@@ -1,0 +1,16 @@
+{
+  "name": "Tune Health",
+  "short_name": "Tune Health",
+  "description": "Where Science Meets Wellness - Evidence-based health insights",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafaf9",
+  "theme_color": "#dc2626",
+  "icons": [
+    {
+      "src": "/assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.6] - 2024-12-10
+
+### Added
+- **SEO & Social Sharing**
+  - Open Graph meta tags for rich social media previews
+  - Twitter Card meta tags
+  - Theme color meta tags for browser UI theming
+  - Canonical URLs for articles
+  - Keywords meta tag
+- **Accessibility Enhancements**
+  - Skip link for keyboard navigation ("Skip to main content")
+  - ARIA labels on progress bars and interactive elements
+  - Enhanced focus-visible states for keyboard users
+  - `prefers-reduced-motion` support across all animations
+  - Semantic `<main>` wrapper for content
+- **Mobile Experience**
+  - 44px minimum touch targets for all interactive elements
+  - Safe area inset support for notched devices (iPhone, etc.)
+  - iOS momentum scrolling on scroll containers
+  - Prevented text selection on buttons and cards
+- **PWA Support**
+  - Added `manifest.json` for Progressive Web App
+  - Apple touch icon support
+- **Print Stylesheet**
+  - Hide navigation, loader, and decorative elements
+  - Show URLs after links in print
+
+### Changed
+- Updated README with accurate tech stack (removed Lenis references)
+- Improved article page meta tags with article-specific Open Graph data
+
 ## [1.0.5] - 2024-12-10
 
 ### Changed

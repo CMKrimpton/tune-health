@@ -685,3 +685,124 @@
 .related-articles {
   @apply py-16 border-t border-stone-200 dark:border-stone-800;
 }
+
+/* =========================================
+   Accessibility & Focus States
+   ========================================= */
+
+/* Enhanced focus states for keyboard navigation */
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-primary-500;
+}
+
+/* Skip link styles */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* =========================================
+   Mobile Enhancements
+   ========================================= */
+
+/* Better touch targets */
+@media (pointer: coarse) {
+  .btn-editorial,
+  .category-chip,
+  .share-button,
+  .back-to-top {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Larger tap targets for mobile nav */
+  .nav-inner a,
+  .nav-inner button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .footer {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  .back-to-top {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  .mobile-menu {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Prevent text selection on interactive elements */
+.btn-editorial,
+.category-chip,
+.article-card {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Smooth scrolling momentum on iOS */
+.categories-scroll,
+.mobile-menu {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================================
+   Print Styles
+   ========================================= */
+
+@media print {
+  .nav-header,
+  .loader,
+  .back-to-top,
+  .scroll-progress,
+  .noise-overlay,
+  .newsletter-visual {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .article-content {
+    max-width: 100% !important;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+}
