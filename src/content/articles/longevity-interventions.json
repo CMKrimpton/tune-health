@@ -1,0 +1,19 @@
+{
+  "title": "Do Any Longevity Interventions Actually Work?",
+  "description": "A critical examination of caloric restriction, fasting, supplements, and the hard truth about what the evidence actually shows.",
+  "category": "Longevity",
+  "publishDate": "2025-12-11",
+  "author": {
+    "name": "Tune Health Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 25,
+  "featured": true,
+  "draft": false,
+  "tags": ["Longevity", "Fasting", "Supplements", "Caloric Restriction", "Evidence Review"],
+  "gradient": {
+    "from": "emerald-600",
+    "to": "teal-700"
+  },
+  "keywords": ["longevity", "lifespan", "fasting", "caloric restriction", "rapamycin", "metformin", "resveratrol", "NAD", "autophagy", "OMAD"]
+}

@@ -7,8 +7,8 @@ import SideNav from '../components/SideNav.astro';
 ---
 
 <BaseLayout
-  title="Tune Health | Where Science Meets Wellness"
-  description="Elevating wellness through science-backed insights and expert guidance on mental health, nutrition, fitness, and longevity."
+  title="Tune Health | No White Coats. No Gurus. Just Evidence."
+  description="The bullshit filter for health. Independent analysis of health claims from any source - peer-reviewed journals and naturopathic remedies alike."
 >
   <Header slot="header" variant="home" />
 
@@ -41,14 +41,15 @@ import SideNav from '../components/SideNav.astro';
         </div>
 
         <h1 class="hero-title font-serif text-display-1 font-semibold mb-6 text-balance" transition:name="hero-title">
-          <span class="block">Where Science</span>
-          <span class="block italic font-normal text-primary-600">Meets Wellness</span>
+          <span class="block">No White Coats.</span>
+          <span class="block">No Gurus.</span>
+          <span class="block italic font-normal text-primary-600">Just Evidence.</span>
         </h1>
 
         <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl mx-auto mb-10">
-          Evidence-based health insights crafted for the discerning reader.
-          Explore the intersection of modern medicine, timeless wisdom, and
-          the art of living well.
+          Independent health analysis for people who think for themselves.
+          We treat peer-reviewed journals and naturopathic claims with the
+          same respect - and the same skepticism.
         </p>
 
         <div class="hero-cta flex flex-col sm:flex-row gap-4 justify-center">
@@ -381,19 +382,43 @@ import SideNav from '../components/SideNav.astro';
     </div>
   </section>
 
-  <!-- Quote Section -->
-  <section class="quote-section">
+  <!-- About / Mission Section -->
+  <section class="py-20 md:py-28 bg-stone-900 dark:bg-stone-950 text-white" id="about">
     <div class="container-editorial">
-      <div class="max-w-narrow mx-auto text-center relative">
-        <span class="quote-mark">"</span>
-        <blockquote class="font-serif text-heading-2 font-normal italic mb-8 pt-8">
-          Health is not simply the absence of disease, but a state of complete physical,
-          mental, and social well-being that allows one to live life to its fullest potential.
-        </blockquote>
-        <cite class="not-italic">
-          <span class="block text-sm font-semibold tracking-wide uppercase">World Health Organization</span>
-          <span class="block text-sm text-stone-400 mt-1">Constitution, 1948</span>
-        </cite>
+      <div class="max-w-3xl mx-auto">
+        <span class="section-label !text-primary-400 mb-4 block">Our Mission</span>
+        <h2 class="font-serif text-heading-1 font-semibold mb-8">The Bullshit Filter for Health</h2>
+
+        <div class="font-body text-body-lg text-stone-300 space-y-6">
+          <p>
+            Health information is broken. Mainstream sources defer to authority and industry-funded research.
+            Alternative health cherry-picks studies and sells false hope. Both sides have conflicts of interest
+            they don't disclose.
+          </p>
+          <p class="text-white font-semibold text-xl">
+            Tune Health exists to cut through it all.
+          </p>
+          <p>
+            We treat peer-reviewed journals and naturopathic claims with the same respect - and the same skepticism.
+            We'll tell you when a cheap generic outperforms an expensive supplement, and when a folk remedy has more
+            science behind it than a blockbuster medication. We follow evidence wherever it leads, even when it's inconvenient.
+          </p>
+        </div>
+
+        <div class="mt-12 pt-8 border-t border-stone-700 flex flex-wrap gap-8">
+          <div>
+            <span class="block text-3xl font-serif font-semibold text-primary-400">No</span>
+            <span class="text-sm text-stone-400 uppercase tracking-wider">Sponsors</span>
+          </div>
+          <div>
+            <span class="block text-3xl font-serif font-semibold text-primary-400">No</span>
+            <span class="text-sm text-stone-400 uppercase tracking-wider">Sacred Cows</span>
+          </div>
+          <div>
+            <span class="block text-3xl font-serif font-semibold text-primary-400">No</span>
+            <span class="text-sm text-stone-400 uppercase tracking-wider">Bullshit</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>

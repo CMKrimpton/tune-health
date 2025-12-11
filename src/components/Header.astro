@@ -1,9 +1,18 @@
 ---
+import { getCollection } from 'astro:content';
+
 interface Props {
   variant?: 'home' | 'article';
 }
 
 const { variant = 'home' } = Astro.props;
+
+// Get the 3 most recent articles sorted by publish date
+const allArticles = await getCollection('articles');
+const latestArticles = allArticles
+  .filter(article => !article.data.draft)
+  .sort((a, b) => new Date(b.data.publishDate).getTime() - new Date(a.data.publishDate).getTime())
+  .slice(0, 3);
 ---
 
 <header class="nav-header" id="header" transition:persist>
@@ -84,24 +93,19 @@ const { variant = 'home' } = Astro.props;
                 </div>
               </div>
 
-              <!-- Featured -->
+              <!-- Latest Articles -->
               <div class="menu-section">
-                <span class="menu-section-label">Featured</span>
+                <span class="menu-section-label">Latest</span>
                 <div class="menu-featured">
-                  <a href="/articles/longevity-interventions" class="menu-featured-item">
-                    <div class="menu-featured-badge">New</div>
-                    <div>
-                      <span class="menu-featured-title">Longevity Interventions</span>
-                      <span class="menu-featured-meta">Longevity · 25 min</span>
-                    </div>
-                  </a>
-                  <a href="/articles/mirtazapine-guide" class="menu-featured-item">
-                    <div class="menu-featured-badge">New</div>
-                    <div>
-                      <span class="menu-featured-title">Mirtazapine Guide</span>
-                      <span class="menu-featured-meta">Mental Health · 18 min</span>
-                    </div>
-                  </a>
+                  {latestArticles.map((article) => (
+                    <a href={`/articles/${article.id}`} class="menu-featured-item">
+                      <div class="menu-featured-badge">New</div>
+                      <div>
+                        <span class="menu-featured-title">{article.data.title.length > 35 ? article.data.title.slice(0, 35) + '...' : article.data.title}</span>
+                        <span class="menu-featured-meta">{article.data.category} · {article.data.readTime} min</span>
+                      </div>
+                    </a>
+                  ))}
                 </div>
               </div>
 
