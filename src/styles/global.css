@@ -687,12 +687,177 @@
 }
 
 /* =========================================
+   Interactive Glow Effects
+   ========================================= */
+
+/* Base glow transition for all interactive elements */
+a, button, [role="button"], .article-card, .featured-card, .category-chip, .deep-dive-card, .newsletter-card {
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+
+/* Primary Button Glow */
+.btn-primary:hover {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.4), 0 0 40px rgba(220, 38, 38, 0.2);
+}
+
+.dark .btn-primary:hover {
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.5), 0 0 50px rgba(239, 68, 68, 0.25);
+}
+
+/* Secondary Button Glow */
+.btn-secondary:hover {
+  box-shadow: 0 0 15px rgba(120, 113, 108, 0.2), 0 0 30px rgba(120, 113, 108, 0.1);
+}
+
+.dark .btn-secondary:hover {
+  box-shadow: 0 0 15px rgba(168, 162, 158, 0.2), 0 0 30px rgba(168, 162, 158, 0.1);
+}
+
+/* Article Card Glow */
+.article-card:hover {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 0 30px rgba(220, 38, 38, 0.08);
+}
+
+.dark .article-card:hover {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 40px rgba(239, 68, 68, 0.15);
+}
+
+/* Featured Card Glow */
+.featured-card:hover {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 40px rgba(220, 38, 38, 0.1);
+}
+
+.dark .featured-card:hover {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 50px rgba(239, 68, 68, 0.2);
+}
+
+/* Category Chip Glow */
+.category-chip:hover,
+.category-chip.active {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 0 20px rgba(220, 38, 38, 0.1);
+}
+
+.dark .category-chip:hover,
+.dark .category-chip.active {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 25px rgba(239, 68, 68, 0.15);
+}
+
+/* Deep Dive Card Glow */
+.deep-dive-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 0 25px rgba(220, 38, 38, 0.1);
+}
+
+.dark .deep-dive-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), 0 0 30px rgba(239, 68, 68, 0.15);
+}
+
+/* Newsletter Card Glow */
+.newsletter-card:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12), 0 0 20px rgba(220, 38, 38, 0.08);
+}
+
+.dark .newsletter-card:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3), 0 0 25px rgba(239, 68, 68, 0.12);
+}
+
+/* Back to Top Glow */
+.back-to-top:hover {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.5), 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.dark .back-to-top:hover {
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.6), 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Share Button Glow */
+.share-button:hover {
+  box-shadow: 0 0 15px rgba(220, 38, 38, 0.4), 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.dark .share-button:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5), 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* Navigation Link Glow */
+.nav-inner a:hover,
+.nav-inner button:hover {
+  text-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+}
+
+/* TOC Link Glow */
+.toc-link:hover,
+.toc-link.active {
+  text-shadow: 0 0 8px rgba(220, 38, 38, 0.25);
+}
+
+/* Footer Link Glow */
+.footer a:hover {
+  text-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+}
+
+/* Command Palette Trigger Glow */
+#cmdkTrigger:hover,
+#cmdkTriggerMobile:hover {
+  box-shadow: 0 0 15px rgba(220, 38, 38, 0.25), 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.dark #cmdkTrigger:hover,
+.dark #cmdkTriggerMobile:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Theme Toggle Glow */
+#themeToggle:hover {
+  box-shadow: 0 0 15px rgba(220, 38, 38, 0.25);
+}
+
+.dark #themeToggle:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.35);
+}
+
+/* Input Focus Glow */
+input:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15), 0 0 20px rgba(220, 38, 38, 0.1);
+}
+
+.dark input:focus,
+.dark textarea:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2), 0 0 25px rgba(239, 68, 68, 0.15);
+}
+
+/* Logo Hover Glow */
+.nav-inner a[href="/"]:hover .text-primary-600,
+header a[href="/"]:hover .text-primary-600 {
+  text-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
+}
+
+/* Floating TOC Link Glow */
+.floating-toc-list a:hover,
+.floating-toc-list a.active {
+  box-shadow: inset 0 0 10px rgba(220, 38, 38, 0.1);
+}
+
+.dark .floating-toc-list a:hover,
+.dark .floating-toc-list a.active {
+  box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.15);
+}
+
+/* Tag Hover Glow */
+[slot="tags"] span:hover,
+.article-content .tags span:hover {
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.2);
+  cursor: default;
+}
+
+/* =========================================
    Accessibility & Focus States
    ========================================= */
 
 /* Enhanced focus states for keyboard navigation */
 *:focus-visible {
   @apply outline-2 outline-offset-2 outline-primary-500;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
 }
 
 /* Skip link styles */
