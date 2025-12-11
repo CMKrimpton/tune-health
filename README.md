@@ -2,6 +2,8 @@
 
 A premium health and wellness editorial website featuring science-backed articles on mental health, nutrition, fitness, sleep science, and longevity.
 
+**Live Site:** https://tune-health-mdt774sf1-krimptons-projects.vercel.app
+
 ## Tech Stack
 
 - **Build Tool**: Vite
@@ -91,6 +93,12 @@ npm run preview
 - `.btn-primary`, `.btn-secondary` - Button styles
 - `.article-card`, `.featured-card` - Article card layouts
 - `.reveal` - Scroll-triggered animation class
+
+## Deployment
+
+The site is deployed on Vercel with automatic deployments:
+- **Push to `main`** → Production deployment
+- **Push to other branches** → Preview deployments
 
 ## Documentation
 

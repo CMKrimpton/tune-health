@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.2] - 2024-12-10
+
+### Added
+- Deployed to Vercel with auto-deployment from GitHub
+- Live site: https://tune-health-mdt774sf1-krimptons-projects.vercel.app
+
+### Changed
+- Updated README.md with live site URL and deployment info
+
 ## [1.0.1] - 2024-12-10
 
 ### Fixed
