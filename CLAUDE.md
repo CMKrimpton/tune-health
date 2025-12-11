@@ -98,7 +98,10 @@ const articles = await getCollection('articles');
 ### Styling Approach
 - Tailwind utility classes with custom component layer in `src/styles/global.css`
 - Dark mode via `class` strategy (toggle in JS, persisted to localStorage)
-- Primary color palette: red tones (`primary-500` = `#ef4444`)
+- **Warm color palette**:
+  - `black` = `#1b1a18` (HSL 47°, 3%, 10%) - warm dark gray
+  - `white` = `#e7e6e3` (HSL 47°, 3%, 90%) - warm off-white
+  - Primary: red tones (`primary-500` = `#ef4444`)
 - Custom typography: Playfair Display (headings), Inter (sans), Crimson Pro (body)
 - Custom easing: `ease-editorial` = `cubic-bezier(0.22, 1, 0.36, 1)`
 

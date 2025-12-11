@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.5.0] - 2024-12-11
+
+### Changed
+- **Warm Color Palette** - Custom black and white with subtle warm tint
+  - `black` now `#1b1a18` (HSL 47°, 3%, 10%) - warm dark gray instead of pure black
+  - `white` now `#e7e6e3` (HSL 47°, 3%, 90%) - warm off-white instead of pure white
+  - Creates a cohesive, premium editorial aesthetic
+  - All Tailwind utilities (`bg-black`, `text-white`, etc.) use these warm tones
+- Fixed Tailwind content paths to include `src/` directory for Astro files
+
 ## [2.4.0] - 2024-12-11
 
 ### Added

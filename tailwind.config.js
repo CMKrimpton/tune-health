@@ -1,14 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./*.html",
-    "./articles/**/*.html",
-    "./js/**/*.js"
+    "./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}",
   ],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        black: '#1b1a18', /* hsl(47, 3%, 10%) - warm dark gray */
+        white: '#e7e6e3', /* hsl(47, 3%, 90%) - warm off-white */
         primary: {
           50: '#fef2f2',
           100: '#fee2e2',
