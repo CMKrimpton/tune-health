@@ -1,0 +1,371 @@
+---
+/**
+ * SideNav - Glass sidebar that reveals on left edge hover
+ * Premium editorial navigation experience
+ */
+---
+
+<aside class="side-nav" id="sideNav">
+  <!-- Hover trigger zone -->
+  <div class="side-nav-trigger" id="sideNavTrigger"></div>
+
+  <!-- Glass panel -->
+  <nav class="side-nav-panel">
+    <div class="side-nav-content">
+      <!-- Logo -->
+      <a href="/" class="side-nav-logo">
+        <span class="text-primary-600 font-bold">T</span>une
+      </a>
+
+      <!-- Scrollable content -->
+      <div class="side-nav-scroll">
+        <!-- Sections -->
+        <div class="side-nav-section">
+          <span class="side-nav-label">Sections</span>
+          <ul class="side-nav-links">
+            <li>
+              <a href="/" class="side-nav-link">
+                <span class="side-nav-link-text">Home</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles" class="side-nav-link">
+                <span class="side-nav-link-text">All Articles</span>
+              </a>
+            </li>
+            <li>
+              <a href="/deep-dives" class="side-nav-link">
+                <span class="side-nav-link-text">Deep Dives</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Topics -->
+        <div class="side-nav-section">
+          <span class="side-nav-label">Topics</span>
+          <ul class="side-nav-links">
+            <li>
+              <a href="/articles?topic=mental-health" class="side-nav-link">
+                <span class="side-nav-link-text">Mental Health</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles?topic=neuroscience" class="side-nav-link">
+                <span class="side-nav-link-text">Neuroscience</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles?topic=nutrition" class="side-nav-link">
+                <span class="side-nav-link-text">Nutrition</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles?topic=longevity" class="side-nav-link">
+                <span class="side-nav-link-text">Longevity</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles?topic=sleep" class="side-nav-link">
+                <span class="side-nav-link-text">Sleep Science</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles?topic=fitness" class="side-nav-link">
+                <span class="side-nav-link-text">Fitness</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles?topic=hormones" class="side-nav-link">
+                <span class="side-nav-link-text">Hormones</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles?topic=supplements" class="side-nav-link">
+                <span class="side-nav-link-text">Supplements</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Featured -->
+        <div class="side-nav-section">
+          <span class="side-nav-label">Featured</span>
+          <ul class="side-nav-links">
+            <li>
+              <a href="/articles/mirtazapine-guide" class="side-nav-link">
+                <span class="side-nav-link-text">Mirtazapine Guide</span>
+                <span class="side-nav-badge">New</span>
+              </a>
+            </li>
+            <li>
+              <a href="/articles/nicotine-research" class="side-nav-link">
+                <span class="side-nav-link-text">Nicotine Research</span>
+                <span class="side-nav-badge">New</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Series -->
+        <div class="side-nav-section">
+          <span class="side-nav-label">Series</span>
+          <ul class="side-nav-links">
+            <li>
+              <a href="/deep-dives#habit-formation" class="side-nav-link">
+                <span class="side-nav-link-text">Habit Formation</span>
+                <span class="side-nav-meta">4 parts</span>
+              </a>
+            </li>
+            <li>
+              <a href="/deep-dives#microbiome" class="side-nav-link">
+                <span class="side-nav-link-text">Microbiome</span>
+                <span class="side-nav-meta">6 parts</span>
+              </a>
+            </li>
+            <li>
+              <a href="/deep-dives#precision-medicine" class="side-nav-link">
+                <span class="side-nav-link-text">Precision Medicine</span>
+                <span class="side-nav-meta">3 parts</span>
+              </a>
+            </li>
+            <li>
+              <a href="/deep-dives#sleep-architecture" class="side-nav-link">
+                <span class="side-nav-link-text">Sleep Architecture</span>
+                <span class="side-nav-meta">5 parts</span>
+              </a>
+            </li>
+            <li>
+              <a href="/deep-dives#stress-resilience" class="side-nav-link">
+                <span class="side-nav-link-text">Stress Resilience</span>
+                <span class="side-nav-meta">4 parts</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Resources -->
+        <div class="side-nav-section">
+          <span class="side-nav-label">Resources</span>
+          <ul class="side-nav-links">
+            <li>
+              <a href="/research" class="side-nav-link">
+                <span class="side-nav-link-text">Research Library</span>
+              </a>
+            </li>
+            <li>
+              <a href="/glossary" class="side-nav-link">
+                <span class="side-nav-link-text">Medical Glossary</span>
+              </a>
+            </li>
+            <li>
+              <a href="/protocols" class="side-nav-link">
+                <span class="side-nav-link-text">Protocols</span>
+              </a>
+            </li>
+            <li>
+              <a href="/tools" class="side-nav-link">
+                <span class="side-nav-link-text">Health Tools</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- About -->
+        <div class="side-nav-section">
+          <span class="side-nav-label">About</span>
+          <ul class="side-nav-links">
+            <li>
+              <a href="/about" class="side-nav-link">
+                <span class="side-nav-link-text">Our Mission</span>
+              </a>
+            </li>
+            <li>
+              <a href="/team" class="side-nav-link">
+                <span class="side-nav-link-text">Editorial Team</span>
+              </a>
+            </li>
+            <li>
+              <a href="/methodology" class="side-nav-link">
+                <span class="side-nav-link-text">Methodology</span>
+              </a>
+            </li>
+            <li>
+              <a href="/contact" class="side-nav-link">
+                <span class="side-nav-link-text">Contact</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Fixed footer -->
+      <div class="side-nav-footer">
+        <div class="side-nav-actions">
+          <button class="side-nav-action-btn" id="sideNavSearch" title="Search">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" stroke-width="2"/>
+              <path d="m21 21-4.35-4.35" stroke-width="2"/>
+            </svg>
+            <span class="sr-only">Search</span>
+          </button>
+          <button class="side-nav-action-btn" id="sideNavTheme" title="Toggle theme">
+            <svg class="w-4 h-4 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="5" stroke-width="2"/>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke-width="2"/>
+            </svg>
+            <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke-width="2"/>
+            </svg>
+            <span class="sr-only">Toggle theme</span>
+          </button>
+        </div>
+        <a href="/subscribe" class="side-nav-subscribe-btn">
+          Subscribe
+        </a>
+        <p class="side-nav-hint">⌘K to search</p>
+      </div>
+    </div>
+  </nav>
+</aside>
+
+<style>
+  .side-nav-scroll {
+    @apply flex-1 overflow-y-auto overflow-x-hidden;
+    @apply -mx-2 px-2;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(168 162 158 / 0.3) transparent;
+  }
+
+  .side-nav-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .side-nav-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .side-nav-scroll::-webkit-scrollbar-thumb {
+    background: rgb(168 162 158 / 0.3);
+    border-radius: 2px;
+  }
+
+  .side-nav-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgb(168 162 158 / 0.5);
+  }
+
+  .side-nav-badge {
+    @apply text-[10px] font-semibold uppercase tracking-wide;
+    @apply px-1.5 py-0.5 rounded;
+    @apply bg-primary-100 text-primary-700;
+    @apply dark:bg-primary-900/30 dark:text-primary-400;
+  }
+
+  .side-nav-meta {
+    @apply text-[10px] text-stone-400 dark:text-stone-600;
+  }
+
+  .side-nav-actions {
+    @apply flex items-center gap-2 mb-3;
+  }
+
+  .side-nav-action-btn {
+    @apply w-8 h-8 rounded-lg;
+    @apply flex items-center justify-center;
+    @apply text-stone-500 dark:text-stone-400;
+    @apply hover:bg-stone-100 dark:hover:bg-stone-800;
+    @apply hover:text-stone-700 dark:hover:text-stone-200;
+    @apply transition-colors;
+  }
+
+  .side-nav-subscribe-btn {
+    @apply w-full py-2 px-4 rounded-lg;
+    @apply bg-primary-600 text-white text-sm font-medium;
+    @apply hover:bg-primary-700;
+    @apply transition-colors text-center;
+    @apply mb-3;
+  }
+
+  .side-nav-hint {
+    @apply text-[10px] text-stone-400 dark:text-stone-500 text-center;
+  }
+</style>
+
+<script>
+  function initSideNav() {
+    const sideNav = document.getElementById('sideNav');
+    const trigger = document.getElementById('sideNavTrigger');
+    const searchBtn = document.getElementById('sideNavSearch');
+    const themeBtn = document.getElementById('sideNavTheme');
+
+    if (!sideNav || !trigger) return;
+
+    let isOpen = false;
+    let closeTimeout: ReturnType<typeof setTimeout>;
+
+    function openNav() {
+      clearTimeout(closeTimeout);
+      if (!isOpen) {
+        isOpen = true;
+        sideNav.classList.add('open');
+      }
+    }
+
+    function closeNav() {
+      closeTimeout = setTimeout(() => {
+        isOpen = false;
+        sideNav.classList.remove('open');
+      }, 300);
+    }
+
+    // Trigger zone hover
+    trigger.addEventListener('mouseenter', openNav);
+
+    // Panel hover keeps it open
+    sideNav.querySelector('.side-nav-panel')?.addEventListener('mouseenter', () => {
+      clearTimeout(closeTimeout);
+    });
+
+    // Close when leaving the whole component
+    sideNav.addEventListener('mouseleave', closeNav);
+
+    // Search button - trigger command palette
+    searchBtn?.addEventListener('click', () => {
+      const cmdkTrigger = document.getElementById('cmdkTrigger');
+      cmdkTrigger?.click();
+    });
+
+    // Theme toggle
+    themeBtn?.addEventListener('click', () => {
+      (window as any).toggleTheme?.();
+    });
+
+    // Active page tracking based on current URL
+    const links = sideNav.querySelectorAll('.side-nav-link');
+    const currentPath = window.location.pathname;
+
+    links.forEach(link => {
+      const href = link.getAttribute('href');
+      if (!href) return;
+
+      // Exact match for home
+      if (href === '/' && currentPath === '/') {
+        link.classList.add('active');
+      }
+      // Exact match for other pages
+      else if (href !== '/' && currentPath === href) {
+        link.classList.add('active');
+      }
+      // Prefix match for nested pages (like /articles/mirtazapine-guide matches /articles)
+      else if (href !== '/' && !href.includes('?') && !href.includes('#') && currentPath.startsWith(href + '/')) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  // Run on load
+  initSideNav();
+
+  // Re-run after View Transitions
+  document.addEventListener('astro:after-swap', initSideNav);
+</script>

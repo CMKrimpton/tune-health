@@ -1,0 +1,187 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+import SideNav from '../components/SideNav.astro';
+
+const series = [
+  {
+    number: 'I',
+    title: 'The Neuroscience of Habit Formation',
+    description: 'A four-part exploration of how habits form, persist, and can be intentionally restructured. From the basal ganglia to practical behavioral strategies.',
+    category: 'Neuroscience',
+    parts: 4,
+    totalTime: '45 min',
+    status: 'coming-soon',
+    gradient: 'from-violet-600 to-purple-700',
+  },
+  {
+    number: 'II',
+    title: 'Understanding Your Microbiome',
+    description: 'The gut-brain connection, microbial diversity, and practical steps for optimization. How trillions of microorganisms influence your health.',
+    category: 'Nutrition',
+    parts: 6,
+    totalTime: '60 min',
+    status: 'coming-soon',
+    gradient: 'from-emerald-500 to-teal-600',
+  },
+  {
+    number: 'III',
+    title: "Precision Medicine: A Patient's Guide",
+    description: 'How genetic testing, biomarkers, and personalized protocols are reshaping healthcare. Navigate the new frontier of individualized treatment.',
+    category: 'Medicine',
+    parts: 3,
+    totalTime: '35 min',
+    status: 'coming-soon',
+    gradient: 'from-cyan-500 to-blue-600',
+  },
+  {
+    number: 'IV',
+    title: 'Sleep Architecture Deep Dive',
+    description: 'Understanding the stages of sleep, circadian biology, and evidence-based strategies for optimizing rest and recovery.',
+    category: 'Sleep Science',
+    parts: 5,
+    totalTime: '50 min',
+    status: 'coming-soon',
+    gradient: 'from-indigo-500 to-purple-600',
+  },
+  {
+    number: 'V',
+    title: 'The Science of Stress Resilience',
+    description: 'From cortisol to catecholamines, understanding the biology of stress and building lasting resilience through evidence-based practices.',
+    category: 'Mental Health',
+    parts: 4,
+    totalTime: '40 min',
+    status: 'coming-soon',
+    gradient: 'from-orange-500 to-amber-600',
+  },
+];
+---
+
+<BaseLayout
+  title="Deep Dives | Tune Health"
+  description="Comprehensive multi-part guides on complex health topics."
+>
+  <Header slot="header" />
+
+  <!-- Hero Section -->
+  <section class="deep-dives-hero">
+    <div class="container-editorial">
+      <div class="max-w-3xl">
+        <span class="section-label">Comprehensive Guides</span>
+        <h1 class="font-serif text-display-2 font-semibold mt-2 mb-6">
+          Deep Dives<br/>
+          <span class="italic font-normal text-primary-600">Into Health Science</span>
+        </h1>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl">
+          Multi-part series that go beyond surface-level explanations. Each Deep Dive
+          thoroughly explores a complex topic, connecting research to practical application.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Series List -->
+  <section class="py-16 md:py-24">
+    <div class="container-editorial">
+      <div class="flex items-center gap-6 mb-10">
+        <span class="section-label">All Series</span>
+        <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+        <span class="text-sm text-stone-400">{series.length} series</span>
+      </div>
+
+      <div class="space-y-6">
+        {series.map((item, index) => (
+          <div class="deep-dive-feature-card group reveal opacity-75 cursor-default">
+            <div class={`deep-dive-feature-image bg-gradient-to-br ${item.gradient}`}>
+              <span class="deep-dive-feature-number">{item.number}</span>
+            </div>
+            <div class="deep-dive-feature-content">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{item.category}</span>
+                <span class="px-2 py-0.5 bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-400 text-xs font-medium rounded">Coming Soon</span>
+              </div>
+              <h2 class="font-serif text-heading-2 font-semibold mb-3">
+                {item.title}
+              </h2>
+              <p class="font-body text-body text-stone-600 dark:text-stone-400 mb-6">
+                {item.description}
+              </p>
+              <div class="flex items-center gap-6 pt-4 border-t border-stone-100 dark:border-stone-800">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-width="2"/>
+                  </svg>
+                  <span class="text-sm text-stone-500">{item.parts} Parts</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                    <path d="M12 6v6l4 2" stroke-width="2"/>
+                  </svg>
+                  <span class="text-sm text-stone-500">{item.totalTime} total</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter CTA -->
+  <section class="py-16 md:py-24 bg-stone-100 dark:bg-stone-900">
+    <div class="container-editorial">
+      <div class="max-w-2xl mx-auto text-center">
+        <span class="section-label">Get Notified</span>
+        <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-4">Be First to Read</h2>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8">
+          Subscribe to get notified when new Deep Dives are published.
+          We'll send you the first part directly to your inbox.
+        </p>
+        <a href="/subscribe" class="btn-primary magnetic inline-flex">
+          <span>Subscribe to Newsletter</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+  <SideNav />
+</BaseLayout>
+
+<style>
+  .deep-dives-hero {
+    @apply py-20 md:py-28 bg-stone-50 dark:bg-stone-900/50;
+    @apply border-b border-stone-200 dark:border-stone-800;
+  }
+
+  .deep-dive-feature-card {
+    @apply grid grid-cols-1 lg:grid-cols-[200px_1fr];
+    @apply bg-white dark:bg-stone-900 rounded-2xl overflow-hidden;
+    @apply border border-stone-200 dark:border-stone-800;
+    @apply transition-all duration-300;
+  }
+
+  .deep-dive-feature-card:hover {
+    @apply shadow-lg dark:shadow-stone-900/50;
+  }
+
+  .deep-dive-feature-image {
+    @apply flex items-center justify-center;
+    @apply min-h-[160px] lg:min-h-full;
+  }
+
+  .deep-dive-feature-number {
+    @apply font-serif text-6xl font-bold text-white/40;
+  }
+
+  .deep-dive-feature-content {
+    @apply p-6 md:p-8;
+  }
+</style>

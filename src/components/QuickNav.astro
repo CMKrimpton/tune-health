@@ -1,0 +1,128 @@
+---
+/**
+ * QuickNav - Floating quick navigation pill
+ * Clean text-based navigation with keyboard shortcuts
+ */
+interface Props {
+  variant?: 'home' | 'article';
+}
+
+const { variant = 'home' } = Astro.props;
+
+const homeLinks = [
+  { key: '1', label: 'Top', href: '#' },
+  { key: '2', label: 'Featured', href: '#featured' },
+  { key: '3', label: 'Articles', href: '#latest' },
+  { key: '4', label: 'Guides', href: '#deep-dives' },
+  { key: '5', label: 'Subscribe', href: '#newsletter' },
+];
+---
+
+<nav class="quick-nav" id="quickNav" aria-label="Quick navigation" data-variant={variant}>
+  <div class="quick-nav-inner">
+    {homeLinks.map((link, i) => (
+      <>
+        {i > 0 && <span class="quick-nav-divider"></span>}
+        <a
+          href={link.href}
+          class="quick-nav-item"
+          data-key={link.key}
+        >
+          <span class="quick-nav-label">{link.label}</span>
+          <span class="quick-nav-key">{link.key}</span>
+        </a>
+      </>
+    ))}
+  </div>
+</nav>
+
+<script>
+  function initQuickNav() {
+    const quickNav = document.getElementById('quickNav');
+    if (!quickNav) return;
+
+    let isVisible = false;
+    let ticking = false;
+
+    // Show/hide based on scroll
+    function updateVisibility() {
+      const scrollY = window.scrollY;
+      const shouldShow = scrollY > 300;
+
+      if (shouldShow !== isVisible) {
+        isVisible = shouldShow;
+        quickNav.classList.toggle('visible', shouldShow);
+      }
+      ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(updateVisibility);
+        ticking = true;
+      }
+    }, { passive: true });
+
+    // Keyboard navigation (1-5 keys)
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger if typing in an input
+      if (e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLTextAreaElement ||
+          e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
+      const key = e.key;
+      if (['1', '2', '3', '4', '5'].includes(key)) {
+        const link = quickNav.querySelector(`[data-key="${key}"]`) as HTMLAnchorElement;
+        if (link) {
+          e.preventDefault();
+
+          // Visual feedback
+          link.classList.add('active');
+          setTimeout(() => link.classList.remove('active'), 200);
+
+          // Navigate
+          const href = link.getAttribute('href');
+          if (href === '#') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else if (href) {
+            const target = document.querySelector(href);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        }
+      }
+    });
+
+    // Active state tracking
+    const sections = ['featured', 'latest', 'deep-dives', 'newsletter'];
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          const items = quickNav.querySelectorAll('.quick-nav-item');
+          items.forEach(item => {
+            const href = item.getAttribute('href');
+            item.classList.toggle('current', href === `#${id}`);
+          });
+        }
+      });
+    }, { threshold: 0.3 });
+
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    // Initial check
+    updateVisibility();
+  }
+
+  // Run on load
+  initQuickNav();
+
+  // Re-run after View Transitions
+  document.addEventListener('astro:after-swap', initQuickNav);
+</script>

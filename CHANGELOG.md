@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.2.0] - 2024-12-11
+
+### Added
+- **Magazine-Style Navigation** - Complete navigation overhaul for premium editorial experience
+  - `SideNav.astro` - Left sidebar with 26+ links organized by Topics, Series, Resources, About
+  - Glass dropdown menu in Header with sections, topics grid, and featured articles
+  - Animated hamburger-to-X icon toggle
+- **New Pages**
+  - `articles/index.astro` - Articles index with published and coming soon sections
+  - `deep-dives.astro` - Deep dive series landing page
+  - `subscribe.astro` - Newsletter subscription page
+- **Editorial Imagery** - Premium Unsplash images throughout
+  - Featured article hero images
+  - Article card thumbnails with hover zoom effects
+  - Deep dive section thumbnails with gradient overlays
+  - Thematically relevant images (meditation for mental health, food for nutrition, etc.)
+
+### Changed
+- Header now uses glass dropdown menu instead of simple "Articles" link
+- Unified stone-900/50 gradient overlays on all images for consistency
+- Updated image quality parameter (&q=80) across all Unsplash URLs
+
 ## [2.1.0] - 2024-12-11
 
 ### Added

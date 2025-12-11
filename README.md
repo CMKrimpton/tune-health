@@ -59,8 +59,9 @@ src/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template
 ├── components/
-│   ├── Header.astro          # Navigation (home/article variants)
+│   ├── Header.astro          # Navigation with glass dropdown menu
 │   ├── Footer.astro          # Site footer
+│   ├── SideNav.astro         # Magazine-style sidebar (26+ links)
 │   ├── CommandPalette.tsx    # React command palette (⌘K)
 │   ├── FloatingTOC.astro     # Floating table of contents
 │   ├── ArticleCard.astro     # Article preview cards
@@ -69,7 +70,9 @@ src/
 │   └── SEO.astro             # JSON-LD structured data
 ├── pages/
 │   ├── index.astro           # Homepage
-│   └── articles/             # Article pages
+│   ├── articles/             # Article pages & index
+│   ├── deep-dives.astro      # Deep dive series page
+│   └── subscribe.astro       # Newsletter subscription
 ├── utils/
 │   ├── articles.ts           # Article collection helpers
 │   └── reading-time.ts       # Reading time calculation
@@ -80,6 +83,8 @@ src/
 ## Features
 
 ### Navigation
+- **Glass Dropdown Menu** - Premium header navigation with sections, topics, and featured articles
+- **SideNav** - Magazine-style sidebar with 26+ links across Topics, Series, Resources, and About
 - **Command Palette (⌘K)** - Site-wide search for articles, sections, and pages
 - **Floating Table of Contents** - Scroll spy navigation for articles
 - **View Transitions** - Smooth page-to-page animations
@@ -92,7 +97,8 @@ src/
 ### Design
 - Responsive design with mobile-first approach
 - Dark/light theme toggle with system preference detection
-- Magazine-style editorial layout
+- Magazine-style editorial layout inspired by Vanity Fair
+- Premium imagery from Unsplash throughout (editorial quality, not stock)
 - Custom View Transition animations
 
 ### Performance

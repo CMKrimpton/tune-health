@@ -1,0 +1,255 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+import SideNav from '../components/SideNav.astro';
+---
+
+<BaseLayout
+  title="Subscribe | Tune Health"
+  description="Get weekly evidence-based health insights delivered to your inbox."
+>
+  <Header slot="header" />
+
+  <div class="subscribe-page">
+    <div class="subscribe-container">
+      <!-- Main Content -->
+      <div class="subscribe-content">
+        <header class="subscribe-header">
+          <span class="subscribe-badge">Newsletter</span>
+          <h1 class="font-serif text-4xl md:text-5xl lg:text-6xl font-semibold mb-6 text-balance">
+            Weekly insights on<br/>
+            <span class="text-primary-600 italic font-normal">health & science</span>
+          </h1>
+          <p class="text-lg md:text-xl text-stone-600 dark:text-stone-400 max-w-lg">
+            Join thousands of readers who receive our curated research summaries,
+            clinical updates, and evidence-based wellness strategies.
+          </p>
+        </header>
+
+        <!-- Subscribe Form -->
+        <form class="subscribe-form" id="subscribeForm">
+          <div class="subscribe-input-group">
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+              required
+              class="subscribe-input"
+            />
+            <button type="submit" class="subscribe-btn">
+              <span>Subscribe</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+          <p class="subscribe-note">
+            Free forever. Unsubscribe anytime. No spam.
+          </p>
+        </form>
+
+        <!-- What to Expect -->
+        <div class="subscribe-features">
+          <h2 class="font-serif text-sm uppercase tracking-widest text-stone-400 mb-6">What to expect</h2>
+          <ul class="subscribe-list">
+            <li>
+              <span class="subscribe-list-icon">📊</span>
+              <div>
+                <strong>Research Summaries</strong>
+                <p>Key findings from the latest clinical studies, translated into actionable insights.</p>
+              </div>
+            </li>
+            <li>
+              <span class="subscribe-list-icon">💊</span>
+              <div>
+                <strong>Clinical Updates</strong>
+                <p>New medications, treatment protocols, and evidence updates from medical literature.</p>
+              </div>
+            </li>
+            <li>
+              <span class="subscribe-list-icon">🧬</span>
+              <div>
+                <strong>Deep Dives</strong>
+                <p>Comprehensive guides on complex health topics, backed by peer-reviewed research.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Testimonials / Social Proof -->
+      <aside class="subscribe-aside">
+        <div class="subscribe-stats">
+          <div class="stat-item">
+            <span class="stat-number">5,000+</span>
+            <span class="stat-label">Subscribers</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">47</span>
+            <span class="stat-label">Issues Published</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">92%</span>
+            <span class="stat-label">Open Rate</span>
+          </div>
+        </div>
+
+        <blockquote class="subscribe-quote">
+          <p>"One of the few newsletters I actually read every week. The research summaries save me hours of reading."</p>
+          <cite>— Dr. Sarah Chen, MD</cite>
+        </blockquote>
+
+        <div class="subscribe-sample">
+          <h3 class="font-serif text-sm font-semibold mb-3">Recent Issues</h3>
+          <ul class="space-y-2 text-sm">
+            <li class="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+              <span class="text-stone-300 dark:text-stone-600">#47</span>
+              Mirtazapine's Hidden Superpowers
+            </li>
+            <li class="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+              <span class="text-stone-300 dark:text-stone-600">#46</span>
+              Nicotine Without the Smoke
+            </li>
+            <li class="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+              <span class="text-stone-300 dark:text-stone-600">#45</span>
+              Sleep Architecture Deep Dive
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+  <SideNav />
+</BaseLayout>
+
+<style>
+  .subscribe-page {
+    @apply min-h-screen py-16 md:py-24;
+  }
+
+  .subscribe-container {
+    @apply max-w-6xl mx-auto px-6;
+    @apply grid gap-16 lg:gap-24;
+    @apply lg:grid-cols-[1fr_360px];
+  }
+
+  .subscribe-content {
+    @apply space-y-12;
+  }
+
+  .subscribe-header {
+    @apply space-y-6;
+  }
+
+  .subscribe-badge {
+    @apply inline-flex items-center px-3 py-1;
+    @apply bg-primary-50 dark:bg-primary-500/10 text-primary-600;
+    @apply text-xs font-semibold uppercase tracking-wider rounded-full;
+  }
+
+  .subscribe-form {
+    @apply space-y-3;
+  }
+
+  .subscribe-input-group {
+    @apply flex flex-col sm:flex-row gap-3;
+  }
+
+  .subscribe-input {
+    @apply flex-1 px-5 py-3.5;
+    @apply bg-stone-100 dark:bg-stone-800 rounded-xl;
+    @apply text-stone-900 dark:text-white;
+    @apply placeholder-stone-400 dark:placeholder-stone-500;
+    @apply border-2 border-transparent;
+    @apply focus:border-primary-500 focus:outline-none;
+    @apply transition-colors;
+  }
+
+  .subscribe-btn {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3.5;
+    @apply bg-primary-600 text-white font-medium;
+    @apply rounded-xl shadow-lg shadow-primary-600/25;
+    @apply hover:bg-primary-700 hover:shadow-xl;
+    @apply transition-all duration-200;
+  }
+
+  .subscribe-note {
+    @apply text-sm text-stone-500;
+  }
+
+  .subscribe-features {
+    @apply pt-8 border-t border-stone-200 dark:border-stone-800;
+  }
+
+  .subscribe-list {
+    @apply space-y-6;
+  }
+
+  .subscribe-list li {
+    @apply flex gap-4;
+  }
+
+  .subscribe-list-icon {
+    @apply text-2xl;
+  }
+
+  .subscribe-list strong {
+    @apply block font-medium text-stone-900 dark:text-white mb-1;
+  }
+
+  .subscribe-list p {
+    @apply text-sm text-stone-600 dark:text-stone-400;
+  }
+
+  /* Aside */
+  .subscribe-aside {
+    @apply space-y-8 lg:sticky lg:top-24 lg:self-start;
+  }
+
+  .subscribe-stats {
+    @apply grid grid-cols-3 gap-4 p-6;
+    @apply bg-stone-50 dark:bg-stone-900 rounded-2xl;
+  }
+
+  .stat-item {
+    @apply text-center;
+  }
+
+  .stat-number {
+    @apply block font-serif text-2xl font-semibold text-stone-900 dark:text-white;
+  }
+
+  .stat-label {
+    @apply text-xs text-stone-500;
+  }
+
+  .subscribe-quote {
+    @apply p-6 bg-stone-50 dark:bg-stone-900 rounded-2xl;
+  }
+
+  .subscribe-quote p {
+    @apply font-serif text-lg italic text-stone-700 dark:text-stone-300 mb-3;
+  }
+
+  .subscribe-quote cite {
+    @apply text-sm text-stone-500 not-italic;
+  }
+
+  .subscribe-sample {
+    @apply p-6 bg-stone-50 dark:bg-stone-900 rounded-2xl;
+  }
+</style>
+
+<script>
+  const form = document.getElementById('subscribeForm');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    // Placeholder for actual subscription logic
+    alert('Thanks for subscribing! (Demo mode)');
+  });
+</script>

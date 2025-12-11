@@ -23,10 +23,9 @@ const articles = [
 
 const pages = [
   { id: 'home', title: 'Home', href: '/', icon: '🏠' },
-  { id: 'featured', title: 'Featured Stories', href: '/#featured', icon: '⭐' },
-  { id: 'latest', title: 'Latest Articles', href: '/#latest', icon: '📰' },
-  { id: 'deep-dives', title: 'Deep Dives', href: '/#deep-dives', icon: '🔬' },
-  { id: 'newsletter', title: 'Newsletter', href: '/#newsletter', icon: '📧' },
+  { id: 'articles', title: 'All Articles', href: '/articles', icon: '📰' },
+  { id: 'deep-dives', title: 'Deep Dives', href: '/deep-dives', icon: '🔬' },
+  { id: 'subscribe', title: 'Subscribe', href: '/subscribe', icon: '📧' },
 ];
 
 const actions = [

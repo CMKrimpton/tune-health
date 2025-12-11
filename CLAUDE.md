@@ -44,8 +44,9 @@ src/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template
 ├── components/
-│   ├── Header.astro          # Navigation header (home/article variants)
+│   ├── Header.astro          # Navigation with glass dropdown menu
 │   ├── Footer.astro          # Site footer
+│   ├── SideNav.astro         # Magazine-style sidebar (26+ links)
 │   ├── CommandPalette.tsx    # React command palette (⌘K)
 │   ├── CommandPaletteWrapper.astro  # Astro wrapper for React island
 │   ├── FloatingTOC.astro     # Floating table of contents with scroll spy
@@ -55,7 +56,10 @@ src/
 │   └── SEO.astro             # JSON-LD structured data
 ├── pages/
 │   ├── index.astro           # Homepage
+│   ├── deep-dives.astro      # Deep dive series page
+│   ├── subscribe.astro       # Newsletter subscription page
 │   └── articles/
+│       ├── index.astro       # Articles index page
 │       ├── mirtazapine-guide.astro
 │       └── nicotine-research.astro
 ├── utils/
@@ -99,6 +103,18 @@ const articles = await getCollection('articles');
 - Custom easing: `ease-editorial` = `cubic-bezier(0.22, 1, 0.36, 1)`
 
 ### Key Features
+
+#### Glass Dropdown Menu (Header)
+- Triggered by hamburger menu icon
+- Contains: Sections (4 with icons), Topics (8 pills), Featured articles (2 with badges)
+- Glass morphism effect with `backdrop-blur-xl`
+- Animated hamburger-to-X icon
+
+#### SideNav (Magazine Sidebar)
+- Reveals on left edge hover
+- 26+ links organized by: Topics, Featured, Series, Resources, About
+- Custom scrollbar, badges for "New" articles
+- Search and theme toggle buttons
 
 #### Command Palette (⌘K)
 - React component using `cmdk` library

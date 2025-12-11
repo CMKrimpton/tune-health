@@ -296,7 +296,7 @@
 
 .loader-logo {
   @apply font-serif text-4xl font-semibold mb-6;
-  @apply flex items-baseline justify-center gap-0.5;
+  @apply flex items-baseline justify-center;
 }
 
 .loader-logo .t {
@@ -534,7 +534,7 @@
    Deep Dive Cards
    ========================================= */
 .deep-dive-card {
-  @apply grid grid-cols-[auto_1fr_auto] gap-6 items-center;
+  @apply flex gap-6 items-center;
   @apply p-6 bg-white dark:bg-stone-900 rounded-2xl;
   @apply border border-stone-200 dark:border-stone-800;
   @apply transition-all duration-300;
@@ -544,9 +544,14 @@
   @apply border-primary-500 shadow-card;
 }
 
+.deep-dive-image {
+  @apply relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0;
+}
+
 .deep-dive-number {
-  @apply font-serif text-4xl font-semibold text-stone-300 dark:text-stone-700;
-  @apply min-w-[60px];
+  @apply font-serif text-3xl font-bold text-white;
+  @apply absolute inset-0 flex items-center justify-center;
+  @apply z-10;
 }
 
 .deep-dive-link {
@@ -612,8 +617,8 @@
    Back to Top
    ========================================= */
 .back-to-top {
-  @apply fixed bottom-6 right-6 z-40;
-  @apply w-12 h-12 rounded-full;
+  @apply fixed bottom-20 right-6 z-40;
+  @apply w-10 h-10 rounded-full;
   @apply bg-stone-900 dark:bg-white text-white dark:text-stone-900;
   @apply flex items-center justify-center;
   @apply opacity-0 invisible translate-y-4;
@@ -980,6 +985,333 @@ header a[href="/"]:hover .text-primary-600 {
 }
 
 /* =========================================
+   Quick Navigation
+   ========================================= */
+.quick-nav {
+  @apply fixed bottom-6 left-1/2 -translate-x-1/2 z-40;
+  @apply opacity-0 translate-y-4 pointer-events-none;
+  @apply transition-all duration-300 ease-out;
+}
+
+.quick-nav.visible {
+  @apply opacity-100 translate-y-0 pointer-events-auto;
+}
+
+.quick-nav-inner {
+  @apply flex items-center;
+  @apply px-1.5 py-1.5 rounded-full;
+  @apply bg-stone-900/95 dark:bg-stone-800/95 backdrop-blur-md;
+  @apply border border-stone-700/50 dark:border-stone-600/50;
+  @apply shadow-2xl;
+}
+
+.quick-nav-divider {
+  @apply w-px h-4 bg-stone-700/50;
+}
+
+.quick-nav-item {
+  @apply relative flex items-center gap-1.5;
+  @apply px-3 py-2 rounded-full;
+  @apply text-stone-400 hover:text-white;
+  @apply hover:bg-stone-700/50 dark:hover:bg-stone-600/50;
+  @apply transition-all duration-200;
+}
+
+.quick-nav-label {
+  @apply text-xs font-medium;
+}
+
+.quick-nav-key {
+  @apply text-[10px] text-stone-500;
+  @apply opacity-0 transition-opacity duration-200;
+}
+
+.quick-nav:hover .quick-nav-key {
+  @apply opacity-100;
+}
+
+.quick-nav-item.current {
+  @apply text-primary-400 bg-primary-500/20;
+}
+
+.quick-nav-item.current .quick-nav-key {
+  @apply text-primary-400/60;
+}
+
+.quick-nav-item.active {
+  @apply scale-95 bg-primary-500 text-white;
+}
+
+/* Quick Nav Glow */
+.quick-nav-inner:hover {
+  box-shadow: 0 0 30px rgba(220, 38, 38, 0.15), 0 25px 50px rgba(0, 0, 0, 0.3);
+}
+
+.quick-nav-item:hover {
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.25);
+}
+
+/* Hide on mobile - too cramped */
+@media (max-width: 640px) {
+  .quick-nav-label {
+    @apply hidden;
+  }
+  .quick-nav-item {
+    @apply px-2.5;
+  }
+  .quick-nav-key {
+    @apply opacity-100 text-xs;
+  }
+}
+
+/* Safe area support for QuickNav */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .quick-nav {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* =========================================
+   Side Navigation (Glass Panel)
+   ========================================= */
+.side-nav {
+  @apply fixed top-0 left-0 h-full z-50;
+  @apply pointer-events-none;
+}
+
+/* Invisible trigger zone on left edge */
+.side-nav-trigger {
+  @apply absolute top-0 left-0 w-4 h-full;
+  @apply pointer-events-auto;
+}
+
+/* Glass panel */
+.side-nav-panel {
+  @apply absolute top-0 left-0 h-full w-64;
+  @apply bg-white/80 dark:bg-stone-900/90 backdrop-blur-xl;
+  @apply border-r border-stone-200/50 dark:border-stone-700/50;
+  @apply transform -translate-x-full;
+  @apply transition-transform duration-300 ease-out;
+  @apply pointer-events-auto;
+  @apply shadow-2xl;
+}
+
+.side-nav.open .side-nav-panel {
+  @apply translate-x-0;
+}
+
+.side-nav-content {
+  @apply flex flex-col h-full py-8 px-6;
+}
+
+/* Logo */
+.side-nav-logo {
+  @apply font-serif text-2xl font-semibold mb-10;
+  @apply opacity-0 transform -translate-x-4;
+  @apply transition-all duration-300 delay-100;
+}
+
+.side-nav.open .side-nav-logo {
+  @apply opacity-100 translate-x-0;
+}
+
+/* Sections */
+.side-nav-section {
+  @apply mb-6;
+}
+
+.side-nav-scroll {
+  @apply opacity-0 transform -translate-x-4;
+  @apply transition-all duration-300;
+}
+
+.side-nav.open .side-nav-scroll {
+  @apply opacity-100 translate-x-0;
+  transition-delay: 150ms;
+}
+
+.side-nav-label {
+  @apply block text-[10px] font-semibold uppercase tracking-widest;
+  @apply text-stone-400 dark:text-stone-500 mb-3 px-3;
+}
+
+/* Links */
+.side-nav-links {
+  @apply space-y-1;
+}
+
+.side-nav-link {
+  @apply flex items-center gap-3 w-full;
+  @apply px-3 py-2 rounded-lg;
+  @apply text-stone-600 dark:text-stone-400;
+  @apply hover:bg-stone-100 dark:hover:bg-stone-800;
+  @apply hover:text-stone-900 dark:hover:text-white;
+  @apply transition-all duration-200;
+  @apply text-left;
+}
+
+.side-nav-link.active {
+  @apply bg-primary-50 dark:bg-primary-500/10;
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+.side-nav-link-num {
+  @apply text-[10px] font-medium text-stone-400 dark:text-stone-600;
+  @apply w-5;
+}
+
+.side-nav-link.active .side-nav-link-num {
+  @apply text-primary-400 dark:text-primary-500;
+}
+
+.side-nav-link-text {
+  @apply text-sm font-medium flex-1;
+}
+
+.side-nav-shortcut {
+  @apply text-[10px] text-stone-400 dark:text-stone-600;
+  @apply px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800;
+}
+
+/* Footer */
+.side-nav-footer {
+  @apply mt-auto pt-6 border-t border-stone-200 dark:border-stone-800;
+  @apply text-[10px] text-stone-400 dark:text-stone-600 leading-relaxed;
+  @apply opacity-0 transform -translate-x-4;
+  @apply transition-all duration-300 delay-300;
+}
+
+.side-nav.open .side-nav-footer {
+  @apply opacity-100 translate-x-0;
+}
+
+/* Glow effect on hover */
+.side-nav-link:hover {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.08);
+}
+
+.side-nav-link.active {
+  box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.05);
+}
+
+/* Hide on mobile and tablet */
+@media (max-width: 1024px) {
+  .side-nav {
+    @apply hidden;
+  }
+}
+
+/* =========================================
+   Editorial Homepage Layout
+   ========================================= */
+
+.home-layout {
+  @apply grid gap-12 lg:gap-16;
+  @apply max-w-6xl mx-auto px-6 py-12 lg:py-20;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .home-layout {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+/* Main Content Area */
+.home-main {
+  @apply space-y-12;
+}
+
+/* Masthead / Hero */
+.home-masthead {
+  @apply pb-12 border-b border-stone-200 dark:border-stone-800;
+}
+
+/* Featured Article */
+.home-featured {
+  @apply pt-2;
+}
+
+.featured-label {
+  @apply flex items-center gap-2 mb-4;
+}
+
+/* Sidebar */
+.home-sidebar {
+  @apply space-y-8 lg:pl-8 lg:border-l lg:border-stone-200 lg:dark:border-stone-800;
+}
+
+@media (max-width: 1023px) {
+  .home-sidebar {
+    @apply border-t border-stone-200 dark:border-stone-800 pt-8;
+  }
+}
+
+.sidebar-section {
+  @apply pb-6;
+}
+
+.sidebar-section:not(:last-child) {
+  @apply border-b border-stone-100 dark:border-stone-800/50;
+}
+
+.sidebar-heading {
+  @apply font-serif text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4;
+  @apply font-semibold;
+}
+
+.sidebar-list {
+  @apply space-y-3;
+}
+
+.sidebar-link {
+  @apply flex items-start gap-3 py-2 -mx-2 px-2 rounded-lg;
+  @apply transition-colors duration-200;
+}
+
+.sidebar-link:hover {
+  @apply bg-stone-50 dark:bg-stone-800/50;
+}
+
+.sidebar-num {
+  @apply text-[10px] font-mono text-stone-300 dark:text-stone-600 mt-1;
+  @apply font-medium;
+}
+
+.sidebar-more {
+  @apply inline-flex items-center gap-1 text-sm text-primary-600 font-medium mt-4;
+  @apply hover:text-primary-700 dark:hover:text-primary-500 transition-colors;
+}
+
+.sidebar-tag {
+  @apply px-3 py-1.5 text-xs font-medium rounded-full;
+  @apply bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400;
+  @apply hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-500/10 dark:hover:text-primary-400;
+  @apply transition-colors duration-200;
+}
+
+.sidebar-newsletter {
+  @apply bg-stone-50 dark:bg-stone-800/50 -mx-4 px-4 py-5 rounded-xl;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-5 py-2.5;
+  @apply bg-primary-600 text-white font-medium text-sm;
+  @apply rounded-full shadow-sm;
+  @apply hover:bg-primary-700 hover:shadow-md;
+  @apply transition-all duration-200;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center gap-2 px-5 py-2.5;
+  @apply bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300;
+  @apply font-medium text-sm rounded-full;
+  @apply hover:bg-stone-200 dark:hover:bg-stone-700;
+  @apply transition-all duration-200;
+}
+
+/* =========================================
    Print Styles
    ========================================= */
 
@@ -987,6 +1319,8 @@ header a[href="/"]:hover .text-primary-600 {
   .nav-header,
   .loader,
   .back-to-top,
+  .quick-nav,
+  .side-nav,
   .scroll-progress,
   .noise-overlay,
   .newsletter-visual {

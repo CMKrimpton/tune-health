@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+import SideNav from '../components/SideNav.astro';
 ---
 
 <BaseLayout
@@ -96,33 +97,14 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
       <a href="/articles/mirtazapine-guide" class="featured-card block reveal">
         <div class="featured-image-container">
           <div class="featured-image-inner">
-            <svg viewBox="0 0 400 500" class="w-full h-full">
-              <defs>
-                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style="stop-color:#1a1a2e"/>
-                  <stop offset="100%" style="stop-color:#16213e"/>
-                </linearGradient>
-                <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style="stop-color:#dc2626"/>
-                  <stop offset="100%" style="stop-color:#ef4444"/>
-                </linearGradient>
-              </defs>
-              <rect width="400" height="500" fill="url(#grad1)"/>
-              <circle cx="200" cy="200" r="100" fill="none" stroke="url(#grad2)" stroke-width="2" opacity="0.5"/>
-              <circle cx="200" cy="200" r="150" fill="none" stroke="#fff" stroke-width="0.5" opacity="0.2"/>
-              <circle cx="200" cy="200" r="50" fill="url(#grad2)" opacity="0.3"/>
-              <g opacity="0.4" stroke="#dc2626" stroke-width="1" fill="none">
-                <path d="M100 150 Q150 100 200 150 Q250 200 200 250"/>
-                <path d="M300 100 Q250 150 300 200 Q350 250 300 300"/>
-                <circle cx="100" cy="150" r="5" fill="#dc2626"/>
-                <circle cx="200" cy="150" r="5" fill="#dc2626"/>
-                <circle cx="300" cy="100" r="5" fill="#dc2626"/>
-                <circle cx="200" cy="250" r="5" fill="#dc2626"/>
-                <circle cx="300" cy="300" r="5" fill="#dc2626"/>
-              </g>
-            </svg>
+            <img
+              src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=1000&fit=crop&q=80"
+              alt="Person meditating at sunrise"
+              class="w-full h-full object-cover"
+              loading="eager"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
           </div>
-          <span class="absolute bottom-4 left-4 text-xs text-white/70">Illustration by Tune Health Studio</span>
         </div>
 
         <div class="p-8 lg:p-12 flex flex-col">
@@ -234,8 +216,15 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
         <!-- Large Featured Card -->
         <a href="/articles/mirtazapine-guide" class="article-card article-card-large group reveal">
           <div class="article-card-image">
-            <div class="article-card-image-inner bg-gradient-to-br from-violet-600 to-purple-700">
-              <span class="article-card-number">01</span>
+            <div class="article-card-image-inner relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=600&h=400&fit=crop&q=80"
+                alt="Serene bedroom morning"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
+              <span class="article-card-number absolute bottom-4 left-4">01</span>
             </div>
           </div>
           <div class="article-card-content">
@@ -246,7 +235,7 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
             <h3 class="font-serif text-heading-3 font-semibold mb-2 group-hover:text-primary-600 transition-colors">Understanding Mirtazapine: A Complete Guide</h3>
             <p class="font-body text-stone-600 dark:text-stone-400 mb-4 line-clamp-3">An in-depth exploration of this unique antidepressant and its applications in modern psychiatry.</p>
             <div class="flex items-center justify-between pt-4 border-t border-stone-100 dark:border-stone-800">
-              <span class="text-xs text-stone-400">12 min read</span>
+              <span class="text-xs text-stone-400">18 min read</span>
               <span class="text-lg text-stone-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
             </div>
           </div>
@@ -255,8 +244,15 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
         <!-- Card 2 - Nicotine Research -->
         <a href="/articles/nicotine-research" class="article-card group reveal reveal-delay-1">
           <div class="article-card-image">
-            <div class="article-card-image-inner bg-gradient-to-br from-emerald-500 to-teal-600">
-              <span class="article-card-number">02</span>
+            <div class="article-card-image-inner relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&h=400&fit=crop&q=80"
+                alt="Scientific research"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
+              <span class="article-card-number absolute bottom-4 left-4">02</span>
             </div>
           </div>
           <div class="article-card-content">
@@ -267,7 +263,7 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
             <h3 class="font-serif text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">Nicotine's Promising Health Benefits</h3>
             <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">A comprehensive research summary exploring nicotine's therapeutic potential beyond its controversial reputation.</p>
             <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
-              <span class="text-xs text-stone-400">18 min read</span>
+              <span class="text-xs text-stone-400">12 min read</span>
               <span class="text-lg text-stone-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
             </div>
           </div>
@@ -276,8 +272,15 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
         <!-- Card 3 - Coming Soon -->
         <div class="article-card group reveal reveal-delay-2 opacity-75 cursor-default">
           <div class="article-card-image relative">
-            <div class="article-card-image-inner bg-gradient-to-br from-cyan-500 to-blue-600">
-              <span class="article-card-number">03</span>
+            <div class="article-card-image-inner relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop&q=80"
+                alt="Fresh healthy bowl"
+                class="w-full h-full object-cover grayscale-[30%]"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
+              <span class="article-card-number absolute bottom-4 left-4">03</span>
             </div>
             <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
           </div>
@@ -296,8 +299,15 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
         <!-- Card 4 - Coming Soon -->
         <div class="article-card group reveal reveal-delay-3 opacity-75 cursor-default">
           <div class="article-card-image relative">
-            <div class="article-card-image-inner bg-gradient-to-br from-orange-500 to-amber-600">
-              <span class="article-card-number">04</span>
+            <div class="article-card-image-inner relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=600&h=400&fit=crop&q=80"
+                alt="Runner silhouette"
+                class="w-full h-full object-cover grayscale-[30%]"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
+              <span class="article-card-number absolute bottom-4 left-4">04</span>
             </div>
             <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
           </div>
@@ -316,8 +326,15 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
         <!-- Card 5 - Coming Soon -->
         <div class="article-card group reveal reveal-delay-4 opacity-75 cursor-default">
           <div class="article-card-image relative">
-            <div class="article-card-image-inner bg-gradient-to-br from-teal-400 to-emerald-500">
-              <span class="article-card-number">05</span>
+            <div class="article-card-image-inner relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=600&h=400&fit=crop&q=80"
+                alt="Doctor consultation"
+                class="w-full h-full object-cover grayscale-[30%]"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
+              <span class="article-card-number absolute bottom-4 left-4">05</span>
             </div>
             <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
           </div>
@@ -362,11 +379,20 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
       </div>
 
       <div class="space-y-4">
-        <div class="deep-dive-card group reveal opacity-75 cursor-default">
-          <div class="deep-dive-number">I</div>
-          <div class="min-w-0">
+        <a href="/deep-dives" class="deep-dive-card group reveal opacity-90 hover:opacity-100">
+          <div class="deep-dive-image">
+            <img
+              src="https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=200&h=200&fit=crop&q=80"
+              alt="Neural connections"
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-stone-900/50"></div>
+            <span class="deep-dive-number">I</span>
+          </div>
+          <div class="min-w-0 flex-1">
             <span class="text-xs font-semibold uppercase tracking-widest text-primary-600 mb-2 block">Series · Coming Soon</span>
-            <h3 class="font-serif text-xl font-semibold mb-1">The Neuroscience of Habit Formation</h3>
+            <h3 class="font-serif text-xl font-semibold mb-1 group-hover:text-primary-600 transition-colors">The Neuroscience of Habit Formation</h3>
             <p class="text-sm text-stone-500 dark:text-stone-400 hidden md:block mb-2">A four-part exploration of how habits form, persist, and can be intentionally restructured.</p>
             <div class="flex gap-2 text-xs text-stone-400">
               <span>4 Parts</span>
@@ -374,13 +400,23 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
               <span>45 min total</span>
             </div>
           </div>
-        </div>
+          <span class="hidden md:block text-lg text-stone-300 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
+        </a>
 
-        <div class="deep-dive-card group reveal reveal-delay-1 opacity-75 cursor-default">
-          <div class="deep-dive-number">II</div>
-          <div class="min-w-0">
+        <a href="/deep-dives" class="deep-dive-card group reveal reveal-delay-1 opacity-90 hover:opacity-100">
+          <div class="deep-dive-image">
+            <img
+              src="https://images.unsplash.com/photo-1628771065518-0d82f1938462?w=200&h=200&fit=crop&q=80"
+              alt="Gut health"
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-stone-900/50"></div>
+            <span class="deep-dive-number">II</span>
+          </div>
+          <div class="min-w-0 flex-1">
             <span class="text-xs font-semibold uppercase tracking-widest text-primary-600 mb-2 block">Series · Coming Soon</span>
-            <h3 class="font-serif text-xl font-semibold mb-1">Understanding Your Microbiome</h3>
+            <h3 class="font-serif text-xl font-semibold mb-1 group-hover:text-primary-600 transition-colors">Understanding Your Microbiome</h3>
             <p class="text-sm text-stone-500 dark:text-stone-400 hidden md:block mb-2">The gut-brain connection, microbial diversity, and practical steps for optimization.</p>
             <div class="flex gap-2 text-xs text-stone-400">
               <span>6 Parts</span>
@@ -388,13 +424,23 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
               <span>60 min total</span>
             </div>
           </div>
-        </div>
+          <span class="hidden md:block text-lg text-stone-300 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
+        </a>
 
-        <div class="deep-dive-card group reveal reveal-delay-2 opacity-75 cursor-default">
-          <div class="deep-dive-number">III</div>
-          <div class="min-w-0">
+        <a href="/deep-dives" class="deep-dive-card group reveal reveal-delay-2 opacity-90 hover:opacity-100">
+          <div class="deep-dive-image">
+            <img
+              src="https://images.unsplash.com/photo-1579154204601-01588f351e67?w=200&h=200&fit=crop&q=80"
+              alt="DNA strand"
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-stone-900/50"></div>
+            <span class="deep-dive-number">III</span>
+          </div>
+          <div class="min-w-0 flex-1">
             <span class="text-xs font-semibold uppercase tracking-widest text-primary-600 mb-2 block">Guide · Coming Soon</span>
-            <h3 class="font-serif text-xl font-semibold mb-1">Precision Medicine: A Patient's Guide</h3>
+            <h3 class="font-serif text-xl font-semibold mb-1 group-hover:text-primary-600 transition-colors">Precision Medicine: A Patient's Guide</h3>
             <p class="text-sm text-stone-500 dark:text-stone-400 hidden md:block mb-2">How genetic testing, biomarkers, and personalized protocols are reshaping healthcare.</p>
             <div class="flex gap-2 text-xs text-stone-400">
               <span>3 Parts</span>
@@ -402,7 +448,17 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
               <span>35 min total</span>
             </div>
           </div>
-        </div>
+          <span class="hidden md:block text-lg text-stone-300 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
+        </a>
+      </div>
+
+      <div class="mt-8 text-center">
+        <a href="/deep-dives" class="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
+          View all Deep Dives
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
+        </a>
       </div>
     </div>
   </section>
@@ -493,6 +549,7 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 
   <Footer slot="footer" />
   <CommandPaletteWrapper />
+  <SideNav />
 
   <script>
     // Track if this is the initial page load vs View Transition

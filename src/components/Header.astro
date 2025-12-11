@@ -8,18 +8,110 @@ const { variant = 'home' } = Astro.props;
 
 <header class="nav-header" id="header" transition:persist>
   <nav class="nav-inner">
-    <!-- Left Nav -->
+    <!-- Left Nav - Menu Button -->
     <div class="flex items-center gap-6">
       {variant === 'home' ? (
-        <>
-          <button class="lg:hidden flex flex-col justify-center gap-1.5 w-6 h-6 group" id="menuToggle" aria-label="Toggle menu">
-            <span class="w-full h-0.5 bg-stone-900 dark:bg-white transition-all duration-300 origin-center group-[.active]:translate-y-2 group-[.active]:rotate-45"></span>
-            <span class="w-full h-0.5 bg-stone-900 dark:bg-white transition-all duration-300 group-[.active]:opacity-0"></span>
-            <span class="w-full h-0.5 bg-stone-900 dark:bg-white transition-all duration-300 origin-center group-[.active]:-translate-y-2 group-[.active]:-rotate-45"></span>
+        <div class="relative" id="menuDropdownWrapper">
+          <!-- Menu Button -->
+          <button
+            class="menu-toggle-btn group"
+            id="menuToggleBtn"
+            aria-label="Open menu"
+            aria-expanded="false"
+          >
+            <div class="menu-icon">
+              <span class="menu-icon-line"></span>
+              <span class="menu-icon-line"></span>
+              <span class="menu-icon-line"></span>
+            </div>
+            <span class="hidden lg:inline text-sm font-medium text-stone-600 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">Menu</span>
           </button>
-          <a href="#featured" class="hidden lg:block text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white link-underline transition-colors">Explore</a>
-          <a href="#latest" class="hidden lg:block text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white link-underline transition-colors">Articles</a>
-        </>
+
+          <!-- Glass Dropdown Menu -->
+          <div class="menu-dropdown" id="menuDropdown">
+            <div class="menu-dropdown-inner">
+              <!-- Sections -->
+              <div class="menu-section">
+                <span class="menu-section-label">Sections</span>
+                <div class="menu-grid">
+                  <a href="/" class="menu-item">
+                    <span class="menu-item-icon">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-width="1.5"/>
+                      </svg>
+                    </span>
+                    <span class="menu-item-text">Home</span>
+                  </a>
+                  <a href="/articles" class="menu-item">
+                    <span class="menu-item-icon">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" stroke-width="1.5"/>
+                      </svg>
+                    </span>
+                    <span class="menu-item-text">Articles</span>
+                  </a>
+                  <a href="/deep-dives" class="menu-item">
+                    <span class="menu-item-icon">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="1.5"/>
+                      </svg>
+                    </span>
+                    <span class="menu-item-text">Deep Dives</span>
+                  </a>
+                  <a href="/subscribe" class="menu-item">
+                    <span class="menu-item-icon">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="1.5"/>
+                      </svg>
+                    </span>
+                    <span class="menu-item-text">Subscribe</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Topics -->
+              <div class="menu-section">
+                <span class="menu-section-label">Topics</span>
+                <div class="menu-topics">
+                  <a href="/articles?topic=mental-health" class="menu-topic">Mental Health</a>
+                  <a href="/articles?topic=neuroscience" class="menu-topic">Neuroscience</a>
+                  <a href="/articles?topic=nutrition" class="menu-topic">Nutrition</a>
+                  <a href="/articles?topic=longevity" class="menu-topic">Longevity</a>
+                  <a href="/articles?topic=sleep" class="menu-topic">Sleep</a>
+                  <a href="/articles?topic=fitness" class="menu-topic">Fitness</a>
+                  <a href="/articles?topic=hormones" class="menu-topic">Hormones</a>
+                  <a href="/articles?topic=supplements" class="menu-topic">Supplements</a>
+                </div>
+              </div>
+
+              <!-- Featured -->
+              <div class="menu-section">
+                <span class="menu-section-label">Featured</span>
+                <div class="menu-featured">
+                  <a href="/articles/mirtazapine-guide" class="menu-featured-item">
+                    <div class="menu-featured-badge">New</div>
+                    <div>
+                      <span class="menu-featured-title">Mirtazapine Guide</span>
+                      <span class="menu-featured-meta">Mental Health · 18 min</span>
+                    </div>
+                  </a>
+                  <a href="/articles/nicotine-research" class="menu-featured-item">
+                    <div class="menu-featured-badge">New</div>
+                    <div>
+                      <span class="menu-featured-title">Nicotine Research</span>
+                      <span class="menu-featured-meta">Neuroscience · 12 min</span>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="menu-footer">
+                <span class="text-xs text-stone-400">Press ⌘K to search</span>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
         <a href="/" class="flex items-center gap-2 text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -31,18 +123,13 @@ const { variant = 'home' } = Astro.props;
     </div>
 
     <!-- Logo -->
-    <a href="/" class="flex items-baseline gap-1 font-serif text-xl md:text-2xl font-semibold group">
-      <span class="text-primary-600 font-bold text-2xl md:text-3xl transition-transform duration-300 group-hover:scale-110" transition:name="logo-t">T</span>
-      <span class="text-stone-900 dark:text-white" transition:name="logo-une">une</span>
-      <em class="font-normal text-stone-600 dark:text-stone-400" transition:name="logo-health">Health</em>
+    <a href="/" class="flex items-baseline font-serif text-xl md:text-2xl font-semibold group">
+      <span class="text-primary-600 font-bold text-2xl md:text-3xl transition-transform duration-300 group-hover:scale-110" transition:name="logo-t">T</span><span class="text-stone-900 dark:text-white" transition:name="logo-une">une</span>
+      <em class="ml-1.5 font-normal text-stone-600 dark:text-stone-400" transition:name="logo-health">Health</em>
     </a>
 
     <!-- Right Nav -->
     <div class="flex items-center gap-4">
-      {variant === 'home' && (
-        <a href="#newsletter" class="hidden lg:block text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white link-underline transition-colors">Subscribe</a>
-      )}
-
       <!-- Command Palette Trigger -->
       <button
         class="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
@@ -76,37 +163,206 @@ const { variant = 'home' } = Astro.props;
       </button>
     </div>
   </nav>
-
-  <!-- Mobile Menu (home only) -->
-  {variant === 'home' && (
-    <div class="mobile-menu" id="mobileMenu">
-      <div class="flex flex-col min-h-full p-8 md:p-12">
-        <nav class="flex-1 space-y-2">
-          <a href="/" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
-            <span class="text-xs font-medium text-stone-400">01</span>
-            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Home</span>
-          </a>
-          <a href="#featured" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
-            <span class="text-xs font-medium text-stone-400">02</span>
-            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Featured</span>
-          </a>
-          <a href="#latest" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
-            <span class="text-xs font-medium text-stone-400">03</span>
-            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Articles</span>
-          </a>
-          <a href="#deep-dives" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
-            <span class="text-xs font-medium text-stone-400">04</span>
-            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Deep Dives</span>
-          </a>
-          <a href="#newsletter" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
-            <span class="text-xs font-medium text-stone-400">05</span>
-            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Newsletter</span>
-          </a>
-        </nav>
-        <div class="pt-8 border-t border-stone-200 dark:border-stone-800">
-          <p class="text-sm text-stone-400 italic">Press ⌘K to search anywhere</p>
-        </div>
-      </div>
-    </div>
-  )}
 </header>
+
+<style>
+  /* Menu Toggle Button */
+  .menu-toggle-btn {
+    @apply flex items-center gap-2;
+    @apply px-2 py-2 lg:px-3 lg:py-2;
+    @apply rounded-lg;
+    @apply hover:bg-stone-100 dark:hover:bg-stone-800;
+    @apply transition-all duration-200;
+  }
+
+  .menu-icon {
+    @apply flex flex-col justify-center gap-1 w-5 h-5;
+  }
+
+  .menu-icon-line {
+    @apply w-full h-0.5 bg-stone-600 dark:bg-stone-400;
+    @apply transition-all duration-300 origin-center;
+  }
+
+  .menu-toggle-btn[aria-expanded="true"] .menu-icon-line:nth-child(1) {
+    @apply translate-y-[6px] rotate-45;
+  }
+
+  .menu-toggle-btn[aria-expanded="true"] .menu-icon-line:nth-child(2) {
+    @apply opacity-0;
+  }
+
+  .menu-toggle-btn[aria-expanded="true"] .menu-icon-line:nth-child(3) {
+    @apply -translate-y-[6px] -rotate-45;
+  }
+
+  /* Dropdown Menu */
+  .menu-dropdown {
+    @apply absolute top-full left-0 mt-2;
+    @apply w-screen max-w-md lg:max-w-2xl;
+    @apply opacity-0 invisible;
+    @apply transform -translate-y-2;
+    @apply transition-all duration-300 ease-out;
+    @apply z-50;
+  }
+
+  .menu-dropdown.open {
+    @apply opacity-100 visible translate-y-0;
+  }
+
+  .menu-dropdown-inner {
+    @apply bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl;
+    @apply border border-stone-200/50 dark:border-stone-700/50;
+    @apply rounded-2xl shadow-2xl;
+    @apply p-8;
+  }
+
+  /* Menu Sections */
+  .menu-section {
+    @apply mb-8 last:mb-0;
+  }
+
+  .menu-section-label {
+    @apply block text-[10px] font-semibold uppercase tracking-widest;
+    @apply text-stone-400 dark:text-stone-500 mb-3;
+  }
+
+  /* Menu Grid */
+  .menu-grid {
+    @apply grid grid-cols-2 lg:grid-cols-4 gap-2;
+  }
+
+  .menu-item {
+    @apply flex items-center gap-3;
+    @apply px-4 py-4 rounded-xl;
+    @apply bg-stone-50 dark:bg-stone-800/50;
+    @apply hover:bg-stone-100 dark:hover:bg-stone-800;
+    @apply transition-colors;
+  }
+
+  .menu-item-icon {
+    @apply w-10 h-10 rounded-lg;
+    @apply bg-white dark:bg-stone-700;
+    @apply flex items-center justify-center;
+    @apply text-stone-500 dark:text-stone-400;
+    @apply shadow-sm;
+  }
+
+  .menu-item-text {
+    @apply text-sm font-medium text-stone-700 dark:text-stone-200;
+  }
+
+  /* Topics */
+  .menu-topics {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .menu-topic {
+    @apply px-3 py-1.5 rounded-full;
+    @apply text-xs font-medium;
+    @apply bg-stone-100 dark:bg-stone-800;
+    @apply text-stone-600 dark:text-stone-400;
+    @apply hover:bg-primary-100 hover:text-primary-700;
+    @apply dark:hover:bg-primary-900/30 dark:hover:text-primary-400;
+    @apply transition-colors;
+  }
+
+  /* Featured */
+  .menu-featured {
+    @apply space-y-2;
+  }
+
+  .menu-featured-item {
+    @apply flex items-center gap-4;
+    @apply p-4 rounded-xl;
+    @apply bg-gradient-to-r from-stone-50 to-transparent;
+    @apply dark:from-stone-800/50 dark:to-transparent;
+    @apply hover:from-primary-50 dark:hover:from-primary-900/20;
+    @apply transition-colors;
+  }
+
+  .menu-featured-badge {
+    @apply px-2 py-0.5 rounded text-[10px] font-semibold uppercase;
+    @apply bg-primary-100 text-primary-700;
+    @apply dark:bg-primary-900/30 dark:text-primary-400;
+  }
+
+  .menu-featured-title {
+    @apply block text-sm font-medium text-stone-700 dark:text-stone-200;
+  }
+
+  .menu-featured-meta {
+    @apply block text-xs text-stone-400;
+  }
+
+  /* Footer */
+  .menu-footer {
+    @apply pt-6 mt-6 border-t border-stone-200 dark:border-stone-700;
+    @apply text-center;
+  }
+</style>
+
+<script>
+  function initHeader() {
+    const menuBtn = document.getElementById('menuToggleBtn');
+    const menuDropdown = document.getElementById('menuDropdown');
+    const menuWrapper = document.getElementById('menuDropdownWrapper');
+
+    if (!menuBtn || !menuDropdown) return;
+
+    let isOpen = false;
+
+    function openMenu() {
+      isOpen = true;
+      menuBtn.setAttribute('aria-expanded', 'true');
+      menuDropdown.classList.add('open');
+    }
+
+    function closeMenu() {
+      isOpen = false;
+      menuBtn.setAttribute('aria-expanded', 'false');
+      menuDropdown.classList.remove('open');
+    }
+
+    function toggleMenu() {
+      if (isOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    }
+
+    // Toggle on click
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (isOpen && menuWrapper && !menuWrapper.contains(e.target as Node)) {
+        closeMenu();
+      }
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        closeMenu();
+      }
+    });
+
+    // Close when clicking a link
+    menuDropdown.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        closeMenu();
+      });
+    });
+  }
+
+  // Run on load
+  initHeader();
+
+  // Re-run after View Transitions
+  document.addEventListener('astro:after-swap', initHeader);
+</script>

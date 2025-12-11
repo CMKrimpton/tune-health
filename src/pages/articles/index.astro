@@ -1,0 +1,253 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
+import SideNav from '../../components/SideNav.astro';
+
+const articles = [
+  {
+    slug: 'mirtazapine-guide',
+    title: 'Mirtazapine: The Quiet Overachiever of Modern Psychopharmacology',
+    description: 'A comprehensive clinical evidence review covering 20+ therapeutic applications, remarkable safety data, and why one drug demonstrates positive evidence across such diverse conditions.',
+    category: 'Mental Health',
+    readTime: '18 min read',
+    publishDate: 'Dec 10, 2025',
+    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop&q=80',
+    imageAlt: 'Person meditating at sunrise',
+  },
+  {
+    slug: 'nicotine-research',
+    title: "Nicotine's Promising Health Benefits: A Research Summary",
+    description: 'Exploring the cognitive enhancement potential of nicotine separated from tobacco, examining current research on attention, memory, and neuroprotection.',
+    category: 'Neuroscience',
+    readTime: '12 min read',
+    publishDate: 'Dec 10, 2025',
+    image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop&q=80',
+    imageAlt: 'Scientific research',
+  },
+];
+
+const comingSoon = [
+  {
+    title: 'Metabolic Flexibility: A New Paradigm',
+    category: 'Nutrition',
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop&q=80',
+    imageAlt: 'Fresh healthy bowl',
+  },
+  {
+    title: 'Zone 2 Training: The Science Behind Slow',
+    category: 'Fitness',
+    image: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=600&h=400&fit=crop&q=80',
+    imageAlt: 'Runner silhouette',
+  },
+  {
+    title: 'Senolytics: Clearing the Path to Longevity',
+    category: 'Longevity',
+    image: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=600&h=400&fit=crop&q=80',
+    imageAlt: 'Medical consultation',
+  },
+];
+---
+
+<BaseLayout
+  title="Articles | Tune Health"
+  description="Evidence-based health insights and clinical research reviews."
+>
+  <Header slot="header" />
+
+  <!-- Hero Section -->
+  <section class="articles-hero">
+    <div class="container-editorial">
+      <div class="max-w-3xl">
+        <span class="section-label">The Library</span>
+        <h1 class="font-serif text-display-2 font-semibold mt-2 mb-6">
+          Evidence-Based<br/>
+          <span class="italic font-normal text-primary-600">Health Insights</span>
+        </h1>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl">
+          In-depth articles on mental health, neuroscience, nutrition, and longevity.
+          Each piece is thoroughly researched and reviewed by our editorial board.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Published Articles -->
+  <section class="py-16 md:py-24">
+    <div class="container-editorial">
+      <div class="flex items-center gap-6 mb-10">
+        <span class="section-label">Published Articles</span>
+        <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+        <span class="text-sm text-stone-400">{articles.length} articles</span>
+      </div>
+
+      <div class="space-y-8">
+        {articles.map((article, index) => (
+          <a href={`/articles/${article.slug}`} class="article-feature-card group reveal block">
+            <div class="article-feature-image">
+              <div class="article-feature-image-inner relative overflow-hidden">
+                <img
+                  src={article.image}
+                  alt={article.imageAlt}
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/30 to-transparent"></div>
+                <span class="article-feature-number absolute bottom-6 left-6">{String(index + 1).padStart(2, '0')}</span>
+              </div>
+            </div>
+            <div class="article-feature-content">
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+                <span class="text-xs text-stone-400">{article.publishDate}</span>
+              </div>
+              <h2 class="font-serif text-heading-2 font-semibold mb-3 group-hover:text-primary-600 transition-colors">
+                {article.title}
+              </h2>
+              <p class="font-body text-body text-stone-600 dark:text-stone-400 mb-6 line-clamp-2">
+                {article.description}
+              </p>
+              <div class="flex items-center justify-between pt-4 border-t border-stone-100 dark:border-stone-800">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-semibold">TH</div>
+                  <span class="text-sm text-stone-500">Tune Health Editorial</span>
+                </div>
+                <div class="flex items-center gap-4">
+                  <span class="text-sm text-stone-400">{article.readTime}</span>
+                  <span class="text-lg text-stone-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Coming Soon -->
+  <section class="py-16 md:py-24 bg-stone-100 dark:bg-stone-900">
+    <div class="container-editorial">
+      <div class="flex items-center gap-6 mb-10">
+        <span class="section-label">Coming Soon</span>
+        <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {comingSoon.map((article, index) => (
+          <div class="article-card group reveal opacity-75 cursor-default">
+            <div class="article-card-image relative">
+              <div class="article-card-image-inner relative overflow-hidden">
+                <img
+                  src={article.image}
+                  alt={article.imageAlt}
+                  class="w-full h-full object-cover grayscale-[30%]"
+                  loading="lazy"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/30 to-transparent"></div>
+                <span class="article-card-number absolute bottom-4 left-4">{String(articles.length + index + 1).padStart(2, '0')}</span>
+              </div>
+              <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
+            </div>
+            <div class="article-card-content">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+              </div>
+              <h3 class="font-serif text-xl font-semibold mb-2">{article.title}</h3>
+              <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
+                <span class="text-xs text-stone-400">Coming soon</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter CTA -->
+  <section class="py-16 md:py-24">
+    <div class="container-editorial">
+      <div class="max-w-2xl mx-auto text-center">
+        <span class="section-label">Stay Updated</span>
+        <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-4">Never Miss an Article</h2>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8">
+          Get notified when we publish new research summaries and in-depth guides.
+        </p>
+        <a href="/subscribe" class="btn-primary magnetic inline-flex">
+          <span>Subscribe to Newsletter</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+  <SideNav />
+</BaseLayout>
+
+<style>
+  .articles-hero {
+    @apply py-20 md:py-28 bg-stone-50 dark:bg-stone-900/50;
+    @apply border-b border-stone-200 dark:border-stone-800;
+  }
+
+  /* Feature card - horizontal layout */
+  .article-feature-card {
+    @apply grid grid-cols-1 lg:grid-cols-[380px_1fr];
+    @apply bg-white dark:bg-stone-900 rounded-2xl overflow-hidden;
+    @apply border border-stone-200 dark:border-stone-800;
+    @apply transition-all duration-300;
+  }
+
+  .article-feature-card:hover {
+    @apply shadow-xl dark:shadow-stone-900/50;
+    @apply border-stone-300 dark:border-stone-700;
+  }
+
+  .article-feature-image {
+    @apply relative aspect-[4/3] lg:aspect-auto;
+  }
+
+  .article-feature-image-inner {
+    @apply w-full h-full;
+    @apply min-h-[200px] lg:min-h-[320px];
+  }
+
+  .article-feature-number {
+    @apply font-serif text-6xl font-bold text-white/60;
+  }
+
+  .article-feature-content {
+    @apply p-6 md:p-8 lg:p-10;
+  }
+
+  /* Standard card - vertical layout for coming soon */
+  .article-card {
+    @apply bg-white dark:bg-stone-900 rounded-2xl overflow-hidden;
+    @apply border border-stone-200 dark:border-stone-800;
+    @apply transition-all duration-300;
+  }
+
+  .article-card:hover {
+    @apply shadow-lg dark:shadow-stone-900/50;
+  }
+
+  .article-card-image {
+    @apply relative aspect-[4/3];
+  }
+
+  .article-card-image-inner {
+    @apply w-full h-full;
+  }
+
+  .article-card-number {
+    @apply font-serif text-4xl font-bold text-white/60;
+  }
+
+  .article-card-content {
+    @apply p-6;
+  }
+</style>
