@@ -6,13 +6,18 @@ Our mission is to be a bullshit-filter in matters of health. We treat "white coa
 
 ---
 
-## Selected Brand Voice (Option D)
+## Selected Brand Voice (Final)
 
-### Slogan
-**"No white coats. No gurus. Just evidence."**
+### Hero Slogan
+**"Evidence. Wherever it leads."**
 
-### Tagline
-**"The bullshit filter for health"**
+### Taglines (Health/Wealth Theme)
+- **Footer:** "Health is wealth. We help you protect it."
+- **About Section Closer:** "The only wealth that matters."
+- **Newsletter Heading:** "Real Wealth Starts Here"
+
+### Section Heading
+**"Health Without the Hype"**
 
 ### About Us
 
@@ -22,11 +27,16 @@ Our mission is to be a bullshit-filter in matters of health. We treat "white coa
 >
 > We treat peer-reviewed journals and naturopathic claims with the same respect - and the same skepticism. We'll tell you when a cheap generic outperforms an expensive supplement, and when a folk remedy has more science behind it than a blockbuster medication. We follow evidence wherever it leads, even when it's inconvenient.
 >
-> No sponsors. No sacred cows. No bullshit.
+> *The only wealth that matters.*
+
+### Visual Elements (About Section)
+- No Sponsors
+- No Sacred Cows
+- No Bullshit
 
 ### Homepage Hero
-- **Main:** "No white coats. No gurus. Just evidence."
-- **Sub:** "Independent health analysis for people who think for themselves"
+- **Main:** "Evidence." / "Wherever it leads."
+- **Sub:** "Independent health analysis for people who think for themselves. We treat peer-reviewed journals and naturopathic claims with the same respect - and the same skepticism."
 
 ---
 

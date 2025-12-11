@@ -6,7 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [2.5.0] - 2024-12-11
+## [2.6.0] - 2025-12-11
+
+### Changed
+- **Brand Messaging Overhaul** - Refined hero and site-wide copy
+  - Hero slogan: "Evidence. Wherever it leads." (positive framing, replaces "No..." opener)
+  - About section heading: "Health Without the Hype"
+  - Health/Wealth theme woven throughout:
+    - Footer: "Health is wealth. We help you protect it."
+    - About closer: "The only wealth that matters."
+    - Newsletter: "Real Wealth Starts Here"
+  - Updated BRAND.md with final brand voice
+- **Dynamic Header Menu** - Latest articles now fetched dynamically
+  - Uses `getCollection('articles')` to show 3 most recent
+  - No more hardcoded article links
+  - Section renamed from "Featured" to "Latest"
+
+## [2.5.0] - 2025-12-11
 
 ### Changed
 - **Warm Color Palette** - Custom black and white with subtle warm tint
