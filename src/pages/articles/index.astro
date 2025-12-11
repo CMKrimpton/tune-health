@@ -90,7 +90,7 @@ const comingSoon = [
                 <img
                   src={article.image}
                   alt={article.imageAlt}
-                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  class="w-full h-full object-cover"
                   loading={index === 0 ? 'eager' : 'lazy'}
                 />
                 <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/30 to-transparent"></div>
@@ -115,7 +115,7 @@ const comingSoon = [
                 </div>
                 <div class="flex items-center gap-4">
                   <span class="text-sm text-stone-400">{article.readTime}</span>
-                  <span class="text-lg text-stone-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
+                  <span class="text-lg text-stone-400 group-hover:text-primary-600 transition-colors">→</span>
                 </div>
               </div>
             </div>

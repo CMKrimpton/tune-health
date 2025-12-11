@@ -64,7 +64,7 @@
   .btn-primary {
     @apply btn-editorial bg-stone-900 text-white dark:bg-white dark:text-stone-900;
     @apply hover:bg-primary-600 dark:hover:bg-primary-500 dark:hover:text-white;
-    @apply hover:-translate-y-0.5 hover:shadow-lg;
+    @apply hover:shadow-lg;
   }
 
   .btn-secondary {
@@ -434,7 +434,7 @@
 }
 
 .featured-card:hover {
-  @apply shadow-2xl -translate-y-1;
+  @apply shadow-2xl;
 }
 
 .featured-image-container {
@@ -445,9 +445,7 @@
   @apply absolute inset-0 transition-transform duration-700 ease-editorial;
 }
 
-.featured-card:hover .featured-image-inner {
-  @apply scale-105;
-}
+/* Image zoom removed - per user preference for calmer hover effects */
 
 /* =========================================
    Article Cards
@@ -459,7 +457,7 @@
 }
 
 .article-card:hover {
-  @apply border-transparent shadow-card-hover -translate-y-1;
+  @apply border-transparent shadow-card-hover;
 }
 
 .article-card-image {
@@ -471,9 +469,7 @@
   @apply transition-transform duration-700 ease-editorial;
 }
 
-.article-card:hover .article-card-image-inner {
-  @apply scale-105;
-}
+/* Image zoom removed - per user preference for calmer hover effects */
 
 .article-card-number {
   @apply font-serif text-6xl lg:text-7xl font-bold;
@@ -577,7 +573,7 @@
 }
 
 .newsletter-card:hover {
-  @apply -translate-y-1 !rotate-0;
+  @apply !rotate-0;
 }
 
 .newsletter-card-1 {
@@ -631,7 +627,7 @@
 }
 
 .back-to-top:hover {
-  @apply bg-primary-600 dark:bg-primary-500 text-white -translate-y-1;
+  @apply bg-primary-600 dark:bg-primary-500 text-white;
 }
 
 /* =========================================

@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.3.0] - 2024-12-11
+
+### Changed
+- **Header Menu** - Now opens on hover instead of click for smoother UX
+  - 150ms delay on mouse leave prevents accidental closing
+  - Click still works for mobile/touch devices
+- **Calmer Hover Effects** - Removed zoom/movement from large elements
+  - Removed `scale-105` hover effect from article card images
+  - Removed `translate-y-1` hover lift from cards (featured, article, newsletter)
+  - Removed button translate on hover
+  - Cards now only have shadow/glow changes on hover
+  - Small elements (arrows, logo "T") retain subtle motion
+
 ## [2.2.0] - 2024-12-11
 
 ### Added
@@ -19,7 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - `subscribe.astro` - Newsletter subscription page
 - **Editorial Imagery** - Premium Unsplash images throughout
   - Featured article hero images
-  - Article card thumbnails with hover zoom effects
+  - Article card thumbnails
   - Deep dive section thumbnails with gradient overlays
   - Thematically relevant images (meditation for mental health, food for nutrition, etc.)
 

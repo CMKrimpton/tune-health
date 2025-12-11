@@ -105,7 +105,8 @@ const articles = await getCollection('articles');
 ### Key Features
 
 #### Glass Dropdown Menu (Header)
-- Triggered by hamburger menu icon
+- Opens on hover (mouseenter), closes on mouse leave with 150ms delay
+- Click also works for mobile/touch devices
 - Contains: Sections (4 with icons), Topics (8 pills), Featured articles (2 with badges)
 - Glass morphism effect with `backdrop-blur-xl`
 - Animated hamburger-to-X icon
@@ -180,6 +181,13 @@ When writing CSS in this project, follow these rules to avoid build errors:
 - Prefer CSS hover effects over JS for simple transforms
 - Limit `backdrop-blur` usage - use `backdrop-blur-sm` or `backdrop-blur-md` max
 - Use higher opacity backgrounds instead of heavy blur effects
+
+### UX Guidelines
+- **Hover effects on large elements**: Only use shadow/glow changes, NO scale or translate
+  - Cards (article, featured, newsletter) should not zoom or move on hover
+  - Exhausting when many large areas move simultaneously
+- **Small UI elements**: Subtle scale/translate OK (arrows, icons, logo letters)
+- **Menu dropdowns**: Prefer hover-to-open over click for desktop
 
 ## Documentation Requirements
 

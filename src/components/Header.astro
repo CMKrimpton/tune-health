@@ -308,11 +308,16 @@ const { variant = 'home' } = Astro.props;
     const menuDropdown = document.getElementById('menuDropdown');
     const menuWrapper = document.getElementById('menuDropdownWrapper');
 
-    if (!menuBtn || !menuDropdown) return;
+    if (!menuBtn || !menuDropdown || !menuWrapper) return;
 
     let isOpen = false;
+    let closeTimeout: ReturnType<typeof setTimeout> | null = null;
 
     function openMenu() {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
+      }
       isOpen = true;
       menuBtn.setAttribute('aria-expanded', 'true');
       menuDropdown.classList.add('open');
@@ -324,24 +329,30 @@ const { variant = 'home' } = Astro.props;
       menuDropdown.classList.remove('open');
     }
 
-    function toggleMenu() {
+    function scheduleClose() {
+      // Small delay before closing to allow moving to dropdown
+      closeTimeout = setTimeout(() => {
+        closeMenu();
+      }, 150);
+    }
+
+    // Open on hover (mouseenter)
+    menuWrapper.addEventListener('mouseenter', () => {
+      openMenu();
+    });
+
+    // Close on mouse leave (with delay)
+    menuWrapper.addEventListener('mouseleave', () => {
+      scheduleClose();
+    });
+
+    // Also support click for mobile/touch
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (isOpen) {
         closeMenu();
       } else {
         openMenu();
-      }
-    }
-
-    // Toggle on click
-    menuBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleMenu();
-    });
-
-    // Close on click outside
-    document.addEventListener('click', (e) => {
-      if (isOpen && menuWrapper && !menuWrapper.contains(e.target as Node)) {
-        closeMenu();
       }
     });
 
