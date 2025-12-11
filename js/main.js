@@ -15,15 +15,15 @@ gsap.registerPlugin(ScrollTrigger);
 // Initialize Lenis Smooth Scroll
 // =========================================
 const lenis = new Lenis({
-  duration: 0.8,
+  duration: 0.6,
   easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
   orientation: 'vertical',
   gestureOrientation: 'vertical',
   smoothWheel: true,
-  wheelMultiplier: 1.2,
-  touchMultiplier: 1.5,
+  wheelMultiplier: 1.5,
+  touchMultiplier: 2,
   infinite: false,
-  lerp: 0.1,
+  lerp: 0.15,
 });
 
 // Connect Lenis to GSAP ScrollTrigger
@@ -282,27 +282,21 @@ function initAnimations() {
     );
   }
 
-  // Counter animation
+  // Counter animation - animate immediately on page load
   const counters = document.querySelectorAll('.counter');
 
   counters.forEach((counter) => {
     const target = parseInt(counter.dataset.count);
 
-    ScrollTrigger.create({
-      trigger: counter,
-      start: 'top 90%',
-      onEnter: () => {
-        gsap.to(counter, {
-          innerText: target,
-          duration: 2,
-          ease: 'power2.out',
-          snap: { innerText: 1 },
-          onUpdate: function() {
-            counter.innerText = Math.round(this.targets()[0].innerText);
-          }
-        });
-      },
-      once: true
+    gsap.to(counter, {
+      innerText: target,
+      duration: 2,
+      delay: 0.5,
+      ease: 'power2.out',
+      snap: { innerText: 1 },
+      onUpdate: function() {
+        counter.innerText = Math.round(this.targets()[0].innerText);
+      }
     });
   });
 
