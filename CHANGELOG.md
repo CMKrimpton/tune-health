@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.5] - 2024-12-10
+
+### Changed
+- **MAJOR Performance Overhaul**: Removed Lenis scroll hijacking for native browser scroll
+  - Sites like Nutrafol, Vanity Fair, Washington Post use native scroll - now we do too
+  - Eliminated JS scroll synchronization overhead for instant 60fps scrolling
+- Replaced GSAP ScrollTrigger with IntersectionObserver for reveal animations
+  - CSS transitions handle animations (GPU-accelerated)
+  - IntersectionObserver triggers class additions only
+- Converted scroll event listeners to passive with requestAnimationFrame batching
+- Removed SplitType dependency (text animations now CSS-only)
+- GSAP now only used for:
+  - Hero entrance animation (complex, one-time)
+  - Counter number animation (innerText tweening)
+
+### Removed
+- Lenis smooth scroll library (~2kb saved)
+- SplitType library
+- GSAP ScrollTrigger plugin (scroll animations now CSS-based)
+- Parallax effects (minor visual, major performance cost)
+- Magnetic button GSAP animations (replaced with CSS transform)
+
+### Fixed
+- Added `prefers-reduced-motion` media query for accessibility
+- Passive scroll listeners prevent blocking main thread
+
 ## [1.0.4] - 2024-12-10
 
 ### Fixed

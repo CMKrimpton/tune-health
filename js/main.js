@@ -1,39 +1,10 @@
 /**
  * Tune Health - Premium Editorial Experience
- * Advanced JavaScript with GSAP animations, Lenis smooth scroll, and modern interactions
+ * Optimized JavaScript - Native scroll with CSS animations
+ * Removed Lenis scroll hijacking for native browser performance
  */
 
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
-import SplitType from 'split-type';
-
-// Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger);
-
-// =========================================
-// Initialize Lenis Smooth Scroll
-// =========================================
-const lenis = new Lenis({
-  duration: 0.6,
-  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-  orientation: 'vertical',
-  gestureOrientation: 'vertical',
-  smoothWheel: true,
-  wheelMultiplier: 1.5,
-  touchMultiplier: 2,
-  infinite: false,
-  lerp: 0.15,
-});
-
-// Connect Lenis to GSAP ScrollTrigger
-lenis.on('scroll', ScrollTrigger.update);
-
-gsap.ticker.add((time) => {
-  lenis.raf(time * 1000);
-});
-
-gsap.ticker.lagSmoothing(0);
 
 // =========================================
 // Loader Animation
@@ -41,16 +12,14 @@ gsap.ticker.lagSmoothing(0);
 const loader = document.getElementById('loader');
 
 function hideLoader() {
-  gsap.to(loader, {
-    opacity: 0,
-    duration: 0.6,
-    ease: 'power2.out',
-    onComplete: () => {
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => {
       loader.classList.add('hidden');
       document.body.style.overflow = '';
       initAnimations();
-    }
-  });
+    }, 600);
+  }
 }
 
 // Hide loader after content loads
@@ -64,7 +33,6 @@ window.addEventListener('load', () => {
 const themeToggle = document.getElementById('themeToggle');
 const html = document.documentElement;
 
-// Check for saved theme preference or default to system preference
 const getThemePreference = () => {
   if (localStorage.getItem('theme')) {
     return localStorage.getItem('theme');
@@ -72,7 +40,6 @@ const getThemePreference = () => {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
 
-// Apply theme
 const applyTheme = (theme) => {
   if (theme === 'dark') {
     html.classList.add('dark');
@@ -82,10 +49,8 @@ const applyTheme = (theme) => {
   localStorage.setItem('theme', theme);
 };
 
-// Initialize theme
 applyTheme(getThemePreference());
 
-// Toggle theme on button click
 themeToggle?.addEventListener('click', () => {
   const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -103,83 +68,78 @@ const searchOverlay = document.getElementById('searchOverlay');
 const searchClose = document.getElementById('searchClose');
 const searchInput = document.getElementById('searchInput');
 
-// Header scroll effect
-let lastScrollY = 0;
+// Header scroll effect - using passive scroll listener
+let ticking = false;
 
 const updateHeader = () => {
   const scrollY = window.scrollY;
 
   if (scrollY > 50) {
-    header.classList.add('scrolled');
+    header?.classList.add('scrolled');
   } else {
-    header.classList.remove('scrolled');
+    header?.classList.remove('scrolled');
   }
 
-  lastScrollY = scrollY;
+  ticking = false;
 };
 
-lenis.on('scroll', updateHeader);
+window.addEventListener('scroll', () => {
+  if (!ticking) {
+    requestAnimationFrame(updateHeader);
+    ticking = true;
+  }
+}, { passive: true });
 
 // Mobile menu toggle
 menuToggle?.addEventListener('click', () => {
   menuToggle.classList.toggle('active');
-  mobileMenu.classList.toggle('active');
+  mobileMenu?.classList.toggle('active');
   document.body.classList.toggle('menu-open');
-
-  if (mobileMenu.classList.contains('active')) {
-    lenis.stop();
-  } else {
-    lenis.start();
-  }
 });
 
 // Search overlay
 searchToggle?.addEventListener('click', () => {
-  searchOverlay.classList.add('active');
+  searchOverlay?.classList.add('active');
   document.body.classList.add('search-open');
   searchInput?.focus();
-  lenis.stop();
 });
 
 searchClose?.addEventListener('click', () => {
-  searchOverlay.classList.remove('active');
+  searchOverlay?.classList.remove('active');
   document.body.classList.remove('search-open');
-  lenis.start();
 });
 
-// Close search on escape
+// Close search/menu on escape
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (searchOverlay?.classList.contains('active')) {
       searchOverlay.classList.remove('active');
       document.body.classList.remove('search-open');
-      lenis.start();
     }
     if (mobileMenu?.classList.contains('active')) {
-      menuToggle.classList.remove('active');
+      menuToggle?.classList.remove('active');
       mobileMenu.classList.remove('active');
       document.body.classList.remove('menu-open');
-      lenis.start();
     }
   }
 });
 
 // =========================================
-// Scroll Progress Bar
+// Scroll Progress Bar (CSS-only with JS update)
 // =========================================
 const scrollProgress = document.getElementById('scrollProgress');
 
 if (scrollProgress) {
-  gsap.to(scrollProgress, {
-    scaleX: 1,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: document.body,
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 0.3,
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = scrollTop / docHeight;
+        scrollProgress.style.transform = `scaleX(${progress})`;
+      });
     }
-  });
+  }, { passive: true });
 }
 
 // =========================================
@@ -188,105 +148,93 @@ if (scrollProgress) {
 const backToTop = document.getElementById('backToTop');
 
 if (backToTop) {
-  ScrollTrigger.create({
-    start: 'top -400',
-    onUpdate: (self) => {
-      if (self.direction === 1 && window.scrollY > 400) {
+  window.addEventListener('scroll', () => {
+    requestAnimationFrame(() => {
+      if (window.scrollY > 400) {
         backToTop.classList.add('visible');
-      } else if (window.scrollY < 400) {
+      } else {
         backToTop.classList.remove('visible');
       }
-    }
-  });
+    });
+  }, { passive: true });
 
   backToTop.addEventListener('click', () => {
-    lenis.scrollTo(0, { duration: 1.5 });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
 // =========================================
-// Reveal Animations
+// IntersectionObserver for Reveal Animations
 // =========================================
 function initAnimations() {
-  // Reveal elements on scroll
+  // Reveal elements using IntersectionObserver (GPU-accelerated CSS transitions)
   const reveals = document.querySelectorAll('.reveal');
-
-  reveals.forEach((el) => {
-    gsap.fromTo(el,
-      {
-        opacity: 0,
-        y: 50,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: el,
-          start: 'top 85%',
-          toggleActions: 'play none none none',
-        }
-      }
-    );
-  });
-
-  // Stagger children animations
   const staggerGroups = document.querySelectorAll('.stagger-children');
+  const imageReveals = document.querySelectorAll('.image-reveal');
 
-  staggerGroups.forEach((group) => {
-    const children = group.children;
-
-    gsap.fromTo(children,
-      {
-        opacity: 0,
-        y: 30,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: group,
-          start: 'top 85%',
-          toggleActions: 'play none none none',
-        }
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        revealObserver.unobserve(entry.target);
       }
-    );
+    });
+  }, {
+    threshold: 0.15,
+    rootMargin: '0px 0px -50px 0px'
   });
 
-  // Hero animations
+  reveals.forEach((el) => revealObserver.observe(el));
+  staggerGroups.forEach((el) => revealObserver.observe(el));
+  imageReveals.forEach((el) => {
+    const imgObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          imgObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.2 });
+    imgObserver.observe(el);
+  });
+
+  // Hero entrance animation (one-time, immediate)
   const heroTitle = document.querySelector('.hero h1');
   const heroBadge = document.querySelector('.hero .reveal');
   const heroSubtitle = document.querySelector('.hero p');
-  const heroCtas = document.querySelector('.hero .flex');
 
   if (heroTitle) {
+    // Use GSAP only for the hero entrance (complex, one-time animation)
     const tl = gsap.timeline({ delay: 0.3 });
 
-    tl.fromTo(heroBadge,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
-    )
-    .fromTo(heroTitle,
+    if (heroBadge) {
+      tl.fromTo(heroBadge,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+      );
+    }
+
+    tl.fromTo(heroTitle,
       { opacity: 0, y: 40 },
       { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' },
       '-=0.3'
-    )
-    .fromTo(heroSubtitle,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
-      '-=0.4'
     );
+
+    if (heroSubtitle) {
+      tl.fromTo(heroSubtitle,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+        '-=0.4'
+      );
+    }
   }
 
-  // Counter animation - animate immediately on page load
+  // Counter animation - immediate on page load
   const counters = document.querySelectorAll('.counter');
 
   counters.forEach((counter) => {
     const target = parseInt(counter.dataset.count);
+    if (isNaN(target)) return;
 
     gsap.to(counter, {
       innerText: target,
@@ -299,24 +247,10 @@ function initAnimations() {
       }
     });
   });
-
-  // Image reveal effects
-  const imageReveals = document.querySelectorAll('.image-reveal');
-
-  imageReveals.forEach((el) => {
-    ScrollTrigger.create({
-      trigger: el,
-      start: 'top 80%',
-      onEnter: () => {
-        el.classList.add('revealed');
-      },
-      once: true
-    });
-  });
 }
 
 // =========================================
-// Magnetic Button Effect
+// Magnetic Button Effect (optional, CSS fallback available)
 // =========================================
 const magneticButtons = document.querySelectorAll('.magnetic');
 
@@ -326,45 +260,13 @@ magneticButtons.forEach((btn) => {
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
 
-    gsap.to(btn, {
-      x: x * 0.2,
-      y: y * 0.2,
-      duration: 0.3,
-      ease: 'power2.out'
-    });
+    btn.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
   });
 
   btn.addEventListener('mouseleave', () => {
-    gsap.to(btn, {
-      x: 0,
-      y: 0,
-      duration: 0.5,
-      ease: 'elastic.out(1, 0.5)'
-    });
+    btn.style.transform = '';
   });
 });
-
-// =========================================
-// Parallax Effects
-// =========================================
-const parallaxElements = document.querySelectorAll('[data-parallax]');
-
-parallaxElements.forEach((el) => {
-  const speed = el.dataset.parallax || 0.2;
-
-  gsap.to(el, {
-    yPercent: -100 * speed,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: el.parentElement,
-      start: 'top bottom',
-      end: 'bottom top',
-      scrub: true,
-    }
-  });
-});
-
-// Article Card Hover Effects - handled by CSS for better performance
 
 // =========================================
 // Newsletter Form
@@ -386,7 +288,6 @@ newsletterForm?.addEventListener('submit', (e) => {
   `;
   btn.disabled = true;
 
-  // Simulate API call
   setTimeout(() => {
     btn.innerHTML = `
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -421,7 +322,7 @@ categoryChips.forEach((chip) => {
 });
 
 // =========================================
-// Smooth Scroll for Anchor Links
+// Smooth Scroll for Anchor Links (native)
 // =========================================
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener('click', (e) => {
@@ -430,17 +331,20 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
       e.preventDefault();
       const target = document.querySelector(href);
       if (target) {
-        lenis.scrollTo(target, {
-          offset: -100,
-          duration: 1.2,
+        const headerOffset = 100;
+        const elementPosition = target.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
         });
 
         // Close mobile menu if open
         if (mobileMenu?.classList.contains('active')) {
-          menuToggle.classList.remove('active');
+          menuToggle?.classList.remove('active');
           mobileMenu.classList.remove('active');
           document.body.classList.remove('menu-open');
-          lenis.start();
         }
       }
     }
@@ -448,47 +352,13 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
 });
 
 // =========================================
-// Text Split Animation for Headlines
-// =========================================
-const splitHeadlines = document.querySelectorAll('[data-split]');
-
-splitHeadlines.forEach((headline) => {
-  const split = new SplitType(headline, { types: 'chars, words' });
-
-  gsap.fromTo(split.chars,
-    {
-      opacity: 0,
-      y: 50,
-      rotateX: -90,
-    },
-    {
-      opacity: 1,
-      y: 0,
-      rotateX: 0,
-      duration: 0.8,
-      stagger: 0.02,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: headline,
-        start: 'top 85%',
-        toggleActions: 'play none none none',
-      }
-    }
-  );
-});
-
-// Newsletter Cards Float Animation - removed for performance
-// The cards have CSS hover effects which are sufficient
-
-// =========================================
 // Initialize on DOM Ready
 // =========================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Add loaded class for CSS transitions
   document.body.classList.add('loaded');
 });
 
 // =========================================
 // Export for potential module use
 // =========================================
-export { lenis, gsap, ScrollTrigger };
+export { gsap };
