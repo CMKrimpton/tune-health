@@ -4,12 +4,20 @@ import { useState, useEffect, useCallback } from 'react';
 // Article data - in a real app this would come from a CMS/API
 const articles = [
   {
+    id: 'longevity',
+    title: 'Do Any Longevity Interventions Actually Work?',
+    description: 'A critical examination of caloric restriction, fasting, and supplements',
+    category: 'Longevity',
+    href: '/articles/longevity-interventions',
+    readTime: '25 min',
+  },
+  {
     id: 'mirtazapine',
     title: 'Mirtazapine: The Quiet Overachiever',
     description: 'A comprehensive clinical evidence review',
     category: 'Mental Health',
     href: '/articles/mirtazapine-guide',
-    readTime: '12 min',
+    readTime: '18 min',
   },
   {
     id: 'nicotine',
@@ -17,7 +25,7 @@ const articles = [
     description: 'A comprehensive research summary',
     category: 'Neuroscience',
     href: '/articles/nicotine-research',
-    readTime: '18 min',
+    readTime: '12 min',
   },
 ];
 

@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.4.0] - 2024-12-11
+
+### Added
+- **New Article** - "Do Any Longevity Interventions Actually Work?"
+  - Comprehensive 25-minute evidence review of longevity interventions
+  - Covers OMAD, caloric restriction, autophagy, primate studies, CALERIE trials
+  - Reviews supplements: rapamycin, metformin, resveratrol, NAD+ precursors
+  - Includes ProLon fasting-mimicking diet analysis
+  - Critical examination of translation problems from animal to human studies
+  - Section on failed interventions and "zombie ideas"
+  - Exercise as the only proven intervention
+  - Located at `/articles/longevity-interventions`
+- Article added to homepage grid, articles index, command palette, and header menu
+
 ## [2.3.0] - 2024-12-11
 
 ### Changed
