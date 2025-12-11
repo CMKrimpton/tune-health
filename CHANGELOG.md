@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.7] - 2024-12-10
+
+### Changed
+- **Article Content Overhaul**: Rewrote both articles to faithfully match source documents
+  - `mirtazapine-guide.html`: Now reflects "Mirtazapine: The Quiet Overachiever of Modern Psychopharmacology" source with all clinical data (400x overdose survival, 89 overdose cases with no deaths, Phase III nausea trials, etc.)
+  - `nicotine-research.html`: Now reflects "Nicotine's Promising Health Benefits" source with all research statistics (40-60% Parkinson's reduction, 46% memory recovery, 41 meta-analysis studies, etc.)
+- Added prominent medical disclaimer to nicotine article
+- Updated article dates to December 2025
+- Updated CLAUDE.md to reflect current architecture (removed Lenis/SplitType references)
+
+### Fixed
+- Fixed invisible body text on article pages (initAnimations not called when no loader present)
+
 ## [1.0.6] - 2024-12-10
 
 ### Added

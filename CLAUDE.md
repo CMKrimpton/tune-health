@@ -24,9 +24,9 @@ npm run preview  # Preview production build
 - Node version specified in `.nvmrc`
 
 ### Core Libraries
-- **GSAP + ScrollTrigger**: All scroll-based animations and reveal effects
-- **Lenis**: Smooth scrolling (integrated with GSAP ticker)
-- **SplitType**: Text splitting for character/word animations
+- **GSAP**: Hero entrance animation and counter number tweening only
+- **IntersectionObserver**: CSS-triggered reveal animations (no ScrollTrigger)
+- **Native browser scroll**: No scroll hijacking - 60fps performance
 
 ### File Structure
 - `index.html` - Main homepage
@@ -52,15 +52,14 @@ npm run preview  # Preview production build
 
 ### Animation Patterns
 All animations handled in `js/main.js`:
-- Reveal animations trigger at 85% viewport intersection
+- Reveal animations trigger at 15% viewport intersection via IntersectionObserver
 - Counter animations use GSAP `snap` for integer display
-- Magnetic button effect on `.magnetic` class
-- Parallax effects via `data-parallax` attribute
-- Text split animations via `data-split` attribute
+- Magnetic button effect on `.magnetic` class (CSS transform)
+- Hero entrance uses GSAP timeline (complex, one-time animation)
 
 ### Navigation
-- Fixed header with scroll state detection
-- Mobile menu with Lenis scroll stop/start
+- Fixed header with scroll state detection (passive listeners)
+- Mobile menu toggle
 - Search overlay with keyboard support (Escape to close)
 - Theme persisted to localStorage
 
