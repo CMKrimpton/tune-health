@@ -11,8 +11,8 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 >
   <Header slot="header" variant="home" />
 
-  <!-- Loader -->
-  <div class="loader" id="loader" transition:persist>
+  <!-- Loader - only shown on initial page load, not View Transitions -->
+  <div class="loader" id="loader" data-astro-transition-scope="loader">
     <div class="loader-content">
       <div class="loader-logo">
         <span class="t">T</span>
@@ -497,20 +497,28 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
   <script>
     import { gsap } from 'gsap';
 
-    function initHomePage() {
+    // Track if this is the initial page load vs View Transition
+    let isInitialLoad = true;
+    let animationsRun = false;
+
+    function initHomePage(isViewTransition = false) {
       const loader = document.getElementById('loader');
 
-      // Hide loader
+      // Hide loader (only on initial load)
       function hideLoader() {
-        if (loader) {
+        if (loader && !loader.classList.contains('hidden')) {
           loader.style.opacity = '0';
           setTimeout(() => {
             loader.classList.add('hidden');
             document.body.style.overflow = '';
-            initHeroAnimation();
+            if (!animationsRun) {
+              initHeroAnimation();
+              animationsRun = true;
+            }
           }, 600);
-        } else {
+        } else if (!animationsRun) {
           initHeroAnimation();
+          animationsRun = true;
         }
       }
 
@@ -564,54 +572,84 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
         });
       }
 
-      // Newsletter form
+      // Newsletter form - only bind once
       const newsletterForm = document.getElementById('newsletterForm');
-      newsletterForm?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const btn = newsletterForm.querySelector('button[type="submit"]') as HTMLButtonElement;
-        const originalText = btn.innerHTML;
+      if (newsletterForm && !newsletterForm.dataset.bound) {
+        newsletterForm.dataset.bound = 'true';
+        newsletterForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const btn = newsletterForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+          const originalText = btn.innerHTML;
 
-        btn.innerHTML = `
-          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span>Subscribing...</span>
-        `;
-        btn.disabled = true;
-
-        setTimeout(() => {
           btn.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M5 13l4 4L19 7" stroke-width="2"/>
+            <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Subscribed!</span>
+            <span>Subscribing...</span>
           `;
-          btn.classList.remove('bg-stone-900', 'dark:bg-white');
-          btn.classList.add('bg-green-600', 'dark:bg-green-600');
+          btn.disabled = true;
 
           setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            btn.classList.remove('bg-green-600', 'dark:bg-green-600');
-            btn.classList.add('bg-stone-900', 'dark:bg-white');
-            (newsletterForm as HTMLFormElement).reset();
-          }, 3000);
-        }, 1500);
-      });
+            btn.innerHTML = `
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M5 13l4 4L19 7" stroke-width="2"/>
+              </svg>
+              <span>Subscribed!</span>
+            `;
+            btn.classList.remove('bg-stone-900', 'dark:bg-white');
+            btn.classList.add('bg-green-600', 'dark:bg-green-600');
 
-      // Start
-      if (loader && !loader.classList.contains('hidden')) {
-        setTimeout(hideLoader, 1800);
-      } else {
-        initHeroAnimation();
+            setTimeout(() => {
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+              btn.classList.remove('bg-green-600', 'dark:bg-green-600');
+              btn.classList.add('bg-stone-900', 'dark:bg-white');
+              (newsletterForm as HTMLFormElement).reset();
+            }, 3000);
+          }, 1500);
+        });
+      }
+
+      // Start - only run loader/animation on initial load
+      if (isInitialLoad && !isViewTransition) {
+        if (loader && !loader.classList.contains('hidden')) {
+          setTimeout(hideLoader, 1800);
+        } else {
+          hideLoader();
+        }
+        isInitialLoad = false;
+      } else if (isViewTransition) {
+        // On View Transition back to home, hide loader immediately and skip animation
+        if (loader) {
+          loader.classList.add('hidden');
+        }
+        // Set elements to final state without animation
+        const heroTitle = document.querySelector('.hero h1') as HTMLElement;
+        const heroBadge = document.querySelector('.hero .reveal') as HTMLElement;
+        const heroSubtitle = document.querySelector('.hero p') as HTMLElement;
+        if (heroTitle) heroTitle.style.opacity = '1';
+        if (heroBadge) heroBadge.style.opacity = '1';
+        if (heroSubtitle) heroSubtitle.style.opacity = '1';
+
+        // Set counters to final values
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach((counter) => {
+          const target = (counter as HTMLElement).dataset.count || '0';
+          (counter as HTMLElement).innerText = target;
+        });
       }
     }
 
-    // Run on load
-    initHomePage();
+    // Run on initial load
+    initHomePage(false);
 
-    // Run after View Transitions
-    document.addEventListener('astro:after-swap', initHomePage);
+    // Run after View Transitions - mark as view transition
+    document.addEventListener('astro:after-swap', () => {
+      // Only run if we're on the homepage
+      if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+        initHomePage(true);
+      }
+    });
   </script>
 </BaseLayout>
