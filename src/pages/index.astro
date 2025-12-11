@@ -34,23 +34,23 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 
     <div class="container-editorial">
       <div class="max-w-narrow mx-auto text-center">
-        <div class="reveal inline-flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-medium tracking-wide uppercase text-stone-600 dark:text-stone-400 mb-8">
+        <div class="hero-badge inline-flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-medium tracking-wide uppercase text-stone-600 dark:text-stone-400 mb-8">
           <span class="w-1.5 h-1.5 bg-primary-600 rounded-full animate-pulse"></span>
-          <span>Issue No. 47 — Winter 2024</span>
+          <span>Issue No. 47 — Winter 2025</span>
         </div>
 
-        <h1 class="reveal reveal-delay-1 font-serif text-display-1 font-semibold mb-6 text-balance" transition:name="hero-title">
+        <h1 class="hero-title font-serif text-display-1 font-semibold mb-6 text-balance" transition:name="hero-title">
           <span class="block">Where Science</span>
           <span class="block italic font-normal text-primary-600">Meets Wellness</span>
         </h1>
 
-        <p class="reveal reveal-delay-2 font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl mx-auto mb-10">
+        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl mx-auto mb-10">
           Evidence-based health insights crafted for the discerning reader.
           Explore the intersection of modern medicine, timeless wisdom, and
           the art of living well.
         </p>
 
-        <div class="reveal reveal-delay-3 flex flex-col sm:flex-row gap-4 justify-center">
+        <div class="hero-cta flex flex-col sm:flex-row gap-4 justify-center">
           <a href="#featured" class="btn-primary magnetic">
             <span>Explore Articles</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,7 +241,7 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
           <div class="article-card-content">
             <div class="flex items-center gap-3 mb-3">
               <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Mental Health</span>
-              <span class="text-xs text-stone-400">Dec 10, 2024</span>
+              <span class="text-xs text-stone-400">Dec 10, 2025</span>
             </div>
             <h3 class="font-serif text-heading-3 font-semibold mb-2 group-hover:text-primary-600 transition-colors">Understanding Mirtazapine: A Complete Guide</h3>
             <p class="font-body text-stone-600 dark:text-stone-400 mb-4 line-clamp-3">An in-depth exploration of this unique antidepressant and its applications in modern psychiatry.</p>
@@ -262,7 +262,7 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
           <div class="article-card-content">
             <div class="flex items-center gap-3 mb-3">
               <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Neuroscience</span>
-              <span class="text-xs text-stone-400">Dec 10, 2024</span>
+              <span class="text-xs text-stone-400">Dec 10, 2025</span>
             </div>
             <h3 class="font-serif text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">Nicotine's Promising Health Benefits</h3>
             <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">A comprehensive research summary exploring nicotine's therapeutic potential beyond its controversial reputation.</p>
@@ -495,81 +495,71 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
   <CommandPaletteWrapper />
 
   <script>
-    import { gsap } from 'gsap';
-
     // Track if this is the initial page load vs View Transition
     let isInitialLoad = true;
-    let animationsRun = false;
+    let heroAnimated = false;
 
     function initHomePage(isViewTransition = false) {
       const loader = document.getElementById('loader');
+      const heroBadge = document.querySelector('.hero-badge') as HTMLElement;
+      const heroTitle = document.querySelector('.hero-title') as HTMLElement;
+      const heroSubtitle = document.querySelector('.hero-subtitle') as HTMLElement;
+      const heroCta = document.querySelector('.hero-cta') as HTMLElement;
+      const heroElements = [heroBadge, heroTitle, heroSubtitle, heroCta].filter(Boolean);
 
-      // Hide loader (only on initial load)
+      // Reveal hero elements with CSS animation
+      function revealHero() {
+        if (heroAnimated) return;
+        heroAnimated = true;
+
+        // Add active class to trigger CSS transitions
+        heroElements.forEach(el => {
+          if (el) el.classList.add('active');
+        });
+
+        // Animate counters
+        animateCounters();
+      }
+
+      // Simple counter animation without GSAP
+      function animateCounters() {
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach((counter) => {
+          const el = counter as HTMLElement;
+          const target = parseInt(el.dataset.count || '0');
+          if (isNaN(target)) return;
+
+          const duration = 1500;
+          const startTime = performance.now();
+
+          function updateCounter(currentTime: number) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.innerText = Math.round(eased * target).toString();
+
+            if (progress < 1) {
+              requestAnimationFrame(updateCounter);
+            }
+          }
+
+          requestAnimationFrame(updateCounter);
+        });
+      }
+
+      // Hide loader and reveal hero
       function hideLoader() {
         if (loader && !loader.classList.contains('hidden')) {
           loader.style.opacity = '0';
           setTimeout(() => {
             loader.classList.add('hidden');
             document.body.style.overflow = '';
-            if (!animationsRun) {
-              initHeroAnimation();
-              animationsRun = true;
-            }
-          }, 600);
-        } else if (!animationsRun) {
-          initHeroAnimation();
-          animationsRun = true;
+            revealHero();
+          }, 500);
+        } else {
+          revealHero();
         }
-      }
-
-      // Hero animation with GSAP
-      function initHeroAnimation() {
-        const heroTitle = document.querySelector('.hero h1');
-        const heroBadge = document.querySelector('.hero .reveal');
-        const heroSubtitle = document.querySelector('.hero p');
-
-        if (heroTitle) {
-          const tl = gsap.timeline({ delay: 0.3 });
-
-          if (heroBadge) {
-            tl.fromTo(heroBadge,
-              { opacity: 0, y: 20 },
-              { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
-            );
-          }
-
-          tl.fromTo(heroTitle,
-            { opacity: 0, y: 40 },
-            { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' },
-            '-=0.3'
-          );
-
-          if (heroSubtitle) {
-            tl.fromTo(heroSubtitle,
-              { opacity: 0, y: 30 },
-              { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
-              '-=0.4'
-            );
-          }
-        }
-
-        // Counter animation
-        const counters = document.querySelectorAll('.counter');
-        counters.forEach((counter) => {
-          const target = parseInt((counter as HTMLElement).dataset.count || '0');
-          if (isNaN(target)) return;
-
-          gsap.to(counter, {
-            innerText: target,
-            duration: 2,
-            delay: 0.5,
-            ease: 'power2.out',
-            snap: { innerText: 1 },
-            onUpdate: function() {
-              (counter as HTMLElement).innerText = Math.round(parseFloat((counter as HTMLElement).innerText)).toString();
-            }
-          });
-        });
       }
 
       // Newsletter form - only bind once
@@ -611,32 +601,34 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
         });
       }
 
-      // Start - only run loader/animation on initial load
+      // Handle initial load vs View Transition
       if (isInitialLoad && !isViewTransition) {
+        // Initial page load - wait for loader
         if (loader && !loader.classList.contains('hidden')) {
-          setTimeout(hideLoader, 1800);
+          setTimeout(hideLoader, 1600);
         } else {
           hideLoader();
         }
         isInitialLoad = false;
       } else if (isViewTransition) {
-        // On View Transition back to home, hide loader immediately and skip animation
+        // View Transition back to home - show immediately without animation
         if (loader) {
           loader.classList.add('hidden');
         }
-        // Set elements to final state without animation
-        const heroTitle = document.querySelector('.hero h1') as HTMLElement;
-        const heroBadge = document.querySelector('.hero .reveal') as HTMLElement;
-        const heroSubtitle = document.querySelector('.hero p') as HTMLElement;
-        if (heroTitle) heroTitle.style.opacity = '1';
-        if (heroBadge) heroBadge.style.opacity = '1';
-        if (heroSubtitle) heroSubtitle.style.opacity = '1';
 
-        // Set counters to final values
+        // Instantly show hero elements (no animation)
+        heroElements.forEach(el => {
+          if (el) {
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+          }
+        });
+
+        // Set counters to final values instantly
         const counters = document.querySelectorAll('.counter');
         counters.forEach((counter) => {
-          const target = (counter as HTMLElement).dataset.count || '0';
-          (counter as HTMLElement).innerText = target;
+          const el = counter as HTMLElement;
+          el.innerText = el.dataset.count || '0';
         });
       }
     }
@@ -644,9 +636,8 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
     // Run on initial load
     initHomePage(false);
 
-    // Run after View Transitions - mark as view transition
+    // Run after View Transitions
     document.addEventListener('astro:after-swap', () => {
-      // Only run if we're on the homepage
       if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
         initHomePage(true);
       }

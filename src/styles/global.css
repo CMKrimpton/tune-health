@@ -387,6 +387,43 @@
   @apply top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
 }
 
+/* Hero Elements - Hidden Initially for Smooth Animation */
+.hero-badge,
+.hero-title,
+.hero-subtitle,
+.hero-cta {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* Active state - reveal with CSS transition */
+.hero-badge.active,
+.hero-title.active,
+.hero-subtitle.active,
+.hero-cta.active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Staggered delays for hero elements */
+.hero-badge.active {
+  transition-delay: 0ms;
+}
+
+.hero-title.active {
+  transition-delay: 150ms;
+}
+
+.hero-subtitle.active {
+  transition-delay: 300ms;
+}
+
+.hero-cta.active {
+  transition-delay: 450ms;
+}
+
 /* =========================================
    Featured Article Card
    ========================================= */
