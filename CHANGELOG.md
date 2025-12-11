@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.4] - 2024-12-10
+
+### Fixed
+- Removed all dead `href="#"` links throughout the site
+- Converted placeholder article cards to non-clickable "Coming Soon" cards with badges
+- Changed navigation links to scroll to actual page sections (#featured, #latest, #deep-dives, #newsletter)
+- Changed category filter chips from links to buttons (proper UI pattern)
+- Converted article tags from links to non-clickable labels
+- Simplified footer to only include working links
+- Fixed mobile menu to navigate to real sections
+- Cleaned up search overlay to only show existing articles
+
+### Changed
+- Removed social media icons from footer (no active accounts)
+- Simplified article page footers with medical disclaimer
+- Deep dives section now shows "Coming Soon" labels
+- Related articles sections now link to real articles or show "Coming Soon" badges
+
 ## [1.0.3] - 2024-12-10
 
 ### Added
