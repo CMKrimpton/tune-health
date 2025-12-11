@@ -1,0 +1,63 @@
+---
+/**
+ * Breadcrumbs - Navigation breadcrumbs for article pages
+ * Enhances navigation and SEO
+ */
+
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+  class?: string;
+}
+
+const { items, class: className = '' } = Astro.props;
+---
+
+<nav
+  class:list={['breadcrumbs text-sm', className]}
+  aria-label="Breadcrumb"
+>
+  <ol class="flex items-center gap-2 flex-wrap">
+    {items.map((item, index) => (
+      <li class="flex items-center gap-2">
+        {index > 0 && (
+          <svg class="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        )}
+        {item.href ? (
+          <a
+            href={item.href}
+            class="text-stone-500 dark:text-stone-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          >
+            {item.label}
+          </a>
+        ) : (
+          <span class="text-stone-900 dark:text-white font-medium" aria-current="page">
+            {item.label}
+          </span>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .breadcrumbs {
+    container-type: inline-size;
+  }
+
+  /* On very small screens, truncate long labels */
+  @container (max-width: 400px) {
+    .breadcrumbs span[aria-current="page"] {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+</style>

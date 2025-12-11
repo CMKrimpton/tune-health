@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Tune Health is a premium health and wellness editorial website built with Vite, Tailwind CSS, and GSAP animations. The site features a magazine-style design with articles on mental health, nutrition, fitness, sleep science, and longevity.
+Tune Health is a premium health and wellness editorial website built with **Astro**, Tailwind CSS, and React islands for interactivity. The site features a magazine-style design with articles on mental health, nutrition, fitness, sleep science, and longevity.
 
 ## Development Commands
 
 ```bash
 npm install      # Install dependencies (required before first run)
-npm run dev      # Start development server on port 3000
+npm run dev      # Start Astro development server on port 4321
 npm run build    # Build for production (outputs to dist/)
 npm run preview  # Preview production build
 ```
@@ -18,61 +18,123 @@ npm run preview  # Preview production build
 ## Architecture
 
 ### Build System
-- **Vite** as the build tool with multi-page configuration
-- Entry points defined in `vite.config.js`: main index and article pages
-- Tailwind CSS with PostCSS for styling
+- **Astro v5** as the static site generator with islands architecture
+- **React** for interactive components (Command Palette)
+- **Tailwind CSS** with PostCSS for styling
+- **View Transitions API** for smooth page navigation
+- **Content Collections** for type-safe article management
 - Node version specified in `.nvmrc`
 
 ### Core Libraries
+- **Astro**: Static site generation with View Transitions and Content Collections
+- **React + cmdk**: Command palette (⌘K) for site-wide navigation
 - **GSAP**: Hero entrance animation and counter number tweening only
-- **IntersectionObserver**: CSS-triggered reveal animations (no ScrollTrigger)
-- **Native browser scroll**: No scroll hijacking - 60fps performance
+- **IntersectionObserver**: CSS-triggered reveal animations and scroll spy
+- **Zod**: Schema validation for content collections
 
 ### File Structure
-- `index.html` - Main homepage
-- `articles/` - Article pages (e.g., `mirtazapine-guide.html`)
-- `js/main.js` - All JavaScript: animations, navigation, theme toggle, form handling
-- `css/style.css` - Tailwind directives + custom component styles
-- `tailwind.config.js` - Extended theme with custom colors, typography, animations
-- `assets/` - Images and SVG assets
+```
+src/
+├── content/
+│   ├── config.ts             # Content collection schema (Zod)
+│   └── articles/             # Article metadata (JSON)
+│       ├── mirtazapine-guide.json
+│       └── nicotine-research.json
+├── layouts/
+│   ├── BaseLayout.astro      # Main layout with View Transitions
+│   └── ArticleLayout.astro   # Reusable article template
+├── components/
+│   ├── Header.astro          # Navigation header (home/article variants)
+│   ├── Footer.astro          # Site footer
+│   ├── CommandPalette.tsx    # React command palette (⌘K)
+│   ├── CommandPaletteWrapper.astro  # Astro wrapper for React island
+│   ├── FloatingTOC.astro     # Floating table of contents with scroll spy
+│   ├── ArticleCard.astro     # Reusable article preview cards
+│   ├── Newsletter.astro      # Newsletter signup section
+│   ├── Breadcrumbs.astro     # Navigation breadcrumbs
+│   └── SEO.astro             # JSON-LD structured data
+├── pages/
+│   ├── index.astro           # Homepage
+│   └── articles/
+│       ├── mirtazapine-guide.astro
+│       └── nicotine-research.astro
+├── utils/
+│   ├── articles.ts           # Article collection helpers
+│   └── reading-time.ts       # Reading time calculation
+└── styles/
+    └── global.css            # Tailwind directives + custom styles
+```
+
+### Content Collections
+
+Articles use Astro's Content Collections for type-safe data management:
+
+```typescript
+// src/content/config.ts
+const articles = defineCollection({
+  type: 'data',
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    category: z.string(),
+    publishDate: z.string(),
+    readTime: z.number(),
+    tags: z.array(z.string()),
+    // ... more fields
+  }),
+});
+```
+
+Query articles with full TypeScript support:
+```typescript
+import { getCollection } from 'astro:content';
+const articles = await getCollection('articles');
+```
 
 ### Styling Approach
-- Tailwind utility classes with custom component layer in `css/style.css`
-- Dark mode via `class` strategy (toggle in JS)
+- Tailwind utility classes with custom component layer in `src/styles/global.css`
+- Dark mode via `class` strategy (toggle in JS, persisted to localStorage)
 - Primary color palette: red tones (`primary-500` = `#ef4444`)
 - Custom typography: Playfair Display (headings), Inter (sans), Crimson Pro (body)
 - Custom easing: `ease-editorial` = `cubic-bezier(0.22, 1, 0.36, 1)`
 
-### Key CSS Components
-- `.container-editorial` - Main content container
-- `.reveal` - Elements that animate on scroll
-- `.btn-primary`, `.btn-secondary` - Button styles
-- `.article-card`, `.featured-card` - Article card layouts
-- `.glass` - Glassmorphism effect
+### Key Features
 
-### Animation Patterns
-All animations handled in `js/main.js`:
-- Reveal animations trigger at 15% viewport intersection via IntersectionObserver
-- Counter animations use GSAP `snap` for integer display
-- Magnetic button effect on `.magnetic` class (CSS transform)
-- Hero entrance uses GSAP timeline (complex, one-time animation)
+#### Command Palette (⌘K)
+- React component using `cmdk` library
+- Site-wide search: articles, sections, pages
+- Actions: theme toggle, share, print
+- Recently used items tracking
+- Keyboard navigation (↑↓ Enter Esc)
 
-### Navigation
-- Fixed header with scroll state detection (passive listeners)
-- Mobile menu toggle
-- Search overlay with keyboard support (Escape to close)
-- Theme persisted to localStorage
+#### View Transitions
+- Native browser View Transitions API via Astro
+- Smooth morphing between pages with custom animations
+- `transition:name` for element persistence (e.g., `title-${slug}`)
+- Theme persists across transitions via `astro:after-swap`
+- Custom fade/slide animations per element
 
-## CSS/Tailwind Guidelines
+#### Floating TOC (Articles)
+- Appears after scrolling past hero
+- Highlights current section via IntersectionObserver
+- Collapses to pill on mobile showing current section
+- Click to navigate to sections
+
+#### SEO & Structured Data
+- JSON-LD schema generation (Article, WebSite, Organization, BreadcrumbList)
+- Open Graph and Twitter Card meta tags
+- Canonical URLs
+
+### CSS/Tailwind Guidelines
 
 When writing CSS in this project, follow these rules to avoid build errors:
 
-### Avoid in @apply directives
+#### Avoid in @apply directives
 - `group` - Add directly in HTML class attribute instead
 - `visible`/`invisible` when the selector contains `.visible` or `.invisible` (circular dependency)
 - Non-standard opacity values like `/98` - use raw CSS instead
 
-### Correct patterns
+#### Correct patterns
 ```css
 /* BAD - causes circular dependency */
 .back-to-top.visible {
@@ -96,9 +158,11 @@ When writing CSS in this project, follow these rules to avoid build errors:
 ```
 
 ### Performance considerations
-- Prefer CSS hover effects over JS (GSAP) for simple transforms
+- Astro outputs zero JS by default for static content
+- React islands only hydrate interactive components (`client:load`)
+- Content Collections provide type safety without runtime overhead
+- Prefer CSS hover effects over JS for simple transforms
 - Limit `backdrop-blur` usage - use `backdrop-blur-sm` or `backdrop-blur-md` max
-- Avoid infinite GSAP animations (`repeat: -1`)
 - Use higher opacity backgrounds instead of heavy blur effects
 
 ## Documentation Requirements

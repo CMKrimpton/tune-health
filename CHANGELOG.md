@@ -6,6 +6,73 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2024-12-11
+
+### Added
+- **Content Collections** - Type-safe article management using Astro's content collections
+  - `src/content/config.ts` - Schema definition with Zod validation
+  - `src/content/articles/*.json` - Article metadata (title, description, tags, etc.)
+  - Type-safe article queries with `getCollection()`
+- **SEO Component** - Rich structured data for search engines
+  - JSON-LD schema generation (Article, WebSite, Organization, BreadcrumbList)
+  - Automatic schema injection into article pages
+- **Reusable Components**
+  - `ArticleCard.astro` - Configurable article preview cards with View Transition support
+  - `Newsletter.astro` - Reusable newsletter signup section with form handling
+  - `Breadcrumbs.astro` - Navigation breadcrumbs with responsive truncation
+- **Utility Functions**
+  - `src/utils/reading-time.ts` - Calculate reading time from content
+  - `src/utils/articles.ts` - Article collection helpers (getArticles, getRelatedArticles, etc.)
+
+### Changed
+- **Improved View Transitions**
+  - Custom fade/slide animations per element
+  - Article-specific transition names for smoother morphing
+  - Custom CSS keyframes for article title transitions
+- **ArticleLayout Enhancements**
+  - Now accepts `tags` and `slug` props for better SEO
+  - Uses Newsletter component instead of inline markup
+  - Integrated SEO component for structured data
+- **BaseLayout Updates**
+  - Added `head` slot for injecting additional head content (SEO schemas, etc.)
+
+## [2.0.0] - 2024-12-11
+
+### Changed
+- **MAJOR: Migrated from Vite to Astro** - Complete architecture overhaul for premium editorial UX
+  - Zero JavaScript by default for static content (islands architecture)
+  - Native View Transitions API for smooth page navigation
+  - React islands for interactive components only
+
+### Added
+- **Command Palette (⌘K)** - Site-wide navigation using `cmdk` library
+  - Search articles, sections, and pages
+  - Quick actions: theme toggle, share, print
+  - Recently used items tracking
+  - Full keyboard navigation (↑↓ Enter Esc)
+- **Floating Table of Contents** - Article navigation with scroll spy
+  - Appears after scrolling past hero
+  - Highlights current section via IntersectionObserver
+  - Collapses to pill on mobile showing current section name
+- **View Transitions** - Smooth morphing between pages
+  - Logo and header elements persist across navigation
+  - Theme state preserved during transitions
+- **Reusable ArticleLayout.astro** - DRY article template with slots for feature image, tags, and related content
+
+### Architecture
+- New file structure under `src/`:
+  - `src/layouts/BaseLayout.astro` - Main layout with View Transitions
+  - `src/layouts/ArticleLayout.astro` - Reusable article template
+  - `src/components/Header.astro` - Navigation (home/article variants)
+  - `src/components/Footer.astro` - Site footer
+  - `src/components/CommandPalette.tsx` - React command palette
+  - `src/components/FloatingTOC.astro` - Floating table of contents
+  - `src/pages/index.astro` - Homepage
+  - `src/pages/articles/*.astro` - Article pages
+  - `src/styles/global.css` - Tailwind + custom styles
+- Updated dependencies: Astro v5, React 19, cmdk v1.1.1
+- Dev server now runs on port 4321
+
 ## [1.0.7] - 2024-12-10
 
 ### Changed

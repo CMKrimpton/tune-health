@@ -1,0 +1,358 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="Nicotine's Promising Health Benefits"
+  description="A comprehensive research summary examining peer-reviewed evidence on nicotine's potential therapeutic applications across neurodegenerative diseases, cognitive function, inflammatory conditions, mood disorders, and metabolic health."
+  category="Research Summary"
+  readTime="20 min read"
+  publishDate="December 2025"
+>
+  <!-- Feature Image -->
+  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
+    <defs>
+      <linearGradient id="articleGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#0f172a"/>
+        <stop offset="100%" style="stop-color:#1e293b"/>
+      </linearGradient>
+      <linearGradient id="articleGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#10b981"/>
+        <stop offset="100%" style="stop-color:#34d399"/>
+      </linearGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+    <rect width="1200" height="600" fill="url(#articleGrad1)"/>
+
+    <!-- Brain/neuron visualization -->
+    <g opacity="0.6" filter="url(#glow)">
+      <!-- Central brain outline -->
+      <ellipse cx="600" cy="280" rx="180" ry="150" fill="none" stroke="#10b981" stroke-width="2" opacity="0.3"/>
+
+      <!-- Neurons -->
+      <circle cx="500" cy="200" r="10" fill="#10b981"/>
+      <circle cx="550" cy="280" r="8" fill="#10b981"/>
+      <circle cx="480" cy="340" r="8" fill="#10b981"/>
+      <circle cx="600" cy="180" r="12" fill="#34d399"/>
+      <circle cx="650" cy="260" r="10" fill="#10b981"/>
+      <circle cx="700" cy="200" r="8" fill="#10b981"/>
+      <circle cx="720" cy="320" r="8" fill="#10b981"/>
+      <circle cx="620" cy="360" r="8" fill="#10b981"/>
+      <circle cx="540" cy="380" r="6" fill="#10b981"/>
+
+      <!-- Receptor sites (nicotinic acetylcholine receptors) -->
+      <circle cx="450" cy="250" r="5" fill="#fbbf24"/>
+      <circle cx="580" cy="220" r="5" fill="#fbbf24"/>
+      <circle cx="670" cy="300" r="5" fill="#fbbf24"/>
+      <circle cx="520" cy="320" r="5" fill="#fbbf24"/>
+      <circle cx="680" cy="240" r="5" fill="#fbbf24"/>
+
+      <!-- Neural connections -->
+      <path d="M500 200 Q525 240 550 280" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
+      <path d="M550 280 Q515 310 480 340" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
+      <path d="M600 180 Q575 230 550 280" stroke="#34d399" stroke-width="2" fill="none" opacity="0.7"/>
+      <path d="M600 180 Q650 220 650 260" stroke="#34d399" stroke-width="2" fill="none" opacity="0.7"/>
+      <path d="M600 180 Q650 190 700 200" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
+      <path d="M650 260 Q685 290 720 320" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
+      <path d="M650 260 Q635 310 620 360" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
+      <path d="M550 280 Q595 320 620 360" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
+      <path d="M480 340 Q510 360 540 380" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
+
+      <!-- Signaling particles -->
+      <circle cx="525" cy="240" r="2" fill="#fbbf24" opacity="0.8"/>
+      <circle cx="575" cy="230" r="2" fill="#fbbf24" opacity="0.8"/>
+      <circle cx="625" cy="220" r="2" fill="#fbbf24" opacity="0.8"/>
+      <circle cx="660" cy="280" r="2" fill="#fbbf24" opacity="0.8"/>
+    </g>
+
+    <!-- Decorative circles -->
+    <circle cx="600" cy="300" r="220" fill="none" stroke="url(#articleGrad2)" stroke-width="1" opacity="0.2"/>
+    <circle cx="600" cy="300" r="270" fill="none" stroke="#fff" stroke-width="0.5" opacity="0.1"/>
+    <circle cx="600" cy="300" r="170" fill="none" stroke="#fff" stroke-width="0.5" opacity="0.1"/>
+
+    <!-- Central glow -->
+    <circle cx="600" cy="280" r="80" fill="url(#articleGrad2)" opacity="0.1"/>
+
+    <!-- Bottom wave -->
+    <path d="M0 550 Q300 500 600 530 T1200 510 V600 H0 Z" fill="#0c0a09" opacity="0.3"/>
+  </svg>
+
+  <!-- Important Disclaimer -->
+  <div class="mb-12 p-6 bg-primary-50 dark:bg-primary-900/20 rounded-2xl border-l-4 border-primary-500 reveal">
+    <p class="text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
+      <strong>Important Disclaimer:</strong> This document summarizes scientific research on nicotine's potential therapeutic applications. It is not medical advice. Nicotine is an addictive substance, and smoking tobacco causes serious health harms. Any therapeutic use of nicotine should only be considered under medical supervision. The research summarized here represents ongoing scientific inquiry, and many findings require further validation.
+    </p>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#executive-summary" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Executive Summary</a>
+      <a href="#parkinsons" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">1. Parkinson's Disease</a>
+      <a href="#alzheimers" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">2. Alzheimer's Disease & Mild Cognitive Impairment</a>
+      <a href="#cognitive" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">3. Cognitive Enhancement</a>
+      <a href="#ulcerative-colitis" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">4. Ulcerative Colitis & Anti-Inflammatory Effects</a>
+      <a href="#mood" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">5. Mood Disorders</a>
+      <a href="#schizophrenia" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">6. Schizophrenia</a>
+      <a href="#metabolic" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">7. Metabolic Effects & Weight Regulation</a>
+      <a href="#other" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">8. Other Conditions Under Investigation</a>
+      <a href="#takeaways" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">9. Key Takeaways & Limitations</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="executive-summary" class="reveal">
+      <h2>Executive Summary</h2>
+
+      <p>Nicotine, the primary psychoactive compound in tobacco, has a paradoxical relationship with human health. While tobacco smoking remains the leading cause of preventable death worldwide, research over the past several decades has revealed that isolated nicotine—separated from the thousands of harmful compounds in tobacco smoke—may possess therapeutic potential for a range of conditions. This document compiles peer-reviewed research examining nicotine's potential benefits across neurodegenerative diseases, cognitive function, inflammatory conditions, mood disorders, and metabolic health.</p>
+    </section>
+
+    <section id="parkinsons" class="reveal">
+      <h2>1. Neurodegenerative Disease Protection</h2>
+
+      <h3>1.1 Parkinson's Disease</h3>
+
+      <p>Epidemiological studies consistently demonstrate that smokers have a <strong>40-60% lower incidence</strong> of Parkinson's disease compared to never-smokers. This inverse relationship appears dose-dependent, with longer duration and greater intensity of smoking associated with stronger protective effects.</p>
+
+      <p>Research suggests nicotine may protect dopaminergic neurons through multiple mechanisms: upregulating antiapoptotic proteins, inducing detoxifying enzymes, protecting against nigrostriatal degeneration, and reducing levels of SIRT6 protein which contributes to neuronal death. Animal studies show nicotine can protect against parkinsonism-inducing toxins and may restore dopaminergic function even after damage has occurred.</p>
+
+      <p>However, clinical trials using nicotine patches in Parkinson's patients have shown mixed results, with the <strong>NIC-PD trial finding no significant slowing of disease progression</strong>. Dietary nicotine from peppers and tomatoes has also been associated with reduced Parkinson's risk, particularly in non-smokers.</p>
+    </section>
+
+    <section id="alzheimers" class="reveal">
+      <h3>1.2 Alzheimer's Disease & Mild Cognitive Impairment</h3>
+
+      <p>Nicotinic acetylcholine receptors are progressively lost during Alzheimer's disease, and nicotine's ability to directly stimulate these receptors has made it a subject of therapeutic interest. The Memory Improvement through Nicotine Dosing (MIND) study demonstrated that transdermal nicotine significantly improved attention, episodic memory, and overall functioning in patients with mild cognitive impairment (MCI) over six months. A larger two-year trial is ongoing.</p>
+
+      <p>In one study, participants using nicotine patches <strong>regained 46% of normal memory performance</strong> for their age, while the placebo group <strong>worsened by 26%</strong>. Laboratory research shows nicotine prevents aggregation of beta-amyloid proteins that form damaging plaques in Alzheimer's brains. However, some preclinical studies suggest nicotine may worsen tau pathology, indicating the relationship is complex. The Alzheimer's Drug Discovery Foundation rates the evidence as mixed but notes potential for cognitive enhancement.</p>
+    </section>
+
+    <!-- Pull Quote -->
+    <aside class="pull-quote reveal">
+      <p>"Participants using nicotine patches regained 46% of normal memory performance for their age, while the placebo group worsened by 26%."</p>
+    </aside>
+
+    <section id="cognitive" class="reveal">
+      <h2>2. Cognitive Enhancement</h2>
+
+      <p>Meta-analyses of <strong>41 placebo-controlled studies</strong> confirm nicotine has genuine cognitive-enhancing effects that go beyond withdrawal relief. Nicotine consistently improves:</p>
+
+      <ul>
+        <li>Attention and vigilance (both alerting and orienting)</li>
+        <li>Working memory and short-term episodic memory</li>
+        <li>Fine motor skills</li>
+        <li>Reaction time</li>
+        <li>Accuracy of time estimation</li>
+      </ul>
+
+      <p>These effects occur in both smokers (satiated) and non-smokers, suggesting true cognitive enhancement rather than merely reversing deficits. Nicotine enhances cognition through multiple mechanisms: stimulating release of neurotransmitters including acetylcholine, dopamine, norepinephrine, and serotonin; enhancing phosphorylation of proteins essential for synaptic plasticity; and rescuing long-term potentiation (LTP) impaired by sleep deprivation, chronic stress, or disease. The <strong>α4β2 and α7 nicotinic receptor subtypes</strong> appear particularly important for cognitive effects.</p>
+    </section>
+
+    <!-- Info Card -->
+    <div class="info-card my-12 reveal">
+      <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">Nicotinic Receptor Subtypes</h4>
+      <ul class="space-y-2 text-sm">
+        <li><strong>α4β2:</strong> Most common subtype, important for cognitive effects and addiction</li>
+        <li><strong>α7:</strong> Key for anti-inflammatory pathway and cognitive enhancement</li>
+        <li><strong>α3β4:</strong> Involved in appetite suppression and metabolic effects</li>
+      </ul>
+    </div>
+
+    <section id="ulcerative-colitis" class="reveal">
+      <h2>3. Ulcerative Colitis & Anti-Inflammatory Effects</h2>
+
+      <p>Ulcerative colitis occurs primarily in non-smokers and ex-smokers, with only <strong>8% of patients being active smokers</strong> compared to 44% in the general population. Multiple randomized controlled trials demonstrate that transdermal nicotine (15-25 mg/day) added to standard therapy significantly improves symptoms of active ulcerative colitis.</p>
+
+      <p>In UK and US trials, <strong>39-49% of nicotine-treated patients achieved complete symptom resolution</strong> versus 9-24% with placebo. Nicotine activates the "cholinergic anti-inflammatory pathway" through α7 nicotinic receptors on immune cells, reducing pro-inflammatory cytokines while preserving anti-inflammatory signals. It also stimulates colonic mucus production and induces protective autophagy to maintain intestinal barrier integrity.</p>
+
+      <p>However, <strong>nicotine is not effective for maintenance therapy</strong> and does not prevent relapses. Importantly, nicotine has opposite effects in Crohn's disease, where it worsens outcomes. The anti-inflammatory effects of nicotine also extend to obesity-related inflammation, improving glucose homeostasis and insulin sensitivity in animal models.</p>
+    </section>
+
+    <section id="mood" class="reveal">
+      <h2>4. Mood Disorders</h2>
+
+      <h3>4.1 Late-Life Depression</h3>
+
+      <p>Late-life depression (LLD) is characterized by poor response to conventional antidepressants and accompanying cognitive dysfunction—symptoms that no currently approved treatment addresses together. Open-label trials at Vanderbilt University demonstrated remarkable results with transdermal nicotine: <strong>76-87% response rates and 53-59% remission rates</strong>, with improvement seen as early as three weeks.</p>
+
+      <p>Participants showed improvement not only in depression severity but also in apathy, rumination, insomnia, and anxiety. Executive function, specifically cognitive control, also improved. In earlier research, chronic nicotine resulted in significant declines in depression scores compared to placebo. The mechanism likely involves nicotine's modulation of the Cognitive Control Network, which shows altered connectivity in depression, plus broad effects across nicotinic receptor subtypes. Transdermal nicotine was well-tolerated with no withdrawal symptoms after discontinuation. NIH-funded definitive trials are ongoing.</p>
+
+      <h3>4.2 ADHD (Attention-Deficit/Hyperactivity Disorder)</h3>
+
+      <p>The high rate of smoking among individuals with ADHD (approximately <strong>40% vs. 26%</strong> in the general population) suggests self-medication, as nicotine improves core ADHD symptoms. Placebo-controlled studies demonstrate nicotine improves:</p>
+
+      <ul>
+        <li>Reaction time and inattention</li>
+        <li>Accuracy of time perception (often impaired in ADHD)</li>
+        <li>Vigor and alertness</li>
+        <li>Sustained attention and accuracy on continuous performance tests</li>
+        <li>Cognitive control and working memory</li>
+      </ul>
+
+      <p>Importantly, these improvements occur in non-smokers with ADHD, not just those experiencing nicotine withdrawal. In one case report, a patient whose ADHD symptoms did not respond to stimulants achieved <strong>complete resolution of inattentiveness, reading comprehension problems, and accompanying depression/anxiety within one hour</strong> of nicotine patch application. Research suggests nicotine may be particularly useful for adults with ADHD who cannot tolerate stimulant medications, though larger trials are needed.</p>
+    </section>
+
+    <!-- Pull Quote -->
+    <aside class="pull-quote reveal">
+      <p>"Open-label trials demonstrated 76-87% response rates and 53-59% remission rates for late-life depression, with improvement seen as early as three weeks."</p>
+    </aside>
+
+    <section id="schizophrenia" class="reveal">
+      <h2>5. Schizophrenia</h2>
+
+      <p>Between <strong>60-90% of people with schizophrenia smoke</strong>—three times the rate of the general population—leading researchers to hypothesize self-medication of cognitive and sensory processing deficits. Research shows nicotine normalizes "hypofrontality" (reduced prefrontal cortex activity) associated with schizophrenia, improving attention, working memory, and executive function.</p>
+
+      <p>A 2017 <em>Nature Medicine</em> study found that nicotine reverses genetically-induced brain activity impairments in mouse models by normalizing the default mode network's hyperconnectivity. Nicotine also improves auditory sensory gating deficits characteristic of schizophrenia. However, meta-analyses indicate effects are specific to attention and do not extend to all cognitive domains. Long-term cognitive improvements have not been established.</p>
+
+      <p>Current antipsychotics effectively treat positive symptoms but fail to address cognitive deficits—an unmet therapeutic need that has driven interest in nicotinic receptor-based treatments. The α7 nicotinic receptor has emerged as a potential therapeutic target, though <strong>no drug targeting nicotinic systems has yet succeeded in Phase 3 trials</strong>.</p>
+    </section>
+
+    <section id="metabolic" class="reveal">
+      <h2>6. Metabolic Effects & Weight Regulation</h2>
+
+      <p>Smokers weigh on average <strong>4-5 kg (9-11 lb) less</strong> than non-smokers, and smoking cessation commonly leads to weight gain of <strong>5-7 kg within two years</strong>. Nicotine affects body weight through multiple mechanisms:</p>
+
+      <ul>
+        <li>Increasing resting metabolic rate by <strong>7-15%</strong> (burning approximately 200 extra calories per day)</li>
+        <li>Suppressing appetite through effects on hypothalamic neurons</li>
+        <li>Increasing fat oxidation independent of food intake changes</li>
+        <li>Stimulating catecholamine release (epinephrine, norepinephrine)</li>
+        <li>Affecting appetite-regulating peptides including leptin</li>
+      </ul>
+
+      <p>Animal research confirms nicotine suppresses body weight via increased fat metabolism even without changes in feeding behavior. Nicotine also improves glucose homeostasis and insulin sensitivity in obese animal models through its anti-inflammatory effects on adipose tissue. However, the relationship is complex: heavy smokers may actually weigh more than light smokers, and nicotine is not recommended as a weight-loss intervention due to addiction potential and cardiovascular risks.</p>
+    </section>
+
+    <!-- Evidence Summary Card -->
+    <div class="info-card my-12 reveal">
+      <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">Metabolic Effects Summary</h4>
+      <ul class="space-y-2 text-sm">
+        <li><strong>Weight difference:</strong> Smokers weigh 4-5 kg less on average</li>
+        <li><strong>Metabolic boost:</strong> 7-15% increase in resting metabolic rate</li>
+        <li><strong>Caloric burn:</strong> ~200 extra calories per day</li>
+        <li><strong>Post-cessation gain:</strong> 5-7 kg within two years of quitting</li>
+      </ul>
+    </div>
+
+    <section id="other" class="reveal">
+      <h2>7. Other Conditions Under Investigation</h2>
+
+      <h3>7.1 Tourette's Syndrome</h3>
+
+      <p>Nicotine has shown promise for reducing tics in Tourette's syndrome. A double-blind placebo-controlled study found that transdermal nicotine combined with haloperidol was more effective than haloperidol alone. Nicotinic compounds may help by modulating dopaminergic transmission in the basal ganglia circuits implicated in tic disorders.</p>
+
+      <h3>7.2 Sleep Apnea</h3>
+
+      <p>While counterintuitive given that smoking worsens sleep apnea, isolated nicotine may improve upper airway muscle tone through effects on nicotinic receptors. This potential benefit requires further investigation and separation from the harmful effects of tobacco smoke.</p>
+
+      <h3>7.3 Wound Healing & Tissue Repair</h3>
+
+      <p>Low concentrations of nicotine applied topically may promote tissue repair by stimulating blood vessel capillary growth and enhancing cell proliferation. Some research suggests nicotine patches can accelerate healing processes, though smoking itself impairs wound healing through other mechanisms.</p>
+    </section>
+
+    <section id="takeaways" class="reveal">
+      <h2>8. Key Takeaways & Limitations</h2>
+
+      <h3>Promising Areas</h3>
+
+      <p>The strongest evidence for therapeutic benefit exists for:</p>
+
+      <ul>
+        <li>Cognitive enhancement in mild cognitive impairment</li>
+        <li>Adjunctive treatment of active ulcerative colitis</li>
+        <li>Potential mood improvement in late-life depression</li>
+        <li>Attention improvement in ADHD</li>
+      </ul>
+
+      <p>The epidemiological protection against Parkinson's disease is robust, though clinical trials of nicotine treatment have been disappointing.</p>
+
+      <h3>Critical Limitations</h3>
+
+      <ul>
+        <li>Most studies are small, short-term, and require replication in larger trials</li>
+        <li>The addiction potential of nicotine cannot be ignored, even via transdermal delivery</li>
+        <li>Cardiovascular effects (increased heart rate, blood pressure) pose risks for some populations</li>
+        <li>Long-term safety data outside of smoking cessation contexts are limited</li>
+        <li>Many trials are open-label, requiring placebo-controlled confirmation</li>
+      </ul>
+
+      <h3>Clinical Reality</h3>
+
+      <p><strong>Nicotine is NOT recommended as a self-treatment for any condition.</strong> While this research is scientifically fascinating and may eventually lead to new therapies—whether nicotine itself or more selective nicotinic receptor modulators—current evidence does not support widespread therapeutic use. Individuals interested in these potential benefits should discuss them with healthcare providers and consider participating in clinical trials rather than self-medicating.</p>
+    </section>
+
+    <!-- Disclaimer -->
+    <div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal">
+      <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+        <strong>Medical Disclaimer:</strong> This summary is for informational purposes only and does not constitute medical advice. The research field is evolving, and some findings may be superseded by future studies. Always consult healthcare professionals before considering any therapeutic intervention.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Neuroscience</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Research Summary</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Cognitive Health</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Mental Health</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Pharmacology</span>
+  </Fragment>
+
+  <!-- Related Articles -->
+  <div slot="related" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <a href="/articles/mirtazapine-guide" class="article-card group reveal">
+      <div class="article-card-image">
+        <div class="article-card-image-inner bg-gradient-to-br from-violet-600 to-purple-700">
+          <span class="article-card-number">01</span>
+        </div>
+      </div>
+      <div class="article-card-content">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Clinical Evidence</span>
+        </div>
+        <h3 class="font-serif text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">Mirtazapine: The Quiet Overachiever</h3>
+        <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">A comprehensive clinical evidence review of 20+ therapeutic applications.</p>
+      </div>
+    </a>
+
+    <div class="article-card group reveal reveal-delay-1 opacity-75 cursor-default">
+      <div class="article-card-image relative">
+        <div class="article-card-image-inner bg-gradient-to-br from-cyan-500 to-blue-600">
+          <span class="article-card-number">02</span>
+        </div>
+        <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
+      </div>
+      <div class="article-card-content">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Neuroscience</span>
+        </div>
+        <h3 class="font-serif text-xl font-semibold mb-2">The Science of Neuroplasticity</h3>
+        <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">How your brain rewires itself throughout life and ways to enhance the process.</p>
+      </div>
+    </div>
+
+    <div class="article-card group reveal reveal-delay-2 opacity-75 cursor-default">
+      <div class="article-card-image relative">
+        <div class="article-card-image-inner bg-gradient-to-br from-teal-400 to-emerald-500">
+          <span class="article-card-number">03</span>
+        </div>
+        <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
+      </div>
+      <div class="article-card-content">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Longevity</span>
+        </div>
+        <h3 class="font-serif text-xl font-semibold mb-2">Protecting Your Brain: Prevention Strategies</h3>
+        <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">Evidence-based approaches to maintaining cognitive health as you age.</p>
+      </div>
+    </div>
+  </div>
+</ArticleLayout>

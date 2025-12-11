@@ -1,0 +1,617 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+---
+
+<BaseLayout
+  title="Tune Health | Where Science Meets Wellness"
+  description="Elevating wellness through science-backed insights and expert guidance on mental health, nutrition, fitness, and longevity."
+>
+  <Header slot="header" variant="home" />
+
+  <!-- Loader -->
+  <div class="loader" id="loader" transition:persist>
+    <div class="loader-content">
+      <div class="loader-logo">
+        <span class="t">T</span>
+        <span>une</span>
+      </div>
+      <div class="loader-bar">
+        <div class="loader-progress"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="gradient-radial-primary absolute inset-0"></div>
+      <div class="hero-pattern"></div>
+      <div class="hero-glow"></div>
+    </div>
+
+    <div class="container-editorial">
+      <div class="max-w-narrow mx-auto text-center">
+        <div class="reveal inline-flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-medium tracking-wide uppercase text-stone-600 dark:text-stone-400 mb-8">
+          <span class="w-1.5 h-1.5 bg-primary-600 rounded-full animate-pulse"></span>
+          <span>Issue No. 47 — Winter 2024</span>
+        </div>
+
+        <h1 class="reveal reveal-delay-1 font-serif text-display-1 font-semibold mb-6 text-balance" transition:name="hero-title">
+          <span class="block">Where Science</span>
+          <span class="block italic font-normal text-primary-600">Meets Wellness</span>
+        </h1>
+
+        <p class="reveal reveal-delay-2 font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl mx-auto mb-10">
+          Evidence-based health insights crafted for the discerning reader.
+          Explore the intersection of modern medicine, timeless wisdom, and
+          the art of living well.
+        </p>
+
+        <div class="reveal reveal-delay-3 flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="#featured" class="btn-primary magnetic">
+            <span>Explore Articles</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+            </svg>
+          </a>
+          <a href="#newsletter" class="btn-secondary magnetic">Subscribe Free</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+      <span class="text-overline text-stone-400">Scroll to explore</span>
+      <div class="w-px h-10 bg-gradient-to-b from-stone-400 to-transparent animate-pulse"></div>
+    </div>
+
+    <div class="hidden lg:flex absolute bottom-8 right-12 gap-12">
+      <div class="text-right">
+        <span class="block font-serif text-4xl font-semibold counter" data-count="2">0</span>
+        <span class="text-overline text-stone-400">Expert Articles</span>
+      </div>
+      <div class="text-right">
+        <span class="block font-serif text-4xl font-semibold counter" data-count="1">0</span>
+        <span class="text-overline text-stone-400">Contributors</span>
+      </div>
+      <div class="text-right">
+        <span class="block font-serif text-4xl font-semibold">
+          <span class="text-2xl text-stone-500">New!</span>
+        </span>
+        <span class="text-overline text-stone-400">Just Launched</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Article -->
+  <section class="py-20 md:py-28 bg-stone-100 dark:bg-stone-900" id="featured">
+    <div class="container-editorial">
+      <div class="flex items-center gap-6 mb-10">
+        <span class="section-label">Featured Story</span>
+        <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+      </div>
+
+      <a href="/articles/mirtazapine-guide" class="featured-card block reveal">
+        <div class="featured-image-container">
+          <div class="featured-image-inner">
+            <svg viewBox="0 0 400 500" class="w-full h-full">
+              <defs>
+                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#1a1a2e"/>
+                  <stop offset="100%" style="stop-color:#16213e"/>
+                </linearGradient>
+                <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#dc2626"/>
+                  <stop offset="100%" style="stop-color:#ef4444"/>
+                </linearGradient>
+              </defs>
+              <rect width="400" height="500" fill="url(#grad1)"/>
+              <circle cx="200" cy="200" r="100" fill="none" stroke="url(#grad2)" stroke-width="2" opacity="0.5"/>
+              <circle cx="200" cy="200" r="150" fill="none" stroke="#fff" stroke-width="0.5" opacity="0.2"/>
+              <circle cx="200" cy="200" r="50" fill="url(#grad2)" opacity="0.3"/>
+              <g opacity="0.4" stroke="#dc2626" stroke-width="1" fill="none">
+                <path d="M100 150 Q150 100 200 150 Q250 200 200 250"/>
+                <path d="M300 100 Q250 150 300 200 Q350 250 300 300"/>
+                <circle cx="100" cy="150" r="5" fill="#dc2626"/>
+                <circle cx="200" cy="150" r="5" fill="#dc2626"/>
+                <circle cx="300" cy="100" r="5" fill="#dc2626"/>
+                <circle cx="200" cy="250" r="5" fill="#dc2626"/>
+                <circle cx="300" cy="300" r="5" fill="#dc2626"/>
+              </g>
+            </svg>
+          </div>
+          <span class="absolute bottom-4 left-4 text-xs text-white/70">Illustration by Tune Health Studio</span>
+        </div>
+
+        <div class="p-8 lg:p-12 flex flex-col">
+          <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-wide mb-6">
+            <span class="text-primary-600">Mental Health</span>
+            <span class="text-stone-400">·</span>
+            <span class="text-stone-500">12 min read</span>
+          </div>
+
+          <h2 class="font-serif text-heading-1 font-semibold mb-4 group-hover:text-primary-600 transition-colors">
+            Understanding Mirtazapine: A Complete Guide to This Unique Antidepressant
+          </h2>
+
+          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8 flex-1">
+            An in-depth exploration of mirtazapine's mechanism of action, therapeutic applications,
+            and what makes this medication distinct in the landscape of modern antidepressants.
+            From its NaSSA classification to practical considerations for patients and clinicians alike.
+          </p>
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">TH</div>
+              <div>
+                <span class="block text-sm font-semibold">Tune Health Editorial</span>
+                <span class="block text-xs text-stone-500">Medical Review Board</span>
+              </div>
+            </div>
+
+            <span class="inline-flex items-center gap-2 font-semibold text-sm group-hover:text-primary-600 transition-colors">
+              Read Article
+              <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+              </svg>
+            </span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="py-10 border-b border-stone-200 dark:border-stone-800">
+    <div class="container-editorial">
+      <div class="categories-scroll">
+        <button class="category-chip active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <span class="text-sm font-medium">All Topics</span>
+        </button>
+        <button class="category-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+          <span class="text-sm font-medium">Mental Health</span>
+        </button>
+        <button class="category-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+            <line x1="6" y1="1" x2="6" y2="4"/>
+            <line x1="10" y1="1" x2="10" y2="4"/>
+            <line x1="14" y1="1" x2="14" y2="4"/>
+          </svg>
+          <span class="text-sm font-medium">Nutrition</span>
+        </button>
+        <button class="category-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          <span class="text-sm font-medium">Fitness</span>
+        </button>
+        <button class="category-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <span class="text-sm font-medium">Sleep Science</span>
+        </button>
+        <button class="category-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span class="text-sm font-medium">Longevity</span>
+        </button>
+        <button class="category-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4M12 8h.01"/>
+          </svg>
+          <span class="text-sm font-medium">Neuroscience</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest Articles Grid -->
+  <section class="py-20 md:py-28" id="latest">
+    <div class="container-editorial">
+      <div class="flex items-center justify-between mb-10">
+        <div>
+          <span class="section-label">Latest Stories</span>
+          <h2 class="font-serif text-heading-2 font-semibold mt-1">Fresh Perspectives</h2>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Large Featured Card -->
+        <a href="/articles/mirtazapine-guide" class="article-card article-card-large group reveal">
+          <div class="article-card-image">
+            <div class="article-card-image-inner bg-gradient-to-br from-violet-600 to-purple-700">
+              <span class="article-card-number">01</span>
+            </div>
+          </div>
+          <div class="article-card-content">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Mental Health</span>
+              <span class="text-xs text-stone-400">Dec 10, 2024</span>
+            </div>
+            <h3 class="font-serif text-heading-3 font-semibold mb-2 group-hover:text-primary-600 transition-colors">Understanding Mirtazapine: A Complete Guide</h3>
+            <p class="font-body text-stone-600 dark:text-stone-400 mb-4 line-clamp-3">An in-depth exploration of this unique antidepressant and its applications in modern psychiatry.</p>
+            <div class="flex items-center justify-between pt-4 border-t border-stone-100 dark:border-stone-800">
+              <span class="text-xs text-stone-400">12 min read</span>
+              <span class="text-lg text-stone-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card 2 - Nicotine Research -->
+        <a href="/articles/nicotine-research" class="article-card group reveal reveal-delay-1">
+          <div class="article-card-image">
+            <div class="article-card-image-inner bg-gradient-to-br from-emerald-500 to-teal-600">
+              <span class="article-card-number">02</span>
+            </div>
+          </div>
+          <div class="article-card-content">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Neuroscience</span>
+              <span class="text-xs text-stone-400">Dec 10, 2024</span>
+            </div>
+            <h3 class="font-serif text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">Nicotine's Promising Health Benefits</h3>
+            <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">A comprehensive research summary exploring nicotine's therapeutic potential beyond its controversial reputation.</p>
+            <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
+              <span class="text-xs text-stone-400">18 min read</span>
+              <span class="text-lg text-stone-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all">→</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card 3 - Coming Soon -->
+        <div class="article-card group reveal reveal-delay-2 opacity-75 cursor-default">
+          <div class="article-card-image relative">
+            <div class="article-card-image-inner bg-gradient-to-br from-cyan-500 to-blue-600">
+              <span class="article-card-number">03</span>
+            </div>
+            <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
+          </div>
+          <div class="article-card-content">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Nutrition</span>
+            </div>
+            <h3 class="font-serif text-xl font-semibold mb-2">Metabolic Flexibility: A New Paradigm</h3>
+            <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">Why the ability to switch between fuel sources matters for longevity.</p>
+            <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
+              <span class="text-xs text-stone-400">Coming soon</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 - Coming Soon -->
+        <div class="article-card group reveal reveal-delay-3 opacity-75 cursor-default">
+          <div class="article-card-image relative">
+            <div class="article-card-image-inner bg-gradient-to-br from-orange-500 to-amber-600">
+              <span class="article-card-number">04</span>
+            </div>
+            <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
+          </div>
+          <div class="article-card-content">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Fitness</span>
+            </div>
+            <h3 class="font-serif text-xl font-semibold mb-2">Zone 2 Training: The Science Behind Slow</h3>
+            <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">How low-intensity exercise builds the foundation for elite performance.</p>
+            <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
+              <span class="text-xs text-stone-400">Coming soon</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 - Coming Soon -->
+        <div class="article-card group reveal reveal-delay-4 opacity-75 cursor-default">
+          <div class="article-card-image relative">
+            <div class="article-card-image-inner bg-gradient-to-br from-teal-400 to-emerald-500">
+              <span class="article-card-number">05</span>
+            </div>
+            <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
+          </div>
+          <div class="article-card-content">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">Longevity</span>
+            </div>
+            <h3 class="font-serif text-xl font-semibold mb-2">Senolytics: Clearing the Path to Longevity</h3>
+            <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">The emerging science of eliminating senescent cells for healthier aging.</p>
+            <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
+              <span class="text-xs text-stone-400">Coming soon</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quote Section -->
+  <section class="quote-section">
+    <div class="container-editorial">
+      <div class="max-w-narrow mx-auto text-center relative">
+        <span class="quote-mark">"</span>
+        <blockquote class="font-serif text-heading-2 font-normal italic mb-8 pt-8">
+          Health is not simply the absence of disease, but a state of complete physical,
+          mental, and social well-being that allows one to live life to its fullest potential.
+        </blockquote>
+        <cite class="not-italic">
+          <span class="block text-sm font-semibold tracking-wide uppercase">World Health Organization</span>
+          <span class="block text-sm text-stone-400 mt-1">Constitution, 1948</span>
+        </cite>
+      </div>
+    </div>
+  </section>
+
+  <!-- Deep Dives -->
+  <section class="py-20 md:py-28 bg-stone-100 dark:bg-stone-900" id="deep-dives">
+    <div class="container-editorial">
+      <div class="mb-10">
+        <span class="section-label">Deep Dives</span>
+        <h2 class="font-serif text-heading-2 font-semibold mt-1">Comprehensive Guides</h2>
+      </div>
+
+      <div class="space-y-4">
+        <div class="deep-dive-card group reveal opacity-75 cursor-default">
+          <div class="deep-dive-number">I</div>
+          <div class="min-w-0">
+            <span class="text-xs font-semibold uppercase tracking-widest text-primary-600 mb-2 block">Series · Coming Soon</span>
+            <h3 class="font-serif text-xl font-semibold mb-1">The Neuroscience of Habit Formation</h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 hidden md:block mb-2">A four-part exploration of how habits form, persist, and can be intentionally restructured.</p>
+            <div class="flex gap-2 text-xs text-stone-400">
+              <span>4 Parts</span>
+              <span>·</span>
+              <span>45 min total</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="deep-dive-card group reveal reveal-delay-1 opacity-75 cursor-default">
+          <div class="deep-dive-number">II</div>
+          <div class="min-w-0">
+            <span class="text-xs font-semibold uppercase tracking-widest text-primary-600 mb-2 block">Series · Coming Soon</span>
+            <h3 class="font-serif text-xl font-semibold mb-1">Understanding Your Microbiome</h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 hidden md:block mb-2">The gut-brain connection, microbial diversity, and practical steps for optimization.</p>
+            <div class="flex gap-2 text-xs text-stone-400">
+              <span>6 Parts</span>
+              <span>·</span>
+              <span>60 min total</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="deep-dive-card group reveal reveal-delay-2 opacity-75 cursor-default">
+          <div class="deep-dive-number">III</div>
+          <div class="min-w-0">
+            <span class="text-xs font-semibold uppercase tracking-widest text-primary-600 mb-2 block">Guide · Coming Soon</span>
+            <h3 class="font-serif text-xl font-semibold mb-1">Precision Medicine: A Patient's Guide</h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 hidden md:block mb-2">How genetic testing, biomarkers, and personalized protocols are reshaping healthcare.</p>
+            <div class="flex gap-2 text-xs text-stone-400">
+              <span>3 Parts</span>
+              <span>·</span>
+              <span>35 min total</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter -->
+  <section class="py-20 md:py-28" id="newsletter">
+    <div class="container-editorial">
+      <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <div>
+          <span class="section-label">Newsletter</span>
+          <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-4">Stay Informed, Stay Healthy</h2>
+          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8">
+            Join over 100,000 readers who receive our weekly digest of science-backed health insights,
+            exclusive interviews, and practical wellness strategies.
+          </p>
+
+          <form class="mb-8" id="newsletterForm">
+            <div class="flex flex-col sm:flex-row gap-3 mb-4">
+              <input type="email" required placeholder="Enter your email"
+                     class="flex-1 px-5 py-3.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-base focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all">
+              <button type="submit" class="btn-primary whitespace-nowrap">
+                <span>Subscribe</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+            <label class="flex items-start gap-3 text-sm text-stone-500">
+              <input type="checkbox" required class="mt-0.5 w-4 h-4 accent-primary-600">
+              <span>I agree to receive weekly newsletters and accept the privacy policy</span>
+            </label>
+          </form>
+
+          <div class="flex flex-wrap gap-6">
+            <div class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/>
+                <polyline points="22 4 12 14.01 9 11.01" stroke-width="2"/>
+              </svg>
+              <span>Weekly insights</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/>
+                <polyline points="22 4 12 14.01 9 11.01" stroke-width="2"/>
+              </svg>
+              <span>Expert interviews</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/>
+                <polyline points="22 4 12 14.01 9 11.01" stroke-width="2"/>
+              </svg>
+              <span>No spam, ever</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="newsletter-visual">
+          <div class="newsletter-card newsletter-card-1">
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 text-xs font-semibold uppercase rounded">New</span>
+              <span class="text-xs text-stone-400">This Week</span>
+            </div>
+            <h4 class="font-serif font-semibold mb-1">The Science of Cold Exposure</h4>
+            <p class="text-sm text-stone-500">What the research actually says about ice baths</p>
+          </div>
+          <div class="newsletter-card newsletter-card-2">
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 text-xs font-semibold uppercase rounded">Popular</span>
+              <span class="text-xs text-stone-400">Last Week</span>
+            </div>
+            <h4 class="font-serif font-semibold mb-1">Rethinking Protein Intake</h4>
+            <p class="text-sm text-stone-500">New guidelines challenge old assumptions</p>
+          </div>
+          <div class="newsletter-card newsletter-card-3">
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 text-xs font-semibold uppercase rounded">Featured</span>
+              <span class="text-xs text-stone-400">Archive</span>
+            </div>
+            <h4 class="font-serif font-semibold mb-1">Sleep & Memory</h4>
+            <p class="text-sm text-stone-500">How rest consolidates learning</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+
+  <script>
+    import { gsap } from 'gsap';
+
+    function initHomePage() {
+      const loader = document.getElementById('loader');
+
+      // Hide loader
+      function hideLoader() {
+        if (loader) {
+          loader.style.opacity = '0';
+          setTimeout(() => {
+            loader.classList.add('hidden');
+            document.body.style.overflow = '';
+            initHeroAnimation();
+          }, 600);
+        } else {
+          initHeroAnimation();
+        }
+      }
+
+      // Hero animation with GSAP
+      function initHeroAnimation() {
+        const heroTitle = document.querySelector('.hero h1');
+        const heroBadge = document.querySelector('.hero .reveal');
+        const heroSubtitle = document.querySelector('.hero p');
+
+        if (heroTitle) {
+          const tl = gsap.timeline({ delay: 0.3 });
+
+          if (heroBadge) {
+            tl.fromTo(heroBadge,
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+            );
+          }
+
+          tl.fromTo(heroTitle,
+            { opacity: 0, y: 40 },
+            { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' },
+            '-=0.3'
+          );
+
+          if (heroSubtitle) {
+            tl.fromTo(heroSubtitle,
+              { opacity: 0, y: 30 },
+              { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+              '-=0.4'
+            );
+          }
+        }
+
+        // Counter animation
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach((counter) => {
+          const target = parseInt((counter as HTMLElement).dataset.count || '0');
+          if (isNaN(target)) return;
+
+          gsap.to(counter, {
+            innerText: target,
+            duration: 2,
+            delay: 0.5,
+            ease: 'power2.out',
+            snap: { innerText: 1 },
+            onUpdate: function() {
+              (counter as HTMLElement).innerText = Math.round(parseFloat((counter as HTMLElement).innerText)).toString();
+            }
+          });
+        });
+      }
+
+      // Newsletter form
+      const newsletterForm = document.getElementById('newsletterForm');
+      newsletterForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const btn = newsletterForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+        const originalText = btn.innerHTML;
+
+        btn.innerHTML = `
+          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Subscribing...</span>
+        `;
+        btn.disabled = true;
+
+        setTimeout(() => {
+          btn.innerHTML = `
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M5 13l4 4L19 7" stroke-width="2"/>
+            </svg>
+            <span>Subscribed!</span>
+          `;
+          btn.classList.remove('bg-stone-900', 'dark:bg-white');
+          btn.classList.add('bg-green-600', 'dark:bg-green-600');
+
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            btn.classList.remove('bg-green-600', 'dark:bg-green-600');
+            btn.classList.add('bg-stone-900', 'dark:bg-white');
+            (newsletterForm as HTMLFormElement).reset();
+          }, 3000);
+        }, 1500);
+      });
+
+      // Start
+      if (loader && !loader.classList.contains('hidden')) {
+        setTimeout(hideLoader, 1800);
+      } else {
+        initHeroAnimation();
+      }
+    }
+
+    // Run on load
+    initHomePage();
+
+    // Run after View Transitions
+    document.addEventListener('astro:after-swap', initHomePage);
+  </script>
+</BaseLayout>

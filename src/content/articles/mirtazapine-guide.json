@@ -1,0 +1,19 @@
+{
+  "title": "Mirtazapine: The Quiet Overachiever of Modern Psychopharmacology",
+  "description": "A comprehensive clinical evidence review covering 20+ therapeutic applications, remarkable safety data, and why one drug demonstrates positive evidence across such diverse conditions.",
+  "category": "Clinical Evidence",
+  "publishDate": "2025-12-10",
+  "author": {
+    "name": "Tune Health Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 18,
+  "featured": true,
+  "draft": false,
+  "tags": ["Mental Health", "Antidepressants", "Clinical Evidence", "Pharmacology", "Palliative Care"],
+  "gradient": {
+    "from": "violet-600",
+    "to": "purple-700"
+  },
+  "keywords": ["mirtazapine", "remeron", "antidepressant", "insomnia", "nausea", "appetite", "depression", "anxiety"]
+}

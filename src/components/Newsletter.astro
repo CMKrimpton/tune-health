@@ -1,0 +1,74 @@
+---
+/**
+ * Newsletter - Reusable newsletter signup section
+ * Used on both homepage and article pages
+ */
+
+interface Props {
+  variant?: 'default' | 'compact';
+  class?: string;
+}
+
+const { variant = 'default', class: className = '' } = Astro.props;
+
+const isCompact = variant === 'compact';
+---
+
+<section
+  class:list={[
+    'bg-stone-900 dark:bg-stone-950 text-white',
+    isCompact ? 'py-16' : 'py-20',
+    className,
+  ]}
+  id="newsletter"
+>
+  <div class="container-editorial text-center">
+    <span class="section-label text-primary-400 mb-4 block">Stay Informed</span>
+    <h2 class:list={['font-serif font-semibold mb-4', isCompact ? 'text-heading-3' : 'text-heading-2']}>
+      {isCompact ? 'Get More Health Insights' : 'Join Our Community'}
+    </h2>
+    <p class:list={['font-body text-stone-400 max-w-xl mx-auto', isCompact ? 'text-base mb-6' : 'text-lg mb-8']}>
+      {isCompact
+        ? 'Join our community of readers who receive weekly evidence-based health articles.'
+        : 'Subscribe to receive weekly evidence-based health articles and expert insights delivered to your inbox.'}
+    </p>
+    <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" data-newsletter-form>
+      <input
+        type="email"
+        required
+        placeholder="Enter your email"
+        class="flex-1 px-5 py-3.5 bg-stone-800 border border-stone-700 rounded-xl text-base text-white placeholder-stone-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+      />
+      <button type="submit" class="btn-primary whitespace-nowrap bg-primary-600 hover:bg-primary-500">
+        Subscribe
+      </button>
+    </form>
+    <p class="text-xs text-stone-500 mt-4">No spam. Unsubscribe anytime.</p>
+  </div>
+</section>
+
+<script>
+  // Handle newsletter form submission
+  document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = form.querySelector('input[type="email"]') as HTMLInputElement;
+      const button = form.querySelector('button') as HTMLButtonElement;
+
+      if (input && button) {
+        const originalText = button.textContent;
+        button.textContent = 'Subscribed!';
+        button.disabled = true;
+        input.disabled = true;
+
+        // Reset after 3 seconds (in a real app, this would submit to an API)
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.disabled = false;
+          input.disabled = false;
+          input.value = '';
+        }, 3000);
+      }
+    });
+  });
+</script>

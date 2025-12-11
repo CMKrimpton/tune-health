@@ -1,0 +1,19 @@
+{
+  "title": "Nicotine's Promising Health Benefits",
+  "description": "A comprehensive research summary examining peer-reviewed evidence on nicotine's potential therapeutic applications across neurodegenerative diseases, cognitive function, inflammatory conditions, mood disorders, and metabolic health.",
+  "category": "Research Summary",
+  "publishDate": "2025-12-10",
+  "author": {
+    "name": "Tune Health Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 20,
+  "featured": false,
+  "draft": false,
+  "tags": ["Neuroscience", "Research Summary", "Cognitive Health", "Mental Health", "Pharmacology"],
+  "gradient": {
+    "from": "emerald-500",
+    "to": "teal-600"
+  },
+  "keywords": ["nicotine", "parkinson's", "alzheimer's", "cognitive", "memory", "ulcerative colitis", "depression", "adhd"]
+}

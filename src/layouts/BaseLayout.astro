@@ -1,0 +1,228 @@
+---
+import { ViewTransitions } from 'astro:transitions';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+  ogType?: string;
+  canonical?: string;
+}
+
+const {
+  title,
+  description,
+  ogImage = '/assets/og-image.png',
+  ogType = 'website',
+  canonical
+} = Astro.props;
+
+const siteUrl = 'https://tune-health.vercel.app';
+const canonicalUrl = canonical || Astro.url.pathname;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content={description}>
+  <meta name="author" content="Tune Health">
+  <meta name="theme-color" content="#dc2626" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#ef4444" media="(prefers-color-scheme: dark)">
+  <title>{title}</title>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content={ogType}>
+  <meta property="og:url" content={`${siteUrl}${canonicalUrl}`}>
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:image" content={ogImage}>
+  <meta property="og:site_name" content="Tune Health">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content={title}>
+  <meta name="twitter:description" content={description}>
+  <meta name="twitter:image" content={ogImage}>
+
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap" rel="stylesheet">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="canonical" href={`${siteUrl}${canonicalUrl}`}>
+
+  <!-- View Transitions -->
+  <ViewTransitions />
+
+  <!-- Additional head content (for SEO, etc.) -->
+  <slot name="head" />
+</head>
+<body class="overflow-x-hidden">
+  <!-- Skip Link -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-lg focus:outline-none">
+    Skip to main content
+  </a>
+
+  <!-- Noise Overlay -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Scroll Progress -->
+  <div class="scroll-progress" id="scrollProgress" role="progressbar" aria-label="Reading progress"></div>
+
+  <slot name="header" />
+
+  <main id="main-content">
+    <slot />
+  </main>
+
+  <slot name="footer" />
+
+  <!-- Back to Top -->
+  <button class="back-to-top" id="backToTop" aria-label="Back to top">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path d="M18 15l-6-6-6 6" stroke-width="2"/>
+    </svg>
+  </button>
+
+  <!-- Command Palette Container -->
+  <div id="command-palette-root"></div>
+
+  <script>
+    // Theme management
+    const html = document.documentElement;
+    const getThemePreference = () => {
+      if (localStorage.getItem('theme')) {
+        return localStorage.getItem('theme');
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+
+    const applyTheme = (theme: string) => {
+      if (theme === 'dark') {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
+      localStorage.setItem('theme', theme);
+    };
+
+    // Apply theme immediately
+    applyTheme(getThemePreference()!);
+
+    // Make available globally
+    (window as any).toggleTheme = () => {
+      const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    };
+
+    // Persist theme across View Transitions
+    document.addEventListener('astro:after-swap', () => {
+      applyTheme(getThemePreference()!);
+    });
+  </script>
+
+  <script>
+    // Core interactions - runs on every page
+    function initInteractions() {
+      const header = document.getElementById('header');
+      const scrollProgress = document.getElementById('scrollProgress');
+      const backToTop = document.getElementById('backToTop');
+      const themeToggle = document.getElementById('themeToggle');
+      const menuToggle = document.getElementById('menuToggle');
+      const mobileMenu = document.getElementById('mobileMenu');
+
+      // Header scroll effect
+      let ticking = false;
+      const updateScroll = () => {
+        const scrollY = window.scrollY;
+
+        // Header
+        if (scrollY > 50) {
+          header?.classList.add('scrolled');
+        } else {
+          header?.classList.remove('scrolled');
+        }
+
+        // Progress bar
+        if (scrollProgress) {
+          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = scrollY / docHeight;
+          scrollProgress.style.transform = `scaleX(${progress})`;
+        }
+
+        // Back to top
+        if (backToTop) {
+          if (scrollY > 400) {
+            backToTop.classList.add('visible');
+          } else {
+            backToTop.classList.remove('visible');
+          }
+        }
+
+        ticking = false;
+      };
+
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          requestAnimationFrame(updateScroll);
+          ticking = true;
+        }
+      }, { passive: true });
+
+      // Theme toggle
+      themeToggle?.addEventListener('click', () => {
+        (window as any).toggleTheme();
+      });
+
+      // Mobile menu
+      menuToggle?.addEventListener('click', () => {
+        menuToggle.classList.toggle('active');
+        mobileMenu?.classList.toggle('active');
+        document.body.classList.toggle('menu-open');
+      });
+
+      // Back to top
+      backToTop?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      // Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          mobileMenu?.classList.remove('active');
+          menuToggle?.classList.remove('active');
+          document.body.classList.remove('menu-open');
+        }
+      });
+
+      // Reveal animations
+      const reveals = document.querySelectorAll('.reveal');
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+      reveals.forEach((el) => revealObserver.observe(el));
+    }
+
+    // Run on initial load
+    initInteractions();
+
+    // Run after View Transitions
+    document.addEventListener('astro:after-swap', initInteractions);
+  </script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import FloatingTOC from '../components/FloatingTOC.astro';
+import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+import SEO from '../components/SEO.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { fade, slide } from 'astro:transitions';
+
+interface Props {
+  title: string;
+  description: string;
+  category: string;
+  readTime: string;
+  publishDate: string;
+  ogImage?: string;
+  tags?: string[];
+  slug?: string;
+}
+
+const {
+  title,
+  description,
+  category,
+  readTime,
+  publishDate,
+  ogImage,
+  tags = [],
+  slug = Astro.url.pathname.split('/').pop() || 'article',
+} = Astro.props;
+---
+
+<BaseLayout
+  title={`${title} | Tune Health`}
+  description={description}
+  ogType="article"
+  ogImage={ogImage || '/assets/og-image.png'}
+>
+  <!-- Structured Data -->
+  <SEO
+    slot="head"
+    type="article"
+    article={{
+      title,
+      description,
+      publishDate,
+      author: 'Tune Health Editorial',
+      category,
+      tags,
+    }}
+  />
+
+  <Header slot="header" variant="article" />
+
+  <!-- Article Hero -->
+  <section
+    class="article-hero bg-stone-50 dark:bg-stone-950"
+    transition:animate={fade({ duration: '0.3s' })}
+  >
+    <div class="container-editorial">
+      <div class="article-header">
+        <div class="flex items-center justify-center gap-3 mb-6">
+          <span
+            class="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs font-semibold uppercase tracking-wide rounded-full"
+            transition:name={`category-${slug}`}
+          >
+            {category}
+          </span>
+          <span class="text-sm text-stone-500">{publishDate}</span>
+          <span class="text-stone-400">·</span>
+          <span class="text-sm text-stone-500">{readTime}</span>
+        </div>
+
+        <h1
+          class="font-serif text-display-2 font-semibold mb-6 text-balance"
+          transition:name={`title-${slug}`}
+          transition:animate={slide({ duration: '0.4s' })}
+        >
+          {title}
+        </h1>
+
+        <p
+          class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-2xl mx-auto mb-8"
+          transition:animate={fade({ duration: '0.4s', delay: '0.1s' })}
+        >
+          {description}
+        </p>
+
+        <div class="flex items-center justify-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
+            TH
+          </div>
+          <div class="text-left">
+            <span class="block text-sm font-semibold">Tune Health Editorial</span>
+            <span class="block text-xs text-stone-500">Medical Review Board</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Image Slot -->
+  <div class="container-editorial">
+    <div
+      class="article-feature-image reveal"
+      transition:name={`image-${slug}`}
+      transition:animate={slide({ duration: '0.5s', delay: '0.1s' })}
+    >
+      <slot name="feature-image" />
+    </div>
+  </div>
+
+  <!-- Article Content -->
+  <article
+    class="article-body"
+    id="article-content"
+    transition:animate={fade({ duration: '0.4s', delay: '0.2s' })}
+  >
+    <div class="container-editorial">
+      <div class="max-w-article mx-auto">
+        <slot />
+
+        <!-- Share & Tags -->
+        <div class="mt-12 pt-8 border-t border-stone-200 dark:border-stone-800 reveal">
+          <div class="flex flex-wrap gap-2">
+            <slot name="tags" />
+          </div>
+        </div>
+
+        <!-- Author Card -->
+        <div class="author-card mt-12 reveal">
+          <div class="author-avatar">TH</div>
+          <div>
+            <span class="block font-semibold mb-1">Tune Health Editorial</span>
+            <p class="text-sm text-stone-600 dark:text-stone-400">
+              Our medical review board comprises healthcare professionals dedicated to providing
+              accurate, evidence-based health information.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- Related Articles -->
+  <section class="related-articles" transition:animate={fade({ duration: '0.3s', delay: '0.3s' })}>
+    <div class="container-editorial">
+      <div class="mb-10">
+        <span class="section-label">Continue Reading</span>
+        <h2 class="font-serif text-heading-2 font-semibold mt-1">Related Articles</h2>
+      </div>
+      <slot name="related" />
+    </div>
+  </section>
+
+  <!-- Newsletter CTA -->
+  <Newsletter variant="compact" />
+
+  <Footer slot="footer" />
+  <FloatingTOC />
+  <CommandPaletteWrapper />
+</BaseLayout>
+
+<style is:global>
+  /* Custom View Transition animations for articles */
+  @keyframes article-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes article-fade-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+
+  /* Article title transition */
+  ::view-transition-old(article-title) {
+    animation: article-fade-out 0.3s ease-out forwards;
+  }
+
+  ::view-transition-new(article-title) {
+    animation: article-fade-in 0.4s ease-out forwards;
+  }
+
+  /* Smooth hero image transitions */
+  ::view-transition-old(article-image),
+  ::view-transition-new(article-image) {
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+</style>

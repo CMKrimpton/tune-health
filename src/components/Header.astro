@@ -1,0 +1,112 @@
+---
+interface Props {
+  variant?: 'home' | 'article';
+}
+
+const { variant = 'home' } = Astro.props;
+---
+
+<header class="nav-header" id="header" transition:persist>
+  <nav class="nav-inner">
+    <!-- Left Nav -->
+    <div class="flex items-center gap-6">
+      {variant === 'home' ? (
+        <>
+          <button class="lg:hidden flex flex-col justify-center gap-1.5 w-6 h-6 group" id="menuToggle" aria-label="Toggle menu">
+            <span class="w-full h-0.5 bg-stone-900 dark:bg-white transition-all duration-300 origin-center group-[.active]:translate-y-2 group-[.active]:rotate-45"></span>
+            <span class="w-full h-0.5 bg-stone-900 dark:bg-white transition-all duration-300 group-[.active]:opacity-0"></span>
+            <span class="w-full h-0.5 bg-stone-900 dark:bg-white transition-all duration-300 origin-center group-[.active]:-translate-y-2 group-[.active]:-rotate-45"></span>
+          </button>
+          <a href="#featured" class="hidden lg:block text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white link-underline transition-colors">Explore</a>
+          <a href="#latest" class="hidden lg:block text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white link-underline transition-colors">Articles</a>
+        </>
+      ) : (
+        <a href="/" class="flex items-center gap-2 text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2"/>
+          </svg>
+          <span class="hidden sm:inline">Back to Home</span>
+        </a>
+      )}
+    </div>
+
+    <!-- Logo -->
+    <a href="/" class="flex items-baseline gap-1 font-serif text-xl md:text-2xl font-semibold group">
+      <span class="text-primary-600 font-bold text-2xl md:text-3xl transition-transform duration-300 group-hover:scale-110" transition:name="logo-t">T</span>
+      <span class="text-stone-900 dark:text-white" transition:name="logo-une">une</span>
+      <em class="font-normal text-stone-600 dark:text-stone-400" transition:name="logo-health">Health</em>
+    </a>
+
+    <!-- Right Nav -->
+    <div class="flex items-center gap-4">
+      {variant === 'home' && (
+        <a href="#newsletter" class="hidden lg:block text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white link-underline transition-colors">Subscribe</a>
+      )}
+
+      <!-- Command Palette Trigger -->
+      <button
+        class="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+        id="cmdkTrigger"
+        aria-label="Open command palette"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" stroke-width="2"/>
+          <path d="m21 21-4.35-4.35" stroke-width="2"/>
+        </svg>
+        <span class="text-xs">⌘K</span>
+      </button>
+
+      <!-- Mobile Search -->
+      <button class="sm:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors" id="cmdkTriggerMobile" aria-label="Search">
+        <svg class="w-5 h-5 text-stone-600 dark:text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" stroke-width="2"/>
+          <path d="m21 21-4.35-4.35" stroke-width="2"/>
+        </svg>
+      </button>
+
+      <!-- Theme Toggle -->
+      <button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors" id="themeToggle" aria-label="Toggle theme">
+        <svg class="w-5 h-5 text-stone-600 dark:text-stone-400 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5" stroke-width="2"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke-width="2"/>
+        </svg>
+        <svg class="w-5 h-5 text-stone-400 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke-width="2"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu (home only) -->
+  {variant === 'home' && (
+    <div class="mobile-menu" id="mobileMenu">
+      <div class="flex flex-col min-h-full p-8 md:p-12">
+        <nav class="flex-1 space-y-2">
+          <a href="/" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
+            <span class="text-xs font-medium text-stone-400">01</span>
+            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Home</span>
+          </a>
+          <a href="#featured" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
+            <span class="text-xs font-medium text-stone-400">02</span>
+            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Featured</span>
+          </a>
+          <a href="#latest" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
+            <span class="text-xs font-medium text-stone-400">03</span>
+            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Articles</span>
+          </a>
+          <a href="#deep-dives" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
+            <span class="text-xs font-medium text-stone-400">04</span>
+            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Deep Dives</span>
+          </a>
+          <a href="#newsletter" class="flex items-baseline gap-6 py-4 border-b border-stone-200 dark:border-stone-800 group">
+            <span class="text-xs font-medium text-stone-400">05</span>
+            <span class="font-serif text-3xl md:text-4xl font-medium group-hover:text-primary-600 transition-colors">Newsletter</span>
+          </a>
+        </nav>
+        <div class="pt-8 border-t border-stone-200 dark:border-stone-800">
+          <p class="text-sm text-stone-400 italic">Press ⌘K to search anywhere</p>
+        </div>
+      </div>
+    </div>
+  )}
+</header>

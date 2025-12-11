@@ -1,0 +1,91 @@
+---
+/**
+ * ArticleCard - Reusable article preview card with View Transitions support
+ * Supports different sizes and "coming soon" state
+ */
+
+interface Props {
+  title: string;
+  description: string;
+  category: string;
+  href: string;
+  gradient?: { from: string; to: string };
+  number?: string;
+  readTime?: string;
+  comingSoon?: boolean;
+  size?: 'default' | 'featured';
+  class?: string;
+  delay?: number;
+}
+
+const {
+  title,
+  description,
+  category,
+  href,
+  gradient = { from: 'primary-500', to: 'primary-600' },
+  number,
+  readTime,
+  comingSoon = false,
+  size = 'default',
+  class: className = '',
+  delay = 0,
+} = Astro.props;
+
+const isFeatured = size === 'featured';
+
+// Build gradient class
+const gradientClass = `from-${gradient.from} to-${gradient.to}`;
+
+// Build delay class for reveal animations
+const delayClass = delay > 0 ? `reveal-delay-${delay}` : '';
+
+// Generate a unique transition name based on the href
+const slug = href.split('/').pop() || 'article';
+---
+
+{comingSoon ? (
+  <div class:list={['article-card group reveal', delayClass, 'opacity-75 cursor-default', className]}>
+    <div class="article-card-image relative">
+      <div class:list={['article-card-image-inner bg-gradient-to-br', gradientClass]}>
+        {number && <span class="article-card-number">{number}</span>}
+      </div>
+      <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">
+        Coming Soon
+      </span>
+    </div>
+    <div class="article-card-content">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{category}</span>
+      </div>
+      <h3 class="font-serif text-xl font-semibold mb-2">{title}</h3>
+      <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">{description}</p>
+    </div>
+  </div>
+) : (
+  <a href={href} class:list={['article-card group reveal', delayClass, className]}>
+    <div class="article-card-image" transition:name={`card-image-${slug}`}>
+      <div class:list={['article-card-image-inner bg-gradient-to-br', gradientClass]}>
+        {number && <span class="article-card-number">{number}</span>}
+      </div>
+    </div>
+    <div class="article-card-content">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{category}</span>
+        {readTime && (
+          <>
+            <span class="text-stone-400">·</span>
+            <span class="text-xs text-stone-500">{readTime}</span>
+          </>
+        )}
+      </div>
+      <h3
+        class="font-serif text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors"
+        transition:name={`card-title-${slug}`}
+      >
+        {title}
+      </h3>
+      <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">{description}</p>
+    </div>
+  </a>
+)}

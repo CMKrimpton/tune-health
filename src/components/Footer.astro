@@ -1,0 +1,50 @@
+---
+// Footer component
+---
+
+<footer class="footer">
+  <div class="container-editorial">
+    <div class="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12 mb-12">
+      <!-- Brand -->
+      <div>
+        <a href="/" class="inline-flex items-baseline gap-1 font-serif text-xl font-semibold mb-4">
+          <span class="text-primary-600 font-bold text-2xl">T</span>
+          <span>une</span>
+          <em class="font-normal text-stone-500">Health</em>
+        </a>
+        <p class="text-sm text-stone-500 mb-6 max-w-xs">
+          Elevating wellness through science-backed insights and expert guidance.
+        </p>
+        <p class="text-xs text-stone-400">Press <kbd class="px-1.5 py-0.5 bg-stone-200 dark:bg-stone-700 rounded text-xs font-mono">⌘K</kbd> to navigate</p>
+      </div>
+
+      <!-- Quick Links -->
+      <div>
+        <h4 class="font-semibold text-sm mb-4">Quick Links</h4>
+        <ul class="space-y-2">
+          <li><a href="/#featured" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Featured Story</a></li>
+          <li><a href="/#latest" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Latest Articles</a></li>
+          <li><a href="/#deep-dives" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Deep Dives</a></li>
+          <li><a href="/#newsletter" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Newsletter</a></li>
+        </ul>
+      </div>
+
+      <!-- Articles -->
+      <div>
+        <h4 class="font-semibold text-sm mb-4">Articles</h4>
+        <ul class="space-y-2">
+          <li><a href="/articles/mirtazapine-guide" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Mirtazapine Guide</a></li>
+          <li><a href="/articles/nicotine-research" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Nicotine Research</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pt-8 border-t border-stone-200 dark:border-stone-800 flex flex-col md:flex-row justify-between gap-4">
+      <p class="text-sm text-stone-500">© {new Date().getFullYear()} Tune Health. All rights reserved.</p>
+      <p class="text-xs text-stone-400 max-w-lg">
+        The content on this site is for informational purposes only and is not a substitute
+        for professional medical advice, diagnosis, or treatment.
+      </p>
+    </div>
+  </div>
+</footer>
