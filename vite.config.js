@@ -9,7 +9,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        article: resolve(__dirname, 'articles/mirtazapine-guide.html')
+        mirtazapine: resolve(__dirname, 'articles/mirtazapine-guide.html'),
+        nicotine: resolve(__dirname, 'articles/nicotine-research.html')
       }
     }
   },
