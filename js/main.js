@@ -19,12 +19,20 @@ function hideLoader() {
       document.body.style.overflow = '';
       initAnimations();
     }, 600);
+  } else {
+    // No loader on article pages - initialize animations immediately
+    initAnimations();
   }
 }
 
 // Hide loader after content loads
 window.addEventListener('load', () => {
-  setTimeout(hideLoader, 1800);
+  if (loader) {
+    setTimeout(hideLoader, 1800);
+  } else {
+    // Article pages: no loader, init immediately
+    initAnimations();
+  }
 });
 
 // =========================================
