@@ -9,7 +9,7 @@ A premium health and wellness editorial website featuring science-backed article
 - **Framework**: Astro v5 with Islands Architecture
 - **Styling**: Tailwind CSS with custom design system
 - **Interactivity**: React (Command Palette only)
-- **Animations**: GSAP (hero only) + CSS transitions with IntersectionObserver
+- **Animations**: CSS transitions with IntersectionObserver + GSAP (counter tweening)
 - **Navigation**: Native View Transitions API
 - **Typography**: Playfair Display, Inter, Crimson Pro
 

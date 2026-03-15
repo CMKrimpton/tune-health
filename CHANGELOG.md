@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-03-14
+
+### Added
+- **New Article** - "The Serotonin Deception: How a Flawed Theory Became Medicine's Most Profitable Myth"
+  - 22-minute evidence review of the serotonin/chemical imbalance theory of depression
+  - Covers the 2022 Moncrieff umbrella review in Molecular Psychiatry
+  - Examines pharmaceutical marketing of the chemical imbalance narrative
+  - SSRI efficacy data from Cipriani meta-analysis (522 trials, 116,477 participants)
+  - Placebo problem analysis (active vs inert placebos)
+  - Withdrawal crisis: 56% experience symptoms, 46% describe them as severe
+  - Evidence-based alternatives: exercise, CBT, psilocybin-assisted therapy, social connection
+  - Located at `/articles/the-serotonin-deception`
+- Article added to homepage grid (position 01), articles index, command palette, and SideNav featured section
+- Homepage article counter updated from 3 to 4
+
 ## [2.6.0] - 2025-12-11
 
 ### Changed

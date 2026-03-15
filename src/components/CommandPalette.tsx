@@ -4,6 +4,14 @@ import { useState, useEffect, useCallback } from 'react';
 // Article data - in a real app this would come from a CMS/API
 const articles = [
   {
+    id: 'serotonin',
+    title: 'The Serotonin Deception',
+    description: 'How a flawed theory became medicine\'s most profitable myth',
+    category: 'Mental Health',
+    href: '/articles/the-serotonin-deception',
+    readTime: '22 min',
+  },
+  {
     id: 'longevity',
     title: 'Do Any Longevity Interventions Actually Work?',
     description: 'A critical examination of caloric restriction, fasting, and supplements',

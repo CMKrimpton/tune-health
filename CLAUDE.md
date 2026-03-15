@@ -39,7 +39,9 @@ src/
 │   ├── config.ts             # Content collection schema (Zod)
 │   └── articles/             # Article metadata (JSON)
 │       ├── mirtazapine-guide.json
-│       └── nicotine-research.json
+│       ├── nicotine-research.json
+│       ├── longevity-interventions.json
+│       └── the-serotonin-deception.json
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template
@@ -61,7 +63,9 @@ src/
 │   └── articles/
 │       ├── index.astro       # Articles index page
 │       ├── mirtazapine-guide.astro
-│       └── nicotine-research.astro
+│       ├── nicotine-research.astro
+│       ├── longevity-interventions.astro
+│       └── the-serotonin-deception.astro
 ├── utils/
 │   ├── articles.ts           # Article collection helpers
 │   └── reading-time.ts       # Reading time calculation
