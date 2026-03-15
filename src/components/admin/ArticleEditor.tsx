@@ -14,6 +14,8 @@ interface ArticleMetadata {
   readTime: number;
   publishDate: string;
   keywords: string[];
+  heroImage: string;
+  heroImageAlt: string;
 }
 
 interface GeneratedArticle {
@@ -470,9 +472,19 @@ export default function ArticleEditor() {
           slug: metadata.slug,
           astroContent,
           metadata: {
-            ...metadata,
+            title: metadata.title,
+            description: metadata.description,
+            category: metadata.category,
+            publishDate: metadata.publishDate,
             author: { name: 'alumi news Editorial', role: 'Medical Review Board' },
+            readTime: metadata.readTime,
+            featured: metadata.featured,
             draft: false,
+            tags: metadata.tags,
+            gradient: metadata.gradient,
+            keywords: metadata.keywords,
+            heroImage: metadata.heroImage || undefined,
+            heroImageAlt: metadata.heroImageAlt || undefined,
           },
           commitMessage: `feat: Add '${metadata.title}' article`,
         }),
@@ -720,6 +732,14 @@ ${article.svg ? `<div class="svg-wrap"><svg viewBox="0 0 1200 600">${article.svg
                     <input
                       value={metadata.tags.join(', ')}
                       onChange={(e) => updateMetadata('tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+                    />
+                  </div>
+                  <div className="admin-field admin-field-full">
+                    <label>Hero Image URL (for homepage card)</label>
+                    <input
+                      value={metadata.heroImage || ''}
+                      onChange={(e) => updateMetadata('heroImage', e.target.value)}
+                      placeholder="https://images.unsplash.com/photo-..."
                     />
                   </div>
                   <div className="admin-field admin-field-full" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
