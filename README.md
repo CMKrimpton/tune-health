@@ -1,8 +1,8 @@
-# Tune Health
+# alumi news (formerly Tune Health)
 
 A premium health and wellness editorial website featuring science-backed articles on mental health, nutrition, fitness, sleep science, and longevity.
 
-**Live Site:** https://tune-health.vercel.app
+**Live Site:** https://alumi-news.vercel.app
 
 ## Tech Stack
 

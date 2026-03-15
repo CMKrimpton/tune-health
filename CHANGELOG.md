@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-03-14
+
+### Changed
+- **REBRAND: Tune Health → alumi news** — Company renamed from Tune to Alumi
+  - All brand references updated: "Tune Health" → "alumi news" (lowercase)
+  - Logo text changed from "Tune Health" to "alumi news" in header, footer, sidenav, and loader
+  - Logo font changed from serif (Playfair Display) to sans-serif (Inter) for brand consistency with alumi Health app
+  - Author bylines: "Tune Health Editorial" → "alumi news Editorial"
+  - Avatar initials: "TH" → "an"
+  - Page titles, meta tags, Open Graph, and SEO structured data updated
+  - Command palette footer branding updated
+  - Site URL updated to alumi-news.vercel.app
+  - All 5 article JSON author fields updated
+  - Copyright notice updated
+
 ## [2.7.0] - 2026-03-14
 
 ### Added

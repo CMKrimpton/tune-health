@@ -295,7 +295,7 @@
 }
 
 .loader-logo {
-  @apply font-serif text-4xl font-semibold mb-6;
+  @apply font-sans text-4xl font-semibold mb-6;
   @apply flex items-baseline justify-center;
 }
 

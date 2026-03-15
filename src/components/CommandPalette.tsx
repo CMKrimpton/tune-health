@@ -346,7 +346,7 @@ export default function CommandPalette() {
                 close
               </span>
             </div>
-            <span className="text-primary-600 font-medium">Tune Health</span>
+            <span className="text-primary-600 font-medium">alumi news</span>
           </div>
         </Command>
       </div>
