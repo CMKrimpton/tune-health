@@ -1,15 +1,29 @@
 ---
 export const prerender = false;
 import '../../styles/admin.css';
-import { getCollection } from 'astro:content';
-import { getArticles, getComingSoonArticles, formatPublishDateShort } from '../../utils/articles';
 
-const articles = await getArticles();
-const comingSoon = await getComingSoonArticles();
+const edgeFunctionBase = (process.env.PUBLIC_SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL || '').trim();
+const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
 
-// Get raw collection data for sortOrder and featured status
-const rawArticles = await getCollection('articles');
-const articleMap = new Map(rawArticles.map(a => [a.id.replace('.json', ''), a.data]));
+// Fetch articles from database
+let articles: any[] = [];
+try {
+  const res = await fetch(`${apiBase}/articles-api`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'list' }),
+  });
+  if (res.ok) articles = await res.json();
+} catch {}
+
+const published = articles.filter(a => a.status === 'published' && !a.coming_soon);
+const drafts = articles.filter(a => a.status === 'draft' && !a.coming_soon);
+const comingSoon = articles.filter(a => a.coming_soon);
+
+function formatDate(d: string) {
+  if (!d) return '-';
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 ---
 
 <html lang="en">
@@ -19,7 +33,7 @@ const articleMap = new Map(rawArticles.map(a => [a.id.replace('.json', ''), a.da
   <title>Admin Dashboard | alumi news</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
 </head>
 <body class="admin-body">
   <header class="admin-header">
@@ -32,6 +46,7 @@ const articleMap = new Map(rawArticles.map(a => [a.id.replace('.json', ''), a.da
         <a href="/admin" class="admin-nav-link active">Dashboard</a>
         <a href="/admin/new" class="admin-nav-link">New Article</a>
         <a href="/" class="admin-nav-link" target="_blank">View Site &rarr;</a>
+        <button id="logoutBtn" class="admin-nav-link" style="border:none;background:none;cursor:pointer;font-family:inherit;font-size:inherit">Logout</button>
       </nav>
     </div>
   </header>
@@ -40,20 +55,19 @@ const articleMap = new Map(rawArticles.map(a => [a.id.replace('.json', ''), a.da
     <!-- Stats -->
     <div class="admin-stats">
       <div class="admin-stat-card">
-        <span class="admin-stat-number">{articles.length}</span>
+        <span class="admin-stat-number">{published.length}</span>
         <span class="admin-stat-label">Published</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number">{comingSoon.length}</span>
-        <span class="admin-stat-label">Coming Soon</span>
+        <span class="admin-stat-number">{drafts.length}</span>
+        <span class="admin-stat-label">Drafts</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number">{articles.filter(a => a.featured).length}</span>
+        <span class="admin-stat-number">{published.filter(a => a.featured).length}</span>
         <span class="admin-stat-label">Featured</span>
       </div>
     </div>
 
-    <!-- New Article CTA -->
     <a href="/admin/new" class="admin-new-article-btn">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -62,67 +76,85 @@ const articleMap = new Map(rawArticles.map(a => [a.id.replace('.json', ''), a.da
       New Article
     </a>
 
-    <!-- Published Articles -->
+    <!-- Published -->
     <section class="admin-section">
       <h2 class="admin-section-title">Published Articles</h2>
-      <div class="admin-article-list">
-        {articles.map((article, i) => {
-          const raw = articleMap.get(article.slug);
-          return (
+      {published.length === 0 ? (
+        <p style="color:#78716c;font-size:0.875rem">No published articles yet.</p>
+      ) : (
+        <div class="admin-article-list">
+          {published.map((article, i) => (
             <div class="admin-article-card" data-slug={article.slug}>
-              <!-- Gradient stripe -->
-              <div class={`admin-article-stripe bg-gradient-to-b from-${article.gradient.from} to-${article.gradient.to}`}></div>
-
+              <div class="admin-article-stripe" style={`background:linear-gradient(to bottom, var(--stripe-from, #dc2626), var(--stripe-to, #b91c1c))`}></div>
               <div class="admin-article-body">
-                <!-- Top row: title + badges -->
                 <div class="admin-article-top">
                   <div class="admin-article-info">
                     <h3 class="admin-article-title">{article.title}</h3>
                     <div class="admin-article-meta">
                       <span class="admin-category-badge">{article.category}</span>
                       {article.featured && <span class="admin-featured-badge">Featured</span>}
-                      <span class="admin-article-date">{formatPublishDateShort(article.publishDate)}</span>
-                      <span class="admin-article-date">{article.readTime} min</span>
+                      {article.article_html ? <span class="admin-has-content-badge">Has Content</span> : <span class="admin-no-content-badge">No Content</span>}
+                      <span class="admin-article-date">{formatDate(article.publish_date)}</span>
+                      <span class="admin-article-date">{article.read_time} min</span>
                     </div>
                   </div>
-
-                  <!-- Sort order -->
-                  <div class="admin-article-order">
-                    <span class="admin-order-label">#{raw?.sortOrder || i + 1}</span>
-                  </div>
                 </div>
-
-                <!-- Actions -->
                 <div class="admin-article-actions">
-                  <a href={article.href} target="_blank" class="admin-action-btn admin-action-view" title="View on site">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                      <polyline points="15 3 21 3 21 9"/>
-                      <line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
+                  <a href={`/articles/${article.slug}`} target="_blank" class="admin-action-btn admin-action-view">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     View
                   </a>
-                  <a href={`/admin/edit/${article.slug}`} class="admin-action-btn admin-action-edit" title="Edit metadata">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
+                  <a href={`/admin/edit/${article.slug}`} class="admin-action-btn admin-action-edit">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     Edit
                   </a>
-                  <button class="admin-action-btn admin-action-delete" data-slug={article.slug} data-title={article.title} title="Delete article">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
+                  <button class="admin-action-btn admin-action-delete" data-slug={article.slug} data-title={article.title}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     Delete
                   </button>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
+
+    <!-- Drafts -->
+    {drafts.length > 0 && (
+      <section class="admin-section">
+        <h2 class="admin-section-title">Drafts</h2>
+        <div class="admin-article-list">
+          {drafts.map((article) => (
+            <div class="admin-article-card" data-slug={article.slug}>
+              <div class="admin-article-stripe" style="background:#f59e0b"></div>
+              <div class="admin-article-body">
+                <div class="admin-article-top">
+                  <div class="admin-article-info">
+                    <h3 class="admin-article-title">{article.title}</h3>
+                    <div class="admin-article-meta">
+                      <span class="admin-category-badge">{article.category}</span>
+                      <span class="admin-draft-badge">Draft</span>
+                      <span class="admin-article-date">{article.read_time} min</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="admin-article-actions">
+                  <a href={`/admin/edit/${article.slug}`} class="admin-action-btn admin-action-edit">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit
+                  </a>
+                  <button class="admin-action-btn admin-action-delete" data-slug={article.slug} data-title={article.title}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
 
     <!-- Coming Soon -->
     {comingSoon.length > 0 && (
@@ -131,7 +163,7 @@ const articleMap = new Map(rawArticles.map(a => [a.id.replace('.json', ''), a.da
         <div class="admin-article-list">
           {comingSoon.map((article) => (
             <div class="admin-article-card admin-article-card-muted">
-              <div class={`admin-article-stripe bg-gradient-to-b from-${article.gradient.from} to-${article.gradient.to}`} style="opacity:0.4"></div>
+              <div class="admin-article-stripe" style="opacity:0.4;background:#57534e"></div>
               <div class="admin-article-body">
                 <div class="admin-article-top">
                   <div class="admin-article-info">
@@ -149,77 +181,73 @@ const articleMap = new Map(rawArticles.map(a => [a.id.replace('.json', ''), a.da
       </section>
     )}
 
-    <!-- Delete confirmation modal -->
+    <!-- Delete Modal -->
     <div id="deleteModal" class="admin-modal" style="display:none">
       <div class="admin-modal-backdrop"></div>
       <div class="admin-modal-card">
         <h3 class="admin-modal-title">Delete Article</h3>
-        <p class="admin-modal-text">Are you sure you want to delete "<span id="deleteArticleTitle"></span>"? This will remove the article from the site.</p>
+        <p class="admin-modal-text">Delete "<span id="deleteArticleTitle"></span>"? This removes it from the database and the live site.</p>
         <div class="admin-modal-actions">
           <button id="deleteCancelBtn" class="admin-cancel-btn">Cancel</button>
-          <button id="deleteConfirmBtn" class="admin-action-btn admin-action-delete" style="padding:0.5rem 1.25rem">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            Delete permanently
-          </button>
+          <button id="deleteConfirmBtn" class="admin-action-btn admin-action-delete" style="padding:0.5rem 1.25rem">Delete permanently</button>
         </div>
       </div>
     </div>
   </main>
 
-  <script define:vars={{ edgeFunctionBase: import.meta.env.PUBLIC_SUPABASE_URL ? `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1` : '' }}>
-    // Delete article flow
+  <script define:vars={{ apiBase }}>
+    const getToken = () => (document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/)?.[1] || '');
+
+    // Logout
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+      document.cookie = 'admin_token=; path=/; max-age=0';
+      window.location.href = '/admin/login';
+    });
+
+    // Delete
     let pendingDeleteSlug = '';
 
     document.querySelectorAll('.admin-action-delete[data-slug]').forEach(btn => {
       btn.addEventListener('click', () => {
         pendingDeleteSlug = btn.getAttribute('data-slug') || '';
-        const title = btn.getAttribute('data-title') || '';
-        document.getElementById('deleteArticleTitle').textContent = title;
+        document.getElementById('deleteArticleTitle').textContent = btn.getAttribute('data-title') || '';
         document.getElementById('deleteModal').style.display = 'flex';
       });
     });
 
     document.getElementById('deleteCancelBtn')?.addEventListener('click', () => {
       document.getElementById('deleteModal').style.display = 'none';
-      pendingDeleteSlug = '';
     });
-
     document.querySelector('.admin-modal-backdrop')?.addEventListener('click', () => {
       document.getElementById('deleteModal').style.display = 'none';
-      pendingDeleteSlug = '';
     });
 
     document.getElementById('deleteConfirmBtn')?.addEventListener('click', async () => {
       if (!pendingDeleteSlug) return;
-
       const btn = document.getElementById('deleteConfirmBtn');
-      btn.textContent = 'Deleting...';
-      btn.disabled = true;
+      btn.textContent = 'Deleting...'; btn.disabled = true;
 
       try {
-        const token = document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/)?.[1] || '';
-        const res = await fetch(`${edgeFunctionBase}/delete-article`, {
+        // Delete from database
+        await fetch(`${apiBase}/articles-api`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ slug: pendingDeleteSlug }),
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({ action: 'delete', slug: pendingDeleteSlug }),
         });
 
-        if (!res.ok) throw new Error('Delete failed');
+        // Also delete from GitHub (non-blocking)
+        fetch(`${apiBase}/delete-article`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({ slug: pendingDeleteSlug }),
+        }).catch(() => {});
 
-        // Remove the card from DOM
-        const card = document.querySelector(`[data-slug="${pendingDeleteSlug}"].admin-article-card`);
-        if (card) card.remove();
-
+        document.querySelector(`[data-slug="${pendingDeleteSlug}"].admin-article-card`)?.remove();
         document.getElementById('deleteModal').style.display = 'none';
-        pendingDeleteSlug = '';
       } catch (err) {
-        alert('Failed to delete article: ' + err.message);
+        alert('Delete failed: ' + err.message);
       } finally {
-        btn.textContent = 'Delete permanently';
-        btn.disabled = false;
+        btn.textContent = 'Delete permanently'; btn.disabled = false;
       }
     });
   </script>

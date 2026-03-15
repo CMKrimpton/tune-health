@@ -21,6 +21,16 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { action, ...payload } = await req.json();
+
+    // Auth check for write operations
+    if (action !== "list" && action !== "get") {
+      const adminToken = (Deno.env.get("ADMIN_TOKEN") || "").trim();
+      const authHeader = req.headers.get("authorization")?.replace("Bearer ", "") || "";
+      if (adminToken && authHeader !== adminToken) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+    }
+
     const db = supabase();
 
     // ─── LIST: Get all articles ───
@@ -53,16 +63,41 @@ Deno.serve(async (req: Request) => {
       const article = payload.article;
       if (!article || !article.slug) return json({ error: "article with slug required" }, 400);
 
-      article.updated_at = new Date().toISOString();
-
-      const { data, error } = await db
+      // Check if article already exists
+      const { data: existing } = await db
         .from("articles")
-        .upsert(article, { onConflict: "slug" })
-        .select()
-        .single();
+        .select("id")
+        .eq("slug", article.slug)
+        .maybeSingle();
 
-      if (error) throw error;
-      return json(data);
+      let result;
+      if (existing) {
+        // Partial update — only set provided fields
+        const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        for (const [key, val] of Object.entries(article)) {
+          if (key !== "slug" && val !== undefined) updates[key] = val;
+        }
+        const { data, error } = await db
+          .from("articles")
+          .update(updates)
+          .eq("slug", article.slug)
+          .select()
+          .single();
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert — requires all fields
+        article.updated_at = new Date().toISOString();
+        const { data, error } = await db
+          .from("articles")
+          .insert(article)
+          .select()
+          .single();
+        if (error) throw error;
+        result = data;
+      }
+
+      return json(result);
     }
 
     // ─── DELETE: Remove article ───

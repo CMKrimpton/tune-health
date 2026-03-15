@@ -44,6 +44,7 @@ const liveUrl = `/articles/${slug}`;
         <a href="/admin" class="admin-nav-link">&larr; Dashboard</a>
         <a href="/admin/new" class="admin-nav-link">New Article</a>
         <a href={liveUrl} class="admin-nav-link" target="_blank">View Live &rarr;</a>
+        <button id="logoutBtn" class="admin-nav-link" style="border:none;background:none;cursor:pointer;font-family:inherit;font-size:inherit">Logout</button>
       </nav>
     </div>
   </header>
@@ -125,6 +126,20 @@ const liveUrl = `/articles/${slug}`;
               <button type="submit" class="admin-publish-btn" id="saveMetaBtn">Save Metadata</button>
             </div>
           </form>
+
+          <!-- Publish to GitHub -->
+          <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #292524">
+            <div style="font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.05em;color:#78716c;font-weight:600;margin-bottom:0.75rem">Deploy to Live Site</div>
+            <p style="font-size:0.8125rem;color:#a8a29e;margin-bottom:1rem;line-height:1.5">Push the current database version to GitHub, triggering a Vercel rebuild. Only do this when you're ready to go live.</p>
+            <div id="publishStatus" style="display:none" class="admin-edit-status"></div>
+            <div id="publishError" style="display:none" class="admin-error"></div>
+            <button id="publishGitHubBtn" class="admin-publish-btn" style="background:#dc2626;width:100%;justify-content:center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+              Publish to GitHub
+            </button>
+          </div>
         </div>
 
         <!-- CONTENT TAB -->
@@ -198,6 +213,101 @@ const liveUrl = `/articles/${slug}`;
   <script define:vars={{ slug, apiBase, articleData: article }}>
     const getToken = () => (document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/)?.[1] || '');
     let currentHtml = articleData.article_html || '';
+
+    // Logout
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+      document.cookie = 'admin_token=; path=/; max-age=0';
+      window.location.href = '/admin/login';
+    });
+
+    // Publish to GitHub
+    document.getElementById('publishGitHubBtn')?.addEventListener('click', async () => {
+      if (!confirm('Publish this article to the live site?')) return;
+      const btn = document.getElementById('publishGitHubBtn');
+      const status = document.getElementById('publishStatus');
+      const error = document.getElementById('publishError');
+      btn.textContent = 'Publishing...'; btn.disabled = true;
+      error.style.display = 'none'; status.style.display = 'none';
+
+      try {
+        // First get the latest article data from DB
+        const getRes = await fetch(`${apiBase}/articles-api`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get', slug }),
+        });
+        if (!getRes.ok) throw new Error('Failed to load article from database');
+        const dbArticle = await getRes.json();
+
+        // Assemble the .astro file
+        const publishDate = new Date(dbArticle.publish_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        const tagsHtml = (dbArticle.tags || [])
+          .map(tag => '    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">' + tag + '</span>')
+          .join('\n');
+
+        const tocHtml = (dbArticle.toc || [])
+          .map(item => '      <a href="#' + item.id + '" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">' + item.title + '</a>')
+          .join('\n');
+
+        const title = dbArticle.title.replace(/"/g, '&quot;');
+        const desc = dbArticle.description.replace(/"/g, '&quot;');
+
+        const astroContent = '---\nimport ArticleLayout from \'../../layouts/ArticleLayout.astro\';\n---\n\n<ArticleLayout\n  title="' + title + '"\n  description="' + desc + '"\n  category="' + dbArticle.category + '"\n  readTime="' + dbArticle.read_time + ' min read"\n  publishDate="' + publishDate + '"\n>\n' +
+          (dbArticle.article_svg ? '  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">\n' + dbArticle.article_svg + '\n  </svg>\n\n' : '') +
+          '  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">\n    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>\n    <nav class="space-y-2">\n' + tocHtml + '\n    </nav>\n  </div>\n\n  <div class="article-content">\n' + dbArticle.article_html + '\n  </div>\n\n  <Fragment slot="tags">\n' + tagsHtml + '\n  </Fragment>\n</ArticleLayout>\n';
+
+        // Build metadata JSON for content collection
+        const metadata = {
+          title: dbArticle.title,
+          description: dbArticle.description,
+          category: dbArticle.category,
+          publishDate: dbArticle.publish_date,
+          author: { name: 'alumi news Editorial', role: 'Medical Review Board' },
+          readTime: dbArticle.read_time,
+          featured: dbArticle.featured,
+          draft: dbArticle.draft || false,
+          tags: dbArticle.tags || [],
+          gradient: { from: dbArticle.gradient_from, to: dbArticle.gradient_to },
+          keywords: dbArticle.keywords || [],
+          heroImage: dbArticle.hero_image || undefined,
+          heroImageAlt: dbArticle.hero_image_alt || undefined,
+          sortOrder: dbArticle.sort_order || undefined,
+          comingSoon: dbArticle.coming_soon || false,
+        };
+
+        // Commit to GitHub
+        const pubRes = await fetch(`${apiBase}/publish-article`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({
+            slug,
+            astroContent,
+            metadata,
+            commitMessage: 'feat: Publish \'' + dbArticle.title + '\' from admin',
+          }),
+        });
+
+        if (!pubRes.ok) throw new Error('GitHub publish failed');
+
+        // Update database status
+        await fetch(`${apiBase}/articles-api`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({ action: 'save', article: { slug, status: 'published', published_at: new Date().toISOString() } }),
+        });
+
+        status.textContent = 'Published to GitHub! Vercel will rebuild in ~60 seconds.';
+        status.style.display = 'block';
+        btn.textContent = 'Published';
+      } catch (err) {
+        error.textContent = 'Publish failed: ' + err.message;
+        error.style.display = 'block';
+        btn.textContent = 'Publish to GitHub';
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     // ─── Tab switching ───
     document.querySelectorAll('.admin-tab').forEach(tab => {
