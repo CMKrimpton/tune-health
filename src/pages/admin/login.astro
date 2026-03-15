@@ -106,12 +106,52 @@ const failed = url.searchParams.get('error') === '1';
   <div class="login-card">
     <div class="logo"><span>a</span>lumi admin</div>
     <p class="subtitle">Publishing portal</p>
-    <form method="POST" action="/api/admin-login">
+    <form id="loginForm">
       <label for="token">Admin Token</label>
       <input type="password" id="token" name="token" placeholder="Enter your admin token" required autofocus />
-      <button type="submit">Sign In</button>
+      <button type="submit" id="loginBtn">Sign In</button>
     </form>
     {failed && <div class="error">Invalid token. Try again.</div>}
+    <div id="errorMsg" class="error" style="display:none"></div>
+
+    <script>
+      document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn') as HTMLButtonElement;
+        const errorMsg = document.getElementById('errorMsg') as HTMLDivElement;
+        const token = (document.getElementById('token') as HTMLInputElement).value.trim();
+
+        btn.textContent = 'Signing in...';
+        btn.disabled = true;
+        errorMsg.style.display = 'none';
+
+        try {
+          const formData = new FormData();
+          formData.append('token', token);
+
+          const res = await fetch('/api/admin-login', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (res.redirected) {
+            window.location.href = res.url;
+          } else if (res.ok) {
+            window.location.href = '/admin';
+          } else {
+            errorMsg.textContent = 'Invalid token. Try again.';
+            errorMsg.style.display = 'block';
+            btn.textContent = 'Sign In';
+            btn.disabled = false;
+          }
+        } catch {
+          errorMsg.textContent = 'Connection error. Try again.';
+          errorMsg.style.display = 'block';
+          btn.textContent = 'Sign In';
+          btn.disabled = false;
+        }
+      });
+    </script>
   </div>
 </body>
 </html>
