@@ -1,23 +1,28 @@
 ---
 export const prerender = false;
 
-// Handle POST (form submission)
-if (Astro.request.method === 'POST') {
-  const formData = await Astro.request.formData();
-  const token = formData.get('token')?.toString().trim();
-  const adminToken = import.meta.env.ADMIN_TOKEN || process.env.ADMIN_TOKEN;
-
-  if (token && token === adminToken) {
-    Astro.cookies.set('admin_token', token, {
-      path: '/',
-      httpOnly: true,
-      secure: import.meta.env.PROD,
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
-    return Astro.redirect('/admin');
-  }
+// If already authenticated, redirect to dashboard
+const cookie = Astro.cookies.get('admin_token');
+const adminToken = import.meta.env.ADMIN_TOKEN || process.env.ADMIN_TOKEN;
+if (cookie && cookie.value === adminToken) {
+  return Astro.redirect('/admin');
 }
+
+// Handle GET with token query param (client-side form submits here)
+const url = new URL(Astro.request.url);
+const tokenParam = url.searchParams.get('token')?.trim();
+if (tokenParam && tokenParam === adminToken) {
+  Astro.cookies.set('admin_token', tokenParam, {
+    path: '/',
+    httpOnly: true,
+    secure: import.meta.env.PROD,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+  });
+  return Astro.redirect('/admin');
+}
+
+const failed = tokenParam && tokenParam !== adminToken;
 ---
 
 <html lang="en">
@@ -99,17 +104,37 @@ if (Astro.request.method === 'POST') {
       transition: background 0.2s;
     }
     button:hover { background: #b91c1c; }
+    .error {
+      margin-top: 1rem;
+      padding: 0.5rem 0.75rem;
+      background: #7f1d1d;
+      border: 1px solid #991b1b;
+      border-radius: 0.375rem;
+      font-size: 0.8125rem;
+      color: #fecaca;
+    }
   </style>
 </head>
 <body>
   <div class="login-card">
     <div class="logo"><span>a</span>lumi admin</div>
     <p class="subtitle">Publishing portal</p>
-    <form method="POST">
+    <form id="loginForm">
       <label for="token">Admin Token</label>
       <input type="password" id="token" name="token" placeholder="Enter your admin token" required autofocus />
       <button type="submit">Sign In</button>
     </form>
+    {failed && <div class="error">Invalid token. Try again.</div>}
   </div>
+
+  <script>
+    document.getElementById('loginForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const token = (document.getElementById('token') as HTMLInputElement).value.trim();
+      if (token) {
+        window.location.href = `/admin/login?token=${encodeURIComponent(token)}`;
+      }
+    });
+  </script>
 </body>
 </html>
