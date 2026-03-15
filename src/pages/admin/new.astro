@@ -1,5 +1,7 @@
 ---
 export const prerender = false;
+import '../../styles/admin.css';
+import ArticleEditor from '../../components/admin/ArticleEditor';
 ---
 
 <html lang="en">
@@ -10,12 +12,8 @@ export const prerender = false;
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet" />
-  <style>
-    @import url('/src/styles/admin.css');
-  </style>
 </head>
 <body class="admin-body">
-  <!-- Admin Header -->
   <header class="admin-header">
     <div class="admin-header-inner">
       <div class="admin-logo">
@@ -30,17 +28,6 @@ export const prerender = false;
     </div>
   </header>
 
-  <!-- Editor -->
-  <div id="editor-root"></div>
-
-  <!-- Load React editor -->
-  <script type="module">
-    import React from 'react';
-    import { createRoot } from 'react-dom/client';
-    import ArticleEditor from '/src/components/admin/ArticleEditor';
-
-    const root = createRoot(document.getElementById('editor-root'));
-    root.render(React.createElement(ArticleEditor));
-  </script>
+  <ArticleEditor client:load />
 </body>
 </html>
