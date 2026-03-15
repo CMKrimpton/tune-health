@@ -1,15 +1,36 @@
 ---
 export const prerender = false;
 
+const adminToken = (process.env.PUBLIC_ADMIN_TOKEN || process.env.ADMIN_TOKEN || import.meta.env.PUBLIC_ADMIN_TOKEN || '').trim();
+
 // If already authenticated, redirect to dashboard
 const cookie = Astro.cookies.get('admin_token');
-const adminToken = (process.env.PUBLIC_ADMIN_TOKEN || process.env.ADMIN_TOKEN || import.meta.env.PUBLIC_ADMIN_TOKEN || '').trim();
 if (cookie && cookie.value === adminToken) {
   return Astro.redirect('/admin');
 }
 
-const url = new URL(Astro.request.url);
-const failed = url.searchParams.get('error') === '1';
+// Handle POST (form submission to self)
+let failed = false;
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const token = formData.get('token')?.toString().trim();
+
+    if (token && token === adminToken) {
+      Astro.cookies.set('admin_token', token, {
+        path: '/',
+        httpOnly: true,
+        secure: import.meta.env.PROD,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+      });
+      return Astro.redirect('/admin');
+    }
+    failed = true;
+  } catch {
+    failed = true;
+  }
+}
 ---
 
 <html lang="en">
@@ -19,7 +40,7 @@ const failed = url.searchParams.get('error') === '1';
   <title>Admin Login | alumi news</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -39,66 +60,32 @@ const failed = url.searchParams.get('error') === '1';
       border: 1px solid #44403c;
       border-radius: 1rem;
     }
-    .logo {
-      font-family: 'Inter', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
+    .logo { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
     .logo span { color: #dc2626; font-weight: 700; }
-    .subtitle {
-      font-size: 0.875rem;
-      color: #a8a29e;
-      margin-bottom: 2rem;
-    }
+    .subtitle { font-size: 0.875rem; color: #a8a29e; margin-bottom: 2rem; }
     label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #a8a29e;
-      margin-bottom: 0.5rem;
+      display: block; font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: #a8a29e; margin-bottom: 0.5rem;
     }
-    input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      background: #1c1917;
-      border: 1px solid #44403c;
-      border-radius: 0.5rem;
-      color: #e7e6e3;
-      font-size: 1rem;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      transition: border-color 0.2s;
+    input[type="password"] {
+      width: 100%; padding: 0.75rem 1rem;
+      background: #1c1917; border: 1px solid #44403c;
+      border-radius: 0.5rem; color: #e7e6e3;
+      font-size: 1rem; font-family: inherit; outline: none;
     }
-    input:focus {
-      border-color: #dc2626;
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
-    }
+    input:focus { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
     button {
-      width: 100%;
-      margin-top: 1.5rem;
-      padding: 0.75rem;
-      background: #dc2626;
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      transition: background 0.2s;
+      width: 100%; margin-top: 1.5rem; padding: 0.75rem;
+      background: #dc2626; color: white; border: none;
+      border-radius: 0.5rem; font-size: 0.875rem;
+      font-weight: 600; font-family: inherit; cursor: pointer;
     }
     button:hover { background: #b91c1c; }
     .error {
-      margin-top: 1rem;
-      padding: 0.5rem 0.75rem;
-      background: #7f1d1d;
-      border: 1px solid #991b1b;
-      border-radius: 0.375rem;
-      font-size: 0.8125rem;
-      color: #fecaca;
+      margin-top: 1rem; padding: 0.5rem 0.75rem;
+      background: #7f1d1d; border: 1px solid #991b1b;
+      border-radius: 0.375rem; font-size: 0.8125rem; color: #fecaca;
     }
   </style>
 </head>
@@ -106,52 +93,12 @@ const failed = url.searchParams.get('error') === '1';
   <div class="login-card">
     <div class="logo"><span>a</span>lumi admin</div>
     <p class="subtitle">Publishing portal</p>
-    <form id="loginForm">
+    <form method="POST">
       <label for="token">Admin Token</label>
       <input type="password" id="token" name="token" placeholder="Enter your admin token" required autofocus />
-      <button type="submit" id="loginBtn">Sign In</button>
+      <button type="submit">Sign In</button>
     </form>
     {failed && <div class="error">Invalid token. Try again.</div>}
-    <div id="errorMsg" class="error" style="display:none"></div>
-
-    <script>
-      document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('loginBtn') as HTMLButtonElement;
-        const errorMsg = document.getElementById('errorMsg') as HTMLDivElement;
-        const token = (document.getElementById('token') as HTMLInputElement).value.trim();
-
-        btn.textContent = 'Signing in...';
-        btn.disabled = true;
-        errorMsg.style.display = 'none';
-
-        try {
-          const formData = new FormData();
-          formData.append('token', token);
-
-          const res = await fetch('/api/admin-login', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (res.redirected) {
-            window.location.href = res.url;
-          } else if (res.ok) {
-            window.location.href = '/admin';
-          } else {
-            errorMsg.textContent = 'Invalid token. Try again.';
-            errorMsg.style.display = 'block';
-            btn.textContent = 'Sign In';
-            btn.disabled = false;
-          }
-        } catch {
-          errorMsg.textContent = 'Connection error. Try again.';
-          errorMsg.style.display = 'block';
-          btn.textContent = 'Sign In';
-          btn.disabled = false;
-        }
-      });
-    </script>
   </div>
 </body>
 </html>
