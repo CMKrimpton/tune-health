@@ -21,6 +21,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Article added to homepage grid (position 01), articles index, command palette, and SideNav featured section
 - Homepage article counter updated from 3 to 4
 
+### Added
+- **New Article** - "Pan-demic: The Truth About Your Non-Stick Cookware"
+  - 10-minute evidence review of PFAS "forever chemicals" in non-stick coatings
+  - Covers DuPont/3M corporate cover-up history and litigation
+  - PFAS health risks: 56% increased thyroid cancer risk, 97% of Americans contaminated
+  - Heat decomposition and microplastic release from scratched surfaces
+  - Safer cookware alternatives: borosilicate glass, stainless steel 18/10, cast iron
+  - Reformatted from external source into TUNE editorial voice (removed emojis, added evidence framing)
+  - Located at `/articles/nonstick-pan-pfas`
+- Article added to homepage grid, articles index, command palette, and SideNav
+- Homepage article counter updated from 4 to 5
+
 ## [2.6.0] - 2025-12-11
 
 ### Changed

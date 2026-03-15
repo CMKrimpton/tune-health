@@ -12,6 +12,14 @@ const articles = [
     readTime: '22 min',
   },
   {
+    id: 'pfas',
+    title: 'Pan-demic: The Truth About Non-Stick Cookware',
+    description: 'PFAS forever chemicals in your kitchen',
+    category: 'Environmental Health',
+    href: '/articles/nonstick-pan-pfas',
+    readTime: '10 min',
+  },
+  {
     id: 'longevity',
     title: 'Do Any Longevity Interventions Actually Work?',
     description: 'A critical examination of caloric restriction, fasting, and supplements',

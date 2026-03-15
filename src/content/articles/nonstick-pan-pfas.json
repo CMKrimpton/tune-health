@@ -1,0 +1,19 @@
+{
+  "title": "Pan-demic: The Truth About Your Non-Stick Cookware",
+  "description": "PFAS 'forever chemicals' from non-stick coatings are in 97% of American blood. A critical look at the science, the corporate cover-up, and what to cook with instead.",
+  "category": "Environmental Health",
+  "publishDate": "2026-03-14",
+  "author": {
+    "name": "Tune Health Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": ["Environmental Health", "Toxicology", "PFAS", "Nutrition", "Evidence Review"],
+  "gradient": {
+    "from": "amber-500",
+    "to": "orange-600"
+  },
+  "keywords": ["PFAS", "teflon", "non-stick", "forever chemicals", "PFOA", "cookware", "DuPont", "cancer", "toxins"]
+}

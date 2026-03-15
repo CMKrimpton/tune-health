@@ -41,7 +41,8 @@ src/
 │       ├── mirtazapine-guide.json
 │       ├── nicotine-research.json
 │       ├── longevity-interventions.json
-│       └── the-serotonin-deception.json
+│       ├── the-serotonin-deception.json
+│       └── nonstick-pan-pfas.json
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template
@@ -65,7 +66,8 @@ src/
 │       ├── mirtazapine-guide.astro
 │       ├── nicotine-research.astro
 │       ├── longevity-interventions.astro
-│       └── the-serotonin-deception.astro
+│       ├── the-serotonin-deception.astro
+│       └── nonstick-pan-pfas.astro
 ├── utils/
 │   ├── articles.ts           # Article collection helpers
 │   └── reading-time.ts       # Reading time calculation
