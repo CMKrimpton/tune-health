@@ -134,7 +134,7 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-6-20250610",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 16000,
         temperature: 0.3,
         system: SYSTEM_PROMPT,
