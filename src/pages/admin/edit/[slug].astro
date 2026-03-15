@@ -1,0 +1,198 @@
+---
+export const prerender = false;
+import '../../../styles/admin.css';
+import { getCollection } from 'astro:content';
+
+const { slug } = Astro.params;
+const allArticles = await getCollection('articles');
+const article = allArticles.find(a => a.id.replace('.json', '') === slug);
+
+if (!article) {
+  return Astro.redirect('/admin');
+}
+
+const data = article.data;
+const articleJson = JSON.stringify(data, null, 2);
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit: {data.title} | alumi admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+</head>
+<body class="admin-body">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-logo">
+        <span class="admin-logo-accent">a</span>lumi
+        <span class="admin-logo-badge">admin</span>
+      </div>
+      <nav class="admin-nav">
+        <a href="/admin" class="admin-nav-link">&larr; Dashboard</a>
+        <a href="/admin/new" class="admin-nav-link">New Article</a>
+        <a href={`/articles/${slug}`} class="admin-nav-link" target="_blank">View Article &rarr;</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main" style="max-width:800px">
+    <div style="margin-bottom:1.5rem">
+      <span style="font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.05em;color:#78716c">Editing</span>
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.5rem;margin-top:0.25rem">{data.title}</h1>
+    </div>
+
+    <form id="editForm" class="admin-edit-form">
+      <!-- Title -->
+      <div class="admin-edit-field">
+        <label for="title">Title</label>
+        <input id="title" name="title" value={data.title} />
+      </div>
+
+      <!-- Description -->
+      <div class="admin-edit-field">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="3">{data.description}</textarea>
+      </div>
+
+      <!-- Two column -->
+      <div class="admin-edit-row">
+        <div class="admin-edit-field">
+          <label for="category">Category</label>
+          <select id="category" name="category">
+            {['Mental Health', 'Neuroscience', 'Nutrition', 'Longevity', 'Fitness', 'Sleep Science', 'Clinical Evidence', 'Research Summary', 'Environmental Health', 'Pharmacology'].map(c => (
+              <option value={c} selected={c === data.category}>{c}</option>
+            ))}
+          </select>
+        </div>
+        <div class="admin-edit-field">
+          <label for="readTime">Read Time (minutes)</label>
+          <input id="readTime" name="readTime" type="number" value={data.readTime} min="1" />
+        </div>
+      </div>
+
+      <div class="admin-edit-row">
+        <div class="admin-edit-field">
+          <label for="publishDate">Publish Date</label>
+          <input id="publishDate" name="publishDate" type="date" value={data.publishDate} />
+        </div>
+        <div class="admin-edit-field">
+          <label for="sortOrder">Sort Order</label>
+          <input id="sortOrder" name="sortOrder" type="number" value={data.sortOrder || ''} min="1" placeholder="Auto" />
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="admin-edit-field">
+        <label for="tags">Tags (comma-separated)</label>
+        <input id="tags" name="tags" value={data.tags.join(', ')} />
+      </div>
+
+      <!-- Keywords -->
+      <div class="admin-edit-field">
+        <label for="keywords">Keywords (comma-separated)</label>
+        <input id="keywords" name="keywords" value={(data.keywords || []).join(', ')} />
+      </div>
+
+      <!-- Hero Image -->
+      <div class="admin-edit-field">
+        <label for="heroImage">Hero Image URL</label>
+        <input id="heroImage" name="heroImage" value={data.heroImage || ''} placeholder="https://images.unsplash.com/..." />
+      </div>
+
+      <!-- Checkboxes -->
+      <div class="admin-edit-row">
+        <div class="admin-edit-field">
+          <label class="admin-checkbox-label">
+            <input type="checkbox" id="featured" name="featured" checked={data.featured} />
+            Featured Article
+          </label>
+        </div>
+        <div class="admin-edit-field">
+          <label class="admin-checkbox-label">
+            <input type="checkbox" id="draft" name="draft" checked={data.draft} />
+            Draft (hidden from site)
+          </label>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div id="editStatus" style="display:none" class="admin-edit-status"></div>
+      <div id="editError" style="display:none" class="admin-error"></div>
+
+      <!-- Actions -->
+      <div class="admin-edit-actions">
+        <a href="/admin" class="admin-cancel-btn" style="padding:0.625rem 1.25rem;text-decoration:none">Cancel</a>
+        <button type="submit" class="admin-publish-btn" id="saveBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <script define:vars={{ slug, edgeFunctionBase: import.meta.env.PUBLIC_SUPABASE_URL ? `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1` : '', currentData: data }}>
+    document.getElementById('editForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('saveBtn');
+      const status = document.getElementById('editStatus');
+      const error = document.getElementById('editError');
+
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+      error.style.display = 'none';
+
+      try {
+        const form = e.target;
+        const updatedMetadata = {
+          ...currentData,
+          title: form.title.value.trim(),
+          description: form.description.value.trim(),
+          category: form.category.value,
+          readTime: parseInt(form.readTime.value) || currentData.readTime,
+          publishDate: form.publishDate.value || currentData.publishDate,
+          sortOrder: form.sortOrder.value ? parseInt(form.sortOrder.value) : undefined,
+          tags: form.tags.value.split(',').map(t => t.trim()).filter(Boolean),
+          keywords: form.keywords.value.split(',').map(t => t.trim()).filter(Boolean),
+          heroImage: form.heroImage.value.trim() || undefined,
+          heroImageAlt: currentData.heroImageAlt,
+          featured: form.featured.checked,
+          draft: form.draft.checked,
+        };
+
+        const token = document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/)?.[1] || '';
+
+        const res = await fetch(`${edgeFunctionBase}/publish-article`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            slug: slug,
+            astroContent: null, // null means don't update .astro file
+            metadata: updatedMetadata,
+            commitMessage: `chore: Update '${updatedMetadata.title}' metadata`,
+          }),
+        });
+
+        if (!res.ok) throw new Error('Save failed');
+
+        status.textContent = 'Saved! Changes will be live after Vercel rebuilds (~60 seconds).';
+        status.style.display = 'block';
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Saved';
+      } catch (err) {
+        error.textContent = 'Failed to save: ' + err.message;
+        error.style.display = 'block';
+        btn.textContent = 'Save Changes';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

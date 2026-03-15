@@ -6,30 +6,23 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-interface PublishRequest {
-  slug: string;
-  astroContent: string;
-  metadata: Record<string, unknown>;
-  commitMessage: string;
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { slug, astroContent, metadata, commitMessage }: PublishRequest = await req.json();
+    const { slug } = await req.json();
 
-    if (!slug || !astroContent || !metadata) {
+    if (!slug || typeof slug !== "string") {
       return new Response(
-        JSON.stringify({ error: "slug, astroContent, and metadata are required" }),
+        JSON.stringify({ error: "slug is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const githubToken = Deno.env.get("GITHUB_TOKEN");
-    const githubRepo = Deno.env.get("GITHUB_REPO"); // format: "owner/repo"
+    const githubRepo = Deno.env.get("GITHUB_REPO");
 
     if (!githubToken || !githubRepo) {
       return new Response(
@@ -46,60 +39,49 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     };
 
-    // 1. Get the current commit SHA for the branch
+    // 1. Get current commit SHA
     const refRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, { headers });
     if (!refRes.ok) throw new Error(`Failed to get branch ref: ${refRes.status}`);
     const refData = await refRes.json();
     const currentCommitSha = refData.object.sha;
 
-    // 2. Get the current commit to find the tree SHA
+    // 2. Get current tree
     const commitRes = await fetch(`${apiBase}/git/commits/${currentCommitSha}`, { headers });
     if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
     const commitData = await commitRes.json();
     const baseTreeSha = commitData.tree.sha;
 
-    // 3. Create blobs for files that need updating
-    const jsonContent = JSON.stringify(metadata, null, 2) + "\n";
-    const jsonBlob = await createBlob(apiBase, headers, jsonContent);
-
-    const treeItems: Array<{ path: string; mode: string; type: string; sha: string }> = [
-      {
-        path: `src/content/articles/${slug}.json`,
-        mode: "100644",
-        type: "blob",
-        sha: jsonBlob,
-      },
-    ];
-
-    // Only include .astro file if content was provided (null = metadata-only update)
-    if (astroContent) {
-      const astroBlob = await createBlob(apiBase, headers, astroContent);
-      treeItems.push({
-        path: `src/pages/articles/${slug}.astro`,
-        mode: "100644",
-        type: "blob",
-        sha: astroBlob,
-      });
-    }
-
-    // 4. Create a new tree
+    // 3. Create new tree WITHOUT the deleted files (sha: null deletes)
     const treeRes = await fetch(`${apiBase}/git/trees`, {
       method: "POST",
       headers,
       body: JSON.stringify({
         base_tree: baseTreeSha,
-        tree: treeItems,
+        tree: [
+          {
+            path: `src/pages/articles/${slug}.astro`,
+            mode: "100644",
+            type: "blob",
+            sha: null, // Delete
+          },
+          {
+            path: `src/content/articles/${slug}.json`,
+            mode: "100644",
+            type: "blob",
+            sha: null, // Delete
+          },
+        ],
       }),
     });
     if (!treeRes.ok) throw new Error(`Failed to create tree: ${treeRes.status}`);
     const treeData = await treeRes.json();
 
-    // 5. Create the commit
+    // 4. Create commit
     const newCommitRes = await fetch(`${apiBase}/git/commits`, {
       method: "POST",
       headers,
       body: JSON.stringify({
-        message: commitMessage || `feat: Add '${slug}' article`,
+        message: `chore: Delete '${slug}' article`,
         tree: treeData.sha,
         parents: [currentCommitSha],
       }),
@@ -107,23 +89,16 @@ Deno.serve(async (req: Request) => {
     if (!newCommitRes.ok) throw new Error(`Failed to create commit: ${newCommitRes.status}`);
     const newCommitData = await newCommitRes.json();
 
-    // 6. Update the branch reference
+    // 5. Update branch ref
     const updateRefRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, {
       method: "PATCH",
       headers,
-      body: JSON.stringify({
-        sha: newCommitData.sha,
-      }),
+      body: JSON.stringify({ sha: newCommitData.sha }),
     });
     if (!updateRefRes.ok) throw new Error(`Failed to update ref: ${updateRefRes.status}`);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        commitSha: newCommitData.sha,
-        commitUrl: newCommitData.html_url,
-        articleUrl: `/articles/${slug}`,
-      }),
+      JSON.stringify({ success: true, commitSha: newCommitData.sha }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -133,17 +108,3 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
-
-async function createBlob(apiBase: string, headers: Record<string, string>, content: string): Promise<string> {
-  const res = await fetch(`${apiBase}/git/blobs`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      content: btoa(unescape(encodeURIComponent(content))),
-      encoding: "base64",
-    }),
-  });
-  if (!res.ok) throw new Error(`Failed to create blob: ${res.status}`);
-  const data = await res.json();
-  return data.sha;
-}
