@@ -8,21 +8,8 @@ if (cookie && cookie.value === adminToken) {
   return Astro.redirect('/admin');
 }
 
-// Handle GET with token query param (client-side form submits here)
 const url = new URL(Astro.request.url);
-const tokenParam = url.searchParams.get('token')?.trim();
-if (tokenParam && tokenParam === adminToken) {
-  Astro.cookies.set('admin_token', tokenParam, {
-    path: '/',
-    httpOnly: true,
-    secure: import.meta.env.PROD,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  });
-  return Astro.redirect('/admin');
-}
-
-const failed = tokenParam && tokenParam !== adminToken;
+const failed = url.searchParams.get('error') === '1';
 ---
 
 <html lang="en">
@@ -119,22 +106,12 @@ const failed = tokenParam && tokenParam !== adminToken;
   <div class="login-card">
     <div class="logo"><span>a</span>lumi admin</div>
     <p class="subtitle">Publishing portal</p>
-    <form id="loginForm">
+    <form method="POST" action="/api/admin-login">
       <label for="token">Admin Token</label>
       <input type="password" id="token" name="token" placeholder="Enter your admin token" required autofocus />
       <button type="submit">Sign In</button>
     </form>
     {failed && <div class="error">Invalid token. Try again.</div>}
   </div>
-
-  <script>
-    document.getElementById('loginForm')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const token = (document.getElementById('token') as HTMLInputElement).value.trim();
-      if (token) {
-        window.location.href = `/admin/login?token=${encodeURIComponent(token)}`;
-      }
-    });
-  </script>
 </body>
 </html>
