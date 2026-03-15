@@ -110,6 +110,15 @@ export default function ArticleEditor() {
   }, [parseFile]);
 
   // Process article
+  const abortRef = useRef<AbortController | null>(null);
+
+  const cancelProcessing = useCallback(() => {
+    abortRef.current?.abort();
+    setState('upload');
+    setStatusMessage('');
+    setError('Generation cancelled.');
+  }, []);
+
   const processArticle = useCallback(async () => {
     if (!sourceText.trim()) {
       setError('Please provide source text or upload a file.');
@@ -118,7 +127,16 @@ export default function ArticleEditor() {
 
     setState('processing');
     setError('');
-    setStatusMessage('Sending to Claude 4.6 for processing...');
+    setStatusMessage('Sending to Claude Opus for processing... (this takes 30-90 seconds)');
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // Update status message over time
+    const timer1 = setTimeout(() => setStatusMessage('Claude is reading and analyzing your source document...'), 10000);
+    const timer2 = setTimeout(() => setStatusMessage('Generating article structure, pull quotes, and info cards...'), 30000);
+    const timer3 = setTimeout(() => setStatusMessage('Creating SVG hero image and finalizing metadata...'), 60000);
+    const timer4 = setTimeout(() => setStatusMessage('Almost done — assembling final output...'), 90000);
 
     try {
       const adminToken = document.cookie
@@ -132,11 +150,14 @@ export default function ArticleEditor() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${adminToken}`,
         },
+        signal: controller.signal,
         body: JSON.stringify({
           sourceText,
           sourceFormat,
         }),
       });
+
+      [timer1, timer2, timer3, timer4].forEach(clearTimeout);
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -153,9 +174,13 @@ export default function ArticleEditor() {
         content: `Article generated: "${data.metadata.title}" (${data.metadata.readTime} min read). You can refine it by chatting below, edit the metadata, or publish when ready.`,
       }]);
     } catch (err: any) {
+      [timer1, timer2, timer3, timer4].forEach(clearTimeout);
+      if (err.name === 'AbortError') return; // cancelled by user
       setState('upload');
-      setError(err.message || 'Failed to process article.');
+      setError(err.message || 'Failed to process article. The document may be too long — try a shorter excerpt.');
       setStatusMessage('');
+    } finally {
+      abortRef.current = null;
     }
   }, [sourceText, sourceFormat]);
 
@@ -444,8 +469,19 @@ export default function ArticleEditor() {
             <div className="admin-spinner" style={{ width: '40px', height: '40px', borderWidth: '3px' }} />
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Processing Article</div>
-              <div style={{ fontSize: '0.8125rem', color: '#a8a29e' }}>{statusMessage}</div>
+              <div style={{ fontSize: '0.8125rem', color: '#a8a29e', maxWidth: '300px' }}>{statusMessage}</div>
             </div>
+            <button
+              onClick={cancelProcessing}
+              style={{
+                marginTop: '1rem', padding: '0.5rem 1.5rem',
+                background: 'transparent', border: '1px solid #44403c',
+                borderRadius: '0.375rem', color: '#a8a29e',
+                fontSize: '0.8125rem', cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
           </div>
         )}
 
