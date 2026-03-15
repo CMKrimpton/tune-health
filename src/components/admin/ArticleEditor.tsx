@@ -285,6 +285,35 @@ export default function ArticleEditor() {
       setState('preview');
       setStatusMessage('');
 
+      // Save to database
+      try {
+        await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save',
+            article: {
+              slug: data.metadata.slug,
+              title: data.metadata.title,
+              description: data.metadata.description,
+              category: data.metadata.category,
+              tags: data.metadata.tags,
+              keywords: data.metadata.keywords || [],
+              gradient_from: data.metadata.gradient.from,
+              gradient_to: data.metadata.gradient.to,
+              featured: data.metadata.featured,
+              read_time: data.metadata.readTime,
+              publish_date: data.metadata.publishDate,
+              article_html: data.html,
+              article_svg: data.svg,
+              toc: data.toc,
+              source_text: sourceText.slice(0, 50000),
+              status: 'draft',
+            }
+          }),
+        });
+      } catch {} // Non-blocking — don't fail if DB save fails
+
       // Save initial snapshot
       setSnapshots([{
         article: data,
@@ -355,6 +384,21 @@ export default function ArticleEditor() {
       const data = await res.json();
       setArticle(data);
       if (data.metadata) setMetadata(data.metadata);
+
+      // Save refined content to database
+      try {
+        const m = data.metadata || metadata;
+        if (m) {
+          await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'save',
+              article: { slug: m.slug, article_html: data.html }
+            }),
+          });
+        }
+      } catch {}
 
       setChatMessages(prev => [...prev, {
         role: 'assistant',
@@ -438,6 +482,22 @@ export default function ArticleEditor() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || 'Publish failed');
       }
+
+      // Update database status to published
+      try {
+        await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save',
+            article: {
+              slug: metadata.slug,
+              status: 'published',
+              published_at: new Date().toISOString(),
+            }
+          }),
+        });
+      } catch {}
 
       setState('done');
       setStatusMessage('');

@@ -505,7 +505,40 @@
   border-color: #dc2626;
 }
 .admin-edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.admin-edit-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem; }
+.admin-edit-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem; padding-bottom: 1rem; }
+
+/* ─── Code Editor ─── */
+
+.admin-code-editor {
+  width: 100%; min-height: 400px; padding: 1rem;
+  background: #0c0a09; border: 1px solid #292524; border-radius: 0.5rem;
+  color: #a8a29e; font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 0.75rem; line-height: 1.7; resize: vertical; outline: none;
+  tab-size: 2; white-space: pre-wrap;
+}
+.admin-code-editor:focus { border-color: #dc2626; }
+
+.admin-content-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.admin-content-toolbar-label {
+  font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #78716c; font-weight: 600;
+}
+.admin-content-toolbar-info { font-size: 0.6875rem; color: #57534e; }
+
+.admin-content-loading {
+  display: flex; align-items: center; gap: 0.75rem; padding: 2rem;
+  color: #78716c; font-size: 0.8125rem;
+}
+
+.admin-refine-chat {
+  display: flex; flex-direction: column; min-height: 300px;
+}
+.admin-refine-chat .admin-chat-messages {
+  min-height: 200px; max-height: 40vh;
+}
 .admin-edit-status {
   padding: 0.625rem 0.875rem; background: #052e16; border: 1px solid #166534;
   border-radius: 0.375rem; font-size: 0.8125rem; color: #86efac;
