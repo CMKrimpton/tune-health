@@ -115,8 +115,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Truncate very long source docs to stay within Edge Function timeout
-    const MAX_SOURCE_CHARS = 30000;
+    // Truncate very long source docs to keep Opus response fast
+    const MAX_SOURCE_CHARS = 15000;
     const truncatedSource = sourceText.length > MAX_SOURCE_CHARS
       ? sourceText.slice(0, MAX_SOURCE_CHARS) + "\n\n[Source truncated for processing — full document was " + sourceText.length + " characters]"
       : sourceText;
@@ -132,9 +132,6 @@ ${truncatedSource}
 
 Return ONLY valid JSON matching the specified format. No markdown code fences, no explanation — just the JSON object.`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000); // 120s timeout
-
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -142,7 +139,6 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
         "x-api-key": anthropicKey,
         "anthropic-version": "2023-06-01",
       },
-      signal: controller.signal,
       body: JSON.stringify({
         model: "claude-opus-4-20250514",
         max_tokens: 8192,
@@ -151,8 +147,6 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
         messages: [{ role: "user", content: userPrompt }],
       }),
     });
-
-    clearTimeout(timeout);
 
     if (!response.ok) {
       const errText = await response.text();
