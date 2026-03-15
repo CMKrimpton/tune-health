@@ -4,80 +4,10 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
 import SideNav from '../../components/SideNav.astro';
+import { getArticles, getComingSoonArticles, formatPublishDateShort } from '../../utils/articles';
 
-const articles = [
-  {
-    slug: 'the-serotonin-deception',
-    title: 'The Serotonin Deception: How a Flawed Theory Became Medicine\'s Most Profitable Myth',
-    description: 'The chemical imbalance theory of depression was never proven, yet it shaped three decades of prescribing, marketing, and public understanding. A critical review of what went wrong.',
-    category: 'Mental Health',
-    readTime: '22 min read',
-    publishDate: 'Mar 14, 2026',
-    image: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&h=600&fit=crop&q=80',
-    imageAlt: 'Brain neurons',
-  },
-  {
-    slug: 'nonstick-pan-pfas',
-    title: 'Pan-demic: The Truth About Your Non-Stick Cookware',
-    description: 'PFAS "forever chemicals" from non-stick coatings are in 97% of American blood. The science, the corporate cover-up, and what to cook with instead.',
-    category: 'Environmental Health',
-    readTime: '10 min read',
-    publishDate: 'Mar 14, 2026',
-    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop&q=80',
-    imageAlt: 'Kitchen cookware',
-  },
-  {
-    slug: 'longevity-interventions',
-    title: 'Do Any Longevity Interventions Actually Work?',
-    description: 'A critical examination of caloric restriction, fasting, supplements, and the hard truth about what the evidence actually shows for extending human lifespan.',
-    category: 'Longevity',
-    readTime: '25 min read',
-    publishDate: 'Dec 11, 2025',
-    image: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?w=800&h=600&fit=crop&q=80',
-    imageAlt: 'DNA strand',
-  },
-  {
-    slug: 'mirtazapine-guide',
-    title: 'Mirtazapine: The Quiet Overachiever of Modern Psychopharmacology',
-    description: 'A comprehensive clinical evidence review covering 20+ therapeutic applications, remarkable safety data, and why one drug demonstrates positive evidence across such diverse conditions.',
-    category: 'Mental Health',
-    readTime: '18 min read',
-    publishDate: 'Dec 10, 2025',
-    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop&q=80',
-    imageAlt: 'Person meditating at sunrise',
-  },
-  {
-    slug: 'nicotine-research',
-    title: "Nicotine's Promising Health Benefits: A Research Summary",
-    description: 'Exploring the cognitive enhancement potential of nicotine separated from tobacco, examining current research on attention, memory, and neuroprotection.',
-    category: 'Neuroscience',
-    readTime: '12 min read',
-    publishDate: 'Dec 10, 2025',
-    image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop&q=80',
-    imageAlt: 'Scientific research',
-  },
-];
-
-const comingSoon = [
-  {
-    title: 'Metabolic Flexibility: A New Paradigm',
-    category: 'Nutrition',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop&q=80',
-    imageAlt: 'Fresh healthy bowl',
-  },
-  {
-    title: 'Zone 2 Training: The Science Behind Slow',
-    category: 'Fitness',
-    image: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=600&h=400&fit=crop&q=80',
-    imageAlt: 'Runner silhouette',
-  },
-  {
-    title: 'Senolytics: Clearing the Path to Longevity',
-    category: 'Longevity',
-    image: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=600&h=400&fit=crop&q=80',
-    imageAlt: 'Medical consultation',
-  },
-];
+const articles = await getArticles();
+const comingSoon = await getComingSoonArticles();
 ---
 
 <BaseLayout
@@ -114,15 +44,19 @@ const comingSoon = [
 
       <div class="space-y-8">
         {articles.map((article, index) => (
-          <a href={`/articles/${article.slug}`} class="article-feature-card group reveal block">
+          <a href={article.href} class="article-feature-card group reveal block">
             <div class="article-feature-image">
               <div class="article-feature-image-inner relative overflow-hidden">
-                <img
-                  src={article.image}
-                  alt={article.imageAlt}
-                  class="w-full h-full object-cover"
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                />
+                {article.heroImage ? (
+                  <img
+                    src={article.heroImage}
+                    alt={article.heroImageAlt || article.title}
+                    class="w-full h-full object-cover"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                  />
+                ) : (
+                  <div class={`w-full h-full bg-gradient-to-br from-${article.gradient.from} to-${article.gradient.to}`}></div>
+                )}
                 <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/30 to-transparent"></div>
                 <span class="article-feature-number absolute bottom-6 left-6">{String(index + 1).padStart(2, '0')}</span>
               </div>
@@ -130,7 +64,7 @@ const comingSoon = [
             <div class="article-feature-content">
               <div class="flex items-center gap-3 mb-4">
                 <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
-                <span class="text-xs text-stone-400">{article.publishDate}</span>
+                <span class="text-xs text-stone-400">{formatPublishDateShort(article.publishDate)}</span>
               </div>
               <h2 class="font-serif text-heading-2 font-semibold mb-3 group-hover:text-primary-600 transition-colors">
                 {article.title}
@@ -144,8 +78,8 @@ const comingSoon = [
                   <span class="text-sm text-stone-500">alumi news Editorial</span>
                 </div>
                 <div class="flex items-center gap-4">
-                  <span class="text-sm text-stone-400">{article.readTime}</span>
-                  <span class="text-lg text-stone-400 group-hover:text-primary-600 transition-colors">→</span>
+                  <span class="text-sm text-stone-400">{article.readTime} min read</span>
+                  <span class="text-lg text-stone-400 group-hover:text-primary-600 transition-colors">&rarr;</span>
                 </div>
               </div>
             </div>
@@ -156,43 +90,49 @@ const comingSoon = [
   </section>
 
   <!-- Coming Soon -->
-  <section class="py-16 md:py-24 bg-stone-100 dark:bg-stone-900">
-    <div class="container-editorial">
-      <div class="flex items-center gap-6 mb-10">
-        <span class="section-label">Coming Soon</span>
-        <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
-      </div>
+  {comingSoon.length > 0 && (
+    <section class="py-16 md:py-24 bg-stone-100 dark:bg-stone-900">
+      <div class="container-editorial">
+        <div class="flex items-center gap-6 mb-10">
+          <span class="section-label">Coming Soon</span>
+          <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+        </div>
 
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {comingSoon.map((article, index) => (
-          <div class="article-card group reveal opacity-75 cursor-default">
-            <div class="article-card-image relative">
-              <div class="article-card-image-inner relative overflow-hidden">
-                <img
-                  src={article.image}
-                  alt={article.imageAlt}
-                  class="w-full h-full object-cover grayscale-[30%]"
-                  loading="lazy"
-                />
-                <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/30 to-transparent"></div>
-                <span class="article-card-number absolute bottom-4 left-4">{String(articles.length + index + 1).padStart(2, '0')}</span>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {comingSoon.map((article, index) => (
+            <div class="article-card group reveal opacity-75 cursor-default">
+              <div class="article-card-image relative">
+                <div class="article-card-image-inner relative overflow-hidden">
+                  {article.heroImage ? (
+                    <img
+                      src={article.heroImage}
+                      alt={article.heroImageAlt || article.title}
+                      class="w-full h-full object-cover grayscale-[30%]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div class={`w-full h-full bg-gradient-to-br from-${article.gradient.from} to-${article.gradient.to}`}></div>
+                  )}
+                  <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/30 to-transparent"></div>
+                  <span class="article-card-number absolute bottom-4 left-4">{String(articles.length + index + 1).padStart(2, '0')}</span>
+                </div>
+                <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
               </div>
-              <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
+              <div class="article-card-content">
+                <div class="flex items-center gap-3 mb-3">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+                </div>
+                <h3 class="font-serif text-xl font-semibold mb-2">{article.title}</h3>
+                <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
+                  <span class="text-xs text-stone-400">Coming soon</span>
+                </div>
+              </div>
             </div>
-            <div class="article-card-content">
-              <div class="flex items-center gap-3 mb-3">
-                <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
-              </div>
-              <h3 class="font-serif text-xl font-semibold mb-2">{article.title}</h3>
-              <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
-                <span class="text-xs text-stone-400">Coming soon</span>
-              </div>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  )}
 
   <!-- Newsletter CTA -->
   <section class="py-16 md:py-24">

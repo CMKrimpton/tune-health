@@ -15,5 +15,8 @@
     "from": "violet-600",
     "to": "purple-700"
   },
-  "keywords": ["mirtazapine", "remeron", "antidepressant", "insomnia", "nausea", "appetite", "depression", "anxiety"]
+  "keywords": ["mirtazapine", "remeron", "antidepressant", "insomnia", "nausea", "appetite", "depression", "anxiety"],
+  "heroImage": "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=600&h=400&fit=crop&q=80",
+  "heroImageAlt": "Serene bedroom morning",
+  "sortOrder": 3
 }

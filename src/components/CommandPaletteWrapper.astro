@@ -1,6 +1,22 @@
 ---
 import CommandPalette from './CommandPalette';
+import { getArticles } from '../utils/articles';
+
+const articles = await getArticles();
+const articleData = articles.map(a => ({
+  id: a.slug,
+  title: a.title,
+  description: a.description,
+  category: a.category,
+  href: a.href,
+  readTime: `${a.readTime} min`,
+}));
 ---
+
+<!-- Inject article data for React island -->
+<script define:vars={{ articleData }}>
+  window.__ALUMI_ARTICLES__ = articleData;
+</script>
 
 <!-- React Island for Command Palette -->
 <CommandPalette client:load />

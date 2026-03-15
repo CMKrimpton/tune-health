@@ -24,6 +24,11 @@ const articles = defineCollection({
     }),
     // For the command palette and search
     keywords: z.array(z.string()).optional(),
+    // For collection-driven homepage and article cards
+    heroImage: z.string().optional(),
+    heroImageAlt: z.string().optional(),
+    sortOrder: z.number().optional(),
+    comingSoon: z.boolean().default(false),
   }),
 });
 

@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-03-15
+
+### Added
+- **Admin Publishing Portal** - Complete article publishing system at `/admin`
+  - Token-based auth with middleware gate on all `/admin` routes
+  - Dashboard showing published articles, coming soon count, and stats
+  - New Article editor with two-column layout (upload/chat + live preview)
+  - Drag-and-drop file upload supporting .md, .docx, .txt
+  - Claude 4.6 integration for article generation matching exact editorial format
+  - Chat refinement interface for iterating on articles (like working in Claude Code)
+  - Metadata editor for title, slug, category, tags, gradient, featured status
+  - One-click publish to GitHub via API (commits .astro + .json, triggers Vercel rebuild)
+  - Live preview with site fonts and article CSS
+- **Supabase Edge Functions** (deployed to TUNE project)
+  - `process-article`: Sends source text to Claude 4.6 with full editorial system prompt
+  - `refine-article`: Chat-style refinement with conversation history
+  - `publish-article`: GitHub REST API commit pipeline
+- **Coming Soon articles** as content collection entries
+  - `metabolic-flexibility.json`, `zone-2-training.json`, `senolytics.json`
+  - Rendered with "Coming Soon" badges on homepage and articles index
+
+### Changed
+- **MAJOR: All navigation is now collection-driven** — zero hardcoded article references
+  - Homepage article grid renders from `getCollection('articles')`
+  - Homepage featured article renders from `getFeaturedArticles()`
+  - Homepage article counter is dynamic (`articles.length`)
+  - Articles index page renders from collection (was hardcoded arrays)
+  - SideNav featured links auto-populated from latest articles
+  - CommandPalette article data injected from Astro via `window.__ALUMI_ARTICLES__`
+  - Related articles auto-fetched by ArticleLayout (removed `slot="related"` from all 5 article pages)
+- **Content schema extended** with `heroImage`, `heroImageAlt`, `sortOrder`, `comingSoon` fields
+- **Article utilities extended** with `getComingSoonArticles()`, `getArticlesForHomepage()`, `formatPublishDateShort()`
+- **Astro config** switched to use `@astrojs/node` adapter for SSR on admin routes
+- All 5 article JSON files updated with `heroImage` and `heroImageAlt` values
+
+### Architecture
+- SSR support via `@astrojs/node` adapter (admin pages are server-rendered, public pages remain static)
+- Auth middleware at `src/middleware.ts` protects `/admin/*` routes
+- Admin React island (`ArticleEditor.tsx`) with file parsing, preview, chat, and publish
+- Admin styles in `src/styles/admin.css` (warm stone palette matching site design)
+
 ## [3.0.0] - 2026-03-14
 
 ### Changed

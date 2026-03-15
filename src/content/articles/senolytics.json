@@ -1,0 +1,22 @@
+{
+  "title": "Senolytics: Clearing the Path to Longevity",
+  "description": "The emerging science of eliminating senescent cells for healthier aging.",
+  "category": "Longevity",
+  "publishDate": "2026-04-01",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 18,
+  "featured": false,
+  "draft": true,
+  "tags": ["Longevity", "Aging", "Research"],
+  "gradient": {
+    "from": "indigo-500",
+    "to": "purple-600"
+  },
+  "heroImage": "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=600&h=400&fit=crop&q=80",
+  "heroImageAlt": "Doctor consultation",
+  "comingSoon": true,
+  "sortOrder": 8
+}

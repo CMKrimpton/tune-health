@@ -1,0 +1,22 @@
+{
+  "title": "Zone 2 Training: The Science Behind Slow",
+  "description": "How low-intensity exercise builds the foundation for elite performance.",
+  "category": "Fitness",
+  "publishDate": "2026-04-01",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 12,
+  "featured": false,
+  "draft": true,
+  "tags": ["Fitness", "Exercise", "Longevity"],
+  "gradient": {
+    "from": "sky-500",
+    "to": "blue-600"
+  },
+  "heroImage": "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=600&h=400&fit=crop&q=80",
+  "heroImageAlt": "Runner silhouette",
+  "comingSoon": true,
+  "sortOrder": 7
+}

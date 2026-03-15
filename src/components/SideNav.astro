@@ -3,6 +3,10 @@
  * SideNav - Glass sidebar that reveals on left edge hover
  * Premium editorial navigation experience
  */
+import { getArticles } from '../utils/articles';
+
+const articles = await getArticles();
+const featuredArticles = articles.slice(0, 5);
 ---
 
 <aside class="side-nav" id="sideNav">
@@ -92,30 +96,14 @@
         <div class="side-nav-section">
           <span class="side-nav-label">Featured</span>
           <ul class="side-nav-links">
-            <li>
-              <a href="/articles/the-serotonin-deception" class="side-nav-link">
-                <span class="side-nav-link-text">Serotonin Deception</span>
-                <span class="side-nav-badge">New</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles/nonstick-pan-pfas" class="side-nav-link">
-                <span class="side-nav-link-text">Non-Stick Pan Truth</span>
-                <span class="side-nav-badge">New</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles/mirtazapine-guide" class="side-nav-link">
-                <span class="side-nav-link-text">Mirtazapine Guide</span>
-                <span class="side-nav-badge">New</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles/nicotine-research" class="side-nav-link">
-                <span class="side-nav-link-text">Nicotine Research</span>
-                <span class="side-nav-badge">New</span>
-              </a>
-            </li>
+            {featuredArticles.map((article) => (
+              <li>
+                <a href={article.href} class="side-nav-link">
+                  <span class="side-nav-link-text">{article.title.length > 30 ? article.title.slice(0, 30) + '...' : article.title}</span>
+                  <span class="side-nav-badge">New</span>
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
 

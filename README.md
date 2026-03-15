@@ -8,7 +8,7 @@ A premium health and wellness editorial website featuring science-backed article
 
 - **Framework**: Astro v5 with Islands Architecture
 - **Styling**: Tailwind CSS with custom design system
-- **Interactivity**: React (Command Palette only)
+- **Interactivity**: React (Command Palette + Admin Portal)
 - **Animations**: CSS transitions with IntersectionObserver + GSAP (counter tweening)
 - **Navigation**: Native View Transitions API
 - **Typography**: Playfair Display, Inter, Crimson Pro
@@ -93,6 +93,16 @@ src/
 - Content Collections with Zod schema validation
 - Type-safe article queries
 - Automatic reading time calculation
+- **All navigation is collection-driven** — new articles auto-appear everywhere
+
+### Admin Publishing Portal (`/admin`)
+- Token-based authentication
+- Upload source documents (.md, .docx, .txt) or paste text
+- Claude 4.6 generates articles in exact editorial format via Supabase Edge Functions
+- Chat refinement interface for iterating on articles
+- Live preview with site fonts and styles
+- One-click publish to GitHub (triggers Vercel rebuild)
+- Metadata editor for title, slug, category, tags, and more
 
 ### Design
 - Responsive design with mobile-first approach
@@ -103,7 +113,7 @@ src/
 
 ### Performance
 - Zero JavaScript by default (Islands Architecture)
-- React only loads for Command Palette
+- React only loads for Command Palette and Admin Portal
 - Native CSS animations (60fps)
 - Passive scroll listeners
 
@@ -148,6 +158,12 @@ src/
 The site is deployed on Vercel with automatic deployments:
 - **Push to `main`** → Production deployment
 - **Push to other branches** → Preview deployments
+
+### Backend (Supabase Edge Functions)
+- `process-article` — Claude 4.6 article generation
+- `refine-article` — Chat-based article refinement
+- `publish-article` — GitHub commit pipeline
+- Deployed to the TUNE Supabase project (`mvkiornsximonxxitiwr`)
 
 ## Documentation
 

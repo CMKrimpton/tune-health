@@ -1,49 +1,14 @@
 import { Command } from 'cmdk';
 import { useState, useEffect, useCallback } from 'react';
 
-// Article data - in a real app this would come from a CMS/API
-const articles = [
-  {
-    id: 'serotonin',
-    title: 'The Serotonin Deception',
-    description: 'How a flawed theory became medicine\'s most profitable myth',
-    category: 'Mental Health',
-    href: '/articles/the-serotonin-deception',
-    readTime: '22 min',
-  },
-  {
-    id: 'pfas',
-    title: 'Pan-demic: The Truth About Non-Stick Cookware',
-    description: 'PFAS forever chemicals in your kitchen',
-    category: 'Environmental Health',
-    href: '/articles/nonstick-pan-pfas',
-    readTime: '10 min',
-  },
-  {
-    id: 'longevity',
-    title: 'Do Any Longevity Interventions Actually Work?',
-    description: 'A critical examination of caloric restriction, fasting, and supplements',
-    category: 'Longevity',
-    href: '/articles/longevity-interventions',
-    readTime: '25 min',
-  },
-  {
-    id: 'mirtazapine',
-    title: 'Mirtazapine: The Quiet Overachiever',
-    description: 'A comprehensive clinical evidence review',
-    category: 'Mental Health',
-    href: '/articles/mirtazapine-guide',
-    readTime: '18 min',
-  },
-  {
-    id: 'nicotine',
-    title: "Nicotine's Promising Health Benefits",
-    description: 'A comprehensive research summary',
-    category: 'Neuroscience',
-    href: '/articles/nicotine-research',
-    readTime: '12 min',
-  },
-];
+interface ArticleItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  href: string;
+  readTime: string;
+}
 
 const pages = [
   { id: 'home', title: 'Home', href: '/', icon: '🏠' },
@@ -63,6 +28,15 @@ export default function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [recentlyUsed, setRecentlyUsed] = useState<string[]>([]);
+  const [articles, setArticles] = useState<ArticleItem[]>([]);
+
+  // Load articles from window data injected by Astro
+  useEffect(() => {
+    const data = (window as any).__ALUMI_ARTICLES__;
+    if (Array.isArray(data)) {
+      setArticles(data);
+    }
+  }, []);
 
   // Load recently used from localStorage
   useEffect(() => {

@@ -1,0 +1,22 @@
+{
+  "title": "Metabolic Flexibility: A New Paradigm",
+  "description": "Why the ability to switch between fuel sources matters for longevity.",
+  "category": "Nutrition",
+  "publishDate": "2026-04-01",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": true,
+  "tags": ["Nutrition", "Longevity", "Metabolism"],
+  "gradient": {
+    "from": "lime-500",
+    "to": "green-600"
+  },
+  "heroImage": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop&q=80",
+  "heroImageAlt": "Fresh healthy bowl",
+  "comingSoon": true,
+  "sortOrder": 6
+}

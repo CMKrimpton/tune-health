@@ -1,0 +1,115 @@
+---
+export const prerender = false;
+
+// Handle POST (form submission)
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const token = formData.get('token')?.toString().trim();
+  const adminToken = import.meta.env.ADMIN_TOKEN || process.env.ADMIN_TOKEN;
+
+  if (token && token === adminToken) {
+    Astro.cookies.set('admin_token', token, {
+      path: '/',
+      httpOnly: true,
+      secure: import.meta.env.PROD,
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+    return Astro.redirect('/admin');
+  }
+}
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login | alumi news</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #1b1a18;
+      color: #e7e6e3;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      padding: 2.5rem;
+      background: #292524;
+      border: 1px solid #44403c;
+      border-radius: 1rem;
+    }
+    .logo {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .logo span { color: #dc2626; font-weight: 700; }
+    .subtitle {
+      font-size: 0.875rem;
+      color: #a8a29e;
+      margin-bottom: 2rem;
+    }
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #a8a29e;
+      margin-bottom: 0.5rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #1c1917;
+      border: 1px solid #44403c;
+      border-radius: 0.5rem;
+      color: #e7e6e3;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+    }
+    button {
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      background: #dc2626;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #b91c1c; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="logo"><span>a</span>lumi admin</div>
+    <p class="subtitle">Publishing portal</p>
+    <form method="POST">
+      <label for="token">Admin Token</label>
+      <input type="password" id="token" name="token" placeholder="Enter your admin token" required autofocus />
+      <button type="submit">Sign In</button>
+    </form>
+  </div>
+</body>
+</html>

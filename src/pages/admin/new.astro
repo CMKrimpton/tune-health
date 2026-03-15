@@ -1,0 +1,46 @@
+---
+export const prerender = false;
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Article | alumi admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    @import url('/src/styles/admin.css');
+  </style>
+</head>
+<body class="admin-body">
+  <!-- Admin Header -->
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-logo">
+        <span class="admin-logo-accent">a</span>lumi
+        <span class="admin-logo-badge">admin</span>
+      </div>
+      <nav class="admin-nav">
+        <a href="/admin" class="admin-nav-link">Dashboard</a>
+        <a href="/admin/new" class="admin-nav-link active">New Article</a>
+        <a href="/" class="admin-nav-link" target="_blank">View Site &rarr;</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Editor -->
+  <div id="editor-root"></div>
+
+  <!-- Load React editor -->
+  <script type="module">
+    import React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import ArticleEditor from '/src/components/admin/ArticleEditor';
+
+    const root = createRoot(document.getElementById('editor-root'));
+    root.render(React.createElement(ArticleEditor));
+  </script>
+</body>
+</html>

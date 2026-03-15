@@ -18,61 +18,68 @@ npm run preview  # Preview production build
 ## Architecture
 
 ### Build System
-- **Astro v5** as the static site generator with islands architecture
-- **React** for interactive components (Command Palette)
+- **Astro v5** with SSR support via `@astrojs/node` adapter
+- **React** for interactive components (Command Palette, Admin Editor)
 - **Tailwind CSS** with PostCSS for styling
 - **View Transitions API** for smooth page navigation
 - **Content Collections** for type-safe article management
+- **Supabase Edge Functions** for AI article processing and GitHub publishing
 - Node version specified in `.nvmrc`
 
 ### Core Libraries
 - **Astro**: Static site generation with View Transitions and Content Collections
 - **React + cmdk**: Command palette (⌘K) for site-wide navigation
+- **React**: Admin publishing portal (ArticleEditor island)
 - **GSAP**: Hero entrance animation and counter number tweening only
 - **IntersectionObserver**: CSS-triggered reveal animations and scroll spy
 - **Zod**: Schema validation for content collections
+- **mammoth**: DOCX file parsing in admin portal
 
 ### File Structure
 ```
 src/
 ├── content/
 │   ├── config.ts             # Content collection schema (Zod)
-│   └── articles/             # Article metadata (JSON)
-│       ├── mirtazapine-guide.json
-│       ├── nicotine-research.json
-│       ├── longevity-interventions.json
-│       ├── the-serotonin-deception.json
-│       └── nonstick-pan-pfas.json
+│   └── articles/             # Article metadata (JSON) - 5 published + 3 coming soon
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
-│   └── ArticleLayout.astro   # Reusable article template
+│   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
 ├── components/
 │   ├── Header.astro          # Navigation with glass dropdown menu
 │   ├── Footer.astro          # Site footer
-│   ├── SideNav.astro         # Magazine-style sidebar (26+ links)
-│   ├── CommandPalette.tsx    # React command palette (⌘K)
-│   ├── CommandPaletteWrapper.astro  # Astro wrapper for React island
+│   ├── SideNav.astro         # Magazine-style sidebar (collection-driven)
+│   ├── CommandPalette.tsx    # React command palette (dynamic via window injection)
+│   ├── CommandPaletteWrapper.astro  # Injects article data for React island
 │   ├── FloatingTOC.astro     # Floating table of contents with scroll spy
 │   ├── ArticleCard.astro     # Reusable article preview cards
 │   ├── Newsletter.astro      # Newsletter signup section
 │   ├── Breadcrumbs.astro     # Navigation breadcrumbs
-│   └── SEO.astro             # JSON-LD structured data
+│   ├── SEO.astro             # JSON-LD structured data
+│   └── admin/
+│       └── ArticleEditor.tsx # Admin publishing portal React component
 ├── pages/
-│   ├── index.astro           # Homepage
+│   ├── index.astro           # Homepage (collection-driven)
 │   ├── deep-dives.astro      # Deep dive series page
 │   ├── subscribe.astro       # Newsletter subscription page
+│   ├── admin/
+│   │   ├── login.astro       # Admin token login (SSR)
+│   │   ├── index.astro       # Admin dashboard (SSR)
+│   │   └── new.astro         # New article editor (SSR)
 │   └── articles/
-│       ├── index.astro       # Articles index page
-│       ├── mirtazapine-guide.astro
-│       ├── nicotine-research.astro
-│       ├── longevity-interventions.astro
-│       ├── the-serotonin-deception.astro
-│       └── nonstick-pan-pfas.astro
+│       ├── index.astro       # Articles index page (collection-driven)
+│       └── *.astro           # Individual article pages
+├── middleware.ts              # Auth gate for /admin routes
 ├── utils/
 │   ├── articles.ts           # Article collection helpers
 │   └── reading-time.ts       # Reading time calculation
 └── styles/
-    └── global.css            # Tailwind directives + custom styles
+    ├── global.css            # Tailwind directives + custom styles
+    └── admin.css             # Admin portal styles
+supabase/
+└── functions/
+    ├── process-article/      # Claude 4.6 article generation
+    ├── refine-article/       # Chat-based article refinement
+    └── publish-article/      # GitHub commit pipeline
 ```
 
 ### Content Collections
@@ -123,15 +130,33 @@ const articles = await getCollection('articles');
 #### SideNav (Magazine Sidebar)
 - Reveals on left edge hover
 - 26+ links organized by: Topics, Featured, Series, Resources, About
+- Featured section is **collection-driven** (auto-populates from latest articles)
 - Custom scrollbar, badges for "New" articles
 - Search and theme toggle buttons
 
 #### Command Palette (⌘K)
 - React component using `cmdk` library
+- **Collection-driven**: article data injected from Astro via `window.__ALUMI_ARTICLES__`
 - Site-wide search: articles, sections, pages
 - Actions: theme toggle, share, print
 - Recently used items tracking
 - Keyboard navigation (↑↓ Enter Esc)
+
+#### Admin Publishing Portal (/admin)
+- Protected by `ADMIN_TOKEN` cookie (middleware auth gate)
+- **Dashboard**: article stats, published articles table
+- **New Article Editor**: two-column layout (upload/chat + live preview)
+  - Drag-and-drop file upload (.md, .docx, .txt)
+  - Claude 4.6 generates article in exact editorial format (via Supabase Edge Function)
+  - Chat refinement interface for iterating on the article
+  - Metadata editor (title, slug, category, tags, gradient, featured)
+  - One-click publish to GitHub (commits .astro + .json, triggers Vercel rebuild)
+- Edge Functions: `process-article`, `refine-article`, `publish-article`
+
+#### Collection-Driven Navigation
+- All navigation components pull from `getCollection('articles')` — no hardcoded article references
+- Homepage, articles index, SideNav, CommandPalette, and related articles are all dynamic
+- New articles auto-appear everywhere when their .json is added to `src/content/articles/`
 
 #### View Transitions
 - Native browser View Transitions API via Astro

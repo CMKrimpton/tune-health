@@ -15,5 +15,8 @@
     "from": "emerald-500",
     "to": "teal-600"
   },
-  "keywords": ["nicotine", "parkinson's", "alzheimer's", "cognitive", "memory", "ulcerative colitis", "depression", "adhd"]
+  "keywords": ["nicotine", "parkinson's", "alzheimer's", "cognitive", "memory", "ulcerative colitis", "depression", "adhd"],
+  "heroImage": "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&h=400&fit=crop&q=80",
+  "heroImageAlt": "Scientific research",
+  "sortOrder": 4
 }

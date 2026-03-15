@@ -1,0 +1,108 @@
+---
+export const prerender = false;
+
+import { getArticles, getComingSoonArticles, formatPublishDateShort } from '../../utils/articles';
+
+const articles = await getArticles();
+const comingSoon = await getComingSoonArticles();
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | alumi news</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    @import url('/src/styles/admin.css');
+  </style>
+</head>
+<body class="admin-body">
+  <!-- Admin Header -->
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-logo">
+        <span class="admin-logo-accent">a</span>lumi
+        <span class="admin-logo-badge">admin</span>
+      </div>
+      <nav class="admin-nav">
+        <a href="/admin" class="admin-nav-link active">Dashboard</a>
+        <a href="/admin/new" class="admin-nav-link">New Article</a>
+        <a href="/" class="admin-nav-link" target="_blank">View Site &rarr;</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Dashboard Content -->
+  <main class="admin-main">
+    <!-- Stats -->
+    <div class="admin-stats">
+      <div class="admin-stat-card">
+        <span class="admin-stat-number">{articles.length}</span>
+        <span class="admin-stat-label">Published</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-number">{comingSoon.length}</span>
+        <span class="admin-stat-label">Coming Soon</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-number">{articles.length + comingSoon.length}</span>
+        <span class="admin-stat-label">Total</span>
+      </div>
+    </div>
+
+    <!-- New Article CTA -->
+    <a href="/admin/new" class="admin-new-article-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      New Article
+    </a>
+
+    <!-- Published Articles Table -->
+    <section class="admin-section">
+      <h2 class="admin-section-title">Published Articles</h2>
+      <div class="admin-table">
+        <div class="admin-table-header">
+          <span class="admin-col-title">Title</span>
+          <span class="admin-col-category">Category</span>
+          <span class="admin-col-date">Published</span>
+          <span class="admin-col-time">Read Time</span>
+        </div>
+        {articles.map((article) => (
+          <a href={article.href} class="admin-table-row" target="_blank">
+            <span class="admin-col-title">{article.title}</span>
+            <span class="admin-col-category">
+              <span class="admin-category-badge">{article.category}</span>
+            </span>
+            <span class="admin-col-date">{formatPublishDateShort(article.publishDate)}</span>
+            <span class="admin-col-time">{article.readTime} min</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- Coming Soon -->
+    {comingSoon.length > 0 && (
+      <section class="admin-section">
+        <h2 class="admin-section-title">Coming Soon</h2>
+        <div class="admin-table">
+          {comingSoon.map((article) => (
+            <div class="admin-table-row admin-table-row-muted">
+              <span class="admin-col-title">{article.title}</span>
+              <span class="admin-col-category">
+                <span class="admin-category-badge">{article.category}</span>
+              </span>
+              <span class="admin-col-date">-</span>
+              <span class="admin-col-time">{article.readTime} min</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+  </main>
+</body>
+</html>
