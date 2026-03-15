@@ -18,7 +18,7 @@ npm run preview  # Preview production build
 ## Architecture
 
 ### Build System
-- **Astro v5** with SSR support via `@astrojs/node` adapter
+- **Astro v5** with SSR support via `@astrojs/vercel` adapter
 - **React** for interactive components (Command Palette, Admin Editor)
 - **Tailwind CSS** with PostCSS for styling
 - **View Transitions API** for smooth page navigation
@@ -157,6 +157,45 @@ const articles = await getCollection('articles');
 - All navigation components pull from `getCollection('articles')` — no hardcoded article references
 - Homepage, articles index, SideNav, CommandPalette, and related articles are all dynamic
 - New articles auto-appear everywhere when their .json is added to `src/content/articles/`
+
+### Database (Supabase PostgreSQL)
+
+The admin CMS uses a Supabase PostgreSQL database as the source of truth for editing. The static site still builds from files on GitHub.
+
+**`articles` table schema:**
+- `slug` (unique), `title`, `description`, `category`, `tags[]`, `keywords[]`
+- `gradient_from`, `gradient_to`, `featured`, `draft`, `coming_soon`
+- `read_time`, `publish_date`, `sort_order`, `hero_image`, `hero_image_alt`
+- `article_html` (full article body), `article_svg` (hero SVG), `toc` (jsonb)
+- `source_text` (original source document), `status` (draft/published/archived)
+- `created_at`, `updated_at`, `published_at`
+
+**Data flow:**
+1. New article: Claude generates → saved to database as draft
+2. Edits: metadata/content/AI refine → saved to database instantly
+3. Publish: assembles .astro + .json from database → commits to GitHub → Vercel rebuilds
+
+### Edge Functions (Supabase)
+
+All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
+
+| Function | Purpose | Auth |
+|---|---|---|
+| `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN |
+| `process-article` | Claude Opus article generation with editorial system prompt | None (rate-limited by Anthropic) |
+| `refine-article` | Chat-based article refinement | None |
+| `publish-article` | Commits .astro + .json to GitHub via REST API | Bearer token |
+| `delete-article` | Removes article files from GitHub | Bearer token |
+| `fetch-article` | Fetches .astro file content from GitHub | None |
+
+**Deploy commands:**
+```bash
+supabase functions deploy <function-name> --no-verify-jwt
+```
+
+**Required secrets** (set via `supabase secrets set`):
+- `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
 
 #### View Transitions
 - Native browser View Transitions API via Astro

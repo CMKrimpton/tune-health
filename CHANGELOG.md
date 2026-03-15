@@ -9,43 +9,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [4.0.0] - 2026-03-15
 
 ### Added
-- **Admin Publishing Portal** - Complete article publishing system at `/admin`
-  - Token-based auth with middleware gate on all `/admin` routes
-  - Dashboard showing published articles, coming soon count, and stats
-  - New Article editor with two-column layout (upload/chat + live preview)
-  - Drag-and-drop file upload supporting .md, .docx, .txt
-  - Claude 4.6 integration for article generation matching exact editorial format
-  - Chat refinement interface for iterating on articles (like working in Claude Code)
-  - Metadata editor for title, slug, category, tags, gradient, featured status
-  - One-click publish to GitHub via API (commits .astro + .json, triggers Vercel rebuild)
-  - Live preview with site fonts and article CSS
-- **Supabase Edge Functions** (deployed to TUNE project)
-  - `process-article`: Sends source text to Claude 4.6 with full editorial system prompt
-  - `refine-article`: Chat-style refinement with conversation history
-  - `publish-article`: GitHub REST API commit pipeline
+- **Admin Publishing Portal** at `/admin` — full editorial CMS
+  - Token-based auth with middleware gate; logout button in header
+  - **Dashboard** reads from Supabase database; shows Published, Drafts, and Coming Soon sections with status badges (Featured, Has Content, Draft, Coming Soon)
+  - **New Article editor** (two-column: upload/chat + live preview)
+    - Drag-and-drop file upload (.md, .docx, .txt) with mammoth for DOCX parsing
+    - Claude Opus generates articles in exact editorial format (sections, pull quotes, info cards, SVG hero, TOC, disclaimer)
+    - Progressive status messages during generation; cancel button
+    - Chat refinement with 6 quick-action templates (Punchier intro, More evidence, Shorter, etc.)
+    - Version history with restore (snapshots before each refinement)
+    - Metadata editor with validation, auto-slug, visual gradient picker, hero image URL
+    - localStorage auto-save (never lose work on refresh)
+    - Publish confirmation dialog; validation gate
+  - **Edit existing articles** at `/admin/edit/[slug]` (three tabs)
+    - Metadata tab: all fields, saves instantly to database
+    - Content tab: raw HTML code editor with word count and preview
+    - AI Refine tab: chat with Claude to modify article content with quick actions
+    - Live article preview in right panel
+    - "Publish to GitHub" button assembles .astro + .json and commits
+  - **Delete articles** with confirmation modal; removes from both database and GitHub
+- **Supabase PostgreSQL database** — `articles` table as source of truth for editing
+  - Full schema: HTML content, SVG, TOC, metadata, status, timestamps
+  - Auto-updating `updated_at` trigger; RLS enabled
+  - All 5 existing articles seeded with full HTML/SVG/TOC content
+- **Supabase Edge Functions** (6 total, deployed to TUNE project)
+  - `articles-api`: CRUD operations with auth (list, get, save, delete, seed)
+  - `process-article`: Claude Opus article generation with editorial system prompt
+  - `refine-article`: Chat-based article refinement
+  - `publish-article`: GitHub REST API commit pipeline (supports full and metadata-only updates)
+  - `delete-article`: Removes .astro + .json files from GitHub
+  - `fetch-article`: Fetches article content from GitHub (fallback)
 - **Coming Soon articles** as content collection entries
   - `metabolic-flexibility.json`, `zone-2-training.json`, `senolytics.json`
   - Rendered with "Coming Soon" badges on homepage and articles index
 
 ### Changed
-- **MAJOR: All navigation is now collection-driven** — zero hardcoded article references
-  - Homepage article grid renders from `getCollection('articles')`
-  - Homepage featured article renders from `getFeaturedArticles()`
-  - Homepage article counter is dynamic (`articles.length`)
-  - Articles index page renders from collection (was hardcoded arrays)
+- **All navigation is now collection-driven** — zero hardcoded article references
+  - Homepage article grid, featured article, article counter all dynamic
+  - Articles index page renders from collection
   - SideNav featured links auto-populated from latest articles
   - CommandPalette article data injected from Astro via `window.__ALUMI_ARTICLES__`
-  - Related articles auto-fetched by ArticleLayout (removed `slot="related"` from all 5 article pages)
+  - Related articles auto-fetched by ArticleLayout
 - **Content schema extended** with `heroImage`, `heroImageAlt`, `sortOrder`, `comingSoon` fields
 - **Article utilities extended** with `getComingSoonArticles()`, `getArticlesForHomepage()`, `formatPublishDateShort()`
-- **Astro config** switched to use `@astrojs/node` adapter for SSR on admin routes
 - All 5 article JSON files updated with `heroImage` and `heroImageAlt` values
 
 ### Architecture
-- SSR support via `@astrojs/node` adapter (admin pages are server-rendered, public pages remain static)
+- SSR via `@astrojs/vercel` adapter (admin pages server-rendered, public pages static)
 - Auth middleware at `src/middleware.ts` protects `/admin/*` routes
-- Admin React island (`ArticleEditor.tsx`) with file parsing, preview, chat, and publish
-- Admin styles in `src/styles/admin.css` (warm stone palette matching site design)
+- Client-side cookie auth (Vercel blocks POST to serverless functions)
+- Database is source of truth for edits; GitHub for static site deployment
+- Generated articles auto-saved to database; publish pushes to GitHub
 
 ## [3.0.0] - 2026-03-14
 
