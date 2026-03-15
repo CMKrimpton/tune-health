@@ -633,7 +633,7 @@ ${article.svg ? `<div class="svg-wrap"><svg viewBox="0 0 1200 600">${article.svg
                   </div>
                   <div className="admin-field admin-field-full">
                     <label>Description <span style={{ color: '#78716c', fontWeight: 400 }}>({metadata.description.length}/300)</span></label>
-                    <textarea value={metadata.description} onChange={(e) => updateMetadata('description', e.target.value)} rows={2}/>
+                    <textarea value={metadata.description} onChange={(e) => updateMetadata('description', e.target.value)} rows={3}/>
                   </div>
                   <div className="admin-field">
                     <label>Category</label>
@@ -662,14 +662,12 @@ ${article.svg ? `<div class="svg-wrap"><svg viewBox="0 0 1200 600">${article.svg
                       onChange={(e) => updateMetadata('tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
                     />
                   </div>
-                  <div className="admin-field">
+                  <div className="admin-field admin-field-full" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <label className="admin-checkbox-label">
                       <input type="checkbox" checked={metadata.featured} onChange={(e) => updateMetadata('featured', e.target.checked)}/>
                       Featured Article
                     </label>
-                  </div>
-                  <div className="admin-field">
-                    <label>{metadata.readTime} min read &middot; {wordCount(article?.html || '')} words</label>
+                    <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>{metadata.readTime} min read &middot; {wordCount(article?.html || '')} words</span>
                   </div>
                 </div>
               )}
@@ -705,6 +703,7 @@ ${article.svg ? `<div class="svg-wrap"><svg viewBox="0 0 1200 600">${article.svg
                 {/* Quick refine buttons */}
                 {state === 'preview' && !isRefining && (
                   <div className="admin-refine-templates">
+                    <span className="admin-refine-label">Quick actions</span>
                     {REFINE_TEMPLATES.map(t => (
                       <button key={t.label} className="admin-template-btn" onClick={() => refineArticle(t.prompt)}>
                         {t.label}
