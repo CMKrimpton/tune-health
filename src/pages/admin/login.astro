@@ -3,7 +3,7 @@ export const prerender = false;
 
 // If already authenticated, redirect to dashboard
 const cookie = Astro.cookies.get('admin_token');
-const adminToken = process.env.PUBLIC_ADMIN_TOKEN || process.env.ADMIN_TOKEN || import.meta.env.PUBLIC_ADMIN_TOKEN;
+const adminToken = (process.env.PUBLIC_ADMIN_TOKEN || process.env.ADMIN_TOKEN || import.meta.env.PUBLIC_ADMIN_TOKEN || '').trim();
 if (cookie && cookie.value === adminToken) {
   return Astro.redirect('/admin');
 }
