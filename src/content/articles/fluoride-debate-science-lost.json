@@ -1,0 +1,33 @@
+{
+  "title": "The Fluoride Debate Is Over. Science Lost.",
+  "description": "Why we're still adding industrial waste to drinking water when the evidence shows minimal benefits and documented neurological risks.",
+  "category": "Environmental Health",
+  "publishDate": "2026-03-17",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 7,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Water Fluoridation",
+    "Public Health",
+    "Neurotoxicity",
+    "Dental Health",
+    "Environmental Policy"
+  ],
+  "gradient": {
+    "from": "sky-500",
+    "to": "blue-600"
+  },
+  "keywords": [
+    "fluoride",
+    "water fluoridation",
+    "neurotoxicity",
+    "IQ",
+    "dental health",
+    "public health policy",
+    "hydrofluorosilicic acid"
+  ]
+}
