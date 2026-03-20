@@ -1,0 +1,34 @@
+{
+  "title": "The Disease Medicine Forgot",
+  "description": "Endometriosis affects 190 million women worldwide, yet receives less than a fifth of the research funding its disease burden justifies. New treatments and diagnostic tools are finally emerging.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-20",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 9,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Women's Health",
+    "Endometriosis",
+    "Research Funding",
+    "Chronic Pain",
+    "Healthcare Disparities"
+  ],
+  "gradient": {
+    "from": "rose-600",
+    "to": "red-700"
+  },
+  "keywords": [
+    "endometriosis",
+    "women's health",
+    "chronic pain",
+    "research funding",
+    "NIH",
+    "diagnostic delay",
+    "GnRH antagonists",
+    "healthcare disparities"
+  ]
+}
