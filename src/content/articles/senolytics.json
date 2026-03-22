@@ -31,5 +31,7 @@
     "SASP",
     "cellular senescence"
   ],
-  "comingSoon": false
+  "comingSoon": false,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/senolytics.png",
+  "heroImageAlt": "Editorial illustration for Senolytics: Clearing the Path to Longevity"
 }

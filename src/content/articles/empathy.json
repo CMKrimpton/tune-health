@@ -28,5 +28,7 @@
     "burnout",
     "affective empathy",
     "cognitive empathy"
-  ]
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/empathy.png",
+  "heroImageAlt": "Editorial illustration for The Empathy Problem"
 }
