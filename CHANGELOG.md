@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [5.5.1] - 2026-03-22
 
 ### Fixed
-- **Drop cap baseline alignment** — replaced manual `float-left` + hardcoded `font-size`/`margin-top`/`margin-bottom` with CSS `initial-letter: 3`, which automatically sizes and aligns the drop cap to span exactly 3 text lines with proper baseline alignment (Chrome 110+, Safari 9+, Firefox 134+)
+- **Drop cap baseline alignment** — replaced manual `float-left` + hardcoded `font-size`/`margin-top`/`margin-bottom` with CSS `initial-letter: 3` (+ `-webkit-initial-letter` for Safari), which automatically sizes and aligns the drop cap to span exactly 3 text lines with proper baseline alignment. Moved rule outside `@layer components` to prevent cascade layer from suppressing `initial-letter`. Float fallback (`font-size: 6.1rem`) for browsers without support. Fixed selector to `> section:first-child > p:first-of-type` so only the article's opening paragraph gets a drop cap (was applying to every section's first paragraph).
 
 ## [5.5.0] - 2026-03-22
 

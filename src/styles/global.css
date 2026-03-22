@@ -147,13 +147,6 @@
     @apply prose prose-lg dark:prose-invert max-w-article mx-auto;
   }
 
-  .article-content p:first-of-type::first-letter {
-    @apply font-serif font-bold;
-    @apply text-primary-600 dark:text-primary-400;
-    initial-letter: 3;
-    margin-right: 0.6rem;
-  }
-
   /* Article section spacing — tighter rhythm */
   .article-content h2 {
     @apply mt-16 mb-6 pb-3;
@@ -267,6 +260,25 @@
   .counter {
     @apply font-serif tabular-nums;
   }
+}
+
+/* Drop Cap — outside @layer so it isn't overridden by prose defaults.
+   initial-letter: 3 auto-sizes and aligns to span 3 body text lines.
+   Float fallback for browsers without initial-letter support. */
+.article-content > section:first-child > p:first-of-type::first-letter {
+  float: left;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: bold;
+  color: #dc2626;
+  font-size: 6.1rem;
+  line-height: 1;
+  margin-right: 0.5rem;
+  -webkit-initial-letter: 3;
+  initial-letter: 3;
+}
+
+.dark .article-content > section:first-child > p:first-of-type::first-letter {
+  color: #f87171;
 }
 
 @layer utilities {
