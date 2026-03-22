@@ -90,7 +90,7 @@ src/
 - **View Transitions** - Smooth page-to-page animations
 
 ### Content
-- **40 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, and Fitness
+- **39 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
 - Content Collections with Zod schema validation
 - Type-safe article queries
 - Automatic reading time calculation
@@ -101,20 +101,23 @@ src/
 
 ### Admin Publishing Portal (`/admin`)
 - Token-based authentication with logout
-- **Dashboard**: published, drafts, and coming-soon articles with edit/delete actions
-- **New Article**: upload source docs or paste text → Claude Opus generates full article
+- **Dashboard**: published, drafts, and coming-soon articles with edit/delete actions, illustration coverage stats
+- **New Article**: upload source docs or paste text → Claude Opus generates full article → OpenAI auto-generates illustration
 - **Edit Articles**: three-tab editor (Metadata, Content HTML, AI Refine) with live preview
 - Chat refinement with quick-action templates
 - Version history with restore
 - localStorage auto-save
 - One-click publish to GitHub (triggers Vercel rebuild)
 - Database-backed (Supabase PostgreSQL) for instant editing
+- **AI Tools panel**:
+  - **Editorial QC**: "Audit Only" and "Audit & Fix" — Claude reviews all headlines/descriptions holistically, auto-fixes issues
+  - **Illustrations**: "Generate Missing" and "Regenerate All" — batch AI illustration management
 
 ### Design
 - Responsive design with mobile-first approach
 - Dark/light theme toggle with system preference detection
 - Magazine-style editorial layout
-- **Category-based gradient art** — rich, editorial gradient palettes per category (no stock photos)
+- **AI-generated editorial illustrations** (OpenAI GPT Image 1.5) with category gradient fallback
 - Custom View Transition animations
 
 ### Performance

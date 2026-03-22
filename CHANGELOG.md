@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.4.0] - 2026-03-22
+
+### Added
+- **AI Tools panel** on admin dashboard — live controls for Editorial QC and Illustration generation
+  - "Audit Only" button: runs editorial-qc audit, shows grade + issues with before/after comparisons
+  - "Audit & Fix" button: audits then auto-applies medium+ severity fixes
+  - "Generate Missing" button: batch-generates illustrations for articles without them
+  - "Regenerate All" button: regenerates all illustrations (with cost confirmation dialog)
+  - 4th stat card showing illustration coverage (X/Y illustrated)
+- **Auto-illustration on article creation** — ArticleEditor now calls `generate-illustration` automatically after Claude generates a new article
+
+### Changed
+- **14 headlines refined for brand voice** — replaced QC-generated titles that were too clickbaity with headlines matching the editorial voice (provocative + intellectual, not BuzzFeed)
+  - "IQ Tests Are Mostly Bullshit" → "What IQ Actually Measures — and What It Misses Entirely"
+  - "The Ovary Apocalypse" → "Half the Population Goes Through Menopause. Medicine Barely Noticed."
+  - "Empathy Is Overrated" → "Empathy Has a Problem Science Is Only Now Admitting"
+
+### Fixed
+- **Title mismatch between cards and article pages** — all 39 `.astro` page files synced with JSON metadata titles. Previously, card titles (from JSON) were updated but article page titles (hardcoded in `.astro` props) still showed old values.
+
 ## [5.3.0] - 2026-03-22
 
 ### Added

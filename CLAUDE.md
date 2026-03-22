@@ -40,7 +40,7 @@ npm run preview  # Preview production build
 src/
 ├── content/
 │   ├── config.ts             # Content collection schema (Zod)
-│   └── articles/             # Article metadata (JSON) - 40 published articles
+│   └── articles/             # Article metadata (JSON) - 39 published articles
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
@@ -145,14 +145,24 @@ const articles = await getCollection('articles');
 
 #### Admin Publishing Portal (/admin)
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate)
-- **Dashboard**: article stats, published articles table
+- **Dashboard**: article stats (published, drafts, featured, illustration coverage), published articles table
 - **New Article Editor**: two-column layout (upload/chat + live preview)
   - Drag-and-drop file upload (.md, .docx, .txt)
-  - Claude 4.6 generates article in exact editorial format (via Supabase Edge Function)
+  - Claude Opus generates article in exact editorial format (via Supabase Edge Function)
+  - **Auto-generates editorial illustration** via OpenAI GPT Image 1.5 after article creation
   - Chat refinement interface for iterating on the article
   - Metadata editor (title, slug, category, tags, gradient, featured)
-  - One-click publish to GitHub (commits .astro + .json, triggers Vercel rebuild)
-- Edge Functions: `process-article`, `refine-article`, `publish-article`
+  - One-click publish to GitHub (commits .astro + .json with heroImage, triggers Vercel rebuild)
+- **AI Tools panel** on dashboard:
+  - **Editorial QC**: "Audit Only" (report) and "Audit & Fix" (auto-apply) — Claude reviews all headlines/descriptions as a collection
+  - **Illustrations**: "Generate Missing" and "Regenerate All" — batch AI illustration management
+- Edge Functions: `process-article`, `refine-article`, `publish-article`, `generate-illustration`, `editorial-qc`
+
+#### Autonomous AI Pipeline
+- **Article creation**: source doc → Claude writes article → OpenAI generates illustration → both saved to DB → publish commits to GitHub → Vercel deploys
+- **Quality control**: `editorial-qc` reviews full article collection holistically → identifies headline repetition, weak descriptions → auto-fixes via `articles-api`
+- **Illustration generation**: `generate-illustration` creates editorial art per article with house style prompt + category color palettes → stored in Supabase Storage
+- **All secrets** (ANTHROPIC_API_KEY, OPENAI_API_KEY, GITHUB_TOKEN, ADMIN_TOKEN) stored in Supabase secrets only — never in code
 
 #### Collection-Driven Navigation
 - All navigation components pull from `getCollection('articles')` — no hardcoded article references
