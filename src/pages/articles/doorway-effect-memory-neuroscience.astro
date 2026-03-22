@@ -1,0 +1,190 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="The Door That Erases You"
+  description="Why your brain deletes itself every time you leave a room — and why that's actually brilliant. The neuroscience behind the doorway effect reveals how our brains organize memory."
+  category="Neuroscience"
+  readTime="8 min read"
+  publishDate="March 2026"
+>
+  <!-- Feature Image -->
+  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
+<defs>
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+    <feMerge>
+      <feMergeNode in="coloredBlur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+  <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+  </linearGradient>
+  <linearGradient id="door-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:0.8" />
+    <stop offset="100%" style="stop-color:#9333ea;stop-opacity:0.6" />
+  </linearGradient>
+</defs>
+<rect width="1200" height="630" fill="url(#bg-gradient)"/>
+<g transform="translate(600,315)">
+  <!-- Doorway structure -->
+  <rect x="-150" y="-200" width="300" height="400" fill="none" stroke="url(#door-gradient)" stroke-width="3" filter="url(#glow)"/>
+  <rect x="-130" y="-180" width="260" height="360" fill="none" stroke="url(#door-gradient)" stroke-width="2" opacity="0.6"/>
+  
+  <!-- Neural network nodes fading through door -->
+  <circle cx="-200" cy="-50" r="8" fill="#7c3aed" opacity="0.9" filter="url(#glow)"/>
+  <circle cx="-180" cy="20" r="6" fill="#9333ea" opacity="0.8" filter="url(#glow)"/>
+  <circle cx="-160" cy="-80" r="7" fill="#7c3aed" opacity="0.7" filter="url(#glow)"/>
+  
+  <circle cx="0" cy="-30" r="5" fill="#9333ea" opacity="0.5" filter="url(#glow)"/>
+  <circle cx="20" cy="40" r="4" fill="#7c3aed" opacity="0.4" filter="url(#glow)"/>
+  <circle cx="-20" cy="80" r="6" fill="#9333ea" opacity="0.3" filter="url(#glow)"/>
+  
+  <circle cx="180" cy="-60" r="3" fill="#7c3aed" opacity="0.2" filter="url(#glow)"/>
+  <circle cx="200" cy="10" r="4" fill="#9333ea" opacity="0.15" filter="url(#glow)"/>
+  <circle cx="160" cy="50" r="3" fill="#7c3aed" opacity="0.1" filter="url(#glow)"/>
+  
+  <!-- Connecting lines showing memory fragmentation -->
+  <path d="M-200,-50 L-180,20 L-160,-80" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.6"/>
+  <path d="M0,-30 L20,40 L-20,80" fill="none" stroke="#9333ea" stroke-width="1" opacity="0.3"/>
+  <path d="M180,-60 L200,10 L160,50" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.15"/>
+  
+  <!-- Abstract brain waves -->
+  <path d="M-300,0 Q-250,-50 -200,0 T-100,0" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.4" filter="url(#glow)"/>
+  <path d="M100,0 Q150,50 200,0 T300,0" fill="none" stroke="#9333ea" stroke-width="2" opacity="0.2" filter="url(#glow)"/>
+</g>
+  </svg>
+
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#the-experiment" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Experiment That Named It</a>
+      <a href="#memory-architecture" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Architecture of a Memory</a>
+      <a href="#neuroscience" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Neuroscience Behind the Frame</a>
+      <a href="#hidden-benefits" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Upside Nobody Mentions</a>
+      <a href="#practical-strategies" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What To Do About It</a>
+      <a href="#universal-phenomenon" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">You're Not Alone, and You Never Were</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+<section id="introduction" class="reveal">
+  <p>You got up from the couch with a purpose. A clear, specific, non-negotiable purpose. You needed the scissors, or maybe the phone charger, or possibly something from the freezer. The intention felt solid — the kind of thought that seems incapable of disappearing.</p>
+  <p>Then you walked through the door.</p>
+  <p>And it was gone. Not faded, not fuzzy — gone. You stood in the kitchen doing that particular kind of blinking that means your brain is running a search query and coming up empty. You walked back. And the second — the <em>exact second</em> — you crossed back through that door, it returned. The scissors. The charger. The whole reason you existed thirty seconds ago.</p>
+  <p>This isn't your memory failing. It isn't early anything. It has a name, a mechanism, and a body of research behind it that is, frankly, more interesting than the scissors ever were.</p>
+  <p>It's called the <strong>doorway effect</strong>. And it's your brain working exactly as designed.</p>
+</section>
+
+<section id="the-experiment" class="reveal">
+  <h2>The Experiment That Named It</h2>
+  <p>In 2011, Gabriel Radvansky at the University of Notre Dame published a now-landmark series of experiments. Their title was blunt to the point of almost being funny: <em>"Walking Through Doorways Causes Forgetting."</em></p>
+  <p>Participants played a video game where they picked up colored objects from tables and carried them to other tables. The catch: whatever they were carrying became invisible, as if in a virtual backpack.</p>
+  <p>At random intervals, they were asked: what are you carrying?</p>
+  <p>The answer should have been easy. But Radvansky found that subjects forgot more after walking through a doorway compared to moving the same distance across a room. Distance had nothing to do with it. You could travel twice as far down a hallway and remember everything. Step through a frame, and the curtain drops.</p>
+  <aside class="pull-quote reveal">
+    <p>"The room you returned to wasn't the same room, cognitively speaking. The filing had already happened."</p>
+  </aside>
+  <p>The team repeated the experiments in physical environments with real rooms and real objects — same result. Then they tried the obvious fix: what if subjects simply walked back?</p>
+  <p>No improvements. The act of passing through a doorway serves as a way the mind files away memories. The context had closed.</p>
+</section>
+
+<section id="memory-architecture" class="reveal">
+  <h2>The Architecture of a Memory</h2>
+  <p>Memory is not a tape recording. It does not preserve a faithful stream of everything you've experienced. Instead, the brain is a ruthless editor.</p>
+  <p>It breaks experience into discrete chunks — what researchers call <strong>event models</strong> — and stores them as episodic packages tied to context: where you were, what you were doing, what the goal was.</p>
+  <p>Some forms of memory seem optimized to keep information ready until its shelf life expires, then purge it for new stuff. Walking through a doorway is a good time to purge your event models because whatever happened in the old room likely becomes less relevant in the new venue.</p>
+  <div class="info-card my-12 reveal">
+    <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">How Your Brain Compartmentalizes</h4>
+    <ul class="space-y-2 text-sm">
+      <li><strong>Event Models:</strong> Discrete chunks of experience tied to specific contexts</li>
+      <li><strong>Context Updates:</strong> Brain actively registers transitions as significant moments</li>
+      <li><strong>Automatic Purging:</strong> Information from prior events discarded from working memory</li>
+      <li><strong>Anticipatory System:</strong> Brain bets old context won't matter in new one</li>
+    </ul>
+  </div>
+  <p>Your brain isn't malfunctioning — it's anticipating. It's making a bet: <em>whatever you needed in the old context probably doesn't matter anymore in the new one.</em> Most of the time, that bet pays off. You don't need to be thinking about the pot on the stove when you're in the bedroom.</p>
+  <p>It's just that occasionally, the thing you were carrying across that boundary was the very reason you crossed it.</p>
+</section>
+
+<section id="neuroscience" class="reveal">
+  <h2>The Neuroscience Behind the Frame</h2>
+  <p>This isn't just behavioral psychology guesswork — there's hard neuroscience underneath it. Activity in brain regions including the posterior temporal and parietal cortex and lateral frontal cortex increases transiently at event boundaries.</p>
+  <p>Your brain doesn't passively float through space. It actively registers transitions as significant moments, firing off neural signals that mark the end of one cognitive chapter and the beginning of another.</p>
+  <p>The hippocampus — that seahorse-shaped structure deep in the medial temporal lobe — is doing heavy lifting at these junctures. It coordinates with the neocortex to package what just happened and prepare for what comes next.</p>
+  <aside class="pull-quote reveal">
+    <p>"Tab-switching, app-jumping, toggling between windows — every one of those transitions is a cognitive doorway."</p>
+  </aside>
+  <p>When you walk through a doorway, the hippocampus updates your context to the new space. This disrupts your short-term memory, making you forget your original intention. The prefrontal cortex simultaneously shifts its attentional resources to assess the new environment, momentarily releasing its grip on the intention you formed in Room A.</p>
+  <p>According to Event Segmentation Theory, when event models are updated, information belonging to the prior event is discarded from working memory. This accounts for the short-term memory loss commonly experienced when people walk through doorways.</p>
+  <p>The effect isn't limited to physical thresholds. You've experienced this on a screen. The architecture of modern computing may be, inadvertently, the most aggressive doorway-effect-generating machine ever built.</p>
+</section>
+
+<section id="hidden-benefits" class="reveal">
+  <h2>The Upside Nobody Mentions</h2>
+  <p>Here is where most writing on the doorway effect stops — at the frustration of the vanished thought, the comedy of the confused pause. But that framing misses something important.</p>
+  <p>The same system that occasionally erases your intention to grab the scissors is, the rest of the time, doing something extraordinary: organizing your entire lived experience into a searchable, retrievable structure.</p>
+  <p>Event boundaries form anchors for long-term memory. Interventions that encourage people to identify appropriate event boundaries can improve memory for what has happened and the learning of new skills.</p>
+  <div class="info-card my-12 reveal">
+    <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">The Trade-Off</h4>
+    <ul class="space-y-2 text-sm">
+      <li><strong>Cost:</strong> Occasional lost errands and forgotten intentions</li>
+      <li><strong>Benefit:</strong> Coherent, organized autobiographical memory</li>
+      <li><strong>Benefit:</strong> Rapid cognitive pivoting when environment shifts</li>
+      <li><strong>Benefit:</strong> Improved predictions about the near future</li>
+    </ul>
+  </div>
+  <p>Think about how you remember your own life. You don't remember it as an undifferentiated stream. You remember it as <em>scenes</em> — defined moments with context, location, emotional charge. Your wedding. A specific conversation in a specific kitchen. Those memories have such crisp edges precisely because your brain is expert at drawing lines between events.</p>
+  <p>Event segmentation might arise as a side effect of an adaptive mechanism that integrates information over the recent past to improve predictions about the near future. This is a brain constantly modeling the world, constantly updating its predictions, and marking the moments when those predictions need revision.</p>
+  <aside class="pull-quote reveal">
+    <p>"The cost of this system is the occasional lost errand. The benefit is a coherent, organized autobiographical memory."</p>
+  </aside>
+  <p>The doorway is just one of the triggers — a spatial signal that says: <em>conditions have changed, update accordingly.</em> That's not a bad trade.</p>
+</section>
+
+<section id="practical-strategies" class="reveal">
+  <h2>What To Do About It (If You Actually Care)</h2>
+  <p>The research suggests the doorway effect is stubbornly persistent. Despite active maintenance mechanisms deployed to sustain items in visual working memory, memory loss due to crossing an event boundary persists. This type of forgetting cannot be eliminated even when observers actively try to overcome it.</p>
+  <p>That said, there are practical strategies with reasonable evidence behind them:</p>
+  <h3>Verbalize the intention before moving</h3>
+  <p>Saying out loud what you're going for — even quietly to yourself — recruits a different memory system (semantic/verbal) that may survive the boundary transition better than the purely spatial-contextual encoding that gets purged.</p>
+  <h3>Mental rehearsal</h3>
+  <p>Before you get up, run through the action in your mind: rising, walking, retrieving, returning. This pre-loads the intention as an episodic simulation rather than just a momentary goal state — making it stickier.</p>
+  <h3>Take the object with you</h3>
+  <p>When the intention is tied to a physical item — a note, the bottle you need to refill — carry it. The object becomes the memory. Your brain doesn't need to hold the intention if the intention is in your hand.</p>
+  <h3>Go back</h3>
+  <p>While returning to the original room doesn't guarantee memory recovery (Radvansky's experiments were clear on this), anecdotally, the familiar sensory environment can trigger retrieval through associated cues. It's worth the trip.</p>
+</section>
+
+<section id="universal-phenomenon" class="reveal">
+  <h2>You're Not Alone, and You Never Were</h2>
+  <p>One thing worth noting for anyone who has spent decades mildly embarrassed by this quirk: it is perfectly normal to forget why you came here.</p>
+  <p>The effect has been documented across age groups, cognitive profiles, and cultures. It isn't evidence of age-related declines. It doesn't scale with intelligence in either direction. Highly organized people experience it. Scatterbrained people experience it. The effect is democratically, stubbornly human.</p>
+  <aside class="pull-quote reveal">
+    <p>"The person who forgot why they walked into the kitchen this morning is running the same neural architecture as the person who remembered."</p>
+  </aside>
+  <p>They just crossed a boundary at the wrong moment, carrying something their brain judged expendable.</p>
+  <p>The scissors can wait. The brain that lost them is doing something remarkable.</p>
+</section>
+
+<div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal">
+  <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+    <strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical or psychological advice. The doorway effect is a normal cognitive phenomenon and not indicative of memory disorders. If you have concerns about memory loss or cognitive function, please consult with a qualified healthcare professional. The strategies mentioned are based on research findings but individual results may vary.
+  </p>
+</div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Memory</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Cognitive Psychology</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Brain Function</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Event Segmentation</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Hippocampus</span>
+  </Fragment>
+</ArticleLayout>
