@@ -1,0 +1,34 @@
+{
+  "title": "The Tell You Cannot Take Back",
+  "description": "Blushing is the only human expression that cannot be faked or suppressed. New research reveals it may be evolution's most sophisticated social tool.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Evolution",
+    "Social Psychology",
+    "Neuroscience",
+    "Human Behavior",
+    "Emotional Expression"
+  ],
+  "gradient": {
+    "from": "rose-600",
+    "to": "red-700"
+  },
+  "keywords": [
+    "blushing",
+    "facial expressions",
+    "evolution",
+    "social psychology",
+    "Darwin",
+    "emotional sincerity",
+    "theory of mind",
+    "sympathetic nervous system"
+  ]
+}
