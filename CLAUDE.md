@@ -191,6 +191,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `publish-article` | Commits .astro + .json to GitHub via REST API | Bearer token |
 | `delete-article` | Removes article files from GitHub | Bearer token |
 | `fetch-article` | Fetches .astro file content from GitHub | None |
+| `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 
 **Deploy commands:**
 ```bash
@@ -198,7 +199,7 @@ supabase functions deploy <function-name> --no-verify-jwt
 ```
 
 **Required secrets** (set via `supabase secrets set`):
-- `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
+- `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
 
 #### View Transitions

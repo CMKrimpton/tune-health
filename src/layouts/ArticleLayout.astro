@@ -160,7 +160,10 @@ const relatedArticles = await getRelatedArticles(slug, 3);
           {relatedArticles.map((article, i) => (
             <a href={article.href} class={`article-card group reveal${i > 0 ? ` reveal-delay-${i}` : ''}`}>
               <div class="article-card-image">
-                <div class="article-card-image-inner relative overflow-hidden" style={getArticleGradientStyle(article.category)}>
+                <div class="article-card-image-inner relative overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+                  {article.heroImage && (
+                    <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
+                  )}
                   <span class="article-card-number absolute bottom-4 left-4">{String(i + 1).padStart(2, '0')}</span>
                 </div>
               </div>

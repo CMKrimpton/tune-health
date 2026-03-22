@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.2.0] - 2026-03-22
+
+### Added
+- **`generate-illustration` Edge Function** — automated AI illustration pipeline using OpenAI GPT Image 1.5
+  - `generate` action: creates an editorial illustration for a single article by slug
+  - `batch` action: generates illustrations for all articles missing them (with `force` option)
+  - House style prompt ensures consistent "premium health science magazine" visual language
+  - Category-specific color palettes (8 categories) for cohesive art direction
+  - Images stored in Supabase Storage (`article-illustrations` bucket)
+  - Auto-updates `hero_image` and `hero_image_alt` in database
+  - Rate-limit-safe sequential processing for batch operations
+- **heroImage rendering with gradient fallback** — all card components now check for `heroImage` first, then fall back to category gradient art. This means illustrations automatically appear everywhere once generated.
+- `OPENAI_API_KEY` stored securely in Supabase secrets (never in code or .env)
+
+### Architecture
+- Image pipeline: OpenAI GPT Image 1.5 → Supabase Storage → database `hero_image` field → static site JSON → card rendering
+- All secrets (OPENAI_API_KEY, ANTHROPIC_API_KEY, GITHUB_TOKEN, ADMIN_TOKEN) stored in Supabase secrets only
+
 ## [5.1.0] - 2026-03-22
 
 ### Changed

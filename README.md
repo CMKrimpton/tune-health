@@ -174,6 +174,8 @@ The site is deployed on Vercel with automatic deployments:
   - `publish-article` — GitHub commit pipeline
   - `delete-article` — GitHub file deletion
   - `fetch-article` — GitHub file fetching
+  - `generate-illustration` — AI illustration generation (OpenAI GPT Image 1.5) with batch support
+- **Storage**: `article-illustrations` bucket for AI-generated editorial art
 
 ## Documentation
 
