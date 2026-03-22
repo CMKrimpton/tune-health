@@ -175,6 +175,7 @@ The site is deployed on Vercel with automatic deployments:
   - `delete-article` — GitHub file deletion
   - `fetch-article` — GitHub file fetching
   - `generate-illustration` — AI illustration generation (OpenAI GPT Image 1.5) with batch support
+  - `editorial-qc` — Autonomous editorial quality control (Claude audits full collection, auto-fixes headlines/descriptions/illustrations)
 - **Storage**: `article-illustrations` bucket for AI-generated editorial art
 
 ## Documentation

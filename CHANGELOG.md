@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.3.0] - 2026-03-22
+
+### Added
+- **`editorial-qc` Edge Function** — autonomous editorial quality control system
+  - `audit`: Claude (Sonnet) reviews ALL articles holistically as a collection, analyzing headline variety, reader magnetism, description quality, illustration status, and metadata completeness. Returns structured JSON report with issues, severity levels, specific suggestions, and an overall grade.
+  - `fix`: Auto-applies changes by dispatching to other Edge Functions (`articles-api` for titles/descriptions, `generate-illustration` for missing art). Supports `min_severity` threshold and `dry_run` mode.
+  - `audit-and-fix`: Combined flow — audit then auto-fix in one call.
+  - Identifies patterns like structural repetition ("22/39 titles start with 'The'"), weak differentiation, and monotonous headline rhythms.
+- All 39 articles seeded to Supabase database (was only 8)
+
+### Changed
+- **16 article titles improved** based on QC audit — reduced "The X" pattern from 56% to ~30%, increased structural variety, improved reader magnetism
+- Examples: "The Disease Medicine Forgot" → "190 Million Women Have a Disease Science Ignores", "The Switching Brain: What Creativity Actually Is" → "Creativity Isn't What You Think It Is"
+
 ## [5.2.0] - 2026-03-22
 
 ### Added

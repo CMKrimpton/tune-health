@@ -192,6 +192,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `delete-article` | Removes article files from GitHub | Bearer token |
 | `fetch-article` | Fetches .astro file content from GitHub | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
+| `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
 
 **Deploy commands:**
 ```bash
