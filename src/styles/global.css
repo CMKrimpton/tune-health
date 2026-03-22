@@ -148,12 +148,10 @@
   }
 
   .article-content p:first-of-type::first-letter {
-    @apply float-left font-serif font-bold leading-none;
+    @apply font-serif font-bold;
     @apply text-primary-600 dark:text-primary-400;
-    font-size: 4.25rem;
+    initial-letter: 3;
     margin-right: 0.6rem;
-    margin-top: 0.15rem;
-    margin-bottom: -0.25rem;
   }
 
   /* Article section spacing — tighter rhythm */

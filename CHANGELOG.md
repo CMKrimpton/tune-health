@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.5.1] - 2026-03-22
+
+### Fixed
+- **Drop cap baseline alignment** — replaced manual `float-left` + hardcoded `font-size`/`margin-top`/`margin-bottom` with CSS `initial-letter: 3`, which automatically sizes and aligns the drop cap to span exactly 3 text lines with proper baseline alignment (Chrome 110+, Safari 9+, Firefox 134+)
+
 ## [5.5.0] - 2026-03-22
 
 ### Security
