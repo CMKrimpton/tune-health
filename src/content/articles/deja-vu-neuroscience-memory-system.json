@@ -1,0 +1,36 @@
+{
+  "title": "The Glitch That Proves the System Works",
+  "description": "Déjà vu isn't a memory error — it's your brain catching its own mistake. New fMRI research reveals why this strange sensation is actually a sign of healthy cognitive function.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Memory",
+    "Brain Function",
+    "Cognitive Science",
+    "Neurology",
+    "Mental Health"
+  ],
+  "gradient": {
+    "from": "violet-600",
+    "to": "purple-700"
+  },
+  "keywords": [
+    "déjà vu",
+    "memory systems",
+    "neuroscience",
+    "brain function",
+    "cognitive monitoring",
+    "familiarity",
+    "recollection",
+    "temporal lobe",
+    "frontal cortex",
+    "fMRI research"
+  ]
+}
