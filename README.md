@@ -114,6 +114,13 @@ src/
   - **Illustration Agent**: single-article generator, "Generate Missing", "Regenerate All" with cost confirmation
   - **Database Sync**: refresh DB from content
 
+### alumi Health Funnel
+- **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app
+- **Article-end CTA**: category-contextual (maps article topics → app features)
+- **Homepage section**: 4-feature grid (Lab Results, Meal Analysis, AI Analyst, N=1 Experiments)
+- **Header**, **Footer**, and **SideNav** links with UTM tracking
+- Centralized config in `src/utils/funnel.ts` — single source of truth for all CTA copy and deep links
+
 ### Design
 - Responsive design with mobile-first approach
 - Dark/light theme toggle with system preference detection

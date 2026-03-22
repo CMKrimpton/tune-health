@@ -1,0 +1,114 @@
+---
+/**
+ * AppPromo — homepage section bridging editorial content to alumi Health app.
+ */
+import { getAppLink } from '../utils/funnel';
+
+const features = [
+  {
+    name: 'Lab Results',
+    stat: '459 biomarkers',
+    description: 'Upload a photo. 16 clinical categories. 99% accuracy.',
+    icon: 'lab',
+    link: getAppLink('/dashboard', { medium: 'homepage', campaign: 'lab-results' }),
+  },
+  {
+    name: 'Meal Analysis',
+    stat: '80+ nutrients',
+    description: 'Photograph your meal. Full micronutrient breakdown.',
+    icon: 'meal',
+    link: getAppLink('/dashboard', { medium: 'homepage', campaign: 'meal-analysis' }),
+  },
+  {
+    name: 'AI Analyst',
+    stat: 'Claude Opus',
+    description: 'Three communication styles. Evidence-based answers.',
+    icon: 'ai',
+    link: getAppLink('/dashboard', { medium: 'homepage', campaign: 'ai-analyst' }),
+  },
+  {
+    name: 'Experiments',
+    stat: 'N=1',
+    description: 'Track variables. Measure outcomes. Know what works.',
+    icon: 'experiment',
+    link: getAppLink('/dashboard', { medium: 'homepage', campaign: 'experiments' }),
+  },
+];
+
+const trialLink = getAppLink('/', { medium: 'homepage', campaign: 'cta' });
+---
+
+<section class="py-20 md:py-28" id="app">
+  <div class="container-editorial">
+    <div class="max-w-4xl mx-auto">
+      <!-- Header -->
+      <div class="text-center mb-14 reveal">
+        <span class="section-label mb-4 block">From Knowledge to Action</span>
+        <h2 class="font-serif text-heading-1 font-semibold mb-4 text-balance leading-tight">
+          Read the Science.<br/>
+          <span class="italic text-primary-600">Track Your Health.</span>
+        </h2>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-2xl mx-auto" style="line-height: 1.8;">
+          alumi Health puts the same evidence-based rigor we apply to our articles
+          into a personal health platform. AI-powered. No hardware required.
+        </p>
+      </div>
+
+      <!-- Feature Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        {features.map((feature, i) => (
+          <a
+            href={feature.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            class={`app-promo-card group reveal${i > 0 ? ` reveal-delay-${i}` : ''}`}
+            aria-label={`${feature.name} — ${feature.description}`}
+          >
+            <div class="app-cta-icon mb-4" aria-hidden="true">
+              {feature.icon === 'lab' && (
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 3v2m6-2v2M9 5a2 2 0 00-2 2v1a2 2 0 002 2h.93a2 2 0 011.664.89l.812 1.22A2 2 0 0114.07 12H15a2 2 0 002-2V7a2 2 0 00-2-2M9 5h6M7 21h10a2 2 0 002-2v-5.586a1 1 0 00-.293-.707l-1.414-1.414A1 1 0 0016.586 11H7.414a1 1 0 00-.707.293l-1.414 1.414A1 1 0 005 13.414V19a2 2 0 002 2z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              )}
+              {feature.icon === 'meal' && (
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M3 9a2 2 0 012-2h14a2 2 0 012 2M3 9v9a2 2 0 002 2h14a2 2 0 002-2V9M3 9l3-4h12l3 4M12 13v4M8 13v2m8-2v2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              )}
+              {feature.icon === 'ai' && (
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              )}
+              {feature.icon === 'experiment' && (
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              )}
+            </div>
+            <span class="block text-xs font-semibold text-primary-600 dark:text-primary-400 mb-1">{feature.stat}</span>
+            <h3 class="font-serif text-lg font-semibold mb-1.5 group-hover:text-primary-600 transition-colors">{feature.name}</h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 leading-relaxed">{feature.description}</p>
+          </a>
+        ))}
+      </div>
+
+      <!-- CTA -->
+      <div class="text-center reveal">
+        <a
+          href={trialLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn-primary magnetic inline-flex"
+          aria-label="Start free trial of alumi Health"
+        >
+          <span>Start 14-Day Free Trial</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
+        </a>
+        <p class="text-xs text-stone-400 mt-3">No credit card required. Free tier available forever.</p>
+      </div>
+    </div>
+  </div>
+</section>

@@ -6,6 +6,7 @@ import FloatingTOC from '../components/FloatingTOC.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SEO from '../components/SEO.astro';
 import Newsletter from '../components/Newsletter.astro';
+import ArticleCTA from '../components/ArticleCTA.astro';
 import { fade, slide } from 'astro:transitions';
 import { getRelatedArticles, getArticleGradientStyle } from '../utils/articles';
 
@@ -144,6 +145,9 @@ const relatedArticles = await getRelatedArticles(slug, 3);
             </p>
           </div>
         </div>
+
+        <!-- App CTA — contextual per category -->
+        <ArticleCTA category={category} slug={slug} />
       </div>
     </div>
   </article>

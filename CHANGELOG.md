@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.6.0] - 2026-03-22
+
+### Added
+- **alumi Health funnel system** — 5 touchpoints connecting the editorial magazine to the alumi Health app (`https://tune-sigma.vercel.app`)
+  - **Article-end CTA** (`ArticleCTA.astro`): contextual per category — maps article topics to relevant app features (e.g., Longevity → Lab Results, Nutrition → Meal Analysis, Neuroscience → AI Analyst). Appears after every article's author card
+  - **Homepage section** (`AppPromo.astro`): 4-feature grid (Lab Results, Meal Analysis, AI Analyst, N=1 Experiments) with "Start 14-Day Free Trial" CTA, placed between the Mission section and Deep Dives
+  - **Header nav link**: subtle pill-shaped "alumi Health" link with external arrow, hidden on mobile to keep header clean
+  - **Footer section**: alumi Health promo bar with description and "Start Free Trial" button, placed above the copyright bar
+  - **SideNav promo card**: compact app card in the sidebar under a new "App" section label
+- **Funnel configuration module** (`src/utils/funnel.ts`): centralized category-to-feature mapping, CTA copy, and UTM link builder — single source of truth for all 5 touchpoints
+- **UTM tracking**: every app link includes `utm_source=alumi-news`, `utm_medium={touchpoint}`, `utm_campaign={category}`, `utm_content={article-slug}` for conversion tracking
+- **CSS**: `.app-cta`, `.app-cta-icon`, `.app-cta-feature-pill`, `.app-promo-card` styles in `@layer components`
+
 ## [5.5.1] - 2026-03-22
 
 ### Fixed

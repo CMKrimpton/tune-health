@@ -4,6 +4,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SideNav from '../components/SideNav.astro';
+import AppPromo from '../components/AppPromo.astro';
 import { getArticles, getComingSoonArticles, getFeaturedArticles, formatPublishDateShort, getArticleGradientStyle } from '../utils/articles';
 
 const allArticles = await getArticles();
@@ -268,6 +269,9 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
       </div>
     </div>
   </section>
+
+  <!-- alumi Health App Promo -->
+  <AppPromo />
 
   <!-- Deep Dives -->
   <section class="py-20 md:py-28 bg-stone-100 dark:bg-stone-900" id="deep-dives">

@@ -55,6 +55,8 @@ src/
 │   ├── Newsletter.astro      # Newsletter signup section
 │   ├── Breadcrumbs.astro     # Navigation breadcrumbs
 │   ├── SEO.astro             # JSON-LD structured data
+│   ├── ArticleCTA.astro      # Category-contextual app CTA (article end)
+│   ├── AppPromo.astro        # Homepage alumi Health section (4-feature grid)
 │   └── admin/
 │       └── ArticleEditor.tsx # Admin publishing portal React component
 ├── pages/
@@ -71,6 +73,7 @@ src/
 ├── middleware.ts              # Auth gate for /admin routes
 ├── utils/
 │   ├── articles.ts           # Article collection helpers
+│   ├── funnel.ts             # Category-to-feature mapping, UTM link builder
 │   └── reading-time.ts       # Reading time calculation
 └── styles/
     ├── global.css            # Tailwind directives + custom styles
@@ -218,6 +221,21 @@ supabase functions deploy <function-name> --no-verify-jwt
 **Required secrets** (set via `supabase secrets set`):
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
+
+#### User Funnel (alumi Health)
+
+The magazine funnels readers to the **alumi Health** app (`https://tune-sigma.vercel.app`) — an AI-powered health tracking platform (lab OCR, meal analysis, AI analyst, N=1 experiments).
+
+**5 touchpoints** (all link externally with `target="_blank"`):
+1. **Article-end CTA** (`ArticleCTA.astro`): category-contextual — maps article topics to relevant app features via `funnel.ts`
+2. **Homepage section** (`AppPromo.astro`): 4-feature grid between Mission and Deep Dives
+3. **Header nav**: pill-shaped link, hidden on mobile
+4. **Footer**: promo bar with "Start Free Trial" button
+5. **SideNav**: compact promo card under "App" label
+
+**Configuration**: `src/utils/funnel.ts` — centralized category-to-feature mapping and UTM link builder. All 5 touchpoints read from this single source. To add a new category mapping, update `CATEGORY_FEATURE_MAP`.
+
+**UTM scheme**: `utm_source=alumi-news`, `utm_medium={touchpoint}`, `utm_campaign={category}`, `utm_content={slug}`
 
 #### View Transitions
 - Native browser View Transitions API via Astro
