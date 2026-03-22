@@ -1,0 +1,19 @@
+{
+  "title": "Why Everyone Is Going Nearsighted",
+  "description": "Myopia is exploding globally at unprecedented rates. For decades, screens got the blame. New research says the real culprit is something subtler.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 7,
+  "featured": false,
+  "draft": false,
+  "tags": ["Neuroscience", "Vision", "Myopia", "Environmental Health", "Child Development"],
+  "gradient": {
+    "from": "sky-500",
+    "to": "blue-600"
+  },
+  "keywords": ["myopia", "nearsightedness", "outdoor light", "dopamine", "vision", "screens", "child development", "eye health"]
+}

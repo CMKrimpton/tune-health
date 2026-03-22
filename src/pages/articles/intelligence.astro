@@ -1,0 +1,195 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="The Intelligence Trap: What IQ Actually Measures — and What It Doesn't"
+  description="For over a century, a number from an hour-long test has sorted people into categories. The science of intelligence has grown considerably more interesting than that number implies."
+  category="Neuroscience"
+  readTime="9 min read"
+  publishDate="March 2026"
+>
+  <!-- Feature Image -->
+  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
+    <defs>
+      <linearGradient id="intGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#1a0a1e"/>
+        <stop offset="100%" style="stop-color:#2a0a0a"/>
+      </linearGradient>
+      <linearGradient id="intGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#e11d48"/>
+        <stop offset="100%" style="stop-color:#b91c1c"/>
+      </linearGradient>
+      <filter id="intGlow">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+    <rect width="1200" height="600" fill="url(#intGrad1)"/>
+    <!-- Neural network nodes -->
+    <g filter="url(#intGlow)" opacity="0.5">
+      <circle cx="300" cy="150" r="8" fill="#e11d48"/>
+      <circle cx="450" cy="280" r="10" fill="#fb7185"/>
+      <circle cx="600" cy="180" r="12" fill="#e11d48"/>
+      <circle cx="750" cy="320" r="9" fill="#fb7185"/>
+      <circle cx="900" cy="200" r="11" fill="#e11d48"/>
+      <circle cx="350" cy="400" r="7" fill="#fb7185"/>
+      <circle cx="550" cy="420" r="9" fill="#e11d48"/>
+      <circle cx="700" cy="450" r="8" fill="#fb7185"/>
+      <circle cx="850" cy="380" r="10" fill="#e11d48"/>
+      <circle cx="200" cy="300" r="6" fill="#fb7185"/>
+      <circle cx="1000" cy="280" r="7" fill="#e11d48"/>
+    </g>
+    <!-- Connection lines (neural pathways) -->
+    <g stroke="#e11d48" stroke-width="0.8" opacity="0.2">
+      <line x1="300" y1="150" x2="450" y2="280"/>
+      <line x1="450" y1="280" x2="600" y2="180"/>
+      <line x1="600" y1="180" x2="750" y2="320"/>
+      <line x1="750" y1="320" x2="900" y2="200"/>
+      <line x1="200" y1="300" x2="350" y2="400"/>
+      <line x1="350" y1="400" x2="550" y2="420"/>
+      <line x1="550" y1="420" x2="700" y2="450"/>
+      <line x1="700" y1="450" x2="850" y2="380"/>
+      <line x1="300" y1="150" x2="200" y2="300"/>
+      <line x1="450" y1="280" x2="350" y2="400"/>
+      <line x1="600" y1="180" x2="550" y2="420"/>
+      <line x1="750" y1="320" x2="700" y2="450"/>
+      <line x1="900" y1="200" x2="850" y2="380"/>
+      <line x1="900" y1="200" x2="1000" y2="280"/>
+      <line x1="850" y1="380" x2="1000" y2="280"/>
+    </g>
+    <!-- Bell curve outline -->
+    <path d="M200 500 Q400 500 500 400 Q550 350 600 200 Q650 350 700 400 Q800 500 1000 500" fill="none" stroke="url(#intGrad2)" stroke-width="2" opacity="0.3"/>
+    <!-- Scattered measurement marks -->
+    <g opacity="0.15">
+      <rect x="580" y="480" width="40" height="3" fill="#e11d48"/>
+      <rect x="540" y="490" width="120" height="1" fill="#fb7185"/>
+      <rect x="560" y="500" width="80" height="2" fill="#e11d48"/>
+    </g>
+    <path d="M0 550 Q300 530 600 545 T1200 525 V600 H0 Z" fill="#0c0a09" opacity="0.3"/>
+  </svg>
+
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#introduction" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Origin of a Number</a>
+      <a href="#what-the-test-measures" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What the Test Actually Measures</a>
+      <a href="#flynn-effect" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Flynn Effect: Intelligence Is Environmental</a>
+      <a href="#what-it-misses" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What It Misses</a>
+      <a href="#neuroscience" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Neuroscience: What Intelligence Looks Like in the Brain</a>
+      <a href="#honest-summary" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Honest Summary</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="introduction" class="reveal">
+      <p>In 1905, the French psychologist Alfred Binet developed a test to help teachers identify children who needed additional support in school. He was explicit about what it was: a diagnostic educational tool. A practical instrument. He was also explicit about what it wasn't: a measure of innate intelligence, a fixed assessment of a child's ceiling, or a number that should follow anyone through their life.</p>
+
+      <p>By the time his work had crossed the Atlantic, been renamed the Intelligence Quotient, and been deployed in U.S. Army recruiting, immigration screening, and eugenics programs, none of those caveats survived the translation.</p>
+
+      <p>The IQ score has since become one of the most durable and contested constructs in all of psychology. It predicts academic performance reasonably well, lifetime earnings modestly, and a remarkable range of real-world outcomes with statistical significance. It also fails to capture vast territories of human cognitive capacity, is sensitive to environmental factors in ways that challenge its perceived solidity, and has accumulated a history of misuse ugly enough to require honest acknowledgment whenever the science is discussed.</p>
+
+      <p>All of which means the conversation about intelligence has rarely been as interesting — or as necessary — as it is now.</p>
+    </section>
+
+    <section id="what-the-test-measures" class="reveal">
+      <h2>What the Test Actually Measures</h2>
+
+      <p>Modern IQ tests don't measure "intelligence" as a singular thing. They measure performance across several cognitive domains — verbal comprehension, perceptual reasoning, working memory, and processing speed — and aggregate those scores into a summary number. The correlation between scores on different cognitive tests is what gives that summary number its theoretical grounding: people who perform well on one type of cognitive task tend to perform well on others. This shared variance is what Charles Spearman called the <em>g</em> factor — general intelligence — and it has been one of the most replicated findings in all of psychology.</p>
+
+      <p><em>g</em> is real. It predicts outcomes. The University of Bath's research, published in 2025, demonstrated that higher-IQ individuals make more accurate probabilistic forecasts — they estimate the likelihood of future events more precisely, both for good outcomes and bad ones. This calibration advantage cascades across financial decisions, health behaviors, and career choices in ways that accumulate over a lifetime. Higher IQ is associated with lower rates of accidents, better health management, longer lifespans, and more successful navigation of complex social and institutional environments.</p>
+
+      <p>None of this means the test measures what most people think it measures.</p>
+
+      <p>IQ tests are best understood as measuring "the tendency to give correct answers to the types of questions frequently posed in school." This is a useful thing to measure, and it correlates substantially with outcomes that matter. It is not the same as measuring intelligence as an essence — a quantity of cognitive potential a person carries around inside them. That framing is what psychologists call essentialism, and the evidence does not support it.</p>
+    </section>
+
+    <aside class="pull-quote reveal">
+      <p>"IQ tests are best understood as measuring 'the tendency to give correct answers to the types of questions frequently posed in school.'"</p>
+    </aside>
+
+    <section id="flynn-effect" class="reveal">
+      <h2>The Flynn Effect: Intelligence Is Environmental</h2>
+
+      <p>The most compelling evidence that IQ is not primarily a fixed genetic property is the Flynn Effect: the consistent rise in raw IQ scores across virtually every population that has been tested over the past century. Raw scores have risen by roughly <strong>2–3 points per decade</strong>. Over the 20th century, the cumulative gain amounts to approximately 30 points — meaning that the average person in 1920, by today's norms, would score at a level associated with intellectual disability.</p>
+
+      <p>The people were not, obviously, intellectually disabled. They were adapted to their cognitive environment — one with less exposure to abstract visual reasoning, less formal education, less engagement with hypothetical thinking and novel problem-solving. James Flynn, who documented this effect extensively before his death in 2020, argued the gains reflect better problem-solving habits in abstract, hypothetical domains rather than a biological improvement in neural efficiency. The brain's hardware hasn't changed. The software running on it has been updated by environmental demand.</p>
+
+      <p>The implications are substantial. If IQ scores can rise by a generation's worth of schooling and cultural change, they cannot be interpreted as simple measures of fixed biological potential. They are measures of how well a given person has been positioned to exercise the cognitive skills that particular tests value.</p>
+
+      <p>More recent and troubling data: IQ scores in several Scandinavian countries have been declining since the 1990s, reversing the long upward trend. The same countries where scores rose fastest now show the steepest drops. What drove the rise — more abstract thinking, formal education, nutritional improvements — may have plateaued or reversed, possibly supplemented by environmental factors including digital fragmentation of attention, reduced deep reading, and the early outsourcing of cognitive tasks to devices.</p>
+
+      <p>A 2025 Swiss Business School study found a significant negative relationship between frequent AI tool use and independent critical thinking scores, most pronounced in younger adults. The gains of the 20th century may be heading toward a trade: cognition augmented by tools, but cognitive capacity that atrophies without them.</p>
+    </section>
+
+    <div class="info-card my-12 reveal">
+      <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">The Flynn Effect: Key Numbers</h4>
+      <ul class="space-y-2 text-sm">
+        <li><strong>2–3 points per decade:</strong> Average rise in raw IQ scores across the 20th century</li>
+        <li><strong>~30 points total:</strong> Cumulative gain over the century — average 1920 score would be classified as intellectually disabled by modern norms</li>
+        <li><strong>Scandinavian reversal:</strong> IQ scores declining since the 1990s in countries that previously showed the fastest gains</li>
+        <li><strong>2025 finding:</strong> Frequent AI tool use correlates with lower independent critical thinking scores</li>
+      </ul>
+    </div>
+
+    <section id="what-it-misses" class="reveal">
+      <h2>What It Misses</h2>
+
+      <p>The <em>g</em> factor explains a meaningful but incomplete proportion of variance in real-world outcomes. Other factors that predict success, fulfillment, and functional performance in human life are not well-captured by standard IQ measurement.</p>
+
+      <p><strong>Working under uncertainty.</strong> IQ tests are completed in controlled conditions with correct answers. Life operates with incomplete information, ambiguous signals, and no answer key. The capacity to act effectively in that environment — making good decisions with partial data, updating beliefs appropriately, tolerating ambiguity without paralysis — correlates with <em>g</em> but also involves factors the test doesn't touch.</p>
+
+      <p><strong>Motivation and persistence.</strong> A growing literature shows that the motivational state of a test-taker substantially affects IQ performance. Studies using small financial incentives for correct answers produce meaningfully higher scores in lower-performing groups, suggesting that motivational engagement partly explains what looks like a stable trait. IQ tests measure cognitive performance under specific conditions, not cognitive capacity as a ceiling.</p>
+
+      <p><strong>Practical and social intelligence.</strong> The ability to navigate social hierarchies, manage relationships, read interpersonal dynamics accurately, and function effectively in specific cultural contexts contributes enormously to life outcomes. These capacities are largely orthogonal to psychometric <em>g</em> and often matter more in domains where IQ differences between people are small but social and emotional competence differences are large.</p>
+
+      <p><strong>Creativity.</strong> The most important finding from the new creativity neuroscience is that creative ability is not reliably predicted by IQ. They are distinct. The brain networks that support creative thought are different from those that support the logical processing that IQ tests measure. Someone with a modest IQ score may possess exceptional creative capacity, and vice versa. These are genuinely separable dimensions.</p>
+    </section>
+
+    <aside class="pull-quote reveal">
+      <p>"The brain's hardware hasn't changed. The software running on it has been updated by environmental demand."</p>
+    </aside>
+
+    <section id="neuroscience" class="reveal">
+      <h2>The Neuroscience: What Intelligence Looks Like in the Brain</h2>
+
+      <p>Neuroimaging has provided a more granular picture of what <em>g</em> corresponds to in the brain, and it is not localized in the way that pop neuroscience once implied.</p>
+
+      <p>Higher intelligence is associated with greater <strong>global efficiency of the brain's network architecture</strong> — more effective communication between distributed brain regions, rather than simply a larger or more active prefrontal cortex. A 2025 meta-analysis of neuroimaging studies found that brain-wide connectivity patterns predict cognitive performance, with connectivity across the default mode, frontoparietal, and salience networks all contributing.</p>
+
+      <p>The parieto-frontal integration theory (P-FIT) of intelligence proposes that efficient information transfer along fronto-parietal pathways — connecting sensory and association areas with prefrontal executive circuits — is the structural basis of <em>g</em>. People with higher IQ show more myelin-rich white matter tracts connecting these regions, faster neural transmission speeds, and lower metabolic cost per cognitive operation — the brain equivalent of a more fuel-efficient engine.</p>
+
+      <p>Processing speed, which is one of the components IQ tests measure, appears to be a proxy for this neural efficiency: how quickly the brain can execute the operations that cognitive tasks require. This processing speed advantage compounds across complex tasks that require many such operations in sequence.</p>
+    </section>
+
+    <section id="honest-summary" class="reveal">
+      <h2>The Honest Summary</h2>
+
+      <p>IQ is a real, valid, and useful measurement of something important. The something important is not intelligence as an essence but rather cognitive performance across abstract, school-relevant tasks, which predicts a meaningful range of outcomes across a human lifetime. The correlation with <em>g</em> is genuine. The predictive value is genuine. The genetics are real but substantially less deterministic than the popular framing implies.</p>
+
+      <p>What IQ is not: a complete inventory of cognitive capacity, a ceiling on potential, a stable fixed property unresponsive to environment, or a morally meaningful human classification. The century of treating it as all of these things produced outcomes ranging from the merely inaccurate to the genuinely catastrophic.</p>
+
+      <p>The most honest thing to say about intelligence is that it is a wide and varied territory, partially mapped by a tool that was designed to be useful in educational settings and became something much larger through misapplication and ambition. The tool still has value in its original domain. The territory is considerably more interesting, and considerably more accessible, than the number alone suggests.</p>
+    </section>
+
+    <div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal">
+      <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+        <strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute psychological, educational, or medical advice.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Neuroscience</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Intelligence</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Cognitive Science</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Psychology</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Brain</span>
+  </Fragment>
+</ArticleLayout>

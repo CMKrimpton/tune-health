@@ -1,0 +1,19 @@
+{
+  "title": "The Neuroscience of Awe",
+  "description": "Scientists spent twenty years studying what happens when you encounter something vast. Awe reduces inflammation, quiets the ego, expands time, and increases generosity.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": ["Awe", "Neuroscience", "Mental Health", "Inflammation", "Wellbeing"],
+  "gradient": {
+    "from": "sky-500",
+    "to": "blue-600"
+  },
+  "keywords": ["awe", "default mode network", "inflammation", "vagus nerve", "prosocial", "time perception"]
+}

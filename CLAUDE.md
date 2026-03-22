@@ -40,7 +40,7 @@ npm run preview  # Preview production build
 src/
 ├── content/
 │   ├── config.ts             # Content collection schema (Zod)
-│   └── articles/             # Article metadata (JSON) - 5 published + 3 coming soon
+│   └── articles/             # Article metadata (JSON) - 29 published articles
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)

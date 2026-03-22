@@ -1,0 +1,19 @@
+{
+  "title": "Depression May Be an Energy Problem, Not a Chemistry One",
+  "description": "Brain cells in depressed young adults produce more energy at rest but cannot scale up when demanded. The most coherent alternative to the serotonin model yet.",
+  "category": "Mental Health",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": ["Depression", "Mental Health", "Mitochondria", "Neuroscience", "Exercise"],
+  "gradient": {
+    "from": "amber-500",
+    "to": "orange-600"
+  },
+  "keywords": ["depression", "mitochondria", "serotonin", "ATP", "energy metabolism", "mental health", "exercise", "inflammation"]
+}

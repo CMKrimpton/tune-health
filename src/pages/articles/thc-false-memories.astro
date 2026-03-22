@@ -1,0 +1,211 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="THC Doesn't Just Blur Memories. It Creates New Ones."
+  description="Cannabis users recalled words never shown and placed false memories into personal timelines with full confidence. The implications are more significant than the headlines suggested."
+  category="Neuroscience"
+  readTime="7 min read"
+  publishDate="March 2026"
+>
+  <!-- Feature Image -->
+  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
+    <defs>
+      <linearGradient id="thcGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#1a1a2e"/>
+        <stop offset="100%" style="stop-color:#1e1145"/>
+      </linearGradient>
+      <linearGradient id="thcGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#6366f1"/>
+        <stop offset="100%" style="stop-color:#9333ea"/>
+      </linearGradient>
+      <filter id="thcGlow">
+        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <filter id="thcBlur">
+        <feGaussianBlur stdDeviation="2"/>
+      </filter>
+    </defs>
+    <rect width="1200" height="600" fill="url(#thcGrad1)"/>
+    <!-- Hippocampus-inspired curved structure -->
+    <g opacity="0.4" filter="url(#thcGlow)">
+      <path d="M350 300 Q450 200 550 250 Q650 300 700 220 Q750 140 850 200" stroke="#6366f1" stroke-width="2.5" fill="none"/>
+      <path d="M350 320 Q450 220 550 270 Q650 320 700 240 Q750 160 850 220" stroke="#9333ea" stroke-width="1.5" fill="none" opacity="0.6"/>
+    </g>
+    <!-- "Real" memory nodes (solid) -->
+    <g opacity="0.6" filter="url(#thcGlow)">
+      <circle cx="400" cy="280" r="10" fill="#6366f1"/>
+      <circle cx="550" cy="250" r="8" fill="#6366f1"/>
+      <circle cx="700" cy="220" r="9" fill="#6366f1"/>
+    </g>
+    <!-- "False" memory nodes (blurred, ghostly) -->
+    <g opacity="0.35" filter="url(#thcBlur)">
+      <circle cx="480" cy="230" r="12" fill="#9333ea"/>
+      <circle cx="630" cy="270" r="10" fill="#9333ea"/>
+      <circle cx="800" cy="190" r="11" fill="#9333ea"/>
+    </g>
+    <!-- Connection lines between nodes (tangled) -->
+    <g opacity="0.2">
+      <line x1="400" y1="280" x2="480" y2="230" stroke="#9333ea" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="550" y1="250" x2="630" y2="270" stroke="#9333ea" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="700" y1="220" x2="800" y2="190" stroke="#9333ea" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="480" y1="230" x2="550" y2="250" stroke="#6366f1" stroke-width="0.8" stroke-dasharray="3,5"/>
+      <line x1="630" y1="270" x2="700" y2="220" stroke="#6366f1" stroke-width="0.8" stroke-dasharray="3,5"/>
+    </g>
+    <!-- Scattered particles representing fragmented recall -->
+    <g opacity="0.2">
+      <circle cx="200" cy="150" r="3" fill="#6366f1"/>
+      <circle cx="180" cy="420" r="2" fill="#9333ea"/>
+      <circle cx="1000" cy="160" r="3" fill="#6366f1"/>
+      <circle cx="1020" cy="380" r="2" fill="#9333ea"/>
+      <circle cx="300" cy="450" r="2" fill="#6366f1"/>
+      <circle cx="950" cy="450" r="3" fill="#9333ea"/>
+      <circle cx="150" cy="300" r="2" fill="#6366f1"/>
+      <circle cx="1080" cy="250" r="2" fill="#9333ea"/>
+    </g>
+    <!-- Concentric rings suggesting distortion -->
+    <g opacity="0.1">
+      <circle cx="600" cy="280" r="200" fill="none" stroke="url(#thcGrad2)" stroke-width="1"/>
+      <circle cx="600" cy="280" r="150" fill="none" stroke="url(#thcGrad2)" stroke-width="0.8"/>
+      <circle cx="600" cy="280" r="100" fill="url(#thcGrad2)" opacity="0.5"/>
+    </g>
+    <path d="M0 550 Q300 520 600 540 T1200 525 V600 H0 Z" fill="#0c0a09" opacity="0.3"/>
+  </svg>
+
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#introduction" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">More Than Forgetting</a>
+      <a href="#the-study" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Study</a>
+      <a href="#brain-mechanism" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What's Happening in the Brain</a>
+      <a href="#persistence" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Persistence Question</a>
+      <a href="#health-claims" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Legal Industry's Health Claims Problem</a>
+      <a href="#eyewitness" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Eyewitness Problem</a>
+      <a href="#what-people-should-know" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What People Should Know</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="introduction" class="reveal">
+      <p>Memory distortion from cannabis isn't new territory. The association between cannabis use and impaired encoding, retrieval, and working memory has been documented since the 1970s. Get high enough, and you won't remember what you were saying mid-sentence. This is well-known, largely unremarkable, and has never stopped anyone.</p>
+
+      <p>But the study published in March 2026 described something distinct. Not blurring. Not forgetting. Not failing to form a memory. The researchers found that cannabis users were substantially more likely to remember things that never happened — to construct false memories with the same subjective confidence as real ones, and to place those manufactured recollections into their autobiographical history as if they belonged there.</p>
+
+      <p>That is a different kind of finding. A memory you don't have is an absence. A memory you have that is incorrect is an active error — one that shapes decisions, relationships, and self-understanding in ways that a simple gap does not.</p>
+    </section>
+
+    <section id="the-study" class="reveal">
+      <h2>The Study</h2>
+
+      <p>Researchers recruited regular cannabis users and non-using controls and administered a standard false memory paradigm: participants studied lists of words, then were tested on whether specific words had or had not appeared on the list. The critical items were "lure" words — words semantically related to the study list but not actually present. If the word list contained "bed," "dream," "pillow," and "rest," the lure might be "sleep." The tendency to falsely recognize "sleep" as having been on the list is the standard measure of false memory susceptibility.</p>
+
+      <p>Cannabis users showed significantly higher rates of false recognition — they were more likely to confidently "remember" lure words that had never appeared. More notably, they showed impaired performance on tasks requiring prospective memory: remembering to do something in the future, an everyday function that underpins everything from taking medication to keeping appointments.</p>
+
+      <p>The researchers also extended the paradigm to assess whether cannabis users applied the same false memory tendency to autobiographical material — not just word lists but personal events. They did. Participants in the cannabis-using group were more likely to report false confidence in recollections of events that the experimental design had manipulated to include fabricated elements.</p>
+    </section>
+
+    <aside class="pull-quote reveal">
+      <p>"A memory you don't have is an absence. A memory you have that is incorrect is an active error — one that shapes decisions, relationships, and self-understanding in ways that a simple gap does not."</p>
+    </aside>
+
+    <section id="brain-mechanism" class="reveal">
+      <h2>What's Happening in the Brain</h2>
+
+      <p>The mechanism connects to cannabis's primary pharmacological target: the endocannabinoid system.</p>
+
+      <p>THC binds to CB1 receptors, which are expressed at high density in the hippocampus — the brain region responsible for episodic memory formation and consolidation — and in the prefrontal cortex, which provides the evaluative oversight that normally distinguishes "I remember" from "I think I remember."</p>
+
+      <p>CB1 receptor activation in the hippocampus disrupts long-term potentiation (LTP), the synaptic mechanism by which memories are encoded. Specifically, it impairs the inhibitory interneurons that normally prevent pattern completion errors — the process by which the brain, given partial information, fills in gaps with plausible reconstructions rather than accurate ones. Without adequate inhibitory signaling, the hippocampus is more prone to completing patterns with similar but incorrect information. Lure words get confirmed. Similar events get merged. The signal-to-noise ratio of memory drops.</p>
+
+      <p>The prefrontal cortex's monitoring function — the cognitive system that reality-tests memory retrieval and flags uncertainty — is also impaired by CB1 activation. The normal process of assigning confidence to memories ("I'm sure about this" vs. "I think this happened") requires an intact prefrontal evaluation. When THC suppresses this, users are confident about memories that deserve skepticism.</p>
+
+      <p>The result is not merely forgetting; it's a loosening of the memory system's quality control.</p>
+    </section>
+
+    <div class="info-card my-12 reveal">
+      <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">How THC Disrupts Memory</h4>
+      <ul class="space-y-2 text-sm">
+        <li><strong>CB1 receptors:</strong> High density in hippocampus and prefrontal cortex — both critical for memory</li>
+        <li><strong>LTP disruption:</strong> THC impairs the synaptic mechanism that encodes new memories</li>
+        <li><strong>Pattern completion errors:</strong> Brain fills gaps with plausible but inaccurate reconstructions</li>
+        <li><strong>Confidence miscalibration:</strong> Prefrontal monitoring suppressed — false memories feel as real as true ones</li>
+      </ul>
+    </div>
+
+    <section id="persistence" class="reveal">
+      <h2>The Persistence Question</h2>
+
+      <p>An obvious response to these findings is: "Sure, that happens while high. What does it mean when sober?"</p>
+
+      <p>The evidence suggests the effects extend beyond acute intoxication in regular users.</p>
+
+      <p>Studies of heavy long-term cannabis users assessed after periods of abstinence show persistent alterations in hippocampal structure and function — reduced hippocampal volume, altered connectivity patterns, and measurably poorer performance on memory tasks — that do not fully resolve within typical abstinence periods. The degree of persistence correlates with age of onset (earlier is worse), duration of use, and frequency of use.</p>
+
+      <p>A 2024 meta-analysis of 33 studies examining memory performance in cannabis users after at least 72 hours of abstinence — long enough for acute intoxication to resolve — found significant impairments in episodic memory, working memory, and prospective memory relative to non-using controls. Effect sizes were in the moderate range.</p>
+
+      <p>Whether these impairments represent permanent structural change or fully reversible functional inhibition depends on individual variables that the existing literature hasn't fully characterized. The evidence for substantial recovery after extended abstinence in moderate users is more optimistic than for heavy, early-onset users, for whom structural hippocampal changes appear more durable.</p>
+    </section>
+
+    <section id="health-claims" class="reveal">
+      <h2>The Legal Industry's Health Claims Problem</h2>
+
+      <p>The finding sits in an uncomfortable relationship with how cannabis is marketed and regulated in legalized markets.</p>
+
+      <p>The legal cannabis industry in the United States and elsewhere has, in many cases, been built on a therapeutic narrative: the products help with anxiety, sleep, pain, and stress. PTSD patients need it. Cancer patients need it for nausea. Veterans need it for combat trauma. The medical framing has been commercially essential, providing legal cover, differentiation from illicit markets, and social acceptability.</p>
+
+      <p>The false memory findings don't negate legitimate medical applications in severe conditions, where risk-benefit calculations look different. But they do raise a pointed question about the population of recreational-medical consumers for whom these products are being positioned as wellness items: people using cannabis for mild anxiety, better sleep, or general stress reduction.</p>
+
+      <p>If the product is impairing the reliability of autobiographical memory — users' ability to accurately reconstruct what happened, when, and to whom — the wellness framing is taking on water. And this is one study among a growing body of evidence that the health claims of the legal cannabis industry have, for most retail consumers, not been adequately substantiated by the research.</p>
+
+      <p>This is not a moral argument about cannabis use. It is a description of an evidentiary gap that regulatory frameworks have, to date, been inconsistent in requiring to be closed.</p>
+    </section>
+
+    <aside class="pull-quote reveal">
+      <p>"The result is not merely forgetting; it's a loosening of the memory system's quality control."</p>
+    </aside>
+
+    <section id="eyewitness" class="reveal">
+      <h2>The Eyewitness Problem</h2>
+
+      <p>There is a legal dimension to the false memory findings that has not received adequate attention.</p>
+
+      <p>False memory research has been central to the law of eyewitness testimony for decades. Elizabeth Loftus's foundational work established that memory is constructive, malleable, and sensitive to post-event suggestion — findings that have resulted in wrongful conviction overturns and substantial reform in how eyewitness evidence is weighed. The criteria used to assess memory reliability in legal contexts include exactly the variables that cannabis use measurably impairs: source monitoring, confidence calibration, and resistance to interference.</p>
+
+      <p>A witness who is a regular cannabis user — or who was using cannabis at or near the time of a witnessed event — presents a memory reliability profile that, in light of the current research, deserves formal consideration in legal proceedings. No jurisdiction has yet grappled seriously with this question, and the legal literature has been largely silent on it.</p>
+    </section>
+
+    <section id="what-people-should-know" class="reveal">
+      <h2>What People Should Know</h2>
+
+      <p>It is worth being direct about something that health journalism often hedges: millions of people use cannabis daily, including many who use it in the morning, before work, before driving, before parenting. These people are making decisions about their own lives, and they deserve accurate information about what the product they use regularly does to one of the most important cognitive functions they possess.</p>
+
+      <p>Memory is not peripheral to human experience. It is how we construct our personal histories, make sense of relationships, learn from experience, and navigate a world that requires reliable recall of what is true. The discovery that a widely used substance creates false memories — with the same subjective confidence as real ones — is not a minor footnote. It is a clinical fact that people who use cannabis have a reasonable interest in knowing.</p>
+
+      <p>This is not a demand for abstinence or a moral position on legalization. It is an argument for honest information, delivered without the commercial distortion that has characterized too much of the cannabis-health conversation for too long.</p>
+
+      <p>The industry built on therapeutic claims owes its customers an accurate account of the trade-offs. The 2026 study is part of that account.</p>
+    </section>
+
+    <div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal">
+      <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+        <strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical, legal, or psychiatric advice. Cannabis research is rapidly evolving. For medical use of cannabis, consult a qualified healthcare provider.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Cannabis</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Memory</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Neuroscience</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">THC</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Mental Health</span>
+  </Fragment>
+</ArticleLayout>

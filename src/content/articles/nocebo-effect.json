@@ -1,0 +1,19 @@
+{
+  "title": "The Nocebo Effect: How Belief Makes Drugs Toxic",
+  "description": "A landmark review of 23 statin trials found that 90% of reported side effects aren't caused by the drug. The science of how expectation generates real symptoms.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": ["Clinical Evidence", "Nocebo Effect", "Statins", "Informed Consent", "Placebo", "Mental Health"],
+  "gradient": {
+    "from": "amber-500",
+    "to": "orange-600"
+  },
+  "keywords": ["nocebo effect", "statins", "side effects", "placebo", "informed consent", "drug tolerability", "psychosomatic"]
+}

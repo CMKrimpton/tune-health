@@ -1,0 +1,19 @@
+{
+  "title": "The Switching Brain: What Creativity Actually Is",
+  "description": "New neuroscience reveals creativity isn't a mystical gift but a measurable brain state — one defined by how frequently your brain switches between two networks.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": ["Neuroscience", "Creativity", "Brain Networks", "Flow", "Cognitive Science"],
+  "gradient": {
+    "from": "violet-600",
+    "to": "purple-700"
+  },
+  "keywords": ["creativity", "default mode network", "executive control network", "flow state", "divergent thinking", "brain networks", "neuroscience"]
+}

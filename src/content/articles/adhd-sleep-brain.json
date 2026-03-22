@@ -1,0 +1,19 @@
+{
+  "title": "ADHD Brains Are Half Asleep. That Explains Everything.",
+  "description": "New research found that ADHD brains slip into sleep-like activity during demanding tasks — while fully awake. It may be the most clarifying finding about the disorder in years.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": ["ADHD", "Neuroscience", "Sleep", "Attention", "Mental Health"],
+  "gradient": {
+    "from": "sky-500",
+    "to": "blue-600"
+  },
+  "keywords": ["ADHD", "sleep", "attention", "dopamine", "executive function", "stimulants", "neuroscience"]
+}

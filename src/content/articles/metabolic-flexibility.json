@@ -1,22 +1,19 @@
 {
-  "title": "Metabolic Flexibility: A New Paradigm",
-  "description": "Why the ability to switch between fuel sources matters for longevity.",
+  "title": "Your Body Has a Gear It's Forgotten How to Use",
+  "description": "Metabolic flexibility -- the ability to switch between burning fat and glucose -- is one of the most important markers of metabolic health. Most people have lost it.",
   "category": "Nutrition",
-  "publishDate": "2026-04-01",
+  "publishDate": "2026-03-22",
   "author": {
     "name": "alumi news Editorial",
     "role": "Medical Review Board"
   },
-  "readTime": 15,
+  "readTime": 9,
   "featured": false,
-  "draft": true,
-  "tags": ["Nutrition", "Longevity", "Metabolism"],
+  "draft": false,
+  "tags": ["Nutrition", "Metabolism", "Insulin Resistance", "Mitochondria", "Longevity"],
   "gradient": {
     "from": "lime-500",
     "to": "green-600"
   },
-  "heroImage": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop&q=80",
-  "heroImageAlt": "Fresh healthy bowl",
-  "comingSoon": true,
-  "sortOrder": 6
+  "keywords": ["metabolic flexibility", "fat oxidation", "insulin resistance", "mitochondria", "fasting", "ketogenic diet"]
 }

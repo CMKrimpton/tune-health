@@ -1,0 +1,19 @@
+{
+  "title": "The Nerve That Runs Everything",
+  "description": "A single nerve connects your brain to your gut, heart, and immune system. New research shows it governs mood, memory, and inflammation — and that stimulating it may reverse cognitive aging.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 9,
+  "featured": false,
+  "draft": false,
+  "tags": ["Neuroscience", "Vagus Nerve", "Gut-Brain Axis", "Inflammation", "Cognitive Aging", "Heart Rate Variability"],
+  "gradient": {
+    "from": "emerald-500",
+    "to": "teal-600"
+  },
+  "keywords": ["vagus nerve", "gut-brain axis", "heart rate variability", "HRV", "neuroinflammation", "cognitive decline", "vagal tone"]
+}

@@ -1,0 +1,19 @@
+{
+  "title": "Men Are Losing a Chromosome and It Might Kill Them",
+  "description": "As men age, their cells quietly discard the Y chromosome. New research links this progressive loss to heart disease, Alzheimer's, cancer, and shortened lifespan.",
+  "category": "Longevity",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": ["Longevity", "Genetics", "Y Chromosome", "Cardiovascular Health", "Aging"],
+  "gradient": {
+    "from": "violet-600",
+    "to": "purple-700"
+  },
+  "keywords": ["Y chromosome", "LOY", "loss of Y", "cardiovascular disease", "Alzheimer's", "aging", "genetics", "cancer"]
+}

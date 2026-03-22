@@ -1,0 +1,19 @@
+{
+  "title": "The Blood-Brain Barrier Is Leaking. Here's Why That Matters.",
+  "description": "A structure once considered impenetrable turns out to be dynamic and increasingly compromised. Its failure is linked to Alzheimer's, depression, long COVID, and cognitive decline.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 9,
+  "featured": false,
+  "draft": false,
+  "tags": ["Neuroscience", "Blood-Brain Barrier", "Alzheimer's", "Inflammation", "Cognitive Aging"],
+  "gradient": {
+    "from": "rose-600",
+    "to": "red-700"
+  },
+  "keywords": ["blood-brain barrier", "Alzheimer's", "inflammation", "long COVID", "cognitive decline", "exercise", "neuroinflammation"]
+}

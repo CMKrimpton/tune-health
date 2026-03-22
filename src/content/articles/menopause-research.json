@@ -1,0 +1,19 @@
+{
+  "title": "The Menopause Research Debt",
+  "description": "The ovary is now understood as the command center of women's systemic aging. Its decline accelerates Alzheimer's, heart disease, and bone loss simultaneously.",
+  "category": "Longevity",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 9,
+  "featured": false,
+  "draft": false,
+  "tags": ["Women's Health", "Menopause", "Longevity", "Alzheimer's", "Hormone Therapy"],
+  "gradient": {
+    "from": "emerald-600",
+    "to": "teal-700"
+  },
+  "keywords": ["menopause", "hormone therapy", "estrogen", "women's health", "Alzheimer's", "cardiovascular", "ovarian aging", "WHI"]
+}

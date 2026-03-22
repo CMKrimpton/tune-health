@@ -1,0 +1,105 @@
+# Senolytics: Clearing the Path to Longevity
+
+*The idea of drugging your body to kill off its own aged cells is either the most promising intervention in longevity science or an expensive experiment on paying customers. The evidence, for once, is developing faster than the hype — though not in the direction the supplement industry prefers.*
+
+**Longevity · 10 min read**
+
+---
+
+Every cell in your body carries a copy of the same decision tree: keep dividing, stop dividing, or die.
+
+Most cells cycle through division and death without incident. But some cells hit a third state — one the textbooks call cellular senescence — in which they stop dividing, refuse to die, and begin secreting a cocktail of inflammatory signals, proteases, and immune modulators into their local environment. They are, metabolically speaking, retired but still showing up to the office: drawing resources, causing disruption, and declining to leave.
+
+Senescent cells accumulate with age. They accumulate faster in people with chronic disease, chronic inflammation, and unhealthy lifestyles. They are found at elevated concentrations in the tissue surrounding cancers, in the arthritic joint, in the heart with fibrosis, in the brain with Alzheimer's pathology. The inflammatory secretions they produce — collectively called the senescence-associated secretory phenotype, or SASP — create a local environment that drives further senescence in neighbouring cells, degrades tissue architecture, and impairs the stem cell populations that would otherwise maintain tissue renewal.
+
+The question is obvious: what if you could clear them out?
+
+---
+
+## The Biology of the Stuck Cell
+
+To appreciate why clearing senescent cells is even theoretically possible, it helps to understand what makes them persist in the first place.
+
+Cells become senescent through several triggers: accumulated DNA damage (from oxidative stress, radiation, or replication errors), oncogene activation (a safety mechanism to prevent cancer), telomere shortening (each cell division shortens the protective caps on chromosomes; when they become critically short, the cell stops dividing), and chronic inflammatory signalling.
+
+Under normal conditions, the immune system identifies and clears senescent cells through a process called immune surveillance. NK cells and macrophages recognise the surface markers of senescent cells and eliminate them. In young, healthy individuals with robust immune function, this clearance is efficient and senescent cell accumulation is minimal.
+
+Ageing impairs immune surveillance. Fewer NK cells, less effective macrophage function, and a more inflammatory environment reduce the immune system's capacity to clear senescent cells at the rate they're being generated. The balance tips, and senescent cell burden rises.
+
+The key to senolytic drug design is that senescent cells, despite their refusal to die through normal apoptosis, have an Achilles heel: they are more dependent than normal cells on specific anti-apoptotic survival pathways — molecular brakes that prevent them from completing the cell death programme. By targeting these pathways with drugs, it's possible to selectively eliminate senescent cells while leaving normal cells intact. The senescent cells are more vulnerable precisely because they're already under more stress; a well-designed senolytic tips them over the edge while non-senescent cells, with less apoptotic pressure, survive the same treatment.
+
+---
+
+## From Mice to Humans: The Evidence So Far
+
+The animal data on senolytics is, by the standards of longevity research, remarkably consistent. This is saying something, because longevity research is a field littered with interventions that dramatically extend mouse lifespan and fail entirely to translate to humans.
+
+The foundational experiment, published in *Nature* in 2011, demonstrated that clearance of p16INK4a-expressing senescent cells in mice delayed the onset of sarcopenia, cataracts, and adipose tissue loss. Later work showed that intermittent senolytic treatment in aged mice reduced frailty, improved physical function, extended median healthspan, and in some models reduced cancer incidence. The consistency across independent laboratories, using different senolytic compounds and different mouse models, provided genuine confidence that the biology was real.
+
+The most studied drug combination is dasatinib and quercetin (D+Q). Dasatinib is a tyrosine kinase inhibitor originally developed as a chemotherapy drug for chronic myeloid leukaemia. Quercetin is a flavonoid found in many plants, widely available as a supplement. Used together, they hit complementary senescent cell survival pathways. The combination was not discovered through serendipity; it was identified through a bioinformatics-driven approach that mapped senescent cell survival networks and worked backwards to find drugs that would disable them.
+
+**In humans, the evidence is promising but preliminary in ways that matter.**
+
+The first clinical trial of senolytics in humans — a small 2019 study of dasatinib and quercetin in patients with idiopathic pulmonary fibrosis, a fatal lung disease driven by cellular senescence — found improvements in physical function over a short treatment period. Critically, the trial directly confirmed that D+Q reduces senescent cell burden in human adipose tissue — the first demonstration that senolytics actually do in humans what they do in mice.
+
+A 2025 pilot study published in *eBioMedicine* treated twelve older adults with mild cognitive impairment and slow gait speed — a population at elevated risk of developing Alzheimer's disease — with an intermittent D+Q regimen over twelve weeks. The results were modest and the sample size too small for definitive conclusions, but the safety profile was acceptable, there were no serious adverse events, and there were non-significant trends toward improved cognitive assessment scores.
+
+Multiple clinical trials are underway across conditions including osteoarthritis, diabetic kidney disease, Alzheimer's disease, and age-related frailty. The field is active, well-funded relative to its size, and producing a flow of human data that didn't exist three years ago.
+
+---
+
+## The Supplement Industry's Problem
+
+This is where the story requires a hard turn toward skepticism.
+
+Consumer senolytics are a growing product category. You can buy supplements marketed as "senolytic formulas" containing quercetin, fisetin, luteolin, and other plant flavonoids, often at prices reflecting their positioning as anti-aging interventions. Some of these products are sold alongside the animal and early human data as if the evidence supports their use as consumer products. It does not, for several reasons.
+
+**Quercetin alone is not a clinically validated senolytic.** In the D+Q combination, quercetin contributes to senolytic activity through specific anti-apoptotic pathway inhibition. As a standalone supplement at typical commercial doses, quercetin has anti-inflammatory and antioxidant properties, but its independent senolytic effect in humans has not been demonstrated in controlled trials. The evidence is for the combination with dasatinib, using specific doses and dosing regimens.
+
+**Oral bioavailability is poor.** Quercetin is notoriously difficult for the human body to absorb in meaningful quantities. Standard quercetin supplements have bioavailability in the range of 1–4%, meaning that the vast majority of what is swallowed never reaches systemic circulation in active form. Formulations with improved bioavailability (phytosome forms, for example) have been developed but have not been validated in senolytic trials.
+
+**Fisetin, the other popular consumer senolytic, has a similar picture.** Animal data is compelling. A 2018 study showed that fisetin extended healthspan in mice. Human pharmacokinetics are poor and human clinical trial evidence is extremely limited. A small Mayo Clinic trial in older adults found that fisetin reduced some senescence biomarkers in blood but produced no significant improvement in physical function measures. The trial was too small to draw firm conclusions, but the suggestion that fisetin alone might not translate the animal effects to humans is consistent with what we see from other plant polyphenols.
+
+**Dasatinib is not available over the counter.** It's a prescription chemotherapy drug. The clinical trials use it at doses lower than those used in cancer treatment, but still at doses that require medical supervision. Anyone marketing a consumer senolytic "protocol" that doesn't include actual pharmaceutical senolytics is, by definition, offering a product with weaker evidence than what the clinical trials are testing.
+
+---
+
+## The Dosing and Safety Questions
+
+Even granting that the clinical evidence is developing in a positive direction, several questions about practical use in humans remain genuinely unresolved.
+
+**When to treat and how frequently.** Senescent cells don't accumulate at the same rate in all tissues or all individuals. The appropriate timing and dosing interval for senolytic treatment is not established in humans. Animal models have used intermittent dosing — a few days of treatment every few weeks — because senescent cells take time to re-accumulate after clearance. The human equivalents of these regimens are being tested but haven't produced the long-term controlled data needed to establish optimal protocols.
+
+**Which tissues are reached.** Dasatinib crosses into cerebrospinal fluid, which is why it's being tested for Alzheimer's and cognitive decline applications. Not all candidate senolytics reach all tissues at senolytic concentrations. Tissue distribution determines which age-related conditions a given drug might address.
+
+**Potential for removing cells that are still doing useful work.** Not all cellular senescence is harmful. Senescence is a crucial mechanism during wound healing — senescent cells in an acute wound release factors that promote tissue repair. Some developmental processes require transient senescence. Indiscriminate senolytic treatment risks disrupting these beneficial senescent states. The first-generation senolytics are designed to target chronic, accumulated senescent cells rather than acute senescence, but the selectivity is imperfect.
+
+**Long-term safety in healthy humans.** The disease populations studied so far have different risk-benefit calculations than healthy individuals using senolytics preventively. Dasatinib has known toxicities at chemotherapy doses; its safety at senolytic doses over years or decades in healthy adults has not been studied because that study would take years or decades to conduct.
+
+---
+
+## What the Research Actually Promises
+
+The senolytic field is at a genuine inflection point. The science is legitimate, the mechanism is well-characterised, and the early human data has been more consistently promising than most longevity interventions at equivalent stages of development. Several well-designed Phase 2 trials should report within the next three years and will substantially sharpen the picture.
+
+The honest position in early 2026 is something like this: senolytics represent the most mechanistically coherent pharmacological approach to treating the biology of aging currently in human trials. The animal data is exceptional. The early human data is consistent with a real effect. Whether that effect will be large enough, specific enough, and safe enough to justify widespread prophylactic use in healthy aging adults is a question the current evidence cannot answer.
+
+What it cannot justify, and what the supplement market ignores with predictable enthusiasm, is the consumer leap from "dasatinib and quercetin show promise in small clinical trials" to "take this quercetin capsule and clear your senescent cells." That is the same category error that has produced a supplement industry worth hundreds of billions of dollars on the back of mouse studies and mechanistic plausibility. Longevity science has a long history of being more interesting to read about than it is effective to deploy.
+
+Senolytics may be different. The biology distinguishes them from most of what the longevity supplement space offers. The first serious human trials are producing real signals. But "may be different" is not the same as "has been proven to work in healthy adults," and the marketing has, as usual, arrived at least a decade before the evidence.
+
+---
+
+## The Lifestyle Footnote That Deserves More Than a Footnote
+
+One fact the clinical literature is consistent on: exercise, particularly aerobic exercise, reduces senescent cell burden in skeletal muscle and other tissues. The mechanism involves the SASP-suppressing effects of regular physical activity and the immune stimulation that improves NK cell clearance of senescent cells. The effect size is modest compared to pharmacological senolytics — exercise doesn't replicate the targeted clearance that D+Q achieves in animal models.
+
+But it operates continuously, without a prescribing physician, without drug toxicology, without the cost of investigational protocols, and with documented benefits across essentially every other health outcome. The person waiting for senolytics to be approved for preventive use might reasonably treat the wait as an extended opportunity to load up on the lifestyle-based senescent cell management that is already available.
+
+The irony that regular exercise is a senolytic-adjacent intervention that most people have unlimited access to and choose not to use, while the same people queue for supplements that haven't been tested in healthy humans, is not lost on the researchers who study this.
+
+---
+
+*Disclaimer: This article is for informational purposes only and does not constitute medical advice. Dasatinib is a prescription medication; do not use it without medical supervision. Supplement products marketed as senolytics have not been validated through controlled clinical trials for this purpose. Consult a qualified healthcare provider regarding longevity interventions.*
+
+**Tags:** Longevity, Senolytics, Cellular Senescence, Aging, Clinical Evidence, Supplements, Exercise

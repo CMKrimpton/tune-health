@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-03-22
+
+### Added
+- **24 new articles published** — massive content expansion across all categories
+  - **Longevity**: "The Fire That Never Goes Out" (chronic inflammation), "Men Are Losing a Chromosome" (Y chromosome loss), "The Menopause Research Debt"
+  - **Neuroscience**: "The Nerve That Runs Everything" (vagus nerve), "ADHD Brains Are Half Asleep", "The Blood-Brain Barrier Is Leaking", "Why Everyone Is Going Nearsighted" (myopia), "The Second Brain's Second Opinion" (gut-microbiome), "THC Doesn't Just Blur Memories", "The Intelligence Trap: What IQ Actually Measures", "The Switching Brain: What Creativity Actually Is", "The Empathy Problem", "The Neuroscience of Awe"
+  - **Mental Health**: "The Largest Cannabis Study Ever Conducted", "Depression May Be an Energy Problem", "Emotional Intelligence Is Real. The Industry Mostly Isn't.", "The Positive Thinking Trap", "Faith Without God: The Case for Secular Hope"
+  - **Clinical Evidence**: "The Nocebo Effect: How Belief Makes Drugs Toxic", "What Ozempic Is Actually Doing to Your Brain" (GLP-1)
+  - **Environmental Health**: "You Are Mostly Plastic Now" (microplastics)
+  - **Nutrition**: "Your Body Has a Gear It's Forgotten How to Use" (metabolic flexibility)
+  - **Fitness**: "Zone 2 Training: The Science Behind Slow"
+  - **Longevity**: "Senolytics: Clearing the Path to Longevity"
+- Each article includes custom SVG feature image, table of contents, pull quotes, info cards, and medical disclaimer
+- Featured articles: chronic-inflammation, glp1-brain, intelligence
+- Source documents preserved in `source-docs/` directory
+
+### Changed
+- **3 "coming soon" articles converted to full published articles** (metabolic-flexibility, zone-2-training, senolytics)
+  - Updated JSON metadata: `comingSoon: false`, `draft: false`, expanded tags and keywords
+  - Created full `.astro` page files with complete article content
+- Total published articles: 5 → 29
+- All new articles auto-appear in homepage, articles index, SideNav, and Command Palette (collection-driven navigation)
+
 ## [4.0.0] - 2026-03-15
 
 ### Added

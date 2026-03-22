@@ -1,0 +1,19 @@
+{
+  "title": "What Ozempic Is Actually Doing to Your Brain",
+  "description": "GLP-1 drugs were engineered for blood sugar. They turned out to change how the brain responds to food, alcohol, addiction, and compulsion. Nobody fully understands why.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": true,
+  "draft": false,
+  "tags": ["GLP-1", "Ozempic", "Neuroscience", "Addiction", "Clinical Evidence"],
+  "gradient": {
+    "from": "indigo-500",
+    "to": "purple-600"
+  },
+  "keywords": ["GLP-1", "Ozempic", "semaglutide", "addiction", "dopamine", "obesity", "food noise", "reward system"]
+}

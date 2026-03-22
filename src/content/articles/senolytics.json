@@ -1,22 +1,21 @@
 {
   "title": "Senolytics: Clearing the Path to Longevity",
-  "description": "The emerging science of eliminating senescent cells for healthier aging.",
+  "description": "Drugging your body to kill off aged cells is either the most promising longevity intervention or an expensive experiment on paying customers. The evidence is developing faster than the hype.",
   "category": "Longevity",
-  "publishDate": "2026-04-01",
+  "publishDate": "2026-03-22",
   "author": {
     "name": "alumi news Editorial",
     "role": "Medical Review Board"
   },
-  "readTime": 18,
+  "readTime": 10,
   "featured": false,
-  "draft": true,
-  "tags": ["Longevity", "Aging", "Research"],
+  "draft": false,
+  "tags": ["Longevity", "Senolytics", "Cellular Senescence", "Aging", "Clinical Evidence"],
   "gradient": {
     "from": "indigo-500",
     "to": "purple-600"
   },
-  "heroImage": "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=600&h=400&fit=crop&q=80",
-  "heroImageAlt": "Doctor consultation",
-  "comingSoon": true,
+  "keywords": ["senolytics", "senescent cells", "dasatinib", "quercetin", "aging", "longevity", "SASP", "cellular senescence"],
+  "comingSoon": false,
   "sortOrder": 8
 }

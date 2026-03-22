@@ -1,0 +1,19 @@
+{
+  "title": "You Are Mostly Plastic Now",
+  "description": "Microplastics have been found in human brains, hearts, and placentas. The science of what they do once they get there is just beginning — and it isn't reassuring.",
+  "category": "Environmental Health",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 9,
+  "featured": false,
+  "draft": false,
+  "tags": ["Environmental Health", "Microplastics", "Neuroinflammation", "PFAS", "Longevity", "Brain Health"],
+  "gradient": {
+    "from": "violet-600",
+    "to": "purple-700"
+  },
+  "keywords": ["microplastics", "nanoplastics", "brain health", "neuroinflammation", "endocrine disruptors", "BPA", "plastic pollution"]
+}

@@ -1,0 +1,19 @@
+{
+  "title": "THC Doesn't Just Blur Memories. It Creates New Ones.",
+  "description": "Cannabis users recalled words never shown and placed false memories into personal timelines with full confidence. The implications are more significant than the headlines suggested.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 7,
+  "featured": false,
+  "draft": false,
+  "tags": ["Cannabis", "Memory", "Neuroscience", "THC", "Mental Health"],
+  "gradient": {
+    "from": "indigo-500",
+    "to": "purple-600"
+  },
+  "keywords": ["THC", "cannabis", "false memories", "hippocampus", "CB1 receptors", "memory distortion"]
+}

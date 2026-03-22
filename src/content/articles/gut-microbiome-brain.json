@@ -1,0 +1,19 @@
+{
+  "title": "The Second Brain's Second Opinion",
+  "description": "The gut microbiome's influence on mood, cognition, and neurodegeneration is real. Here's what the research actually shows, stripped of the probiotic marketing.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 9,
+  "featured": false,
+  "draft": false,
+  "tags": ["Nutrition", "Gut Microbiome", "Neuroscience", "Depression", "Probiotics"],
+  "gradient": {
+    "from": "lime-500",
+    "to": "green-600"
+  },
+  "keywords": ["gut microbiome", "gut-brain axis", "probiotics", "short-chain fatty acids", "serotonin", "neurodegeneration"]
+}

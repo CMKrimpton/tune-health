@@ -1,0 +1,19 @@
+{
+  "title": "The Intelligence Trap: What IQ Actually Measures — and What It Doesn't",
+  "description": "For over a century, a number from an hour-long test has sorted people into categories. The science of intelligence has grown considerably more interesting than that number implies.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 9,
+  "featured": true,
+  "draft": false,
+  "tags": ["Neuroscience", "Intelligence", "Cognitive Science", "Psychology", "Brain"],
+  "gradient": {
+    "from": "rose-600",
+    "to": "red-700"
+  },
+  "keywords": ["intelligence", "IQ", "cognitive science", "Flynn effect", "neuroscience", "g factor", "brain networks"]
+}

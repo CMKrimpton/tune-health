@@ -1,0 +1,19 @@
+{
+  "title": "The Largest Cannabis Study Ever Conducted Just Delivered Bad News",
+  "description": "Millions use it for anxiety, depression, and PTSD. The most comprehensive review found no evidence it works — and credible evidence it makes mental health worse.",
+  "category": "Mental Health",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": ["Mental Health", "Cannabis", "Anxiety", "Depression", "Clinical Evidence"],
+  "gradient": {
+    "from": "lime-500",
+    "to": "green-600"
+  },
+  "keywords": ["cannabis", "marijuana", "anxiety", "depression", "PTSD", "CBD", "psychosis", "mental health"]
+}
