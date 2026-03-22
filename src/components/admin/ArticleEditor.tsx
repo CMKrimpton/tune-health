@@ -316,6 +316,31 @@ export default function ArticleEditor() {
         });
       } catch {} // Non-blocking — don't fail if DB save fails
 
+      // Auto-generate editorial illustration
+      try {
+        setStatusMessage('Generating editorial illustration...');
+        const illustrationRes = await fetch(`${EDGE_FUNCTION_BASE}/generate-illustration`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'generate',
+            slug: data.metadata.slug,
+            title: data.metadata.title,
+            description: data.metadata.description,
+            category: data.metadata.category,
+          }),
+        });
+        if (illustrationRes.ok) {
+          const illustrationData = await illustrationRes.json();
+          if (illustrationData.imageUrl) {
+            data.metadata.heroImage = illustrationData.imageUrl;
+            data.metadata.heroImageAlt = `Editorial illustration for ${data.metadata.title}`;
+            setMetadata({ ...data.metadata });
+          }
+        }
+        setStatusMessage('');
+      } catch {} // Non-blocking — illustration is a nice-to-have
+
       // Save initial snapshot
       setSnapshots([{
         article: data,
