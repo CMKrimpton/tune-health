@@ -1,0 +1,34 @@
+{
+  "title": "The Itch Is One of Biology's Most Ancient, Mysterious, and Deeply Social Sensations",
+  "description": "Science barely understood the itch until recently. New research reveals dedicated neural pathways, social contagion mechanisms, and why reading about itching makes you scratch.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 7,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Neuroscience",
+    "Sensory Biology",
+    "Mirror Neurons",
+    "Social Behavior",
+    "Medical Research"
+  ],
+  "gradient": {
+    "from": "violet-600",
+    "to": "purple-700"
+  },
+  "keywords": [
+    "itch",
+    "pruritus",
+    "neuroscience",
+    "mirror neurons",
+    "social contagion",
+    "scratching",
+    "sensory perception",
+    "neural pathways"
+  ]
+}
