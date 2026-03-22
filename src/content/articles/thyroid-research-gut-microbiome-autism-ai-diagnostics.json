@@ -1,0 +1,38 @@
+{
+  "title": "The Butterfly Effect: What Science Is Finally Learning About Your Thyroid",
+  "description": "New research reveals the thyroid's profound connections to gut health, autism risk, and autoimmune disease, while AI transforms diagnosis and treatment approaches.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Thyroid Health",
+    "Gut Microbiome",
+    "Autoimmune Disease",
+    "AI in Medicine",
+    "Pregnancy Health"
+  ],
+  "gradient": {
+    "from": "violet-600",
+    "to": "purple-700"
+  },
+  "keywords": [
+    "thyroid",
+    "gut-thyroid axis",
+    "microbiome",
+    "Hashimoto's thyroiditis",
+    "Graves' disease",
+    "thyroid cancer",
+    "AI diagnostics",
+    "pregnancy",
+    "autism",
+    "PFAS",
+    "batoclimab",
+    "T3 T4 controversy"
+  ]
+}
