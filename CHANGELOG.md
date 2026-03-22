@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.6.1] - 2026-03-22
+
+### Added
+- **Funnel expansion** — 3 additional touchpoints from quality audit:
+  - **Command Palette**: "Open alumi Health" action (power users, ⌘K)
+  - **Subscribe page**: app cross-promo card after "Recent Issues" sidebar
+  - **Deep Dives page**: "Apply What You Learn" bridge section between series list and newsletter
+  - **Articles index**: compact "Take Your Learning Further" CTA section above newsletter
+
+### Fixed
+- **AppPromo section background** — added `bg-white dark:bg-stone-900` so the homepage app section visually separates from surrounding sections (was blending into default background)
+- **ArticleCTA touch target** — added `min-h-[44px]` to CTA button for WCAG AA compliance on touch devices
+
 ## [5.6.0] - 2026-03-22
 
 ### Added

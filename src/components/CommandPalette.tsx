@@ -25,6 +25,7 @@ const pages = [
 ];
 
 const actions = [
+  { id: 'app', title: 'Open alumi Health', icon: '💊', action: 'openApp' },
   { id: 'theme', title: 'Toggle Dark Mode', icon: '🌓', action: 'toggleTheme' },
   { id: 'top', title: 'Back to Top', icon: '⬆️', action: 'scrollToTop' },
   { id: 'share', title: 'Share Page', icon: '📤', action: 'share' },
@@ -105,6 +106,9 @@ export default function CommandPalette() {
     setOpen(false);
 
     switch (action) {
+      case 'openApp':
+        window.open('https://tune-sigma.vercel.app?utm_source=alumi-news&utm_medium=command-palette', '_blank');
+        break;
       case 'toggleTheme':
         window.toggleTheme?.();
         break;
