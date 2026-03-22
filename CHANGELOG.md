@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.1.0] - 2026-03-22
+
+### Changed
+- **Homepage redesigned** — article grid limited to 9 cards with "Browse all" CTA (was dumping all 40)
+- **Category filters are now functional** — JS-powered filtering on homepage and articles index
+- **Articles index completely redesigned** — compact 3-column grid with featured row (was full-width stacked cards requiring excessive scrolling)
+- **Category-based gradient art system** — replaced broken dynamic Tailwind gradients and generic Unsplash stock photos with intentional, editorial-quality CSS gradient palettes per category via `getArticleGradientStyle()`
+- **Footer redesigned** — added brand tagline ("Health is wealth. We help you protect it."), 4-column layout with topic links
+- **Newsletter component improved** — progressive feedback animation, benefit checkmarks on default variant, prevents duplicate event bindings
+- **SideNav cleaned up** — removed 8 dead links to non-existent pages (/research, /glossary, /protocols, /tools, /about, /team, /methodology, /contact)
+- **Related articles fixed** — ArticleLayout now uses gradient art system (was showing empty gray boxes from broken dynamic classes)
+- **Newsletter visual cards** on homepage now pull real article data instead of hardcoded fakes
+
+### Added
+- **Article search** on articles index page — real-time filtering by title, tags, and category
+- **Category filter pills** on articles index — functional filtering with live result count
+- **No results state** when search/filter yields no matches
+- `getArticleGradientStyle()` utility — maps categories to rich CSS gradient palettes (Mental Health = indigo/violet, Neuroscience = blue/cyan, Longevity = emerald/teal, etc.)
+- `getCategories()` used in homepage and articles index for dynamic category rendering
+
+### Fixed
+- **Broken gradient rendering** — dynamic Tailwind classes (`from-${var}`) were being purged at build time, showing empty gray card images. Now uses real CSS via inline styles
+- Removed `heroImage`/`heroImageAlt`/`sortOrder` fields from all article JSON files (unused, replaced by gradient art system)
+
 ## [5.0.0] - 2026-03-22
 
 ### Added

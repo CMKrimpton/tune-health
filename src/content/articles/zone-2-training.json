@@ -10,10 +10,23 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": ["Fitness", "Exercise", "Zone 2", "Mitochondria", "Longevity"],
+  "tags": [
+    "Fitness",
+    "Exercise",
+    "Zone 2",
+    "Mitochondria",
+    "Longevity"
+  ],
   "gradient": {
     "from": "sky-500",
     "to": "blue-600"
   },
-  "keywords": ["zone 2 training", "mitochondrial biogenesis", "VO2 max", "aerobic exercise", "longevity", "cardiovascular health"]
+  "keywords": [
+    "zone 2 training",
+    "mitochondrial biogenesis",
+    "VO2 max",
+    "aerobic exercise",
+    "longevity",
+    "cardiovascular health"
+  ]
 }

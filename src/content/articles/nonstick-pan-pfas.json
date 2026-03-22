@@ -10,13 +10,26 @@
   "readTime": 10,
   "featured": false,
   "draft": false,
-  "tags": ["Environmental Health", "Toxicology", "PFAS", "Nutrition", "Evidence Review"],
+  "tags": [
+    "Environmental Health",
+    "Toxicology",
+    "PFAS",
+    "Nutrition",
+    "Evidence Review"
+  ],
   "gradient": {
     "from": "amber-500",
     "to": "orange-600"
   },
-  "keywords": ["PFAS", "teflon", "non-stick", "forever chemicals", "PFOA", "cookware", "DuPont", "cancer", "toxins"],
-  "heroImage": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop&q=80",
-  "heroImageAlt": "Kitchen cookware",
-  "sortOrder": 2
+  "keywords": [
+    "PFAS",
+    "teflon",
+    "non-stick",
+    "forever chemicals",
+    "PFOA",
+    "cookware",
+    "DuPont",
+    "cancer",
+    "toxins"
+  ]
 }

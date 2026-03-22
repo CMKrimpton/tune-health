@@ -10,10 +10,25 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Mental Health", "Cannabis", "Anxiety", "Depression", "Clinical Evidence"],
+  "tags": [
+    "Mental Health",
+    "Cannabis",
+    "Anxiety",
+    "Depression",
+    "Clinical Evidence"
+  ],
   "gradient": {
     "from": "lime-500",
     "to": "green-600"
   },
-  "keywords": ["cannabis", "marijuana", "anxiety", "depression", "PTSD", "CBD", "psychosis", "mental health"]
+  "keywords": [
+    "cannabis",
+    "marijuana",
+    "anxiety",
+    "depression",
+    "PTSD",
+    "CBD",
+    "psychosis",
+    "mental health"
+  ]
 }

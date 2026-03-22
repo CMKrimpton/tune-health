@@ -10,13 +10,25 @@
   "readTime": 20,
   "featured": false,
   "draft": false,
-  "tags": ["Neuroscience", "Research Summary", "Cognitive Health", "Mental Health", "Pharmacology"],
+  "tags": [
+    "Neuroscience",
+    "Research Summary",
+    "Cognitive Health",
+    "Mental Health",
+    "Pharmacology"
+  ],
   "gradient": {
     "from": "emerald-500",
     "to": "teal-600"
   },
-  "keywords": ["nicotine", "parkinson's", "alzheimer's", "cognitive", "memory", "ulcerative colitis", "depression", "adhd"],
-  "heroImage": "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&h=400&fit=crop&q=80",
-  "heroImageAlt": "Scientific research",
-  "sortOrder": 4
+  "keywords": [
+    "nicotine",
+    "parkinson's",
+    "alzheimer's",
+    "cognitive",
+    "memory",
+    "ulcerative colitis",
+    "depression",
+    "adhd"
+  ]
 }

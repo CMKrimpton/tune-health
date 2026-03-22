@@ -10,10 +10,26 @@
   "readTime": 10,
   "featured": true,
   "draft": false,
-  "tags": ["Inflammation", "Longevity", "Cardiovascular Health", "Neuroscience", "Depression", "Alzheimer's"],
+  "tags": [
+    "Inflammation",
+    "Longevity",
+    "Cardiovascular Health",
+    "Neuroscience",
+    "Depression",
+    "Alzheimer's"
+  ],
   "gradient": {
     "from": "rose-600",
     "to": "red-700"
   },
-  "keywords": ["chronic inflammation", "inflammatory markers", "CRP", "cytokines", "heart disease", "Alzheimer's", "depression", "anti-inflammatory"]
+  "keywords": [
+    "chronic inflammation",
+    "inflammatory markers",
+    "CRP",
+    "cytokines",
+    "heart disease",
+    "Alzheimer's",
+    "depression",
+    "anti-inflammatory"
+  ]
 }

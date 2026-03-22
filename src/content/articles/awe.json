@@ -10,10 +10,23 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Awe", "Neuroscience", "Mental Health", "Inflammation", "Wellbeing"],
+  "tags": [
+    "Awe",
+    "Neuroscience",
+    "Mental Health",
+    "Inflammation",
+    "Wellbeing"
+  ],
   "gradient": {
     "from": "sky-500",
     "to": "blue-600"
   },
-  "keywords": ["awe", "default mode network", "inflammation", "vagus nerve", "prosocial", "time perception"]
+  "keywords": [
+    "awe",
+    "default mode network",
+    "inflammation",
+    "vagus nerve",
+    "prosocial",
+    "time perception"
+  ]
 }

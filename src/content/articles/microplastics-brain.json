@@ -10,10 +10,25 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": ["Environmental Health", "Microplastics", "Neuroinflammation", "PFAS", "Longevity", "Brain Health"],
+  "tags": [
+    "Environmental Health",
+    "Microplastics",
+    "Neuroinflammation",
+    "PFAS",
+    "Longevity",
+    "Brain Health"
+  ],
   "gradient": {
     "from": "violet-600",
     "to": "purple-700"
   },
-  "keywords": ["microplastics", "nanoplastics", "brain health", "neuroinflammation", "endocrine disruptors", "BPA", "plastic pollution"]
+  "keywords": [
+    "microplastics",
+    "nanoplastics",
+    "brain health",
+    "neuroinflammation",
+    "endocrine disruptors",
+    "BPA",
+    "plastic pollution"
+  ]
 }

@@ -10,10 +10,24 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Neuroscience", "Creativity", "Brain Networks", "Flow", "Cognitive Science"],
+  "tags": [
+    "Neuroscience",
+    "Creativity",
+    "Brain Networks",
+    "Flow",
+    "Cognitive Science"
+  ],
   "gradient": {
     "from": "violet-600",
     "to": "purple-700"
   },
-  "keywords": ["creativity", "default mode network", "executive control network", "flow state", "divergent thinking", "brain networks", "neuroscience"]
+  "keywords": [
+    "creativity",
+    "default mode network",
+    "executive control network",
+    "flow state",
+    "divergent thinking",
+    "brain networks",
+    "neuroscience"
+  ]
 }

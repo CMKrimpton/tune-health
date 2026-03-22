@@ -10,10 +10,23 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Psychology", "Optimism", "Pessimism", "Mental Health", "Longevity"],
+  "tags": [
+    "Psychology",
+    "Optimism",
+    "Pessimism",
+    "Mental Health",
+    "Longevity"
+  ],
   "gradient": {
     "from": "indigo-500",
     "to": "purple-600"
   },
-  "keywords": ["optimism", "pessimism", "positive thinking", "cognitive behavioral therapy", "longevity", "mental health"]
+  "keywords": [
+    "optimism",
+    "pessimism",
+    "positive thinking",
+    "cognitive behavioral therapy",
+    "longevity",
+    "mental health"
+  ]
 }

@@ -10,10 +10,24 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["ADHD", "Neuroscience", "Sleep", "Attention", "Mental Health"],
+  "tags": [
+    "ADHD",
+    "Neuroscience",
+    "Sleep",
+    "Attention",
+    "Mental Health"
+  ],
   "gradient": {
     "from": "sky-500",
     "to": "blue-600"
   },
-  "keywords": ["ADHD", "sleep", "attention", "dopamine", "executive function", "stimulants", "neuroscience"]
+  "keywords": [
+    "ADHD",
+    "sleep",
+    "attention",
+    "dopamine",
+    "executive function",
+    "stimulants",
+    "neuroscience"
+  ]
 }

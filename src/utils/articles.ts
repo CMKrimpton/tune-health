@@ -119,3 +119,68 @@ export function formatPublishDateShort(dateString: string): string {
     year: 'numeric',
   });
 }
+
+/**
+ * Get unique categories from all published articles
+ */
+export async function getCategories(): Promise<string[]> {
+  const articles = await getArticles();
+  const categories = [...new Set(articles.map((a) => a.category))];
+  return categories.sort();
+}
+
+/**
+ * Category-based gradient palette for article cards.
+ * Each category gets a rich, editorial gradient — no stock photos needed.
+ */
+const categoryGradients: Record<string, { bg: string; pattern: string }> = {
+  'Mental Health': {
+    bg: 'linear-gradient(135deg, #312e81 0%, #581c87 40%, #7e22ce 100%)',
+    pattern: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.06) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 40%)',
+  },
+  'Neuroscience': {
+    bg: 'linear-gradient(135deg, #0c4a6e 0%, #1e3a5f 40%, #164e63 100%)',
+    pattern: 'radial-gradient(circle at 70% 30%, rgba(56,189,248,0.12) 0%, transparent 50%), radial-gradient(circle at 20% 70%, rgba(34,211,238,0.08) 0%, transparent 40%)',
+  },
+  'Longevity': {
+    bg: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #115e59 100%)',
+    pattern: 'radial-gradient(circle at 30% 70%, rgba(52,211,153,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 30%, rgba(45,212,191,0.08) 0%, transparent 40%)',
+  },
+  'Clinical Evidence': {
+    bg: 'linear-gradient(135deg, #3b0764 0%, #4c1d95 40%, #5b21b6 100%)',
+    pattern: 'radial-gradient(circle at 60% 40%, rgba(196,181,253,0.1) 0%, transparent 50%), radial-gradient(circle at 25% 75%, rgba(167,139,250,0.06) 0%, transparent 40%)',
+  },
+  'Environmental Health': {
+    bg: 'linear-gradient(135deg, #78350f 0%, #92400e 40%, #b45309 100%)',
+    pattern: 'radial-gradient(circle at 40% 60%, rgba(251,191,36,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 25%, rgba(245,158,11,0.08) 0%, transparent 40%)',
+  },
+  'Nutrition': {
+    bg: 'linear-gradient(135deg, #14532d 0%, #166534 40%, #15803d 100%)',
+    pattern: 'radial-gradient(circle at 50% 50%, rgba(74,222,128,0.08) 0%, transparent 50%), radial-gradient(circle at 20% 30%, rgba(134,239,172,0.06) 0%, transparent 40%)',
+  },
+  'Fitness': {
+    bg: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 40%, #dc2626 100%)',
+    pattern: 'radial-gradient(circle at 30% 40%, rgba(252,165,165,0.1) 0%, transparent 50%), radial-gradient(circle at 70% 70%, rgba(248,113,113,0.08) 0%, transparent 40%)',
+  },
+  'Sleep Science': {
+    bg: 'linear-gradient(135deg, #1e1b4b 0%, #1e3a5f 40%, #312e81 100%)',
+    pattern: 'radial-gradient(circle at 60% 30%, rgba(129,140,248,0.1) 0%, transparent 50%), radial-gradient(circle at 30% 80%, rgba(99,102,241,0.06) 0%, transparent 40%)',
+  },
+  'Research': {
+    bg: 'linear-gradient(135deg, #1c1917 0%, #292524 40%, #44403c 100%)',
+    pattern: 'radial-gradient(circle at 50% 50%, rgba(168,162,158,0.08) 0%, transparent 50%)',
+  },
+};
+
+const defaultGradient = {
+  bg: 'linear-gradient(135deg, #1c1917 0%, #292524 40%, #44403c 100%)',
+  pattern: 'radial-gradient(circle at 50% 50%, rgba(168,162,158,0.08) 0%, transparent 50%)',
+};
+
+/**
+ * Get the CSS gradient style for an article's card art
+ */
+export function getArticleGradientStyle(category: string): string {
+  const grad = categoryGradients[category] || defaultGradient;
+  return `background: ${grad.pattern}, ${grad.bg};`;
+}

@@ -10,10 +10,23 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": ["Psychology", "Mental Health", "Hope", "Meaning", "Wellbeing"],
+  "tags": [
+    "Psychology",
+    "Mental Health",
+    "Hope",
+    "Meaning",
+    "Wellbeing"
+  ],
   "gradient": {
     "from": "emerald-600",
     "to": "teal-700"
   },
-  "keywords": ["secular faith", "hope", "meaning", "future orientation", "generativity", "temporal motivation"]
+  "keywords": [
+    "secular faith",
+    "hope",
+    "meaning",
+    "future orientation",
+    "generativity",
+    "temporal motivation"
+  ]
 }

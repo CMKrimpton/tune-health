@@ -10,10 +10,25 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": ["Neuroscience", "Vagus Nerve", "Gut-Brain Axis", "Inflammation", "Cognitive Aging", "Heart Rate Variability"],
+  "tags": [
+    "Neuroscience",
+    "Vagus Nerve",
+    "Gut-Brain Axis",
+    "Inflammation",
+    "Cognitive Aging",
+    "Heart Rate Variability"
+  ],
   "gradient": {
     "from": "emerald-500",
     "to": "teal-600"
   },
-  "keywords": ["vagus nerve", "gut-brain axis", "heart rate variability", "HRV", "neuroinflammation", "cognitive decline", "vagal tone"]
+  "keywords": [
+    "vagus nerve",
+    "gut-brain axis",
+    "heart rate variability",
+    "HRV",
+    "neuroinflammation",
+    "cognitive decline",
+    "vagal tone"
+  ]
 }

@@ -10,10 +10,24 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Emotional Intelligence", "Psychology", "Mental Health", "Empathy", "Wellbeing"],
+  "tags": [
+    "Emotional Intelligence",
+    "Psychology",
+    "Mental Health",
+    "Empathy",
+    "Wellbeing"
+  ],
   "gradient": {
     "from": "emerald-500",
     "to": "teal-600"
   },
-  "keywords": ["emotional intelligence", "EQ", "empathy", "psychology", "emotion regulation", "neuroscience", "mental health"]
+  "keywords": [
+    "emotional intelligence",
+    "EQ",
+    "empathy",
+    "psychology",
+    "emotion regulation",
+    "neuroscience",
+    "mental health"
+  ]
 }

@@ -40,7 +40,7 @@ npm run preview  # Preview production build
 src/
 ├── content/
 │   ├── config.ts             # Content collection schema (Zod)
-│   └── articles/             # Article metadata (JSON) - 29 published articles
+│   └── articles/             # Article metadata (JSON) - 40 published articles
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
@@ -117,6 +117,7 @@ const articles = await getCollection('articles');
   - Primary: red tones (`primary-500` = `#ef4444`)
 - Custom typography: Playfair Display (headings), Inter (sans), Crimson Pro (body)
 - Custom easing: `ease-editorial` = `cubic-bezier(0.22, 1, 0.36, 1)`
+- **Category-based gradient art**: `getArticleGradientStyle()` in `src/utils/articles.ts` generates CSS gradients per category for card visuals — no stock photos, no dynamic Tailwind classes (which get purged)
 
 ### Key Features
 
@@ -129,7 +130,7 @@ const articles = await getCollection('articles');
 
 #### SideNav (Magazine Sidebar)
 - Reveals on left edge hover
-- 26+ links organized by: Topics, Featured, Series, Resources, About
+- Links organized by: Sections, Topics, Featured, Series, More
 - Featured section is **collection-driven** (auto-populates from latest articles)
 - Custom scrollbar, badges for "New" articles
 - Search and theme toggle buttons
@@ -157,6 +158,9 @@ const articles = await getCollection('articles');
 - All navigation components pull from `getCollection('articles')` — no hardcoded article references
 - Homepage, articles index, SideNav, CommandPalette, and related articles are all dynamic
 - New articles auto-appear everywhere when their .json is added to `src/content/articles/`
+- Homepage limited to 9 grid articles + "Browse all" CTA
+- Category filtering is functional on homepage and articles index
+- Articles index has real-time search by title, tags, and category
 
 ### Database (Supabase PostgreSQL)
 

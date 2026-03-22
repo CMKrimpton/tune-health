@@ -10,10 +10,25 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Longevity", "Genetics", "Y Chromosome", "Cardiovascular Health", "Aging"],
+  "tags": [
+    "Longevity",
+    "Genetics",
+    "Y Chromosome",
+    "Cardiovascular Health",
+    "Aging"
+  ],
   "gradient": {
     "from": "violet-600",
     "to": "purple-700"
   },
-  "keywords": ["Y chromosome", "LOY", "loss of Y", "cardiovascular disease", "Alzheimer's", "aging", "genetics", "cancer"]
+  "keywords": [
+    "Y chromosome",
+    "LOY",
+    "loss of Y",
+    "cardiovascular disease",
+    "Alzheimer's",
+    "aging",
+    "genetics",
+    "cancer"
+  ]
 }

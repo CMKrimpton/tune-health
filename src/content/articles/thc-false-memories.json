@@ -10,10 +10,23 @@
   "readTime": 7,
   "featured": false,
   "draft": false,
-  "tags": ["Cannabis", "Memory", "Neuroscience", "THC", "Mental Health"],
+  "tags": [
+    "Cannabis",
+    "Memory",
+    "Neuroscience",
+    "THC",
+    "Mental Health"
+  ],
   "gradient": {
     "from": "indigo-500",
     "to": "purple-600"
   },
-  "keywords": ["THC", "cannabis", "false memories", "hippocampus", "CB1 receptors", "memory distortion"]
+  "keywords": [
+    "THC",
+    "cannabis",
+    "false memories",
+    "hippocampus",
+    "CB1 receptors",
+    "memory distortion"
+  ]
 }

@@ -10,12 +10,26 @@
   "readTime": 10,
   "featured": false,
   "draft": false,
-  "tags": ["Longevity", "Senolytics", "Cellular Senescence", "Aging", "Clinical Evidence"],
+  "tags": [
+    "Longevity",
+    "Senolytics",
+    "Cellular Senescence",
+    "Aging",
+    "Clinical Evidence"
+  ],
   "gradient": {
     "from": "indigo-500",
     "to": "purple-600"
   },
-  "keywords": ["senolytics", "senescent cells", "dasatinib", "quercetin", "aging", "longevity", "SASP", "cellular senescence"],
-  "comingSoon": false,
-  "sortOrder": 8
+  "keywords": [
+    "senolytics",
+    "senescent cells",
+    "dasatinib",
+    "quercetin",
+    "aging",
+    "longevity",
+    "SASP",
+    "cellular senescence"
+  ],
+  "comingSoon": false
 }

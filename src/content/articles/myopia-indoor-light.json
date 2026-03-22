@@ -10,10 +10,25 @@
   "readTime": 7,
   "featured": false,
   "draft": false,
-  "tags": ["Neuroscience", "Vision", "Myopia", "Environmental Health", "Child Development"],
+  "tags": [
+    "Neuroscience",
+    "Vision",
+    "Myopia",
+    "Environmental Health",
+    "Child Development"
+  ],
   "gradient": {
     "from": "sky-500",
     "to": "blue-600"
   },
-  "keywords": ["myopia", "nearsightedness", "outdoor light", "dopamine", "vision", "screens", "child development", "eye health"]
+  "keywords": [
+    "myopia",
+    "nearsightedness",
+    "outdoor light",
+    "dopamine",
+    "vision",
+    "screens",
+    "child development",
+    "eye health"
+  ]
 }

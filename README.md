@@ -84,17 +84,20 @@ src/
 
 ### Navigation
 - **Glass Dropdown Menu** - Premium header navigation with sections, topics, and featured articles
-- **SideNav** - Magazine-style sidebar with 26+ links across Topics, Series, Resources, and About
+- **SideNav** - Magazine-style sidebar with Topics, Series, and Featured articles
 - **Command Palette (⌘K)** - Site-wide search for articles, sections, and pages
 - **Floating Table of Contents** - Scroll spy navigation for articles
 - **View Transitions** - Smooth page-to-page animations
 
 ### Content
-- **29 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, and Fitness
+- **40 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, and Fitness
 - Content Collections with Zod schema validation
 - Type-safe article queries
 - Automatic reading time calculation
 - **All navigation is collection-driven** — new articles auto-appear everywhere
+- **Category-based gradient art system** — editorial card visuals generated from category palette
+- **Functional category filtering** on homepage and articles index
+- **Article search** with real-time filtering on articles index
 
 ### Admin Publishing Portal (`/admin`)
 - Token-based authentication with logout
@@ -110,8 +113,8 @@ src/
 ### Design
 - Responsive design with mobile-first approach
 - Dark/light theme toggle with system preference detection
-- Magazine-style editorial layout inspired by Vanity Fair
-- Premium imagery from Unsplash throughout (editorial quality, not stock)
+- Magazine-style editorial layout
+- **Category-based gradient art** — rich, editorial gradient palettes per category (no stock photos)
 - Custom View Transition animations
 
 ### Performance

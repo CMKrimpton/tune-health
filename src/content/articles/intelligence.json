@@ -10,10 +10,24 @@
   "readTime": 9,
   "featured": true,
   "draft": false,
-  "tags": ["Neuroscience", "Intelligence", "Cognitive Science", "Psychology", "Brain"],
+  "tags": [
+    "Neuroscience",
+    "Intelligence",
+    "Cognitive Science",
+    "Psychology",
+    "Brain"
+  ],
   "gradient": {
     "from": "rose-600",
     "to": "red-700"
   },
-  "keywords": ["intelligence", "IQ", "cognitive science", "Flynn effect", "neuroscience", "g factor", "brain networks"]
+  "keywords": [
+    "intelligence",
+    "IQ",
+    "cognitive science",
+    "Flynn effect",
+    "neuroscience",
+    "g factor",
+    "brain networks"
+  ]
 }

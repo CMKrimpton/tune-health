@@ -10,10 +10,24 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": ["Neuroscience", "Blood-Brain Barrier", "Alzheimer's", "Inflammation", "Cognitive Aging"],
+  "tags": [
+    "Neuroscience",
+    "Blood-Brain Barrier",
+    "Alzheimer's",
+    "Inflammation",
+    "Cognitive Aging"
+  ],
   "gradient": {
     "from": "rose-600",
     "to": "red-700"
   },
-  "keywords": ["blood-brain barrier", "Alzheimer's", "inflammation", "long COVID", "cognitive decline", "exercise", "neuroinflammation"]
+  "keywords": [
+    "blood-brain barrier",
+    "Alzheimer's",
+    "inflammation",
+    "long COVID",
+    "cognitive decline",
+    "exercise",
+    "neuroinflammation"
+  ]
 }

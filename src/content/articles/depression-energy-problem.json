@@ -10,10 +10,25 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Depression", "Mental Health", "Mitochondria", "Neuroscience", "Exercise"],
+  "tags": [
+    "Depression",
+    "Mental Health",
+    "Mitochondria",
+    "Neuroscience",
+    "Exercise"
+  ],
   "gradient": {
     "from": "amber-500",
     "to": "orange-600"
   },
-  "keywords": ["depression", "mitochondria", "serotonin", "ATP", "energy metabolism", "mental health", "exercise", "inflammation"]
+  "keywords": [
+    "depression",
+    "mitochondria",
+    "serotonin",
+    "ATP",
+    "energy metabolism",
+    "mental health",
+    "exercise",
+    "inflammation"
+  ]
 }

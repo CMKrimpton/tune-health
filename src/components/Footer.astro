@@ -1,51 +1,89 @@
 ---
-// Footer component
+import { getArticles, getCategories } from '../utils/articles';
+
+const articles = await getArticles();
+const categories = await getCategories();
+const latestArticles = articles.slice(0, 4);
 ---
 
 <footer class="footer">
   <div class="container-editorial">
-    <div class="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12 mb-12">
-      <!-- Brand -->
+    <!-- Brand Tagline -->
+    <div class="mb-16 max-w-lg">
+      <a href="/" class="inline-flex items-baseline gap-1 font-sans text-2xl font-semibold mb-5">
+        <span class="text-primary-500 font-bold text-3xl">a</span>
+        <span class="text-white">lumi</span>
+        <em class="font-normal text-stone-500">news</em>
+      </a>
+      <p class="font-serif text-xl text-stone-300 italic leading-relaxed">
+        Health is wealth. We help you protect it.
+      </p>
+    </div>
+
+    <!-- Columns -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-16">
+      <!-- Latest -->
+      <div class="col-span-2 md:col-span-1">
+        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-4">Latest</h4>
+        <ul class="space-y-2.5">
+          {latestArticles.map((article) => (
+            <li>
+              <a href={article.href} class="text-sm text-stone-400 hover:text-white transition-colors duration-200 leading-snug block">
+                {article.title.length > 45 ? article.title.slice(0, 45) + '...' : article.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Explore -->
       <div>
-        <a href="/" class="inline-flex items-baseline gap-1 font-sans text-xl font-semibold mb-4">
-          <span class="text-primary-600 font-bold text-2xl">a</span>
-          <span>lumi</span>
-          <em class="font-normal text-stone-500">news</em>
+        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-4">Explore</h4>
+        <ul class="space-y-2.5">
+          <li><a href="/articles" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">All Articles</a></li>
+          <li><a href="/deep-dives" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">Deep Dives</a></li>
+          <li><a href="/subscribe" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">Subscribe</a></li>
+        </ul>
+      </div>
+
+      <!-- Topics -->
+      <div>
+        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-4">Topics</h4>
+        <ul class="space-y-2.5">
+          {categories.slice(0, 6).map((cat) => (
+            <li>
+              <a href={`/articles?topic=${cat.toLowerCase().replace(/\s+/g, '-')}`} class="text-sm text-stone-400 hover:text-white transition-colors duration-200">
+                {cat}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Quick Actions -->
+      <div>
+        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-4">Quick</h4>
+        <p class="text-xs text-stone-500 mb-3">
+          Press <kbd class="px-1.5 py-0.5 bg-stone-800 border border-stone-700 rounded text-xs font-mono text-stone-400">⌘K</kbd> to search
+        </p>
+        <a href="/subscribe" class="inline-flex items-center gap-2 text-sm font-medium text-primary-500 hover:text-primary-400 transition-colors">
+          Subscribe free
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
         </a>
-        <p class="text-sm text-stone-500 mb-2 max-w-xs font-medium">
-          Health is wealth. We help you protect it.
-        </p>
-        <p class="text-xs text-stone-400 mb-6 max-w-xs">
-          Evidence. Wherever it leads.
-        </p>
-        <p class="text-xs text-stone-400">Press <kbd class="px-1.5 py-0.5 bg-stone-200 dark:bg-stone-700 rounded text-xs font-mono">⌘K</kbd> to navigate</p>
-      </div>
-
-      <!-- Quick Links -->
-      <div>
-        <h4 class="font-semibold text-sm mb-4">Quick Links</h4>
-        <ul class="space-y-2">
-          <li><a href="/#featured" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Featured Story</a></li>
-          <li><a href="/#latest" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Latest Articles</a></li>
-          <li><a href="/#deep-dives" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Deep Dives</a></li>
-          <li><a href="/#newsletter" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Newsletter</a></li>
-        </ul>
-      </div>
-
-      <!-- Articles -->
-      <div>
-        <h4 class="font-semibold text-sm mb-4">Articles</h4>
-        <ul class="space-y-2">
-          <li><a href="/articles/mirtazapine-guide" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Mirtazapine Guide</a></li>
-          <li><a href="/articles/nicotine-research" class="text-sm text-stone-500 hover:text-primary-600 transition-colors">Nicotine Research</a></li>
-        </ul>
       </div>
     </div>
 
-    <div class="pt-8 border-t border-stone-200 dark:border-stone-800 flex flex-col md:flex-row justify-between gap-4">
-      <p class="text-sm text-stone-500">© {new Date().getFullYear()} alumi news. All rights reserved.</p>
-      <p class="text-xs text-stone-400 max-w-lg">
-        The content on this site is for informational purposes only and is not a substitute
+    <!-- Bottom bar -->
+    <div class="pt-8 border-t border-stone-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="flex items-center gap-4">
+        <p class="text-xs text-stone-600">© {new Date().getFullYear()} alumi news</p>
+        <span class="text-xs text-stone-700">·</span>
+        <p class="text-xs text-stone-600">{articles.length} published</p>
+      </div>
+      <p class="text-xs text-stone-600 max-w-md md:text-right leading-relaxed">
+        Content is for informational purposes only and is not a substitute
         for professional medical advice, diagnosis, or treatment.
       </p>
     </div>

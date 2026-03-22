@@ -10,10 +10,25 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": ["Women's Health", "Menopause", "Longevity", "Alzheimer's", "Hormone Therapy"],
+  "tags": [
+    "Women's Health",
+    "Menopause",
+    "Longevity",
+    "Alzheimer's",
+    "Hormone Therapy"
+  ],
   "gradient": {
     "from": "emerald-600",
     "to": "teal-700"
   },
-  "keywords": ["menopause", "hormone therapy", "estrogen", "women's health", "Alzheimer's", "cardiovascular", "ovarian aging", "WHI"]
+  "keywords": [
+    "menopause",
+    "hormone therapy",
+    "estrogen",
+    "women's health",
+    "Alzheimer's",
+    "cardiovascular",
+    "ovarian aging",
+    "WHI"
+  ]
 }

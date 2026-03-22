@@ -7,7 +7,7 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SEO from '../components/SEO.astro';
 import Newsletter from '../components/Newsletter.astro';
 import { fade, slide } from 'astro:transitions';
-import { getRelatedArticles } from '../utils/articles';
+import { getRelatedArticles, getArticleGradientStyle } from '../utils/articles';
 
 interface Props {
   title: string;
@@ -63,20 +63,21 @@ const relatedArticles = await getRelatedArticles(slug, 3);
   >
     <div class="container-editorial">
       <div class="article-header">
-        <div class="flex items-center justify-center gap-3 mb-6">
+        <div class="flex items-center justify-center gap-2 mb-8">
           <span
-            class="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs font-semibold uppercase tracking-wide rounded-full"
+            class="px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 text-xs font-semibold uppercase tracking-widest rounded-full"
             transition:name={`category-${slug}`}
           >
             {category}
           </span>
-          <span class="text-sm text-stone-500">{publishDate}</span>
-          <span class="text-stone-400">·</span>
-          <span class="text-sm text-stone-500">{readTime}</span>
+          <span class="text-stone-300 dark:text-stone-700">/</span>
+          <span class="text-xs text-stone-500 uppercase tracking-wide">{publishDate}</span>
+          <span class="text-stone-300 dark:text-stone-700">/</span>
+          <span class="text-xs text-stone-500 uppercase tracking-wide">{readTime}</span>
         </div>
 
         <h1
-          class="font-serif text-display-2 font-semibold mb-6 text-balance"
+          class="font-serif text-display-2 font-semibold mb-6 text-balance leading-tight"
           transition:name={`title-${slug}`}
           transition:animate={slide({ duration: '0.4s' })}
         >
@@ -84,14 +85,15 @@ const relatedArticles = await getRelatedArticles(slug, 3);
         </h1>
 
         <p
-          class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-2xl mx-auto mb-8"
+          class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-2xl mx-auto mb-10"
+          style="line-height: 1.8;"
           transition:animate={fade({ duration: '0.4s', delay: '0.1s' })}
         >
           {description}
         </p>
 
-        <div class="flex items-center justify-center gap-4">
-          <div class="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
+        <div class="flex items-center justify-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-semibold">
             an
           </div>
           <div class="text-left">
@@ -125,20 +127,20 @@ const relatedArticles = await getRelatedArticles(slug, 3);
         <slot />
 
         <!-- Share & Tags -->
-        <div class="mt-12 pt-8 border-t border-stone-200 dark:border-stone-800 reveal">
+        <div class="mt-14 pt-8 border-t border-stone-200 dark:border-stone-800 reveal">
           <div class="flex flex-wrap gap-2">
             <slot name="tags" />
           </div>
         </div>
 
         <!-- Author Card -->
-        <div class="author-card mt-12 reveal">
+        <div class="author-card mt-10 reveal">
           <div class="author-avatar">an</div>
-          <div>
+          <div class="flex-1">
             <span class="block font-semibold mb-1">alumi news Editorial</span>
-            <p class="text-sm text-stone-600 dark:text-stone-400">
-              Our medical review board comprises healthcare professionals dedicated to providing
-              accurate, evidence-based health information.
+            <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+              Our editorial team reviews the latest research across health and medicine,
+              synthesizing evidence into accessible, actionable insights.
             </p>
           </div>
         </div>
@@ -150,24 +152,26 @@ const relatedArticles = await getRelatedArticles(slug, 3);
   {relatedArticles.length > 0 && (
     <section class="related-articles" transition:animate={fade({ duration: '0.3s', delay: '0.3s' })}>
       <div class="container-editorial">
-        <div class="mb-10">
+        <div class="flex items-center gap-6 mb-10">
           <span class="section-label">Continue Reading</span>
-          <h2 class="font-serif text-heading-2 font-semibold mt-1">Related Articles</h2>
+          <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           {relatedArticles.map((article, i) => (
             <a href={article.href} class={`article-card group reveal${i > 0 ? ` reveal-delay-${i}` : ''}`}>
               <div class="article-card-image">
-                <div class={`article-card-image-inner bg-gradient-to-br from-${article.gradient.from} to-${article.gradient.to}`}>
-                  <span class="article-card-number">{String(i + 1).padStart(2, '0')}</span>
+                <div class="article-card-image-inner relative overflow-hidden" style={getArticleGradientStyle(article.category)}>
+                  <span class="article-card-number absolute bottom-4 left-4">{String(i + 1).padStart(2, '0')}</span>
                 </div>
               </div>
               <div class="article-card-content">
-                <div class="flex items-center gap-3 mb-3">
-                  <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-xs font-semibold uppercase tracking-widest text-primary-600">{article.category}</span>
+                  <span class="text-stone-300 dark:text-stone-700">/</span>
+                  <span class="text-xs text-stone-400">{article.readTime} min</span>
                 </div>
-                <h3 class="font-serif text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">{article.title}</h3>
-                <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">{article.description}</p>
+                <h3 class="font-serif text-lg font-semibold mb-2 group-hover:text-primary-600 transition-colors leading-snug">{article.title}</h3>
+                <p class="font-body text-sm text-stone-500 dark:text-stone-400 line-clamp-2">{article.description}</p>
               </div>
             </a>
           ))}

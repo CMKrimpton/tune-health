@@ -10,10 +10,23 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": ["Nutrition", "Metabolism", "Insulin Resistance", "Mitochondria", "Longevity"],
+  "tags": [
+    "Nutrition",
+    "Metabolism",
+    "Insulin Resistance",
+    "Mitochondria",
+    "Longevity"
+  ],
   "gradient": {
     "from": "lime-500",
     "to": "green-600"
   },
-  "keywords": ["metabolic flexibility", "fat oxidation", "insulin resistance", "mitochondria", "fasting", "ketogenic diet"]
+  "keywords": [
+    "metabolic flexibility",
+    "fat oxidation",
+    "insulin resistance",
+    "mitochondria",
+    "fasting",
+    "ketogenic diet"
+  ]
 }

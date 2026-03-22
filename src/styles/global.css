@@ -64,14 +64,14 @@
   .btn-primary {
     @apply btn-editorial bg-stone-900 text-white dark:bg-white dark:text-stone-900;
     @apply hover:bg-primary-600 dark:hover:bg-primary-500 dark:hover:text-white;
-    @apply hover:shadow-lg;
+    @apply hover:shadow-lg hover:shadow-primary-600/20;
   }
 
   .btn-secondary {
-    @apply btn-editorial bg-transparent border-2 border-stone-300 dark:border-stone-700;
+    @apply btn-editorial bg-transparent border border-stone-300 dark:border-stone-700;
     @apply text-stone-900 dark:text-stone-100;
     @apply hover:border-stone-900 dark:hover:border-stone-300;
-    @apply hover:bg-stone-100 dark:hover:bg-stone-800;
+    @apply hover:bg-stone-100/50 dark:hover:bg-stone-800/50;
   }
 
   .btn-ghost {
@@ -91,6 +91,7 @@
   .section-label {
     @apply text-overline font-sans font-semibold tracking-widest;
     @apply text-primary-600 dark:text-primary-400;
+    letter-spacing: 0.15em;
   }
 
   /* Animated Underline */
@@ -134,9 +135,12 @@
 
   /* Scroll Progress Bar */
   .scroll-progress {
-    @apply fixed top-0 left-0 h-0.5 bg-primary-600 z-50;
+    @apply fixed top-0 left-0 z-50;
+    height: 2px;
+    background: linear-gradient(90deg, theme('colors.primary.600'), theme('colors.primary.400'));
     transform-origin: left;
     transform: scaleX(0);
+    will-change: transform;
   }
 
   /* Article Typography Enhancements */
@@ -145,25 +149,121 @@
   }
 
   .article-content p:first-of-type::first-letter {
-    @apply float-left font-serif text-6xl font-bold leading-none mr-3 mt-1;
+    @apply float-left font-serif font-bold leading-none;
     @apply text-primary-600 dark:text-primary-400;
+    font-size: 4.25rem;
+    margin-right: 0.6rem;
+    margin-top: 0.15rem;
+    margin-bottom: -0.25rem;
+  }
+
+  /* Article section spacing — tighter rhythm */
+  .article-content h2 {
+    @apply mt-16 mb-6 pb-3;
+    border-bottom: 1px solid theme('colors.stone.200');
+  }
+
+  .dark .article-content h2 {
+    border-bottom-color: theme('colors.stone.800');
+  }
+
+  .article-content h3 {
+    @apply mt-10 mb-4;
+  }
+
+  /* Article horizontal rules — editorial dividers */
+  .article-content hr {
+    @apply my-14 border-none h-px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      theme('colors.stone.300') 20%,
+      theme('colors.stone.300') 80%,
+      transparent
+    );
+  }
+
+  .dark .article-content hr {
+    background: linear-gradient(
+      to right,
+      transparent,
+      theme('colors.stone.700') 20%,
+      theme('colors.stone.700') 80%,
+      transparent
+    );
+  }
+
+  /* Article lists — better spacing */
+  .article-content ul,
+  .article-content ol {
+    @apply my-6;
+  }
+
+  .article-content li {
+    @apply mb-2;
+  }
+
+  /* Article blockquotes — refined */
+  .article-content blockquote {
+    @apply border-l-2 border-primary-500 pl-6 my-8;
+    @apply italic text-stone-700 dark:text-stone-300;
+  }
+
+  /* Article links */
+  .article-content a {
+    @apply text-primary-600 dark:text-primary-400 no-underline;
+    @apply border-b border-primary-300 dark:border-primary-700;
+    @apply hover:border-primary-600 dark:hover:border-primary-400;
+    @apply transition-colors duration-200;
   }
 
   /* Pull Quote */
   .pull-quote {
-    @apply relative my-12 py-8 px-6 md:px-12;
-    @apply border-l-4 border-primary-500;
-    @apply bg-stone-100 dark:bg-stone-900 rounded-r-2xl;
+    @apply relative my-14 py-8 px-8 md:px-12;
+    @apply border-l-[3px] border-primary-500;
+    @apply bg-stone-50 dark:bg-stone-900/60 rounded-r-xl;
+  }
+
+  .pull-quote::before {
+    content: '\201C';
+    @apply absolute -top-4 left-4 font-serif text-6xl text-primary-500/30 leading-none;
   }
 
   .pull-quote p {
     @apply font-serif text-heading-3 italic text-stone-800 dark:text-stone-200;
+    @apply leading-relaxed;
+  }
+
+  .pull-quote cite,
+  .pull-quote .attribution {
+    @apply block mt-4 text-sm font-sans not-italic text-stone-500 dark:text-stone-400;
   }
 
   /* Info Card */
   .info-card {
-    @apply p-6 rounded-xl bg-primary-50 dark:bg-primary-950/30;
-    @apply border border-primary-200 dark:border-primary-800;
+    @apply p-6 md:p-8 rounded-xl bg-primary-50/70 dark:bg-primary-950/20;
+    @apply border border-primary-100 dark:border-primary-900/50;
+    @apply my-8;
+  }
+
+  .info-card h3,
+  .info-card h4 {
+    @apply text-primary-700 dark:text-primary-300;
+  }
+
+  /* Editorial Divider — decorative section break */
+  .editorial-divider {
+    @apply flex items-center justify-center gap-3 my-16;
+  }
+
+  .editorial-divider::before,
+  .editorial-divider::after {
+    content: '';
+    @apply flex-1 h-px bg-stone-200 dark:bg-stone-800;
+  }
+
+  .editorial-divider span {
+    @apply text-stone-400 dark:text-stone-600 text-xs tracking-widest uppercase font-sans;
   }
 
   /* Animated Counter */
@@ -368,8 +468,9 @@
    Hero Section
    ========================================= */
 .hero {
-  @apply relative min-h-screen flex flex-col justify-center;
-  @apply pt-28 md:pt-32 pb-16 overflow-hidden;
+  @apply relative flex flex-col justify-center;
+  @apply pt-28 md:pt-32 pb-20 overflow-hidden;
+  min-height: 100dvh;
 }
 
 .hero-bg {
@@ -430,11 +531,12 @@
 .featured-card {
   @apply grid grid-cols-1 lg:grid-cols-2;
   @apply bg-white dark:bg-stone-900 rounded-3xl overflow-hidden;
-  @apply shadow-editorial transition-all duration-500;
+  @apply shadow-editorial transition-all duration-500 ease-editorial;
+  @apply border border-stone-100 dark:border-stone-800;
 }
 
 .featured-card:hover {
-  @apply shadow-2xl;
+  @apply shadow-2xl border-stone-200 dark:border-stone-700;
 }
 
 .featured-image-container {
@@ -473,11 +575,12 @@
 
 .article-card-number {
   @apply font-serif text-6xl lg:text-7xl font-bold;
-  @apply text-white/20;
+  @apply text-white/15;
+  font-variant-numeric: tabular-nums;
 }
 
 .article-card-content {
-  @apply p-6;
+  @apply p-5 md:p-6;
 }
 
 /* Large Card Variant */
@@ -497,33 +600,34 @@
    Categories Scroll
    ========================================= */
 .categories-scroll {
-  @apply flex gap-3 overflow-x-auto scrollbar-hide pb-4 -mx-6 px-6;
+  @apply flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-6 px-6;
 }
 
 .category-chip {
-  @apply flex-shrink-0 flex flex-col items-center gap-2;
-  @apply px-6 py-4 rounded-xl;
-  @apply bg-stone-100 dark:bg-stone-900 border border-transparent;
+  @apply flex-shrink-0 flex items-center gap-2;
+  @apply px-5 py-2.5 rounded-full;
+  @apply bg-transparent border border-stone-200 dark:border-stone-800;
   @apply transition-all duration-300;
 }
 
 .category-chip:hover,
 .category-chip.active {
-  @apply bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 shadow-card;
+  @apply bg-stone-900 dark:bg-white border-stone-900 dark:border-white;
+  @apply text-white dark:text-stone-900;
 }
 
 .category-chip.active {
-  @apply border-primary-500;
+  @apply bg-stone-900 dark:bg-white;
 }
 
 .category-chip svg {
-  @apply w-6 h-6 text-stone-500 dark:text-stone-400;
+  @apply w-4 h-4 text-stone-500 dark:text-stone-400;
   @apply transition-colors duration-300;
 }
 
 .category-chip:hover svg,
 .category-chip.active svg {
-  @apply text-primary-600 dark:text-primary-400;
+  @apply text-white dark:text-stone-900;
 }
 
 /* =========================================
@@ -531,21 +635,21 @@
    ========================================= */
 .deep-dive-card {
   @apply flex gap-6 items-center;
-  @apply p-6 bg-white dark:bg-stone-900 rounded-2xl;
+  @apply p-5 md:p-6 bg-white dark:bg-stone-900 rounded-2xl;
   @apply border border-stone-200 dark:border-stone-800;
-  @apply transition-all duration-300;
+  @apply transition-all duration-300 ease-editorial;
 }
 
 .deep-dive-card:hover {
-  @apply border-primary-500 shadow-card;
+  @apply border-stone-300 dark:border-stone-700 shadow-card;
 }
 
 .deep-dive-image {
-  @apply relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0;
+  @apply relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden flex-shrink-0;
 }
 
 .deep-dive-number {
-  @apply font-serif text-3xl font-bold text-white;
+  @apply font-serif text-2xl md:text-3xl font-bold text-white;
   @apply absolute inset-0 flex items-center justify-center;
   @apply z-10;
 }
@@ -564,28 +668,29 @@
    Newsletter Section
    ========================================= */
 .newsletter-visual {
-  @apply relative h-[400px] hidden md:block;
+  @apply relative h-[400px] hidden lg:block;
 }
 
 .newsletter-card {
-  @apply absolute w-72 p-5 bg-white dark:bg-stone-900;
-  @apply rounded-xl shadow-lg transition-transform duration-300;
+  @apply absolute w-72 p-5 bg-white dark:bg-stone-800;
+  @apply rounded-xl shadow-lg border border-stone-100 dark:border-stone-700;
+  @apply transition-all duration-500 ease-editorial;
 }
 
 .newsletter-card:hover {
-  @apply !rotate-0;
+  @apply !rotate-0 shadow-xl;
 }
 
 .newsletter-card-1 {
-  @apply top-[10%] left-[5%] -rotate-3 z-30;
+  @apply top-[8%] left-[5%] -rotate-3 z-30;
 }
 
 .newsletter-card-2 {
-  @apply top-[35%] right-[10%] rotate-2 z-20;
+  @apply top-[38%] right-[5%] rotate-2 z-20;
 }
 
 .newsletter-card-3 {
-  @apply bottom-[5%] left-[15%] -rotate-1 z-10;
+  @apply bottom-[5%] left-[12%] -rotate-1 z-10;
 }
 
 /* =========================================
@@ -605,20 +710,21 @@
    Footer
    ========================================= */
 .footer {
-  @apply py-16 md:py-20 bg-stone-100 dark:bg-stone-900;
-  @apply border-t border-stone-200 dark:border-stone-800;
+  @apply py-16 md:py-24 bg-stone-900 dark:bg-stone-950;
+  @apply border-t border-stone-800;
+  color: theme('colors.stone.400');
 }
 
 /* =========================================
    Back to Top
    ========================================= */
 .back-to-top {
-  @apply fixed bottom-20 right-6 z-40;
+  @apply fixed bottom-8 right-6 z-40;
   @apply w-10 h-10 rounded-full;
-  @apply bg-stone-900 dark:bg-white text-white dark:text-stone-900;
+  @apply bg-stone-900/90 dark:bg-white/90 text-white dark:text-stone-900;
   @apply flex items-center justify-center;
   @apply opacity-0 invisible translate-y-4;
-  @apply transition-all duration-300 shadow-lg;
+  @apply transition-all duration-300 shadow-lg backdrop-blur-sm;
 }
 
 .back-to-top.visible {
@@ -665,7 +771,7 @@
    Article Page Specific
    ========================================= */
 .article-hero {
-  @apply pt-28 md:pt-32 pb-12;
+  @apply pt-32 md:pt-40 pb-16;
 }
 
 .article-header {
@@ -673,12 +779,12 @@
 }
 
 .article-feature-image {
-  @apply relative aspect-hero rounded-3xl overflow-hidden my-12;
+  @apply relative aspect-hero rounded-2xl overflow-hidden my-12;
   @apply shadow-editorial;
 }
 
 .article-body {
-  @apply py-12;
+  @apply py-12 md:py-16;
 }
 
 .article-sidebar {
@@ -709,19 +815,21 @@
 
 /* Author Card */
 .author-card {
-  @apply flex items-center gap-4 p-6;
-  @apply bg-stone-100 dark:bg-stone-800 rounded-2xl;
+  @apply flex items-start gap-5 p-6 md:p-8;
+  @apply bg-stone-50 dark:bg-stone-800/50 rounded-2xl;
+  @apply border border-stone-100 dark:border-stone-800;
 }
 
 .author-avatar {
-  @apply w-16 h-16 rounded-full bg-primary-600;
+  @apply w-14 h-14 rounded-full bg-primary-600 flex-shrink-0;
   @apply flex items-center justify-center;
-  @apply text-white font-semibold text-lg;
+  @apply text-white font-semibold text-base;
 }
 
 /* Related Articles */
 .related-articles {
-  @apply py-16 border-t border-stone-200 dark:border-stone-800;
+  @apply py-20 md:py-24 bg-stone-50 dark:bg-stone-900/50;
+  @apply border-t border-stone-200 dark:border-stone-800;
 }
 
 /* =========================================
@@ -769,16 +877,7 @@ a, button, [role="button"], .article-card, .featured-card, .category-chip, .deep
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 50px rgba(239, 68, 68, 0.2);
 }
 
-/* Category Chip Glow */
-.category-chip:hover,
-.category-chip.active {
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 0 20px rgba(220, 38, 38, 0.1);
-}
-
-.dark .category-chip:hover,
-.dark .category-chip.active {
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 25px rgba(239, 68, 68, 0.15);
-}
+/* Category Chip — no glow, clean pill style */
 
 /* Deep Dive Card Glow */
 .deep-dive-card:hover {
@@ -1290,22 +1389,7 @@ header a[href="/"]:hover .text-primary-600 {
   @apply bg-stone-50 dark:bg-stone-800/50 -mx-4 px-4 py-5 rounded-xl;
 }
 
-/* Buttons */
-.btn-primary {
-  @apply inline-flex items-center gap-2 px-5 py-2.5;
-  @apply bg-primary-600 text-white font-medium text-sm;
-  @apply rounded-full shadow-sm;
-  @apply hover:bg-primary-700 hover:shadow-md;
-  @apply transition-all duration-200;
-}
-
-.btn-secondary {
-  @apply inline-flex items-center gap-2 px-5 py-2.5;
-  @apply bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300;
-  @apply font-medium text-sm rounded-full;
-  @apply hover:bg-stone-200 dark:hover:bg-stone-700;
-  @apply transition-all duration-200;
-}
+/* Buttons — defined in @layer components above. Do not duplicate here. */
 
 /* =========================================
    Print Styles

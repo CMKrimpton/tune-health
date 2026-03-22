@@ -10,10 +10,25 @@
   "readTime": 10,
   "featured": true,
   "draft": false,
-  "tags": ["GLP-1", "Ozempic", "Neuroscience", "Addiction", "Clinical Evidence"],
+  "tags": [
+    "GLP-1",
+    "Ozempic",
+    "Neuroscience",
+    "Addiction",
+    "Clinical Evidence"
+  ],
   "gradient": {
     "from": "indigo-500",
     "to": "purple-600"
   },
-  "keywords": ["GLP-1", "Ozempic", "semaglutide", "addiction", "dopamine", "obesity", "food noise", "reward system"]
+  "keywords": [
+    "GLP-1",
+    "Ozempic",
+    "semaglutide",
+    "addiction",
+    "dopamine",
+    "obesity",
+    "food noise",
+    "reward system"
+  ]
 }

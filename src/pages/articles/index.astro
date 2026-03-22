@@ -2,12 +2,18 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
+import Newsletter from '../../components/Newsletter.astro';
 import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
 import SideNav from '../../components/SideNav.astro';
-import { getArticles, getComingSoonArticles, formatPublishDateShort } from '../../utils/articles';
+import { getArticles, getComingSoonArticles, getCategories, formatPublishDateShort, getArticleGradientStyle } from '../../utils/articles';
 
 const articles = await getArticles();
 const comingSoon = await getComingSoonArticles();
+const categories = await getCategories();
+
+// Split articles: first 3 featured, rest in grid
+const featuredArticles = articles.slice(0, 3);
+const gridArticles = articles.slice(3);
 ---
 
 <BaseLayout
@@ -19,67 +25,128 @@ const comingSoon = await getComingSoonArticles();
   <!-- Hero Section -->
   <section class="articles-hero">
     <div class="container-editorial">
-      <div class="max-w-3xl">
-        <span class="section-label">The Library</span>
-        <h1 class="font-serif text-display-2 font-semibold mt-2 mb-6">
-          Evidence-Based<br/>
-          <span class="italic font-normal text-primary-600">Health Insights</span>
-        </h1>
-        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl">
-          In-depth articles on mental health, neuroscience, nutrition, and longevity.
-          Each piece is thoroughly researched and reviewed by our editorial board.
-        </p>
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+        <div class="max-w-2xl">
+          <span class="section-label">The Library</span>
+          <h1 class="font-serif text-display-2 font-semibold mt-3 mb-4 leading-tight">
+            Evidence-Based<br/>
+            <span class="italic font-normal text-primary-600">Health Insights</span>
+          </h1>
+          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg" style="line-height: 1.8;">
+            {articles.length} articles — each thoroughly researched and reviewed by our editorial board.
+          </p>
+        </div>
+
+        <!-- Search -->
+        <div class="relative w-full max-w-sm">
+          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" stroke-width="2"/>
+            <path d="m21 21-4.35-4.35" stroke-width="2"/>
+          </svg>
+          <input
+            type="text"
+            id="articleSearch"
+            placeholder="Search articles..."
+            class="w-full pl-12 pr-5 py-3 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+            aria-label="Search articles"
+          />
+        </div>
+      </div>
+
+      <!-- Category Pills -->
+      <div class="flex flex-wrap gap-2 mt-8">
+        <button class="category-chip active" data-filter="all">
+          <span class="text-sm font-medium">All</span>
+        </button>
+        {categories.map((cat) => (
+          <button class="category-chip" data-filter={cat}>
+            <span class="text-sm font-medium">{cat}</span>
+          </button>
+        ))}
       </div>
     </div>
   </section>
 
-  <!-- Published Articles -->
-  <section class="py-16 md:py-24">
+  <!-- Featured Row: Top 3 Articles -->
+  <section class="py-12 md:py-16" id="featuredRow">
     <div class="container-editorial">
-      <div class="flex items-center gap-6 mb-10">
-        <span class="section-label">Published Articles</span>
-        <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
-        <span class="text-sm text-stone-400">{articles.length} articles</span>
-      </div>
-
-      <div class="space-y-8">
-        {articles.map((article, index) => (
-          <a href={article.href} class="article-feature-card group reveal block">
-            <div class="article-feature-image">
-              <div class="article-feature-image-inner relative overflow-hidden">
-                {article.heroImage ? (
-                  <img
-                    src={article.heroImage}
-                    alt={article.heroImageAlt || article.title}
-                    class="w-full h-full object-cover"
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                  />
-                ) : (
-                  <div class={`w-full h-full bg-gradient-to-br from-${article.gradient.from} to-${article.gradient.to}`}></div>
-                )}
-                <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/30 to-transparent"></div>
-                <span class="article-feature-number absolute bottom-6 left-6">{String(index + 1).padStart(2, '0')}</span>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Lead article — large card */}
+        {featuredArticles[0] && (
+          <a href={featuredArticles[0].href} class="article-lead-card group reveal block" data-category={featuredArticles[0].category} data-title={featuredArticles[0].title.toLowerCase()} data-tags={featuredArticles[0].tags.join(' ').toLowerCase()}>
+            <div class="relative aspect-[4/3] overflow-hidden rounded-t-2xl lg:rounded-2xl" style={getArticleGradientStyle(featuredArticles[0].category)}>
+              <span class="absolute top-6 right-6 font-serif text-[7rem] font-bold text-white/[0.06] leading-none select-none">01</span>
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-stone-900/20 to-transparent"></div>
+              <div class="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="px-2.5 py-1 bg-primary-600 text-white text-xs font-semibold uppercase tracking-wide rounded">{featuredArticles[0].category}</span>
+                  <span class="text-xs text-stone-300">{featuredArticles[0].readTime} min read</span>
+                </div>
+                <h2 class="font-serif text-heading-2 font-semibold text-white mb-2 leading-tight group-hover:text-primary-300 transition-colors">{featuredArticles[0].title}</h2>
+                <p class="font-body text-sm text-stone-300 line-clamp-2">{featuredArticles[0].description}</p>
               </div>
             </div>
-            <div class="article-feature-content">
-              <div class="flex items-center gap-3 mb-4">
-                <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
-                <span class="text-xs text-stone-400">{formatPublishDateShort(article.publishDate)}</span>
-              </div>
-              <h2 class="font-serif text-heading-2 font-semibold mb-3 group-hover:text-primary-600 transition-colors">
-                {article.title}
-              </h2>
-              <p class="font-body text-body text-stone-600 dark:text-stone-400 mb-6 line-clamp-2">
-                {article.description}
-              </p>
-              <div class="flex items-center justify-between pt-4 border-t border-stone-100 dark:border-stone-800">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-semibold">an</div>
-                  <span class="text-sm text-stone-500">alumi news Editorial</span>
+          </a>
+        )}
+
+        {/* Two stacked cards */}
+        <div class="flex flex-col gap-6">
+          {featuredArticles.slice(1, 3).map((article, i) => (
+            <a href={article.href} class={`article-side-card group reveal${i > 0 ? ' reveal-delay-1' : ''} flex-1 block`} data-category={article.category} data-title={article.title.toLowerCase()} data-tags={article.tags.join(' ').toLowerCase()}>
+              <div class="grid grid-cols-[140px_1fr] sm:grid-cols-[180px_1fr] h-full bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-all duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700">
+                <div class="relative overflow-hidden" style={getArticleGradientStyle(article.category)}>
+                  <span class="absolute inset-0 flex items-center justify-center font-serif text-5xl font-bold text-white/[0.08] select-none">{String(featuredArticles.indexOf(article) + 1).padStart(2, '0')}</span>
                 </div>
-                <div class="flex items-center gap-4">
-                  <span class="text-sm text-stone-400">{article.readTime} min read</span>
-                  <span class="text-lg text-stone-400 group-hover:text-primary-600 transition-colors">&rarr;</span>
+                <div class="p-5 flex flex-col justify-center">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+                    <span class="text-xs text-stone-400">{article.readTime} min</span>
+                  </div>
+                  <h3 class="font-serif text-lg font-semibold mb-1.5 group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">{article.title}</h3>
+                  <p class="font-body text-sm text-stone-500 dark:text-stone-400 line-clamp-2 hidden sm:block">{article.description}</p>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- All Articles — Dense Grid -->
+  <section class="py-12 md:py-16 bg-stone-50 dark:bg-stone-900/30">
+    <div class="container-editorial">
+      <div class="flex items-center gap-6 mb-8">
+        <span class="section-label">All Articles</span>
+        <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
+        <span class="text-xs text-stone-400 uppercase tracking-widest" id="articleCount">{articles.length} articles</span>
+      </div>
+
+      <!-- No results message -->
+      <div id="noResults" style="display: none;" class="py-16 text-center">
+        <p class="font-serif text-heading-3 text-stone-400 dark:text-stone-500 mb-2">No articles found</p>
+        <p class="text-sm text-stone-500 dark:text-stone-600">Try a different search term or category.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="articlesGrid">
+        {gridArticles.map((article, i) => (
+          <a href={article.href} class={`article-grid-card group reveal${i > 0 && i < 6 ? ` reveal-delay-${Math.min(i, 5)}` : ''} block`} data-category={article.category} data-title={article.title.toLowerCase()} data-tags={article.tags.join(' ').toLowerCase()}>
+            <div class="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-all duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700 h-full flex flex-col">
+              <div class="relative aspect-[16/10] overflow-hidden" style={getArticleGradientStyle(article.category)}>
+                <span class="absolute bottom-3 left-4 font-serif text-5xl font-bold text-white/[0.08] leading-none select-none">{String(i + 4).padStart(2, '0')}</span>
+              </div>
+              <div class="p-5 flex flex-col flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+                  <span class="text-xs text-stone-400">{formatPublishDateShort(article.publishDate)}</span>
+                </div>
+                <h3 class="font-serif text-lg font-semibold mb-2 group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">{article.title}</h3>
+                <p class="font-body text-sm text-stone-500 dark:text-stone-400 line-clamp-2 mb-3 flex-1">{article.description}</p>
+                <div class="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
+                  <span class="text-xs text-stone-400">{article.readTime} min read</span>
+                  <svg class="w-4 h-4 text-stone-300 dark:text-stone-600 group-hover:text-primary-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -91,41 +158,22 @@ const comingSoon = await getComingSoonArticles();
 
   <!-- Coming Soon -->
   {comingSoon.length > 0 && (
-    <section class="py-16 md:py-24 bg-stone-100 dark:bg-stone-900">
+    <section class="py-12 md:py-16">
       <div class="container-editorial">
-        <div class="flex items-center gap-6 mb-10">
+        <div class="flex items-center gap-6 mb-8">
           <span class="section-label">Coming Soon</span>
-          <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+          <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {comingSoon.map((article, index) => (
-            <div class="article-card group reveal opacity-75 cursor-default">
-              <div class="article-card-image relative">
-                <div class="article-card-image-inner relative overflow-hidden">
-                  {article.heroImage ? (
-                    <img
-                      src={article.heroImage}
-                      alt={article.heroImageAlt || article.title}
-                      class="w-full h-full object-cover grayscale-[30%]"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div class={`w-full h-full bg-gradient-to-br from-${article.gradient.from} to-${article.gradient.to}`}></div>
-                  )}
-                  <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/30 to-transparent"></div>
-                  <span class="article-card-number absolute bottom-4 left-4">{String(articles.length + index + 1).padStart(2, '0')}</span>
-                </div>
+          {comingSoon.map((article) => (
+            <div class="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 opacity-75">
+              <div class="relative aspect-[16/10] overflow-hidden" style={getArticleGradientStyle(article.category)}>
                 <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
               </div>
-              <div class="article-card-content">
-                <div class="flex items-center gap-3 mb-3">
-                  <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
-                </div>
-                <h3 class="font-serif text-xl font-semibold mb-2">{article.title}</h3>
-                <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
-                  <span class="text-xs text-stone-400">Coming soon</span>
-                </div>
+              <div class="p-5">
+                <span class="text-xs font-semibold uppercase tracking-wide text-primary-600 mb-2 block">{article.category}</span>
+                <h3 class="font-serif text-lg font-semibold">{article.title}</h3>
               </div>
             </div>
           ))}
@@ -134,90 +182,82 @@ const comingSoon = await getComingSoonArticles();
     </section>
   )}
 
-  <!-- Newsletter CTA -->
-  <section class="py-16 md:py-24">
-    <div class="container-editorial">
-      <div class="max-w-2xl mx-auto text-center">
-        <span class="section-label">Stay Updated</span>
-        <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-4">Never Miss an Article</h2>
-        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8">
-          Get notified when we publish new research summaries and in-depth guides.
-        </p>
-        <a href="/subscribe" class="btn-primary magnetic inline-flex">
-          <span>Subscribe to Newsletter</span>
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
-          </svg>
-        </a>
-      </div>
-    </div>
-  </section>
+  <!-- Newsletter -->
+  <Newsletter variant="compact" />
 
   <Footer slot="footer" />
   <CommandPaletteWrapper />
   <SideNav />
 </BaseLayout>
 
+<script>
+  function initArticlesPage() {
+    const searchInput = document.getElementById('articleSearch') as HTMLInputElement;
+    const categoryChips = document.querySelectorAll('.category-chip[data-filter]');
+    // Select ALL filterable cards (featured + grid)
+    const allCards = document.querySelectorAll('[data-category][data-title]');
+    let activeCategory = 'all';
+
+    function filterArticles() {
+      const query = searchInput?.value.toLowerCase().trim() || '';
+      let visibleCount = 0;
+
+      allCards.forEach(card => {
+        const el = card as HTMLElement;
+        const category = el.dataset.category || '';
+        const title = el.dataset.title || '';
+        const tags = el.dataset.tags || '';
+
+        const matchesCategory = activeCategory === 'all' || category === activeCategory;
+        const matchesSearch = !query || title.includes(query) || tags.includes(query) || category.toLowerCase().includes(query);
+
+        if (matchesCategory && matchesSearch) {
+          el.style.display = '';
+          visibleCount++;
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      const noResults = document.getElementById('noResults');
+      if (noResults) {
+        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+      }
+
+      const countEl = document.getElementById('articleCount');
+      if (countEl) {
+        countEl.textContent = `${visibleCount} article${visibleCount !== 1 ? 's' : ''}`;
+      }
+    }
+
+    searchInput?.addEventListener('input', filterArticles);
+
+    categoryChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        categoryChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        activeCategory = (chip as HTMLElement).dataset.filter || 'all';
+        filterArticles();
+      });
+    });
+  }
+
+  initArticlesPage();
+  document.addEventListener('astro:after-swap', initArticlesPage);
+</script>
+
 <style>
   .articles-hero {
-    @apply py-20 md:py-28 bg-stone-50 dark:bg-stone-900/50;
+    @apply pt-32 md:pt-40 pb-12 md:pb-16 bg-stone-50 dark:bg-stone-950;
     @apply border-b border-stone-200 dark:border-stone-800;
   }
 
-  /* Feature card - horizontal layout */
-  .article-feature-card {
-    @apply grid grid-cols-1 lg:grid-cols-[380px_1fr];
-    @apply bg-white dark:bg-stone-900 rounded-2xl overflow-hidden;
-    @apply border border-stone-200 dark:border-stone-800;
-    @apply transition-all duration-300;
+  .article-lead-card {
+    @apply rounded-2xl overflow-hidden;
+    @apply transition-all duration-500;
   }
 
-  .article-feature-card:hover {
-    @apply shadow-xl dark:shadow-stone-900/50;
-    @apply border-stone-300 dark:border-stone-700;
-  }
-
-  .article-feature-image {
-    @apply relative aspect-[4/3] lg:aspect-auto;
-  }
-
-  .article-feature-image-inner {
-    @apply w-full h-full;
-    @apply min-h-[200px] lg:min-h-[320px];
-  }
-
-  .article-feature-number {
-    @apply font-serif text-6xl font-bold text-white/60;
-  }
-
-  .article-feature-content {
-    @apply p-6 md:p-8 lg:p-10;
-  }
-
-  /* Standard card - vertical layout for coming soon */
-  .article-card {
-    @apply bg-white dark:bg-stone-900 rounded-2xl overflow-hidden;
-    @apply border border-stone-200 dark:border-stone-800;
-    @apply transition-all duration-300;
-  }
-
-  .article-card:hover {
-    @apply shadow-lg dark:shadow-stone-900/50;
-  }
-
-  .article-card-image {
-    @apply relative aspect-[4/3];
-  }
-
-  .article-card-image-inner {
-    @apply w-full h-full;
-  }
-
-  .article-card-number {
-    @apply font-serif text-4xl font-bold text-white/60;
-  }
-
-  .article-card-content {
-    @apply p-6;
+  .article-lead-card:hover {
+    @apply shadow-2xl;
   }
 </style>

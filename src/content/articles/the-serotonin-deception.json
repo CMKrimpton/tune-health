@@ -10,13 +10,25 @@
   "readTime": 22,
   "featured": true,
   "draft": false,
-  "tags": ["Mental Health", "Antidepressants", "Neuroscience", "Evidence Review", "Pharmacology"],
+  "tags": [
+    "Mental Health",
+    "Antidepressants",
+    "Neuroscience",
+    "Evidence Review",
+    "Pharmacology"
+  ],
   "gradient": {
     "from": "rose-600",
     "to": "red-700"
   },
-  "keywords": ["serotonin", "depression", "SSRI", "chemical imbalance", "antidepressants", "mental health", "placebo", "neurotransmitter"],
-  "heroImage": "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=600&h=400&fit=crop&q=80",
-  "heroImageAlt": "Brain neurons",
-  "sortOrder": 1
+  "keywords": [
+    "serotonin",
+    "depression",
+    "SSRI",
+    "chemical imbalance",
+    "antidepressants",
+    "mental health",
+    "placebo",
+    "neurotransmitter"
+  ]
 }

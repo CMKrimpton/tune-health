@@ -10,10 +10,23 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": ["Nutrition", "Gut Microbiome", "Neuroscience", "Depression", "Probiotics"],
+  "tags": [
+    "Nutrition",
+    "Gut Microbiome",
+    "Neuroscience",
+    "Depression",
+    "Probiotics"
+  ],
   "gradient": {
     "from": "lime-500",
     "to": "green-600"
   },
-  "keywords": ["gut microbiome", "gut-brain axis", "probiotics", "short-chain fatty acids", "serotonin", "neurodegeneration"]
+  "keywords": [
+    "gut microbiome",
+    "gut-brain axis",
+    "probiotics",
+    "short-chain fatty acids",
+    "serotonin",
+    "neurodegeneration"
+  ]
 }

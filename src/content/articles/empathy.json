@@ -10,10 +10,23 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Empathy", "Neuroscience", "Mirror Neurons", "Compassion", "Mental Health"],
+  "tags": [
+    "Empathy",
+    "Neuroscience",
+    "Mirror Neurons",
+    "Compassion",
+    "Mental Health"
+  ],
   "gradient": {
     "from": "amber-500",
     "to": "orange-600"
   },
-  "keywords": ["empathy", "compassion", "mirror neurons", "burnout", "affective empathy", "cognitive empathy"]
+  "keywords": [
+    "empathy",
+    "compassion",
+    "mirror neurons",
+    "burnout",
+    "affective empathy",
+    "cognitive empathy"
+  ]
 }

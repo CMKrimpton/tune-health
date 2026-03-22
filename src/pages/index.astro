@@ -4,12 +4,16 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SideNav from '../components/SideNav.astro';
-import { getArticles, getComingSoonArticles, getFeaturedArticles, formatPublishDateShort } from '../utils/articles';
+import { getArticles, getComingSoonArticles, getFeaturedArticles, formatPublishDateShort, getArticleGradientStyle } from '../utils/articles';
 
-const articles = await getArticles();
+const allArticles = await getArticles();
 const comingSoon = await getComingSoonArticles();
 const featured = await getFeaturedArticles();
 const heroArticle = featured[0];
+
+// Homepage shows max 9 articles (excluding the featured hero)
+const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice(0, 9);
+const categories = [...new Set(allArticles.map(a => a.category))].sort();
 ---
 
 <BaseLayout
@@ -43,7 +47,7 @@ const heroArticle = featured[0];
       <div class="max-w-narrow mx-auto text-center">
         <div class="hero-badge inline-flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-medium tracking-wide uppercase text-stone-600 dark:text-stone-400 mb-8">
           <span class="w-1.5 h-1.5 bg-primary-600 rounded-full animate-pulse"></span>
-          <span>Issue No. 47 — Winter 2025</span>
+          <span>Spring 2026 — {allArticles.length} Articles Published</span>
         </div>
 
         <h1 class="hero-title font-serif text-display-1 font-semibold mb-6 text-balance" transition:name="hero-title">
@@ -51,10 +55,9 @@ const heroArticle = featured[0];
           <span class="block italic font-normal text-primary-600">Wherever it leads.</span>
         </h1>
 
-        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl mx-auto mb-10">
+        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg mx-auto mb-10" style="line-height: 1.8;">
           Independent health analysis for people who think for themselves.
-          We treat peer-reviewed journals and naturopathic claims with the
-          same respect - and the same skepticism.
+          Peer-reviewed journals and naturopathic claims — held to the same standard.
         </p>
 
         <div class="hero-cta flex flex-col sm:flex-row gap-4 justify-center">
@@ -74,75 +77,66 @@ const heroArticle = featured[0];
       <div class="w-px h-10 bg-gradient-to-b from-stone-400 to-transparent animate-pulse"></div>
     </div>
 
-    <div class="hidden lg:flex absolute bottom-8 right-12 gap-12">
+    <div class="hidden lg:flex absolute bottom-10 right-12 gap-10 items-end">
       <div class="text-right">
-        <span class="block font-serif text-4xl font-semibold counter" data-count={articles.length}>0</span>
-        <span class="text-overline text-stone-400">Expert Articles</span>
+        <span class="block font-serif text-3xl font-semibold counter" data-count={allArticles.length}>0</span>
+        <span class="text-overline text-stone-400">Published</span>
       </div>
       <div class="text-right">
-        <span class="block font-serif text-4xl font-semibold counter" data-count="1">0</span>
-        <span class="text-overline text-stone-400">Contributors</span>
+        <span class="block font-serif text-3xl font-semibold counter" data-count="7">0</span>
+        <span class="text-overline text-stone-400">Categories</span>
       </div>
       <div class="text-right">
-        <span class="block font-serif text-4xl font-semibold">
-          <span class="text-2xl text-stone-500">New!</span>
-        </span>
-        <span class="text-overline text-stone-400">Just Launched</span>
+        <span class="block text-xs text-stone-400 uppercase tracking-widest">Est. 2024</span>
       </div>
     </div>
   </section>
 
   <!-- Featured Article -->
   {heroArticle && (
-    <section class="py-20 md:py-28 bg-stone-100 dark:bg-stone-900" id="featured">
+    <section class="py-20 md:py-28 bg-stone-50 dark:bg-stone-900/50" id="featured">
       <div class="container-editorial">
-        <div class="flex items-center gap-6 mb-10">
+        <div class="flex items-center gap-6 mb-12">
           <span class="section-label">Featured Story</span>
-          <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+          <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
         </div>
 
-        <a href={heroArticle.href} class="featured-card block reveal">
+        <a href={heroArticle.href} class="featured-card group block reveal">
           <div class="featured-image-container">
-            <div class="featured-image-inner">
-              {heroArticle.heroImage && (
-                <img
-                  src={heroArticle.heroImage}
-                  alt={heroArticle.heroImageAlt || heroArticle.title}
-                  class="w-full h-full object-cover"
-                  loading="eager"
-                />
-              )}
-              <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
+            <div class="featured-image-inner" style={getArticleGradientStyle(heroArticle.category)}>
+              <div class="absolute inset-0 flex items-end p-8">
+                <span class="font-serif text-[8rem] lg:text-[12rem] font-bold text-white/[0.07] leading-none select-none">01</span>
+              </div>
             </div>
           </div>
 
-          <div class="p-8 lg:p-12 flex flex-col">
-            <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-wide mb-6">
+          <div class="p-8 lg:p-12 flex flex-col justify-center">
+            <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-widest mb-6">
               <span class="text-primary-600">{heroArticle.category}</span>
-              <span class="text-stone-400">&middot;</span>
+              <span class="text-stone-300 dark:text-stone-600">/</span>
               <span class="text-stone-500">{heroArticle.readTime} min read</span>
             </div>
 
-            <h2 class="font-serif text-heading-1 font-semibold mb-4 group-hover:text-primary-600 transition-colors">
+            <h2 class="font-serif text-heading-1 font-semibold mb-4 group-hover:text-primary-600 transition-colors leading-tight">
               {heroArticle.title}
             </h2>
 
-            <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8 flex-1">
+            <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8 flex-1 leading-relaxed">
               {heroArticle.description}
             </p>
 
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">an</div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-stone-100 dark:border-stone-800">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-semibold">an</div>
                 <div>
                   <span class="block text-sm font-semibold">alumi news Editorial</span>
                   <span class="block text-xs text-stone-500">Medical Review Board</span>
                 </div>
               </div>
 
-              <span class="inline-flex items-center gap-2 font-semibold text-sm group-hover:text-primary-600 transition-colors">
+              <span class="inline-flex items-center gap-2 font-semibold text-sm text-primary-600 group-hover:gap-3 transition-all">
                 Read Article
-                <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
                 </svg>
               </span>
@@ -154,58 +148,17 @@ const heroArticle = featured[0];
   )}
 
   <!-- Categories -->
-  <section class="py-10 border-b border-stone-200 dark:border-stone-800">
+  <section class="py-8 border-b border-stone-200 dark:border-stone-800" id="categories">
     <div class="container-editorial">
       <div class="categories-scroll">
-        <button class="category-chip active">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 6v6l4 2"/>
-          </svg>
-          <span class="text-sm font-medium">All Topics</span>
+        <button class="category-chip active" data-category="all">
+          <span class="text-sm font-medium">All</span>
         </button>
-        <button class="category-chip">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z"/>
-            <path d="M9 12l2 2 4-4"/>
-          </svg>
-          <span class="text-sm font-medium">Mental Health</span>
-        </button>
-        <button class="category-chip">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-            <line x1="6" y1="1" x2="6" y2="4"/>
-            <line x1="10" y1="1" x2="10" y2="4"/>
-            <line x1="14" y1="1" x2="14" y2="4"/>
-          </svg>
-          <span class="text-sm font-medium">Nutrition</span>
-        </button>
-        <button class="category-chip">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          <span class="text-sm font-medium">Fitness</span>
-        </button>
-        <button class="category-chip">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-          <span class="text-sm font-medium">Sleep Science</span>
-        </button>
-        <button class="category-chip">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
-          <span class="text-sm font-medium">Longevity</span>
-        </button>
-        <button class="category-chip">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 16v-4M12 8h.01"/>
-          </svg>
-          <span class="text-sm font-medium">Neuroscience</span>
-        </button>
+        {categories.map((cat) => (
+          <button class="category-chip" data-category={cat}>
+            <span class="text-sm font-medium">{cat}</span>
+          </button>
+        ))}
       </div>
     </div>
   </section>
@@ -213,33 +166,28 @@ const heroArticle = featured[0];
   <!-- Latest Articles Grid -->
   <section class="py-20 md:py-28" id="latest">
     <div class="container-editorial">
-      <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center justify-between mb-12">
         <div>
           <span class="section-label">Latest Stories</span>
-          <h2 class="font-serif text-heading-2 font-semibold mt-1">Fresh Perspectives</h2>
+          <h2 class="font-serif text-heading-2 font-semibold mt-2">Fresh Perspectives</h2>
         </div>
+        <a href="/articles" class="hidden md:inline-flex items-center gap-2 text-sm font-medium text-stone-500 hover:text-primary-600 transition-colors">
+          View all {allArticles.length} articles
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
+        </a>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Published articles */}
-        {articles.map((article, i) => (
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="articleGrid">
+        {gridArticles.map((article, i) => (
           <a
             href={article.href}
             class={`article-card group reveal${i === 0 ? ' article-card-large' : ''}${i > 0 ? ` reveal-delay-${Math.min(i, 5)}` : ''}`}
+            data-category={article.category}
           >
             <div class="article-card-image">
-              <div class="article-card-image-inner relative overflow-hidden">
-                {article.heroImage ? (
-                  <img
-                    src={article.heroImage}
-                    alt={article.heroImageAlt || article.title}
-                    class="w-full h-full object-cover"
-                    loading={i < 3 ? 'eager' : 'lazy'}
-                  />
-                ) : (
-                  <div class={`w-full h-full bg-gradient-to-br from-${article.gradient.from} to-${article.gradient.to}`}></div>
-                )}
-                <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
+              <div class="article-card-image-inner relative overflow-hidden" style={getArticleGradientStyle(article.category)}>
                 <span class="article-card-number absolute bottom-4 left-4">{String(i + 1).padStart(2, '0')}</span>
               </div>
             </div>
@@ -250,88 +198,64 @@ const heroArticle = featured[0];
               </div>
               <h3 class={`font-serif ${i === 0 ? 'text-heading-3' : 'text-xl'} font-semibold mb-2 group-hover:text-primary-600 transition-colors`}>{article.title}</h3>
               <p class={`font-body ${i === 0 ? '' : 'text-sm '}text-stone-600 dark:text-stone-400 ${i === 0 ? 'mb-4 line-clamp-3' : 'line-clamp-2'}`}>{article.description}</p>
-              <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
-                <span class="text-xs text-stone-400">{article.readTime} min read</span>
-                <span class="text-lg text-stone-400 group-hover:text-primary-600 transition-colors">&rarr;</span>
+              <div class="flex items-center justify-between pt-3 mt-auto border-t border-stone-100 dark:border-stone-800">
+                <span class="text-xs text-stone-400 font-medium">{article.readTime} min read</span>
+                <svg class="w-4 h-4 text-stone-300 dark:text-stone-600 group-hover:text-primary-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+                </svg>
               </div>
             </div>
           </a>
         ))}
+      </div>
 
-        {/* Coming soon articles */}
-        {comingSoon.map((article, i) => (
-          <div class="article-card group reveal reveal-delay-5 opacity-75 cursor-default">
-            <div class="article-card-image relative">
-              <div class="article-card-image-inner relative overflow-hidden">
-                {article.heroImage ? (
-                  <img
-                    src={article.heroImage}
-                    alt={article.heroImageAlt || article.title}
-                    class="w-full h-full object-cover grayscale-[30%]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div class={`w-full h-full bg-gradient-to-br from-${article.gradient.from} to-${article.gradient.to}`}></div>
-                )}
-                <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/20 to-transparent"></div>
-                <span class="article-card-number absolute bottom-4 left-4">{String(articles.length + i + 1).padStart(2, '0')}</span>
-              </div>
-              <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">Coming Soon</span>
-            </div>
-            <div class="article-card-content">
-              <div class="flex items-center gap-3 mb-3">
-                <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
-              </div>
-              <h3 class="font-serif text-xl font-semibold mb-2">{article.title}</h3>
-              <p class="font-body text-sm text-stone-600 dark:text-stone-400 line-clamp-2">{article.description}</p>
-              <div class="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800">
-                <span class="text-xs text-stone-400">Coming soon</span>
-              </div>
-            </div>
-          </div>
-        ))}
+      <!-- View All CTA -->
+      <div class="mt-12 text-center">
+        <a href="/articles" class="btn-secondary magnetic inline-flex">
+          <span>Browse all {allArticles.length} articles</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
+        </a>
       </div>
     </div>
   </section>
 
   <!-- About / Mission Section -->
-  <section class="py-20 md:py-28 bg-stone-900 dark:bg-stone-950 text-white" id="about">
+  <section class="py-24 md:py-32 bg-stone-900 dark:bg-stone-950 text-white" id="about">
     <div class="container-editorial">
       <div class="max-w-3xl mx-auto">
-        <span class="section-label !text-primary-400 mb-4 block">Our Mission</span>
-        <h2 class="font-serif text-heading-1 font-semibold mb-8">Health Without the Hype</h2>
+        <span class="section-label !text-primary-400 mb-6 block">Our Mission</span>
+        <h2 class="font-serif text-heading-1 font-semibold mb-10 leading-tight">Health Without the Hype</h2>
 
-        <div class="font-body text-body-lg text-stone-300 space-y-6">
+        <div class="font-body text-body-lg text-stone-300 space-y-6" style="line-height: 1.85;">
           <p>
             Health information is broken. Mainstream sources defer to authority and industry-funded research.
             Alternative health cherry-picks studies and sells false hope. Both sides have conflicts of interest
             they don't disclose.
           </p>
-          <p class="text-white font-semibold text-xl">
+          <p class="text-white font-semibold text-xl font-serif italic">
             alumi news exists to cut through it all.
           </p>
           <p>
-            We treat peer-reviewed journals and naturopathic claims with the same respect - and the same skepticism.
+            We treat peer-reviewed journals and naturopathic claims with the same respect — and the same skepticism.
             We'll tell you when a cheap generic outperforms an expensive supplement, and when a folk remedy has more
             science behind it than a blockbuster medication. We follow evidence wherever it leads, even when it's inconvenient.
           </p>
-          <p class="text-primary-400 font-serif text-xl italic">
-            The only wealth that matters.
-          </p>
         </div>
 
-        <div class="mt-12 pt-8 border-t border-stone-700 flex flex-wrap gap-8">
+        <div class="mt-14 pt-8 border-t border-stone-700/50 grid grid-cols-3 gap-6 max-w-md">
           <div>
-            <span class="block text-3xl font-serif font-semibold text-primary-400">No</span>
-            <span class="text-sm text-stone-400 uppercase tracking-wider">Sponsors</span>
+            <span class="block text-2xl font-serif font-semibold text-primary-400 mb-1">No</span>
+            <span class="text-xs text-stone-500 uppercase tracking-widest">Sponsors</span>
           </div>
           <div>
-            <span class="block text-3xl font-serif font-semibold text-primary-400">No</span>
-            <span class="text-sm text-stone-400 uppercase tracking-wider">Sacred Cows</span>
+            <span class="block text-2xl font-serif font-semibold text-primary-400 mb-1">No</span>
+            <span class="text-xs text-stone-500 uppercase tracking-widest">Sacred Cows</span>
           </div>
           <div>
-            <span class="block text-3xl font-serif font-semibold text-primary-400">No</span>
-            <span class="text-sm text-stone-400 uppercase tracking-wider">Bullshit</span>
+            <span class="block text-2xl font-serif font-semibold text-primary-400 mb-1">No</span>
+            <span class="text-xs text-stone-500 uppercase tracking-widest">Bullshit</span>
           </div>
         </div>
       </div>
@@ -438,78 +362,62 @@ const heroArticle = featured[0];
         <div>
           <span class="section-label">Newsletter</span>
           <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-4">Real Wealth Starts Here</h2>
-          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8">
-            Join over 100,000 readers who receive our weekly digest of science-backed health insights,
-            exclusive interviews, and practical wellness strategies.
+          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8" style="line-height: 1.8;">
+            Weekly evidence-based health insights delivered to your inbox.
+            No hype, no sales pitches — just the research that matters.
           </p>
 
           <form class="mb-8" id="newsletterForm">
             <div class="flex flex-col sm:flex-row gap-3 mb-4">
-              <input type="email" required placeholder="Enter your email"
-                     class="flex-1 px-5 py-3.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-base focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all">
+              <input type="email" required placeholder="you@example.com"
+                     class="flex-1 px-5 py-3 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                     aria-label="Email address">
               <button type="submit" class="btn-primary whitespace-nowrap">
                 <span>Subscribe</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
                 </svg>
               </button>
             </div>
-            <label class="flex items-start gap-3 text-sm text-stone-500">
-              <input type="checkbox" required class="mt-0.5 w-4 h-4 accent-primary-600">
-              <span>I agree to receive weekly newsletters and accept the privacy policy</span>
-            </label>
+            <p class="text-xs text-stone-400">No spam. Unsubscribe anytime.</p>
           </form>
 
           <div class="flex flex-wrap gap-6">
             <div class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/>
-                <polyline points="22 4 12 14.01 9 11.01" stroke-width="2"/>
+              <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M5 13l4 4L19 7" stroke-width="2"/>
               </svg>
               <span>Weekly insights</span>
             </div>
             <div class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/>
-                <polyline points="22 4 12 14.01 9 11.01" stroke-width="2"/>
+              <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M5 13l4 4L19 7" stroke-width="2"/>
               </svg>
-              <span>Expert interviews</span>
+              <span>Evidence-based</span>
             </div>
             <div class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/>
-                <polyline points="22 4 12 14.01 9 11.01" stroke-width="2"/>
+              <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M5 13l4 4L19 7" stroke-width="2"/>
               </svg>
-              <span>No spam, ever</span>
+              <span>Free forever</span>
             </div>
           </div>
         </div>
 
+        <!-- Newsletter Visual — Real article previews -->
         <div class="newsletter-visual">
-          <div class="newsletter-card newsletter-card-1">
-            <div class="flex items-center justify-between mb-3">
-              <span class="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 text-xs font-semibold uppercase rounded">New</span>
-              <span class="text-xs text-stone-400">This Week</span>
+          {allArticles.slice(0, 3).map((article, i) => (
+            <div class={`newsletter-card newsletter-card-${i + 1}`}>
+              <div class="flex items-center justify-between mb-3">
+                <span class={`px-2 py-1 text-xs font-semibold uppercase rounded ${i === 0 ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600' : i === 1 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>
+                  {i === 0 ? 'New' : i === 1 ? 'Popular' : 'Featured'}
+                </span>
+                <span class="text-xs text-stone-400">{formatPublishDateShort(article.publishDate)}</span>
+              </div>
+              <h4 class="font-serif font-semibold mb-1 line-clamp-1">{article.title}</h4>
+              <p class="text-sm text-stone-500 line-clamp-1">{article.description}</p>
             </div>
-            <h4 class="font-serif font-semibold mb-1">The Science of Cold Exposure</h4>
-            <p class="text-sm text-stone-500">What the research actually says about ice baths</p>
-          </div>
-          <div class="newsletter-card newsletter-card-2">
-            <div class="flex items-center justify-between mb-3">
-              <span class="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 text-xs font-semibold uppercase rounded">Popular</span>
-              <span class="text-xs text-stone-400">Last Week</span>
-            </div>
-            <h4 class="font-serif font-semibold mb-1">Rethinking Protein Intake</h4>
-            <p class="text-sm text-stone-500">New guidelines challenge old assumptions</p>
-          </div>
-          <div class="newsletter-card newsletter-card-3">
-            <div class="flex items-center justify-between mb-3">
-              <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 text-xs font-semibold uppercase rounded">Featured</span>
-              <span class="text-xs text-stone-400">Archive</span>
-            </div>
-            <h4 class="font-serif font-semibold mb-1">Sleep & Memory</h4>
-            <p class="text-sm text-stone-500">How rest consolidates learning</p>
-          </div>
+          ))}
         </div>
       </div>
     </div>
@@ -587,6 +495,34 @@ const heroArticle = featured[0];
         }
       }
 
+      // Category filtering
+      const categoryChips = document.querySelectorAll('.category-chip');
+      const articleCards = document.querySelectorAll('#articleGrid .article-card');
+
+      categoryChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          // Update active state
+          categoryChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+
+          const category = (chip as HTMLElement).dataset.category;
+
+          articleCards.forEach(card => {
+            const cardEl = card as HTMLElement;
+            const cardCategory = cardEl.dataset.category;
+
+            if (category === 'all' || cardCategory === category) {
+              cardEl.style.display = '';
+              // Re-trigger reveal animation
+              cardEl.classList.remove('active');
+              requestAnimationFrame(() => cardEl.classList.add('active'));
+            } else {
+              cardEl.style.display = 'none';
+            }
+          });
+        });
+      });
+
       // Newsletter form - only bind once
       const newsletterForm = document.getElementById('newsletterForm');
       if (newsletterForm && !newsletterForm.dataset.bound) {
@@ -594,35 +530,30 @@ const heroArticle = featured[0];
         newsletterForm.addEventListener('submit', (e) => {
           e.preventDefault();
           const btn = newsletterForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+          const input = newsletterForm.querySelector('input[type="email"]') as HTMLInputElement;
           const originalText = btn.innerHTML;
 
-          btn.innerHTML = `
-            <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Subscribing...</span>
-          `;
+          btn.innerHTML = `<span>Subscribing...</span>`;
           btn.disabled = true;
+          if (input) input.disabled = true;
 
           setTimeout(() => {
             btn.innerHTML = `
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path d="M5 13l4 4L19 7" stroke-width="2"/>
               </svg>
               <span>Subscribed!</span>
             `;
-            btn.classList.remove('bg-stone-900', 'dark:bg-white');
-            btn.classList.add('bg-green-600', 'dark:bg-green-600');
 
             setTimeout(() => {
               btn.innerHTML = originalText;
               btn.disabled = false;
-              btn.classList.remove('bg-green-600', 'dark:bg-green-600');
-              btn.classList.add('bg-stone-900', 'dark:bg-white');
-              (newsletterForm as HTMLFormElement).reset();
+              if (input) {
+                input.disabled = false;
+                input.value = '';
+              }
             }, 3000);
-          }, 1500);
+          }, 1200);
         });
       }
 

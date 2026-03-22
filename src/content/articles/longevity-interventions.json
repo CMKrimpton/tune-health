@@ -10,13 +10,27 @@
   "readTime": 25,
   "featured": true,
   "draft": false,
-  "tags": ["Longevity", "Fasting", "Supplements", "Caloric Restriction", "Evidence Review"],
+  "tags": [
+    "Longevity",
+    "Fasting",
+    "Supplements",
+    "Caloric Restriction",
+    "Evidence Review"
+  ],
   "gradient": {
     "from": "emerald-600",
     "to": "teal-700"
   },
-  "keywords": ["longevity", "lifespan", "fasting", "caloric restriction", "rapamycin", "metformin", "resveratrol", "NAD", "autophagy", "OMAD"],
-  "heroImage": "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=600&h=400&fit=crop&q=80",
-  "heroImageAlt": "DNA strand",
-  "sortOrder": 5
+  "keywords": [
+    "longevity",
+    "lifespan",
+    "fasting",
+    "caloric restriction",
+    "rapamycin",
+    "metformin",
+    "resveratrol",
+    "NAD",
+    "autophagy",
+    "OMAD"
+  ]
 }

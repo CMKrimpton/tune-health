@@ -10,10 +10,25 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": ["Clinical Evidence", "Nocebo Effect", "Statins", "Informed Consent", "Placebo", "Mental Health"],
+  "tags": [
+    "Clinical Evidence",
+    "Nocebo Effect",
+    "Statins",
+    "Informed Consent",
+    "Placebo",
+    "Mental Health"
+  ],
   "gradient": {
     "from": "amber-500",
     "to": "orange-600"
   },
-  "keywords": ["nocebo effect", "statins", "side effects", "placebo", "informed consent", "drug tolerability", "psychosomatic"]
+  "keywords": [
+    "nocebo effect",
+    "statins",
+    "side effects",
+    "placebo",
+    "informed consent",
+    "drug tolerability",
+    "psychosomatic"
+  ]
 }
