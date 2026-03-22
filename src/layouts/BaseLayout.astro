@@ -119,7 +119,7 @@ const canonicalUrl = canonical || Astro.url.pathname;
     applyTheme(getThemePreference()!);
 
     // Make available globally
-    (window as any).toggleTheme = () => {
+    (window as unknown as { toggleTheme: () => void }).toggleTheme = () => {
       const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
       applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
     };
@@ -152,10 +152,11 @@ const canonicalUrl = canonical || Astro.url.pathname;
           header?.classList.remove('scrolled');
         }
 
-        // Progress bar
+        // Progress bar — use visualViewport height when available (handles iOS address bar)
         if (scrollProgress) {
-          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-          const progress = scrollY / docHeight;
+          const vh = window.visualViewport?.height ?? window.innerHeight;
+          const docHeight = document.documentElement.scrollHeight - vh;
+          const progress = docHeight > 0 ? Math.min(scrollY / docHeight, 1) : 0;
           scrollProgress.style.transform = `scaleX(${progress})`;
         }
 
@@ -180,7 +181,7 @@ const canonicalUrl = canonical || Astro.url.pathname;
 
       // Theme toggle
       themeToggle?.addEventListener('click', () => {
-        (window as any).toggleTheme();
+        (window as unknown as { toggleTheme?: () => void }).toggleTheme?.();
       });
 
       // Mobile menu
@@ -204,8 +205,8 @@ const canonicalUrl = canonical || Astro.url.pathname;
         }
       });
 
-      // Reveal animations
-      const reveals = document.querySelectorAll('.reveal');
+      // Reveal animations — only observe elements not already active
+      const reveals = document.querySelectorAll('.reveal:not(.active)');
       const revealObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -213,7 +214,7 @@ const canonicalUrl = canonical || Astro.url.pathname;
             revealObserver.unobserve(entry.target);
           }
         });
-      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+      }, { threshold: 0.1 });
 
       reveals.forEach((el) => revealObserver.observe(el));
     }

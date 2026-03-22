@@ -1,10 +1,51 @@
 # Changelog
 
-All notable changes to the Tune Health project will be documented in this file.
+All notable changes to the alumi news project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+
+## [5.5.0] - 2026-03-22
+
+### Security
+- **Auth added to `delete-article` and `publish-article` Edge Functions** — both were previously unauthenticated, allowing anyone to delete or publish articles. Now require `ADMIN_TOKEN` Bearer auth.
+- **Auth bypass fixed in `articles-api`** — logic `if (adminToken && ...)` allowed write ops when `ADMIN_TOKEN` env var was unset. Changed to `if (!adminToken || ...)`.
+- **Error info leakage fixed** — all 8 Edge Functions now return generic error messages instead of raw `err.message` (which could expose internal details like DB errors, API rate limits)
+- **Admin token env var renamed** — `PUBLIC_ADMIN_TOKEN` → `ADMIN_TOKEN` (server-side only). The `PUBLIC_` prefix was exposing the token in client-side Astro bundles.
+- **Security headers** — added `vercel.json` with X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy
+
+### Added
+- **AI Agents panel** on admin dashboard (replaces minimal "AI Tools" section):
+  - **Editorial QC Agent**: 3 modes (Audit Only, Dry Run preview, Audit & Auto-Fix), severity selector (High/Medium+/All), pattern warnings, copy report to clipboard, per-issue fix status with check/skip/error indicators, status badge showing grade
+  - **Illustration Agent**: single-article dropdown selector for targeted generation, batch controls (Generate Missing, Regenerate All with cost confirmation)
+  - **Database Sync**: refresh DB from content button
+- **Admin dashboard enhancements**: 6 stat cards (total, published, drafts, featured, illustrated, avg read time), category breakdown pill row, recently updated horizontal scroll, article search/filter, description preview per card, illustration status indicator (green/gray dot), tag count
+- **Category gradient mapping** — added "Research Summary" and "Pharmacology" to `getArticleGradientStyle()` (were falling back to gray default)
+
+### Fixed
+- **iPhone scroll-back-up bug** — reveal animations used 700ms `translateY` transitions that fought with iOS Safari scroll momentum. On touch devices, transforms are now disabled — opacity-only transitions at 300ms. Removed negative `rootMargin` from IntersectionObserver. Removed `will-change: transform` from scroll progress bar.
+- **iOS auto-zoom on inputs** — newsletter email input and admin form inputs were below 16px (iOS auto-zooms on < 16px). Changed to `text-base` / `1rem`.
+- **Mobile menu scroll lock** — added `body.menu-open { overflow: hidden }` to prevent background scroll when hamburger menu is open
+- **SideNav back-gesture conflict** — trigger zone moved 12px from left edge, hidden entirely on touch devices to avoid conflicting with iOS Safari back-swipe
+- **Admin layout viewport units** — changed `100vh` to `100dvh` (3 instances) so layout doesn't extend behind iOS browser chrome
+- **Scroll progress bar address bar** — now uses `visualViewport.height` instead of `innerHeight` to handle iOS address bar collapse/expand
+- **Command Palette safe area** — respects `env(safe-area-inset-top)` for iPhone notch, added `px-4` edge padding
+- **FloatingTOC touch target** — collapse button expands to 44px on touch devices (was 24px, below Apple minimum)
+- **TypeScript errors** — fixed `slugify()` union type mismatch in ArticleEditor, reverted `mapArticle` data param to proper Astro type
+- **Silent catch blocks** — 3 empty `catch {}` blocks in ArticleEditor now provide user feedback
+- **`as any` casts eliminated** — added `Window` interface extension, proper type narrowing in CommandPalette, DraftData interface in ArticleEditor, typed `updateMetadata` parameter
+- **`console.error` removed** from generate-illustration Edge Function (production code rule)
+
+### Changed
+- **Branding consistency** — BRAND.md, CHANGELOG.md, package.json updated from "Tune Health" to "alumi news"
+- **Package.json** — name `alumi-news`, version `5.5.0`, removed unused `@astrojs/node` dependency
+- **`.nvmrc`** — updated from Node 20 to 22 (matches runtime)
+- **Deprecated CSS removed** — `-webkit-overflow-scrolling: touch` (unnecessary in modern iOS)
+- **Reveal animation timing** — reduced from 700ms to 400ms on desktop, 300ms on mobile; stagger delays reduced proportionally
+
+### Removed
+- `astro-temp/` leftover scaffold directory (44KB, was gitignored but cluttering workspace)
 
 ## [5.4.0] - 2026-03-22
 

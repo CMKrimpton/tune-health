@@ -8,7 +8,7 @@
   font-family: 'Inter', -apple-system, sans-serif;
   background: #1b1a18;
   color: #e7e6e3;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ─── Header ─── */
@@ -93,7 +93,7 @@
 
 .admin-editor-layout {
   display: grid; grid-template-columns: 540px 1fr; gap: 0;
-  height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
 }
 .admin-editor-left {
   display: flex; flex-direction: column; border-right: 1px solid #292524; overflow: hidden;
@@ -215,7 +215,7 @@
 
 .admin-field input, .admin-field select, .admin-field textarea {
   padding: 0.4375rem 0.625rem; background: #1c1917; border: 1px solid #44403c;
-  border-radius: 0.375rem; color: #e7e6e3; font-size: 0.8125rem;
+  border-radius: 0.375rem; color: #e7e6e3; font-size: 1rem;
   font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s;
 }
 .admin-field input:focus, .admin-field select:focus, .admin-field textarea:focus { border-color: #dc2626; }
@@ -469,7 +469,7 @@
 
 .admin-edit-layout {
   display: grid; grid-template-columns: 540px 1fr; gap: 0;
-  height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
 }
 .admin-edit-left {
   border-right: 1px solid #292524; overflow: hidden; display: flex; flex-direction: column;

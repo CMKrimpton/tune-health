@@ -134,6 +134,14 @@
     transition: all 0.15s;
   }
 
+  /* Expand touch target on touch devices */
+  @media (pointer: coarse) {
+    .floating-toc-collapse {
+      width: 44px;
+      height: 44px;
+    }
+  }
+
   .floating-toc-collapse:hover {
     background: rgb(245 245 244);
     color: rgb(87 83 78);

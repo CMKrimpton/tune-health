@@ -107,7 +107,16 @@ function saveDraft(data: {
   } catch { /* quota exceeded — ignore */ }
 }
 
-function loadDraft(): ReturnType<typeof saveDraft extends (d: infer T) => void ? () => T : never> | null {
+interface DraftData {
+  state: EditorState;
+  sourceText: string;
+  article: GeneratedArticle | null;
+  metadata: ArticleMetadata | null;
+  chatMessages: ChatMessage[];
+  snapshots: ArticleSnapshot[];
+}
+
+function loadDraft(): DraftData | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -157,7 +166,7 @@ export default function ArticleEditor() {
 
   // Load draft on mount
   useEffect(() => {
-    const draft = loadDraft() as any;
+    const draft = loadDraft();
     if (draft && draft.state && draft.state !== 'upload') {
       setState(draft.state === 'publishing' ? 'preview' : draft.state);
       setSourceText(draft.sourceText || '');
@@ -291,7 +300,7 @@ export default function ArticleEditor() {
       try {
         await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
             action: 'save',
             article: {
@@ -314,7 +323,10 @@ export default function ArticleEditor() {
             }
           }),
         });
-      } catch {} // Non-blocking — don't fail if DB save fails
+      } catch {
+        // Non-blocking — don't fail if DB save fails, article is still in local state
+        setStatusMessage('Note: could not save to database, but article is available locally.');
+      }
 
       // Auto-generate editorial illustration
       try {
@@ -339,7 +351,10 @@ export default function ArticleEditor() {
           }
         }
         setStatusMessage('');
-      } catch {} // Non-blocking — illustration is a nice-to-have
+      } catch {
+        // Non-blocking — illustration generation failed but article is still usable
+        setStatusMessage('Illustration generation failed. You can retry from the dashboard.');
+      }
 
       // Save initial snapshot
       setSnapshots([{
@@ -360,11 +375,11 @@ export default function ArticleEditor() {
         state: 'preview', sourceText, article: data, metadata: data.metadata,
         chatMessages: [], snapshots: [],
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       timers.forEach(clearTimeout);
-      if (err.name === 'AbortError') return;
+      if (err instanceof Error && err.name === 'AbortError') return;
       setState('upload');
-      setError(err.message || 'Generation failed. Try a shorter document.');
+      setError(err instanceof Error ? err.message : 'Generation failed. Try a shorter document.');
       setStatusMessage('');
     } finally {
       abortRef.current = null;
@@ -418,24 +433,26 @@ export default function ArticleEditor() {
         if (m) {
           await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
             body: JSON.stringify({
               action: 'save',
               article: { slug: m.slug, article_html: data.html }
             }),
           });
         }
-      } catch {}
+      } catch {
+        // Non-blocking — refinement succeeded even if DB sync failed
+      }
 
       setChatMessages(prev => [...prev, {
         role: 'assistant',
         content: data.message || 'Article updated. Check the preview.',
         timestamp: Date.now(),
       }]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setChatMessages(prev => [...prev, {
         role: 'system',
-        content: `Refinement failed: ${err.message}`,
+        content: `Refinement failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
         timestamp: Date.now(),
       }]);
     } finally {
@@ -524,7 +541,7 @@ export default function ArticleEditor() {
       try {
         await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
             action: 'save',
             article: {
@@ -534,7 +551,9 @@ export default function ArticleEditor() {
             }
           }),
         });
-      } catch {}
+      } catch {
+        // Non-blocking — publish to GitHub succeeded even if DB status update failed
+      }
 
       setState('done');
       setStatusMessage('');
@@ -544,9 +563,9 @@ export default function ArticleEditor() {
         content: `Published! Vercel is rebuilding now. Your article will be live at /articles/${metadata.slug} within ~60 seconds.`,
         timestamp: Date.now(),
       }]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setState('preview');
-      setError(err.message || 'Publish failed.');
+      setError(err instanceof Error ? err.message : 'Publish failed.');
       setStatusMessage('');
     } finally {
       setIsPublishing(false);
@@ -555,12 +574,12 @@ export default function ArticleEditor() {
 
   // ─── Metadata helpers ───────────────────────────────────────────
 
-  const updateMetadata = useCallback((field: string, value: any) => {
+  const updateMetadata = useCallback((field: string, value: string | number | boolean | string[] | { from: string; to: string }) => {
     setMetadata(prev => {
       if (!prev) return prev;
       const updated = { ...prev, [field]: value };
       // Auto-update slug when title changes
-      if (field === 'title' && prev.slug === slugify(prev.title)) {
+      if (field === 'title' && typeof value === 'string' && prev.slug === slugify(prev.title)) {
         updated.slug = slugify(value);
       }
       return updated;

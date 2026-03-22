@@ -19,6 +19,16 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Auth check
+    const adminToken = (Deno.env.get("ADMIN_TOKEN") || "").trim();
+    const authHeader = req.headers.get("authorization")?.replace("Bearer ", "") || "";
+    if (!adminToken || authHeader !== adminToken) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { slug, astroContent, metadata, commitMessage }: PublishRequest = await req.json();
 
     if (!slug || !astroContent || !metadata) {
@@ -126,9 +136,9 @@ Deno.serve(async (req: Request) => {
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: unknown) {
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: "An internal error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -183,7 +183,7 @@ Create an abstract, atmospheric illustration that captures the essence of this a
 
   if (updateError) {
     // Non-fatal — image was generated and stored, just DB update failed
-    console.error(`DB update failed for ${slug}:`, updateError.message);
+    // Error is surfaced in the response below
   }
 
   return json({

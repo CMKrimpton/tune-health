@@ -20,6 +20,7 @@ export interface Article {
   href: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Astro content collection entries have dynamic shape
 function mapArticle(article: { id: string; data: any }): Article {
   return {
     slug: article.id.replace('.json', ''),
@@ -169,6 +170,14 @@ const categoryGradients: Record<string, { bg: string; pattern: string }> = {
   'Research': {
     bg: 'linear-gradient(135deg, #1c1917 0%, #292524 40%, #44403c 100%)',
     pattern: 'radial-gradient(circle at 50% 50%, rgba(168,162,158,0.08) 0%, transparent 50%)',
+  },
+  'Research Summary': {
+    bg: 'linear-gradient(135deg, #1c1917 0%, #292524 40%, #44403c 100%)',
+    pattern: 'radial-gradient(circle at 50% 50%, rgba(168,162,158,0.08) 0%, transparent 50%)',
+  },
+  'Pharmacology': {
+    bg: 'linear-gradient(135deg, #134e4a 0%, #115e59 40%, #0d9488 100%)',
+    pattern: 'radial-gradient(circle at 40% 60%, rgba(94,234,212,0.1) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(45,212,191,0.06) 0%, transparent 40%)',
   },
 };
 

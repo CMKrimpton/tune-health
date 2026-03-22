@@ -26,7 +26,7 @@ Deno.serve(async (req: Request) => {
     if (action !== "list" && action !== "get") {
       const adminToken = (Deno.env.get("ADMIN_TOKEN") || "").trim();
       const authHeader = req.headers.get("authorization")?.replace("Bearer ", "") || "";
-      if (adminToken && authHeader !== adminToken) {
+      if (!adminToken || authHeader !== adminToken) {
         return json({ error: "Unauthorized" }, 401);
       }
     }
@@ -126,8 +126,8 @@ Deno.serve(async (req: Request) => {
     }
 
     return json({ error: `Unknown action: ${action}` }, 400);
-  } catch (err) {
-    return json({ error: err.message }, 500);
+  } catch (err: unknown) {
+    return json({ error: "An internal error occurred" }, 500);
   }
 });
 

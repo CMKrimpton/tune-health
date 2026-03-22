@@ -6,7 +6,25 @@ const edgeFunctionBase = (process.env.PUBLIC_SUPABASE_URL || import.meta.env.PUB
 const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
 
 // Fetch articles from database
-let articles: any[] = [];
+interface ArticleRecord {
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  featured: boolean;
+  article_html: string;
+  hero_image: string;
+  read_time: number;
+  publish_date: string;
+  updated_at: string;
+  status: string;
+  coming_soon: boolean;
+  draft: boolean;
+}
+
+let articles: ArticleRecord[] = [];
+let fetchError = '';
 try {
   const res = await fetch(`${apiBase}/articles-api`, {
     method: 'POST',
@@ -14,17 +32,49 @@ try {
     body: JSON.stringify({ action: 'list' }),
   });
   if (res.ok) articles = await res.json();
-} catch {}
+  else fetchError = `API returned ${res.status}`;
+} catch (e) {
+  fetchError = e instanceof Error ? e.message : 'Failed to connect to database';
+}
 
 const published = articles.filter(a => a.status === 'published' && !a.coming_soon);
 const drafts = articles.filter(a => a.status === 'draft' && !a.coming_soon);
 const comingSoon = articles.filter(a => a.coming_soon);
 const withIllustration = articles.filter(a => a.hero_image);
 const withoutIllustration = articles.filter(a => !a.hero_image);
+const featuredCount = published.filter(a => a.featured).length;
+const totalReadTime = articles.reduce((sum, a) => sum + (a.read_time || 0), 0);
+const avgReadTime = articles.length > 0 ? Math.round(totalReadTime / articles.length) : 0;
+
+// Category breakdown
+const categoryMap: Record<string, number> = {};
+articles.forEach(a => { categoryMap[a.category] = (categoryMap[a.category] || 0) + 1; });
+const categories = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
+
+// Tag stats
+const allTags = articles.flatMap(a => a.tags || []);
+const uniqueTags = [...new Set(allTags)];
+
+// Recently updated
+const recentlyUpdated = [...articles]
+  .filter(a => a.updated_at)
+  .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+  .slice(0, 5);
 
 function formatDate(d: string) {
   if (!d) return '-';
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function timeAgo(d: string) {
+  if (!d) return '';
+  const ms = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
 }
 ---
 
@@ -54,8 +104,18 @@ function formatDate(d: string) {
   </header>
 
   <main class="admin-main">
-    <!-- Stats -->
-    <div class="admin-stats" style="grid-template-columns: repeat(4, 1fr)">
+    {fetchError && (
+      <div style="background:#7f1d1d; border:1px solid #991b1b; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8125rem; color:#fca5a5">
+        <strong>Database error:</strong> {fetchError}
+      </div>
+    )}
+
+    <!-- Stats Row 1: Core counts -->
+    <div class="admin-stats" style="grid-template-columns: repeat(6, 1fr)">
+      <div class="admin-stat-card">
+        <span class="admin-stat-number">{articles.length}</span>
+        <span class="admin-stat-label">Total Articles</span>
+      </div>
       <div class="admin-stat-card">
         <span class="admin-stat-number">{published.length}</span>
         <span class="admin-stat-label">Published</span>
@@ -65,13 +125,30 @@ function formatDate(d: string) {
         <span class="admin-stat-label">Drafts</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number">{published.filter(a => a.featured).length}</span>
+        <span class="admin-stat-number">{featuredCount}</span>
         <span class="admin-stat-label">Featured</span>
       </div>
       <div class="admin-stat-card">
         <span class="admin-stat-number" style={withoutIllustration.length > 0 ? 'color:#f59e0b' : 'color:#4ade80'}>{withIllustration.length}/{articles.length}</span>
         <span class="admin-stat-label">Illustrated</span>
       </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-number">{avgReadTime}<span style="font-size:0.75rem; font-weight:400; color:#78716c"> min</span></span>
+        <span class="admin-stat-label">Avg Read Time</span>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.25rem">
+      {categories.map(([cat, count]) => (
+        <span style="display:inline-flex; align-items:center; gap:0.375rem; background:#292524; border:1px solid #3f3f46; border-radius:999px; padding:0.25rem 0.75rem; font-size:0.6875rem; color:#d6d3d1">
+          <span style="font-weight:600; color:#e7e6e3">{count}</span>
+          {cat}
+        </span>
+      ))}
+      <span style="display:inline-flex; align-items:center; gap:0.375rem; background:#1c1917; border:1px solid #292524; border-radius:999px; padding:0.25rem 0.75rem; font-size:0.6875rem; color:#78716c">
+        {uniqueTags.length} unique tags
+      </span>
     </div>
 
     <a href="/admin/new" class="admin-new-article-btn">
@@ -82,26 +159,54 @@ function formatDate(d: string) {
       New Article
     </a>
 
+    <!-- Recently Updated -->
+    {recentlyUpdated.length > 0 && (
+      <section class="admin-section" style="margin-bottom:0.5rem">
+        <h2 class="admin-section-title" style="font-size:0.8125rem; color:#78716c; text-transform:uppercase; letter-spacing:0.05em">Recently Updated</h2>
+        <div style="display:flex; gap:0.5rem; overflow-x:auto; padding-bottom:0.25rem">
+          {recentlyUpdated.map(article => (
+            <a href={`/admin/edit/${article.slug}`} style="flex-shrink:0; background:#292524; border:1px solid #3f3f46; border-radius:8px; padding:0.5rem 0.75rem; text-decoration:none; color:#e7e6e3; font-size:0.75rem; display:flex; flex-direction:column; gap:0.125rem; min-width:180px">
+              <span style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px">{article.title}</span>
+              <span style="color:#78716c; font-size:0.625rem">{timeAgo(article.updated_at)} &middot; {article.category}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
     <!-- Published -->
     <section class="admin-section">
-      <h2 class="admin-section-title">Published Articles</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem">
+        <h2 class="admin-section-title" style="margin-bottom:0">Published Articles</h2>
+        <input id="articleSearch" type="text" placeholder="Search articles..." style="background:#292524; border:1px solid #3f3f46; border-radius:6px; padding:0.375rem 0.75rem; font-size:0.75rem; color:#e7e6e3; outline:none; width:220px" />
+      </div>
       {published.length === 0 ? (
         <p style="color:#78716c;font-size:0.875rem">No published articles yet.</p>
       ) : (
-        <div class="admin-article-list">
-          {published.map((article, i) => (
-            <div class="admin-article-card" data-slug={article.slug}>
+        <div class="admin-article-list" id="publishedList">
+          {published.map((article) => (
+            <div class="admin-article-card" data-slug={article.slug} data-search={`${article.title} ${article.category} ${(article.tags || []).join(' ')} ${article.description}`.toLowerCase()}>
               <div class="admin-article-stripe" style={`background:linear-gradient(to bottom, var(--stripe-from, #dc2626), var(--stripe-to, #b91c1c))`}></div>
               <div class="admin-article-body">
                 <div class="admin-article-top">
                   <div class="admin-article-info">
-                    <h3 class="admin-article-title">{article.title}</h3>
+                    <h3 class="admin-article-title">
+                      {article.hero_image
+                        ? <span style="color:#4ade80; margin-right:0.375rem" title="Has illustration">◉</span>
+                        : <span style="color:#78716c; margin-right:0.375rem" title="No illustration">○</span>
+                      }
+                      {article.title}
+                    </h3>
+                    <p style="font-size:0.75rem; color:#78716c; margin:0.125rem 0 0.375rem; line-height:1.4; max-width:600px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{article.description}</p>
                     <div class="admin-article-meta">
                       <span class="admin-category-badge">{article.category}</span>
                       {article.featured && <span class="admin-featured-badge">Featured</span>}
                       {article.article_html ? <span class="admin-has-content-badge">Has Content</span> : <span class="admin-no-content-badge">No Content</span>}
                       <span class="admin-article-date">{formatDate(article.publish_date)}</span>
                       <span class="admin-article-date">{article.read_time} min</span>
+                      {article.tags && article.tags.length > 0 && (
+                        <span class="admin-article-date" title={article.tags.join(', ')}>{article.tags.length} tags</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -187,75 +292,143 @@ function formatDate(d: string) {
       </section>
     )}
 
-    <!-- AI Tools -->
+    <!-- AI Agents -->
     <section class="admin-section" style="margin-top:1rem">
-      <h2 class="admin-section-title">AI Tools</h2>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">
+      <h2 class="admin-section-title">AI Agents</h2>
 
-        <!-- Editorial QC -->
-        <div class="admin-stat-card" style="text-align:left; padding:1.5rem">
-          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem">
-            <div style="width:36px; height:36px; border-radius:8px; background:#312e81; display:flex; align-items:center; justify-content:center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-            </div>
-            <div>
-              <h3 style="font-size:0.9375rem; font-weight:600">Editorial QC</h3>
-              <p style="font-size:0.6875rem; color:#78716c">AI reviews all headlines, descriptions & illustrations</p>
-            </div>
+      <!-- Editorial QC Agent -->
+      <div class="admin-stat-card" style="text-align:left; padding:1.5rem; margin-bottom:1rem">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem">
+          <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #312e81, #4338ca); display:flex; align-items:center; justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
           </div>
-          <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem">
-            <button id="qcAuditBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#a5b4fc; border-color:#4338ca">
+          <div style="flex:1">
+            <h3 style="font-size:1rem; font-weight:600">Editorial QC Agent</h3>
+            <p style="font-size:0.75rem; color:#78716c">Claude Sonnet reviews all headlines, descriptions, and illustrations as a collection — identifies repetitive patterns, weak titles, and missing art</p>
+          </div>
+          <div id="qcStatusBadge" style="display:none; padding:0.25rem 0.75rem; border-radius:999px; font-size:0.625rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em"></div>
+        </div>
+
+        <!-- Controls -->
+        <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap">
+          <div style="display:flex; gap:0.5rem; flex:1; min-width:300px">
+            <button id="qcAuditBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem 0.75rem; color:#a5b4fc; border-color:#4338ca">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               Audit Only
             </button>
-            <button id="qcFixBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#fbbf24; border-color:#b45309">
+            <button id="qcDryRunBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem 0.75rem; color:#818cf8; border-color:#4338ca">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              Dry Run (Preview Fixes)
+            </button>
+            <button id="qcFixBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem 0.75rem; color:#fbbf24; border-color:#b45309">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              Audit & Fix
+              Audit & Auto-Fix
             </button>
           </div>
-          <div id="qcResults" style="display:none">
-            <div id="qcGrade" style="font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:600; margin-bottom:0.5rem"></div>
-            <div id="qcSummary" style="font-size:0.75rem; color:#a8a29e; line-height:1.6; margin-bottom:0.75rem"></div>
-            <div id="qcIssues" style="max-height:200px; overflow-y:auto; font-size:0.75rem; scrollbar-width:thin; scrollbar-color:rgba(168,162,158,0.2) transparent"></div>
-          </div>
-          <div id="qcLoading" style="display:none; text-align:center; padding:1rem">
-            <div class="admin-spinner admin-spinner-lg" style="margin:0 auto 0.75rem"></div>
-            <p style="font-size:0.75rem; color:#a8a29e" id="qcLoadingText">Running editorial audit...</p>
+          <div style="display:flex; align-items:center; gap:0.5rem">
+            <label style="font-size:0.6875rem; color:#78716c; white-space:nowrap">Min severity:</label>
+            <select id="qcSeverity" style="background:#292524; border:1px solid #3f3f46; border-radius:4px; padding:0.25rem 0.5rem; font-size:0.75rem; color:#e7e6e3; outline:none">
+              <option value="high">High only</option>
+              <option value="medium" selected>Medium+</option>
+              <option value="low">All (Low+)</option>
+            </select>
           </div>
         </div>
 
-        <!-- Illustrations -->
-        <div class="admin-stat-card" style="text-align:left; padding:1.5rem">
-          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem">
-            <div style="width:36px; height:36px; border-radius:8px; background:#064e3b; display:flex; align-items:center; justify-content:center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <!-- Results area -->
+        <div id="qcResults" style="display:none">
+          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.75rem">
+            <div id="qcGrade" style="font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; line-height:1"></div>
+            <div style="flex:1">
+              <div id="qcSummary" style="font-size:0.75rem; color:#a8a29e; line-height:1.6"></div>
             </div>
-            <div>
-              <h3 style="font-size:0.9375rem; font-weight:600">Illustrations</h3>
-              <p style="font-size:0.6875rem; color:#78716c">AI-generated editorial art (OpenAI GPT Image)</p>
-            </div>
-          </div>
-          <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem">
-            <button id="illustrateBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#6ee7b7; border-color:#059669" {withoutIllustration.length === 0 ? 'disabled' : ''}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Generate Missing ({withoutIllustration.length})
-            </button>
-            <button id="regenAllBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#a8a29e; border-color:#44403c">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              Regenerate All
+            <button id="qcExportBtn" class="admin-action-btn" style="padding:0.375rem 0.75rem; color:#a8a29e; border-color:#44403c; font-size:0.6875rem" title="Copy report to clipboard">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
             </button>
           </div>
-          <div id="illustrationResults" style="display:none">
-            <div id="illustrationSummary" style="font-size:0.75rem; color:#a8a29e; line-height:1.6"></div>
-            <div id="illustrationProgress" style="margin-top:0.5rem; height:4px; background:#292524; border-radius:2px; overflow:hidden">
-              <div id="illustrationBar" style="height:100%; background:#059669; width:0%; transition:width 0.3s"></div>
-            </div>
+          <div id="qcPatterns" style="display:none; margin-bottom:0.75rem"></div>
+          <div id="qcIssues" style="max-height:300px; overflow-y:auto; font-size:0.75rem; scrollbar-width:thin; scrollbar-color:rgba(168,162,158,0.2) transparent"></div>
+        </div>
+        <div id="qcLoading" style="display:none; text-align:center; padding:1.5rem">
+          <div class="admin-spinner admin-spinner-lg" style="margin:0 auto 0.75rem"></div>
+          <p style="font-size:0.8125rem; color:#a8a29e" id="qcLoadingText">Running editorial audit...</p>
+          <p style="font-size:0.6875rem; color:#57534e; margin-top:0.25rem">Claude is analyzing {articles.length} articles holistically (30-60s)</p>
+        </div>
+      </div>
+
+      <!-- Illustration Agent -->
+      <div class="admin-stat-card" style="text-align:left; padding:1.5rem; margin-bottom:1rem">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem">
+          <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #064e3b, #059669); display:flex; align-items:center; justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
-          <div id="illustrationLoading" style="display:none; text-align:center; padding:1rem">
-            <div class="admin-spinner admin-spinner-lg" style="margin:0 auto 0.75rem"></div>
-            <p style="font-size:0.75rem; color:#a8a29e" id="illustrationLoadingText">Generating illustrations...</p>
+          <div style="flex:1">
+            <h3 style="font-size:1rem; font-weight:600">Illustration Agent</h3>
+            <p style="font-size:0.75rem; color:#78716c">OpenAI GPT Image generates editorial art with house style prompt + category color palettes</p>
+          </div>
+          <span style="font-size:0.6875rem; color:{withoutIllustration.length > 0 ? '#f59e0b' : '#4ade80'}; font-weight:500">
+            {withIllustration.length}/{articles.length} illustrated
+          </span>
+        </div>
+
+        <!-- Batch Controls -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem">
+          <button id="illustrateBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#6ee7b7; border-color:#059669" disabled={withoutIllustration.length === 0}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Generate Missing ({withoutIllustration.length})
+          </button>
+          <button id="regenAllBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#a8a29e; border-color:#44403c">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Regenerate All
+          </button>
+        </div>
+
+        <!-- Single Article Illustration -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; align-items:center">
+          <label style="font-size:0.6875rem; color:#78716c; white-space:nowrap">Single article:</label>
+          <select id="illustrateSingleSlug" style="flex:1; background:#292524; border:1px solid #3f3f46; border-radius:4px; padding:0.25rem 0.5rem; font-size:0.75rem; color:#e7e6e3; outline:none">
+            <option value="">Select article...</option>
+            {articles.map(a => (
+              <option value={a.slug}>{a.hero_image ? '◉' : '○'} {a.title}</option>
+            ))}
+          </select>
+          <button id="illustrateSingleBtn" class="admin-action-btn" style="padding:0.375rem 0.75rem; color:#6ee7b7; border-color:#059669; font-size:0.6875rem; white-space:nowrap">
+            Generate
+          </button>
+        </div>
+
+        <!-- Results -->
+        <div id="illustrationResults" style="display:none">
+          <div id="illustrationSummary" style="font-size:0.75rem; color:#a8a29e; line-height:1.6"></div>
+          <div id="illustrationProgress" style="margin-top:0.5rem; height:4px; background:#292524; border-radius:2px; overflow:hidden">
+            <div id="illustrationBar" style="height:100%; background:#059669; width:0%; transition:width 0.3s"></div>
           </div>
         </div>
+        <div id="illustrationLoading" style="display:none; text-align:center; padding:1rem">
+          <div class="admin-spinner admin-spinner-lg" style="margin:0 auto 0.75rem"></div>
+          <p style="font-size:0.75rem; color:#a8a29e" id="illustrationLoadingText">Generating illustration...</p>
+        </div>
+      </div>
+
+      <!-- Article Seeder Agent -->
+      <div class="admin-stat-card" style="text-align:left; padding:1.5rem">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem">
+          <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #78350f, #b45309); display:flex; align-items:center; justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div style="flex:1">
+            <h3 style="font-size:1rem; font-weight:600">Database Sync</h3>
+            <p style="font-size:0.75rem; color:#78716c">Seed or refresh articles in Supabase from GitHub source. Use after manual edits to .json files.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:0.5rem">
+          <button id="seedDbBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#fbbf24; border-color:#b45309">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            Refresh DB from Content
+          </button>
+        </div>
+        <div id="seedResults" style="display:none; margin-top:0.75rem; font-size:0.75rem; color:#a8a29e"></div>
       </div>
     </section>
 
@@ -329,24 +502,45 @@ function formatDate(d: string) {
       }
     });
 
-    // ─── Editorial QC ───
+    // ─── Editorial QC Agent ───
     const qcAuditBtn = document.getElementById('qcAuditBtn');
+    const qcDryRunBtn = document.getElementById('qcDryRunBtn');
     const qcFixBtn = document.getElementById('qcFixBtn');
     const qcResults = document.getElementById('qcResults');
     const qcLoading = document.getElementById('qcLoading');
     const qcLoadingText = document.getElementById('qcLoadingText');
+    const qcSeverity = document.getElementById('qcSeverity');
+    const qcStatusBadge = document.getElementById('qcStatusBadge');
+    let lastQcReport = null;
+
+    function setQcButtons(disabled) {
+      [qcAuditBtn, qcDryRunBtn, qcFixBtn].forEach(b => { if (b) b.disabled = disabled; });
+    }
 
     async function runQC(mode) {
       qcResults.style.display = 'none';
       qcLoading.style.display = 'block';
-      qcLoadingText.textContent = mode === 'audit' ? 'Running editorial audit...' : 'Auditing and applying fixes...';
-      qcAuditBtn.disabled = true;
-      qcFixBtn.disabled = true;
+      const severity = qcSeverity?.value || 'medium';
+
+      const labels = { audit: 'Running editorial audit...', dryrun: 'Running dry-run preview...', fix: 'Auditing and applying fixes...' };
+      qcLoadingText.textContent = labels[mode] || 'Processing...';
+      setQcButtons(true);
+
+      // Status badge
+      qcStatusBadge.style.display = 'inline-block';
+      qcStatusBadge.textContent = 'Running';
+      qcStatusBadge.style.background = '#312e81';
+      qcStatusBadge.style.color = '#a5b4fc';
 
       try {
-        const body = mode === 'audit'
-          ? { action: 'audit' }
-          : { action: 'audit-and-fix', min_severity: 'medium' };
+        let body;
+        if (mode === 'audit') {
+          body = { action: 'audit' };
+        } else if (mode === 'dryrun') {
+          body = { action: 'audit-and-fix', min_severity: severity, dry_run: true };
+        } else {
+          body = { action: 'audit-and-fix', min_severity: severity };
+        }
 
         const res = await fetch(`${apiBase}/editorial-qc`, {
           method: 'POST',
@@ -358,57 +552,115 @@ function formatDate(d: string) {
         if (!res.ok) throw new Error(data.error || 'QC failed');
 
         const report = data.report || data.full_report;
+        lastQcReport = report;
         const summary = report?.summary || {};
 
-        document.getElementById('qcGrade').textContent = `Grade: ${summary.overall_grade || '?'}`;
+        // Grade
+        const grade = summary.overall_grade || '?';
+        document.getElementById('qcGrade').textContent = grade;
         document.getElementById('qcGrade').style.color =
-          (summary.overall_grade || '').startsWith('A') ? '#4ade80' :
-          (summary.overall_grade || '').startsWith('B') ? '#fbbf24' : '#f87171';
+          grade.startsWith('A') ? '#4ade80' : grade.startsWith('B') ? '#fbbf24' : '#f87171';
 
+        // Status badge
+        qcStatusBadge.textContent = grade;
+        qcStatusBadge.style.background = grade.startsWith('A') ? '#052e16' : grade.startsWith('B') ? '#422006' : '#450a0a';
+        qcStatusBadge.style.color = grade.startsWith('A') ? '#4ade80' : grade.startsWith('B') ? '#fbbf24' : '#f87171';
+
+        // Summary text
         let summaryHtml = `<strong>${summary.total_issues || 0} issues</strong> (${summary.high || 0} high, ${summary.medium || 0} medium, ${summary.low || 0} low)`;
-        if (data.applied !== undefined) {
+        if (data.dry_run) {
+          summaryHtml += `<br><span style="color:#818cf8">DRY RUN — no changes applied. Review below, then use "Audit & Auto-Fix" to apply.</span>`;
+        } else if (data.applied !== undefined) {
           summaryHtml += `<br><span style="color:#4ade80">✓ ${data.applied} fixes applied</span>`;
+          if (data.skipped > 0) summaryHtml += ` <span style="color:#78716c">· ${data.skipped} skipped</span>`;
+          if (data.errored > 0) summaryHtml += ` <span style="color:#f87171">· ${data.errored} errors</span>`;
         }
         if (summary.editorial_notes) {
-          summaryHtml += `<br><br><em>${summary.editorial_notes.slice(0, 300)}</em>`;
+          summaryHtml += `<br><br><em style="color:#d6d3d1">${summary.editorial_notes}</em>`;
         }
         document.getElementById('qcSummary').innerHTML = summaryHtml;
 
-        // Show issues
-        const issuesHtml = (report?.issues || []).map(issue => {
+        // Patterns
+        const patternsEl = document.getElementById('qcPatterns');
+        if (summary.patterns && summary.patterns.length > 0) {
+          patternsEl.style.display = 'block';
+          patternsEl.innerHTML = summary.patterns.map(p =>
+            `<div style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.375rem 0; font-size:0.6875rem; color:#a8a29e">
+              <span style="color:#fbbf24; flex-shrink:0">⚠</span>
+              <span>${p}</span>
+            </div>`
+          ).join('');
+        } else {
+          patternsEl.style.display = 'none';
+        }
+
+        // Issues
+        const issues = report?.issues || [];
+        const fixResults = data.fix_results || [];
+        const issuesHtml = issues.map(issue => {
           const color = issue.severity === 'high' ? '#f87171' : issue.severity === 'medium' ? '#fbbf24' : '#78716c';
-          const fixIcon = (data.fix_results || []).find(r => r.slug === issue.slug && r.status === 'applied') ? ' ✓' : '';
+          const fixResult = fixResults.find(r => r.slug === issue.slug && r.field === issue.field);
+          const statusIcon = fixResult
+            ? fixResult.status === 'applied' ? '<span style="color:#4ade80" title="Fixed"> ✓</span>'
+            : fixResult.status === 'skipped' ? '<span style="color:#78716c" title="Would apply"> ◎</span>'
+            : '<span style="color:#f87171" title="Error"> ✗</span>'
+            : '';
           return `<div style="padding:0.5rem 0; border-bottom:1px solid #292524">
-            <span style="color:${color}; font-weight:600; text-transform:uppercase; font-size:0.625rem">${issue.severity}${fixIcon}</span>
-            <span style="color:#a8a29e; margin-left:0.5rem">${issue.slug}</span>
+            <div style="display:flex; align-items:center; gap:0.5rem">
+              <span style="color:${color}; font-weight:600; text-transform:uppercase; font-size:0.625rem">${issue.severity}${statusIcon}</span>
+              <span style="color:#a8a29e; font-size:0.6875rem">${issue.slug}</span>
+              <span style="color:#57534e; font-size:0.625rem; margin-left:auto">${issue.field}</span>
+            </div>
             ${issue.suggested && issue.suggested !== issue.current && issue.suggested !== 'Keep as is'
-              ? `<div style="margin-top:0.25rem; color:#57534e">
-                  <span style="text-decoration:line-through">${issue.current.slice(0, 60)}</span>
-                  <br><span style="color:#e7e6e3">→ ${issue.suggested.slice(0, 60)}</span>
+              ? `<div style="margin-top:0.25rem; color:#57534e; font-size:0.6875rem">
+                  <span style="text-decoration:line-through">${issue.current.length > 80 ? issue.current.slice(0, 80) + '...' : issue.current}</span>
+                  <br><span style="color:#e7e6e3">→ ${issue.suggested.length > 80 ? issue.suggested.slice(0, 80) + '...' : issue.suggested}</span>
                 </div>`
-              : `<div style="margin-top:0.25rem; color:#57534e">${issue.reason.slice(0, 80)}</div>`
+              : `<div style="margin-top:0.25rem; color:#57534e; font-size:0.6875rem">${issue.reason.length > 100 ? issue.reason.slice(0, 100) + '...' : issue.reason}</div>`
             }
           </div>`;
         }).join('');
-        document.getElementById('qcIssues').innerHTML = issuesHtml;
+        document.getElementById('qcIssues').innerHTML = issues.length > 0
+          ? issuesHtml
+          : '<div style="padding:1rem; text-align:center; color:#4ade80">No issues found. Collection looks great.</div>';
 
         qcLoading.style.display = 'none';
         qcResults.style.display = 'block';
       } catch (err) {
         qcLoading.style.display = 'none';
-        alert('QC error: ' + err.message);
+        qcStatusBadge.textContent = 'Error';
+        qcStatusBadge.style.background = '#450a0a';
+        qcStatusBadge.style.color = '#f87171';
+        alert('QC error: ' + (err.message || 'Unknown error'));
       } finally {
-        qcAuditBtn.disabled = false;
-        qcFixBtn.disabled = false;
+        setQcButtons(false);
       }
     }
 
     qcAuditBtn?.addEventListener('click', () => runQC('audit'));
-    qcFixBtn?.addEventListener('click', () => runQC('fix'));
+    qcDryRunBtn?.addEventListener('click', () => runQC('dryrun'));
+    qcFixBtn?.addEventListener('click', () => {
+      if (confirm('This will audit all articles and auto-apply fixes at the selected severity level. Continue?')) {
+        runQC('fix');
+      }
+    });
 
-    // ─── Illustrations ───
+    // Copy report
+    document.getElementById('qcExportBtn')?.addEventListener('click', () => {
+      if (lastQcReport) {
+        navigator.clipboard.writeText(JSON.stringify(lastQcReport, null, 2)).then(() => {
+          const btn = document.getElementById('qcExportBtn');
+          btn.innerHTML = '✓ Copied';
+          setTimeout(() => { btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
+        });
+      }
+    });
+
+    // ─── Illustration Agent ───
     const illustrateBtn = document.getElementById('illustrateBtn');
     const regenAllBtn = document.getElementById('regenAllBtn');
+    const illustrateSingleBtn = document.getElementById('illustrateSingleBtn');
+    const illustrateSingleSlug = document.getElementById('illustrateSingleSlug');
     const illustrationResults = document.getElementById('illustrationResults');
     const illustrationLoading = document.getElementById('illustrationLoading');
     const illustrationLoadingText = document.getElementById('illustrationLoadingText');
@@ -416,6 +668,7 @@ function formatDate(d: string) {
     async function runIllustrations(force) {
       illustrationResults.style.display = 'none';
       illustrationLoading.style.display = 'block';
+      illustrationLoadingText.textContent = force ? 'Regenerating all illustrations...' : 'Generating missing illustrations...';
       illustrateBtn.disabled = true;
       regenAllBtn.disabled = true;
 
@@ -437,14 +690,12 @@ function formatDate(d: string) {
         document.getElementById('illustrationBar').style.width = '100%';
       } catch (err) {
         illustrationLoading.style.display = 'none';
-
-        // Timeout likely — batch takes too long. Generate individually.
-        if (err.message.includes('timeout') || err.message.includes('Failed to fetch')) {
+        if (err.message?.includes('timeout') || err.message?.includes('Failed to fetch')) {
           illustrationResults.style.display = 'block';
           document.getElementById('illustrationSummary').innerHTML =
-            '<span style="color:#fbbf24">Batch timed out. Use individual article edit pages to generate illustrations.</span>';
+            '<span style="color:#fbbf24">Batch timed out — use the single-article selector above to generate individually.</span>';
         } else {
-          alert('Illustration error: ' + err.message);
+          alert('Illustration error: ' + (err.message || 'Unknown error'));
         }
       } finally {
         illustrateBtn.disabled = false;
@@ -452,11 +703,82 @@ function formatDate(d: string) {
       }
     }
 
+    // Single article illustration
+    illustrateSingleBtn?.addEventListener('click', async () => {
+      const slug = illustrateSingleSlug?.value;
+      if (!slug) { alert('Select an article first'); return; }
+
+      illustrationResults.style.display = 'none';
+      illustrationLoading.style.display = 'block';
+      illustrationLoadingText.textContent = `Generating illustration for "${slug}"...`;
+      illustrateSingleBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${apiBase}/generate-illustration`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'generate', slug }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+        illustrationLoading.style.display = 'none';
+        illustrationResults.style.display = 'block';
+        document.getElementById('illustrationSummary').innerHTML =
+          `<span style="color:#4ade80">✓ Illustration generated for "${slug}"</span>` +
+          (data.imageUrl ? `<br><a href="${data.imageUrl}" target="_blank" style="color:#6ee7b7; text-decoration:underline; font-size:0.6875rem">View image →</a>` : '');
+        document.getElementById('illustrationBar').style.width = '100%';
+      } catch (err) {
+        illustrationLoading.style.display = 'none';
+        alert('Generation error: ' + (err.message || 'Unknown error'));
+      } finally {
+        illustrateSingleBtn.disabled = false;
+      }
+    });
+
     illustrateBtn?.addEventListener('click', () => runIllustrations(false));
     regenAllBtn?.addEventListener('click', () => {
-      if (confirm('Regenerate ALL illustrations? This will replace existing ones and costs ~$0.04 per article.')) {
+      if (confirm('Regenerate ALL illustrations? This replaces existing ones and costs ~$0.04/article.')) {
         runIllustrations(true);
       }
+    });
+
+    // ─── Database Seed ───
+    document.getElementById('seedDbBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('seedDbBtn');
+      const results = document.getElementById('seedResults');
+      btn.disabled = true;
+      btn.textContent = 'Syncing...';
+      results.style.display = 'none';
+
+      try {
+        const res = await fetch(`${apiBase}/articles-api`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({ action: 'list' }),
+        });
+        const data = await res.json();
+        results.style.display = 'block';
+        results.innerHTML = `<span style="color:#4ade80">✓ ${Array.isArray(data) ? data.length : 0} articles in database</span>`;
+      } catch (err) {
+        results.style.display = 'block';
+        results.innerHTML = `<span style="color:#f87171">Failed: ${err.message || 'Unknown error'}</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Refresh DB from Content';
+      }
+    });
+
+    // ─── Article Search ───
+    const searchInput = document.getElementById('articleSearch');
+    searchInput?.addEventListener('input', () => {
+      const query = searchInput.value.toLowerCase().trim();
+      const cards = document.querySelectorAll('#publishedList .admin-article-card');
+      cards.forEach(card => {
+        const searchData = card.getAttribute('data-search') || '';
+        card.style.display = !query || searchData.includes(query) ? '' : 'none';
+      });
     });
   </script>
 </body>

@@ -100,8 +100,8 @@ src/
 - **Article search** with real-time filtering on articles index
 
 ### Admin Publishing Portal (`/admin`)
-- Token-based authentication with logout
-- **Dashboard**: published, drafts, and coming-soon articles with edit/delete actions, illustration coverage stats
+- Token-based authentication with logout (server-side only, no `PUBLIC_` prefix)
+- **Dashboard**: 6 stat cards (total, published, drafts, featured, illustrated, avg read time), category breakdown pills, recently updated row, article search/filter
 - **New Article**: upload source docs or paste text → Claude Opus generates full article → OpenAI auto-generates illustration
 - **Edit Articles**: three-tab editor (Metadata, Content HTML, AI Refine) with live preview
 - Chat refinement with quick-action templates
@@ -109,9 +109,10 @@ src/
 - localStorage auto-save
 - One-click publish to GitHub (triggers Vercel rebuild)
 - Database-backed (Supabase PostgreSQL) for instant editing
-- **AI Tools panel**:
-  - **Editorial QC**: "Audit Only" and "Audit & Fix" — Claude reviews all headlines/descriptions holistically, auto-fixes issues
-  - **Illustrations**: "Generate Missing" and "Regenerate All" — batch AI illustration management
+- **AI Agents panel**:
+  - **Editorial QC Agent**: "Audit Only", "Dry Run (Preview Fixes)", "Audit & Auto-Fix" — Claude reviews all headlines/descriptions holistically with severity selector, pattern warnings, copy report, per-issue fix status
+  - **Illustration Agent**: single-article generator, "Generate Missing", "Regenerate All" with cost confirmation
+  - **Database Sync**: refresh DB from content
 
 ### Design
 - Responsive design with mobile-first approach
@@ -125,6 +126,7 @@ src/
 - React only loads for Command Palette and Admin Portal
 - Native CSS animations (60fps)
 - Passive scroll listeners
+- iOS-optimized: opacity-only reveal animations on touch, `100dvh` viewport units, `visualViewport` API for scroll progress
 
 ### SEO & Accessibility
 - JSON-LD structured data (Article, Organization, BreadcrumbList)
@@ -185,6 +187,7 @@ The site is deployed on Vercel with automatic deployments:
 
 - [CLAUDE.md](./CLAUDE.md) - Development guidelines for AI assistants
 - [CHANGELOG.md](./CHANGELOG.md) - Version history and changes
+- [BRAND.md](./BRAND.md) - Brand voice and editorial guidelines
 
 ## License
 

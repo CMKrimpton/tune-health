@@ -1,7 +1,7 @@
 {
-  "name": "tune-health",
-  "version": "2.0.0",
-  "description": "Tune Health - Where Science Meets Wellness",
+  "name": "alumi-news",
+  "version": "5.5.0",
+  "description": "alumi news - Evidence. Wherever it leads.",
   "type": "module",
   "scripts": {
     "dev": "astro dev",
@@ -10,7 +10,6 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/node": "^9.5.5",
     "@astrojs/react": "^4.2.1",
     "@astrojs/tailwind": "^6.0.2",
     "@astrojs/vercel": "^8.2.11",

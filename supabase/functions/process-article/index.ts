@@ -173,7 +173,7 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
       parsed = JSON.parse(jsonStr);
     } catch {
       return new Response(
-        JSON.stringify({ error: "Failed to parse Claude's response as JSON", raw: content.slice(0, 500) }),
+        JSON.stringify({ error: "Failed to parse Claude's response as JSON" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -182,9 +182,9 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
       JSON.stringify(parsed),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: unknown) {
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: "An internal error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

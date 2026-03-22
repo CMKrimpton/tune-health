@@ -77,9 +77,14 @@ src/
     └── admin.css             # Admin portal styles
 supabase/
 └── functions/
-    ├── process-article/      # Claude 4.6 article generation
+    ├── articles-api/         # CRUD for articles database (auth on writes)
+    ├── process-article/      # Claude Opus article generation
     ├── refine-article/       # Chat-based article refinement
-    └── publish-article/      # GitHub commit pipeline
+    ├── publish-article/      # GitHub commit pipeline (auth required)
+    ├── delete-article/       # GitHub file deletion (auth required)
+    ├── fetch-article/        # GitHub file fetching
+    ├── generate-illustration/ # OpenAI GPT Image editorial art
+    └── editorial-qc/         # Autonomous QC agent (Claude audits collection)
 ```
 
 ### Content Collections
@@ -144,8 +149,8 @@ const articles = await getCollection('articles');
 - Keyboard navigation (↑↓ Enter Esc)
 
 #### Admin Publishing Portal (/admin)
-- Protected by `ADMIN_TOKEN` cookie (middleware auth gate)
-- **Dashboard**: article stats (published, drafts, featured, illustration coverage), published articles table
+- Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix)
+- **Dashboard**: 6 stat cards (total, published, drafts, featured, illustrated, avg read time), category breakdown pills, recently updated row, article search
 - **New Article Editor**: two-column layout (upload/chat + live preview)
   - Drag-and-drop file upload (.md, .docx, .txt)
   - Claude Opus generates article in exact editorial format (via Supabase Edge Function)
@@ -153,9 +158,10 @@ const articles = await getCollection('articles');
   - Chat refinement interface for iterating on the article
   - Metadata editor (title, slug, category, tags, gradient, featured)
   - One-click publish to GitHub (commits .astro + .json with heroImage, triggers Vercel rebuild)
-- **AI Tools panel** on dashboard:
-  - **Editorial QC**: "Audit Only" (report) and "Audit & Fix" (auto-apply) — Claude reviews all headlines/descriptions as a collection
-  - **Illustrations**: "Generate Missing" and "Regenerate All" — batch AI illustration management
+- **AI Agents panel** on dashboard:
+  - **Editorial QC Agent**: "Audit Only", "Dry Run (Preview Fixes)", "Audit & Auto-Fix" with severity selector (High/Medium+/All), pattern warnings, copy report, per-issue fix status
+  - **Illustration Agent**: single-article selector, "Generate Missing", "Regenerate All" with cost confirmation
+  - **Database Sync**: refresh DB from content
 - Edge Functions: `process-article`, `refine-article`, `publish-article`, `generate-illustration`, `editorial-qc`
 
 #### Autonomous AI Pipeline
@@ -195,11 +201,11 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 
 | Function | Purpose | Auth |
 |---|---|---|
-| `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN |
+| `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Opus article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |
-| `publish-article` | Commits .astro + .json to GitHub via REST API | Bearer token |
-| `delete-article` | Removes article files from GitHub | Bearer token |
+| `publish-article` | Commits .astro + .json to GitHub via REST API | ADMIN_TOKEN (Bearer) |
+| `delete-article` | Removes article files from GitHub | ADMIN_TOKEN (Bearer) |
 | `fetch-article` | Fetches .astro file content from GitHub | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
@@ -270,6 +276,17 @@ When writing CSS in this project, follow these rules to avoid build errors:
 - Prefer CSS hover effects over JS for simple transforms
 - Limit `backdrop-blur` usage - use `backdrop-blur-sm` or `backdrop-blur-md` max
 - Use higher opacity backgrounds instead of heavy blur effects
+
+### iOS / Mobile considerations
+- **Reveal animations**: on touch devices (`@media (pointer: coarse)`), transforms are disabled — opacity-only transitions prevent iOS Safari scroll-back-up
+- **Input font-size**: all form inputs must be 16px+ (`text-base`) to prevent iOS auto-zoom
+- **Viewport units**: use `100dvh` not `100vh` (admin.css, global.css) — `100vh` includes iOS browser chrome
+- **SideNav trigger**: hidden on touch devices to avoid conflicting with iOS back-swipe gesture
+- **Body scroll lock**: `body.menu-open { overflow: hidden }` prevents background scroll when mobile menu is open
+- **Safe areas**: `env(safe-area-inset-*)` used for notch/home indicator (back-to-top, Command Palette)
+- **Touch targets**: 44px minimum on `@media (pointer: coarse)` for all interactive elements
+- **Scroll progress bar**: uses `visualViewport.height` instead of `innerHeight` to handle iOS address bar changes
+- **Security headers**: `vercel.json` adds X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy
 
 ### UX Guidelines
 - **Hover effects on large elements**: Only use shadow/glow changes, NO scale or translate

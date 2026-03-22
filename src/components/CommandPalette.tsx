@@ -1,6 +1,13 @@
 import { Command } from 'cmdk';
 import { useState, useEffect, useCallback } from 'react';
 
+declare global {
+  interface Window {
+    __ALUMI_ARTICLES__?: ArticleItem[];
+    toggleTheme?: () => void;
+  }
+}
+
 interface ArticleItem {
   id: string;
   title: string;
@@ -32,7 +39,7 @@ export default function CommandPalette() {
 
   // Load articles from window data injected by Astro
   useEffect(() => {
-    const data = (window as any).__ALUMI_ARTICLES__;
+    const data = window.__ALUMI_ARTICLES__;
     if (Array.isArray(data)) {
       setArticles(data);
     }
@@ -83,8 +90,8 @@ export default function CommandPalette() {
     setOpen(false);
 
     // Use View Transitions if available
-    if ('startViewTransition' in document) {
-      (document as any).startViewTransition(() => {
+    if ('startViewTransition' in document && typeof (document as Document & { startViewTransition?: (cb: () => void) => void }).startViewTransition === 'function') {
+      (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
         window.location.href = href;
       });
     } else {
@@ -99,7 +106,7 @@ export default function CommandPalette() {
 
     switch (action) {
       case 'toggleTheme':
-        (window as any).toggleTheme?.();
+        window.toggleTheme?.();
         break;
       case 'scrollToTop':
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -145,7 +152,7 @@ export default function CommandPalette() {
       />
 
       {/* Dialog */}
-      <div className="absolute left-1/2 top-[15%] -translate-x-1/2 w-full max-w-xl">
+      <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-xl px-4" style={{ top: 'max(15%, env(safe-area-inset-top, 0px))' }}>
         <Command
           className="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-700 overflow-hidden"
           loop
@@ -198,10 +205,10 @@ export default function CommandPalette() {
                         className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20"
                       >
                         {'icon' in item ? (
-                          <span className="text-lg">{item.icon}</span>
+                          <span className="text-lg">{(item as typeof pages[number]).icon}</span>
                         ) : (
                           <span className="w-6 h-6 rounded bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-xs font-bold text-primary-600">
-                            {(item as any).category?.[0]}
+                            {(item as ArticleItem).category?.[0]}
                           </span>
                         )}
                         <span className="flex-1 truncate">{item.title}</span>
@@ -210,14 +217,15 @@ export default function CommandPalette() {
                     );
                   }
 
+                  const actionItem = item as typeof actions[number];
                   return (
                     <Command.Item
                       key={id}
                       value={item.title}
-                      onSelect={() => executeAction((item as any).action, id)}
+                      onSelect={() => executeAction(actionItem.action, id)}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20"
                     >
-                      <span className="text-lg">{(item as any).icon}</span>
+                      <span className="text-lg">{actionItem.icon}</span>
                       <span className="flex-1">{item.title}</span>
                       <span className="text-xs text-stone-400">↵</span>
                     </Command.Item>
