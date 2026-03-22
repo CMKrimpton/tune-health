@@ -1,0 +1,34 @@
+{
+  "title": "Your Brain Is Overheating. Time to Yawn.",
+  "description": "The yawn is not what you think it is. New research reveals yawning as a sophisticated brain cooling mechanism, not a sign of boredom or fatigue.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 7,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Brain Function",
+    "Thermoregulation",
+    "Sleep Science",
+    "Behavioral Biology",
+    "Cognitive Performance"
+  ],
+  "gradient": {
+    "from": "sky-500",
+    "to": "blue-600"
+  },
+  "keywords": [
+    "yawning",
+    "brain temperature",
+    "thermoregulation",
+    "contagious yawning",
+    "brain cooling",
+    "neuroscience",
+    "sleep transitions",
+    "Andrew Gallup"
+  ]
+}
