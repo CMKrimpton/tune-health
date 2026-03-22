@@ -19,6 +19,8 @@ try {
 const published = articles.filter(a => a.status === 'published' && !a.coming_soon);
 const drafts = articles.filter(a => a.status === 'draft' && !a.coming_soon);
 const comingSoon = articles.filter(a => a.coming_soon);
+const withIllustration = articles.filter(a => a.hero_image);
+const withoutIllustration = articles.filter(a => !a.hero_image);
 
 function formatDate(d: string) {
   if (!d) return '-';
@@ -53,7 +55,7 @@ function formatDate(d: string) {
 
   <main class="admin-main">
     <!-- Stats -->
-    <div class="admin-stats">
+    <div class="admin-stats" style="grid-template-columns: repeat(4, 1fr)">
       <div class="admin-stat-card">
         <span class="admin-stat-number">{published.length}</span>
         <span class="admin-stat-label">Published</span>
@@ -65,6 +67,10 @@ function formatDate(d: string) {
       <div class="admin-stat-card">
         <span class="admin-stat-number">{published.filter(a => a.featured).length}</span>
         <span class="admin-stat-label">Featured</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-number" style={withoutIllustration.length > 0 ? 'color:#f59e0b' : 'color:#4ade80'}>{withIllustration.length}/{articles.length}</span>
+        <span class="admin-stat-label">Illustrated</span>
       </div>
     </div>
 
@@ -181,6 +187,78 @@ function formatDate(d: string) {
       </section>
     )}
 
+    <!-- AI Tools -->
+    <section class="admin-section" style="margin-top:1rem">
+      <h2 class="admin-section-title">AI Tools</h2>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">
+
+        <!-- Editorial QC -->
+        <div class="admin-stat-card" style="text-align:left; padding:1.5rem">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem">
+            <div style="width:36px; height:36px; border-radius:8px; background:#312e81; display:flex; align-items:center; justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            </div>
+            <div>
+              <h3 style="font-size:0.9375rem; font-weight:600">Editorial QC</h3>
+              <p style="font-size:0.6875rem; color:#78716c">AI reviews all headlines, descriptions & illustrations</p>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem">
+            <button id="qcAuditBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#a5b4fc; border-color:#4338ca">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Audit Only
+            </button>
+            <button id="qcFixBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#fbbf24; border-color:#b45309">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Audit & Fix
+            </button>
+          </div>
+          <div id="qcResults" style="display:none">
+            <div id="qcGrade" style="font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:600; margin-bottom:0.5rem"></div>
+            <div id="qcSummary" style="font-size:0.75rem; color:#a8a29e; line-height:1.6; margin-bottom:0.75rem"></div>
+            <div id="qcIssues" style="max-height:200px; overflow-y:auto; font-size:0.75rem; scrollbar-width:thin; scrollbar-color:rgba(168,162,158,0.2) transparent"></div>
+          </div>
+          <div id="qcLoading" style="display:none; text-align:center; padding:1rem">
+            <div class="admin-spinner admin-spinner-lg" style="margin:0 auto 0.75rem"></div>
+            <p style="font-size:0.75rem; color:#a8a29e" id="qcLoadingText">Running editorial audit...</p>
+          </div>
+        </div>
+
+        <!-- Illustrations -->
+        <div class="admin-stat-card" style="text-align:left; padding:1.5rem">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem">
+            <div style="width:36px; height:36px; border-radius:8px; background:#064e3b; display:flex; align-items:center; justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <div>
+              <h3 style="font-size:0.9375rem; font-weight:600">Illustrations</h3>
+              <p style="font-size:0.6875rem; color:#78716c">AI-generated editorial art (OpenAI GPT Image)</p>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem">
+            <button id="illustrateBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#6ee7b7; border-color:#059669" {withoutIllustration.length === 0 ? 'disabled' : ''}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Generate Missing ({withoutIllustration.length})
+            </button>
+            <button id="regenAllBtn" class="admin-action-btn" style="flex:1; justify-content:center; padding:0.5rem; color:#a8a29e; border-color:#44403c">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Regenerate All
+            </button>
+          </div>
+          <div id="illustrationResults" style="display:none">
+            <div id="illustrationSummary" style="font-size:0.75rem; color:#a8a29e; line-height:1.6"></div>
+            <div id="illustrationProgress" style="margin-top:0.5rem; height:4px; background:#292524; border-radius:2px; overflow:hidden">
+              <div id="illustrationBar" style="height:100%; background:#059669; width:0%; transition:width 0.3s"></div>
+            </div>
+          </div>
+          <div id="illustrationLoading" style="display:none; text-align:center; padding:1rem">
+            <div class="admin-spinner admin-spinner-lg" style="margin:0 auto 0.75rem"></div>
+            <p style="font-size:0.75rem; color:#a8a29e" id="illustrationLoadingText">Generating illustrations...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Delete Modal -->
     <div id="deleteModal" class="admin-modal" style="display:none">
       <div class="admin-modal-backdrop"></div>
@@ -248,6 +326,136 @@ function formatDate(d: string) {
         alert('Delete failed: ' + err.message);
       } finally {
         btn.textContent = 'Delete permanently'; btn.disabled = false;
+      }
+    });
+
+    // ─── Editorial QC ───
+    const qcAuditBtn = document.getElementById('qcAuditBtn');
+    const qcFixBtn = document.getElementById('qcFixBtn');
+    const qcResults = document.getElementById('qcResults');
+    const qcLoading = document.getElementById('qcLoading');
+    const qcLoadingText = document.getElementById('qcLoadingText');
+
+    async function runQC(mode) {
+      qcResults.style.display = 'none';
+      qcLoading.style.display = 'block';
+      qcLoadingText.textContent = mode === 'audit' ? 'Running editorial audit...' : 'Auditing and applying fixes...';
+      qcAuditBtn.disabled = true;
+      qcFixBtn.disabled = true;
+
+      try {
+        const body = mode === 'audit'
+          ? { action: 'audit' }
+          : { action: 'audit-and-fix', min_severity: 'medium' };
+
+        const res = await fetch(`${apiBase}/editorial-qc`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'QC failed');
+
+        const report = data.report || data.full_report;
+        const summary = report?.summary || {};
+
+        document.getElementById('qcGrade').textContent = `Grade: ${summary.overall_grade || '?'}`;
+        document.getElementById('qcGrade').style.color =
+          (summary.overall_grade || '').startsWith('A') ? '#4ade80' :
+          (summary.overall_grade || '').startsWith('B') ? '#fbbf24' : '#f87171';
+
+        let summaryHtml = `<strong>${summary.total_issues || 0} issues</strong> (${summary.high || 0} high, ${summary.medium || 0} medium, ${summary.low || 0} low)`;
+        if (data.applied !== undefined) {
+          summaryHtml += `<br><span style="color:#4ade80">✓ ${data.applied} fixes applied</span>`;
+        }
+        if (summary.editorial_notes) {
+          summaryHtml += `<br><br><em>${summary.editorial_notes.slice(0, 300)}</em>`;
+        }
+        document.getElementById('qcSummary').innerHTML = summaryHtml;
+
+        // Show issues
+        const issuesHtml = (report?.issues || []).map(issue => {
+          const color = issue.severity === 'high' ? '#f87171' : issue.severity === 'medium' ? '#fbbf24' : '#78716c';
+          const fixIcon = (data.fix_results || []).find(r => r.slug === issue.slug && r.status === 'applied') ? ' ✓' : '';
+          return `<div style="padding:0.5rem 0; border-bottom:1px solid #292524">
+            <span style="color:${color}; font-weight:600; text-transform:uppercase; font-size:0.625rem">${issue.severity}${fixIcon}</span>
+            <span style="color:#a8a29e; margin-left:0.5rem">${issue.slug}</span>
+            ${issue.suggested && issue.suggested !== issue.current && issue.suggested !== 'Keep as is'
+              ? `<div style="margin-top:0.25rem; color:#57534e">
+                  <span style="text-decoration:line-through">${issue.current.slice(0, 60)}</span>
+                  <br><span style="color:#e7e6e3">→ ${issue.suggested.slice(0, 60)}</span>
+                </div>`
+              : `<div style="margin-top:0.25rem; color:#57534e">${issue.reason.slice(0, 80)}</div>`
+            }
+          </div>`;
+        }).join('');
+        document.getElementById('qcIssues').innerHTML = issuesHtml;
+
+        qcLoading.style.display = 'none';
+        qcResults.style.display = 'block';
+      } catch (err) {
+        qcLoading.style.display = 'none';
+        alert('QC error: ' + err.message);
+      } finally {
+        qcAuditBtn.disabled = false;
+        qcFixBtn.disabled = false;
+      }
+    }
+
+    qcAuditBtn?.addEventListener('click', () => runQC('audit'));
+    qcFixBtn?.addEventListener('click', () => runQC('fix'));
+
+    // ─── Illustrations ───
+    const illustrateBtn = document.getElementById('illustrateBtn');
+    const regenAllBtn = document.getElementById('regenAllBtn');
+    const illustrationResults = document.getElementById('illustrationResults');
+    const illustrationLoading = document.getElementById('illustrationLoading');
+    const illustrationLoadingText = document.getElementById('illustrationLoadingText');
+
+    async function runIllustrations(force) {
+      illustrationResults.style.display = 'none';
+      illustrationLoading.style.display = 'block';
+      illustrateBtn.disabled = true;
+      regenAllBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${apiBase}/generate-illustration`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'batch', force }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+        illustrationLoading.style.display = 'none';
+        illustrationResults.style.display = 'block';
+        document.getElementById('illustrationSummary').innerHTML =
+          `<span style="color:#4ade80">✓ ${data.generated} illustrations generated</span>` +
+          (data.failed > 0 ? `<br><span style="color:#f87171">✗ ${data.failed} failed</span>` : '');
+        document.getElementById('illustrationBar').style.width = '100%';
+      } catch (err) {
+        illustrationLoading.style.display = 'none';
+
+        // Timeout likely — batch takes too long. Generate individually.
+        if (err.message.includes('timeout') || err.message.includes('Failed to fetch')) {
+          illustrationResults.style.display = 'block';
+          document.getElementById('illustrationSummary').innerHTML =
+            '<span style="color:#fbbf24">Batch timed out. Use individual article edit pages to generate illustrations.</span>';
+        } else {
+          alert('Illustration error: ' + err.message);
+        }
+      } finally {
+        illustrateBtn.disabled = false;
+        regenAllBtn.disabled = false;
+      }
+    }
+
+    illustrateBtn?.addEventListener('click', () => runIllustrations(false));
+    regenAllBtn?.addEventListener('click', () => {
+      if (confirm('Regenerate ALL illustrations? This will replace existing ones and costs ~$0.04 per article.')) {
+        runIllustrations(true);
       }
     });
   </script>
