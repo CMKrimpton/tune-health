@@ -1,0 +1,36 @@
+{
+  "title": "The Night Was Redesigned. Nobody Asked the Body.",
+  "description": "The 3am wake-up has been medicalized and blamed on modern stress. It is, in fact, older than electricity — and probably older than civilization.",
+  "category": "Sleep Science",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Sleep History",
+    "Biphasic Sleep",
+    "Insomnia",
+    "Circadian Rhythms",
+    "Historical Medicine"
+  ],
+  "gradient": {
+    "from": "indigo-500",
+    "to": "purple-600"
+  },
+  "keywords": [
+    "biphasic sleep",
+    "segmented sleep",
+    "Roger Ekirch",
+    "Thomas Wehr",
+    "sleep history",
+    "insomnia",
+    "middle of night awakening",
+    "prolactin",
+    "artificial lighting",
+    "preindustrial sleep"
+  ]
+}
