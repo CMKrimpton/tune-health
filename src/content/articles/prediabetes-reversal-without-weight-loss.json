@@ -1,7 +1,7 @@
 {
   "title": "The Standard Advice for Prediabetes Is Wrong About What Actually Matters",
   "description": "About 96 million Americans have been told the same thing: lose 5–7% of your body weight, or your prediabetes will become diabetes. New research published in 2026 shows blood sugar can fully normalize without hitting that threshold — and the reason why upends three decades of clinical thinking. The real target isn't your scale. It's the fat hiding in your liver.",
-  "category": "Nutrition — deliberately chosen to address the most underrepresented substantive category in the collection (2 of 45 articles). The ADHD candidate scored comparably on raw merit but Neuroscience already represents 38% of the collection. Collection integrity requires this override.",
+  "category": "Nutrition",
   "publishDate": "2026-03-23",
   "author": {
     "name": "alumi news Editorial",
@@ -11,20 +11,20 @@
   "featured": false,
   "draft": false,
   "tags": [
-    "New research",
-    "The finding",
-    "This challenges",
-    "Lifestyle interventions"
+    "Prediabetes",
+    "Nutrition",
+    "Liver Fat",
+    "Diabetes Prevention"
   ],
   "gradient": {
     "to": "red-700",
     "from": "rose-600"
   },
   "keywords": [
-    "New research",
-    "The finding",
-    "This challenges",
-    "Lifestyle interventions"
+    "prediabetes",
+    "liver fat",
+    "diabetes prevention",
+    "metabolic health"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/prediabetes-reversal-without-weight-loss.png",
   "heroImageAlt": "Editorial illustration for The Standard Advice for Prediabetes Is Wrong About What Actually Matters"
