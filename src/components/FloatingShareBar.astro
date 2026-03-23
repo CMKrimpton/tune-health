@@ -83,33 +83,22 @@ const { title, url, description = '' } = Astro.props;
 </style>
 
 <script>
+  let fsbController: AbortController | null = null;
+  let fsbObserver: IntersectionObserver | null = null;
+
   function initFloatingShareBar() {
+    if (fsbController) fsbController.abort();
+    if (fsbObserver) fsbObserver.disconnect();
+    fsbController = new AbortController();
+    const signal = fsbController.signal;
+
     const bar = document.getElementById('floatingShareBar');
     if (!bar) return;
 
     const articleContent = document.getElementById('article-content');
     if (!articleContent) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            bar.classList.add('visible');
-          } else {
-            // Only hide when scrolled above the article
-            const rect = articleContent.getBoundingClientRect();
-            if (rect.top > window.innerHeight) {
-              bar.classList.remove('visible');
-            }
-          }
-        });
-      },
-      { threshold: 0, rootMargin: '-100px 0px -20% 0px' }
-    );
-
-    observer.observe(articleContent);
-
-    // Also hide when near the bottom (footer area)
+    // Use scroll listener only (simpler, avoids duplicate logic with IntersectionObserver)
     let ticking = false;
     window.addEventListener('scroll', () => {
       if (!ticking) {
@@ -127,7 +116,7 @@ const { title, url, description = '' } = Astro.props;
         });
         ticking = true;
       }
-    }, { passive: true });
+    }, { passive: true, signal });
   }
 
   initFloatingShareBar();

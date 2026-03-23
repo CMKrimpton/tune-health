@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.17.0] - 2026-03-22
+
+### Fixed
+- **Stale header state after View Transition** — `updateScroll()` now called immediately on init to clear leftover `.scrolled` / `.header-hidden` classes from the previous page
+- **HighlightShare listener leak** — added AbortController cleanup; `selectionchange`, `scroll`, and `mousedown` listeners were stacking on every page navigation
+- **FloatingShareBar listener leak + duplicate logic** — replaced dual IntersectionObserver + scroll listener with single AbortController-managed scroll listener
+- **Missing site assets** — favicon.svg, apple-touch-icon.png, og-image.png, and logo.png were referenced in BaseLayout and SEO.astro but didn't exist in `/public/assets/`. All now present
+- **Newsletter API failing as static endpoint** — added `export const prerender = false` and try/catch around `request.json()` parsing
+
+### Added
+- **Supabase migration for newsletter_subscribers** — `20260323_newsletter_subscribers.sql` creates table with email unique constraint, RLS enabled, applied to production
+
 ## [5.16.0] - 2026-03-22
 
 ### Added

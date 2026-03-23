@@ -92,7 +92,13 @@ const fullUrl = `${siteUrl}${articleUrl}`;
 </style>
 
 <script>
+  let hsController: AbortController | null = null;
+
   function initHighlightShare() {
+    if (hsController) hsController.abort();
+    hsController = new AbortController();
+    const signal = hsController.signal;
+
     const popup = document.getElementById('highlightShare');
     if (!popup) return;
 
@@ -117,11 +123,8 @@ const fullUrl = `${siteUrl}${articleUrl}`;
     document.addEventListener('selectionchange', () => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed || !selection.toString().trim()) {
-        // Delay hide to allow button clicks
         setTimeout(() => {
-          if (!popup.matches(':hover')) {
-            hidePopup();
-          }
+          if (!popup.matches(':hover')) hidePopup();
         }, 200);
         return;
       }
@@ -132,7 +135,6 @@ const fullUrl = `${siteUrl}${articleUrl}`;
         return;
       }
 
-      // Only show if selection is within article content
       const range = selection.getRangeAt(0);
       if (!articleContent.contains(range.commonAncestorContainer)) {
         hidePopup();
@@ -142,7 +144,7 @@ const fullUrl = `${siteUrl}${articleUrl}`;
       selectedText = text;
       const rect = range.getBoundingClientRect();
       showPopup(rect.left + rect.width / 2, rect.top + window.scrollY);
-    });
+    }, { signal });
 
     // Handle clicks
     popup.querySelectorAll<HTMLButtonElement>('.hs-btn').forEach((btn) => {
@@ -199,7 +201,7 @@ const fullUrl = `${siteUrl}${articleUrl}`;
             checkIcon?.classList.add('hidden');
           }, 1500);
         }
-      });
+      }, { signal });
     });
 
     // Hide on scroll
@@ -207,14 +209,12 @@ const fullUrl = `${siteUrl}${articleUrl}`;
     window.addEventListener('scroll', () => {
       clearTimeout(scrollTimer);
       scrollTimer = setTimeout(hidePopup, 100);
-    }, { passive: true });
+    }, { passive: true, signal });
 
     // Hide on click outside
     document.addEventListener('mousedown', (e) => {
-      if (!popup.contains(e.target as Node)) {
-        hidePopup();
-      }
-    });
+      if (!popup.contains(e.target as Node)) hidePopup();
+    }, { signal });
   }
 
   initHighlightShare();

@@ -253,6 +253,10 @@ const canonicalUrl = canonical || Astro.url.pathname;
       }, { threshold: 0.1 });
 
       reveals.forEach((el) => revealObserver.observe(el));
+
+      // Run scroll handler immediately to sync header state
+      // (prevents stale .scrolled / .header-hidden classes after View Transition)
+      updateScroll();
     }
 
     // Run on initial load
