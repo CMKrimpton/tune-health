@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.19.0] - 2026-03-23
+
+### Changed
+- **Daily article agent → staged pipeline** — broke monolithic pipeline (research + write + illustrate + publish) into 3 independent stages that each complete within Edge Function timeout limits. Each cron invocation processes ONE stage of ONE article
+- **Cron schedule: daily → every 15 minutes** — with staged pipeline, one article takes ~45 min (3 stages x 15 min intervals). Capacity: ~32 articles/day. Temporary ramp-up until 100 articles reached
+- **Rate limit: per-day → per-hour** — allows multiple articles per day instead of one
+
+### Added
+- **Smart featured rotation** — after each article publish, scores all articles on recency (40%), category diversity (20%), illustration quality (20%), read time (10%), and engagement proxy (10%). Auto-rotates featured article every 24h. Prevents stale featured stories
+- **Auto-stop at 100 articles** — pipeline self-disables once article count reaches 100
+- **Stale run cleanup** — automatically marks timed-out pipeline runs as failed, preventing zombie entries from blocking new runs
+- **Concurrent execution guard** — prevents overlapping pipeline stages from running simultaneously
+- **`research_data` column** on `daily_article_log` — stores research JSON between pipeline stages
+
+### Fixed
+- **Pipeline timeout crashes** — old monolithic pipeline (~4 min total) exceeded Edge Function wall clock limits. Staged approach keeps each invocation under 2 min
+
 ## [5.18.0] - 2026-03-23
 
 ### Fixed

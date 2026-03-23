@@ -95,7 +95,8 @@ src/
 supabase/
 ├── migrations/
 │   ├── 20260315_create_articles.sql    # Articles table schema
-│   └── 20260322_daily_article_agent.sql # Log table + pg_cron schedule
+│   ├── 20260322_daily_article_agent.sql # Log table + pg_cron schedule
+│   └── 20260324_hourly_article_schedule.sql # Staged pipeline + 15-min cron
 └── functions/
     ├── articles-api/          # CRUD for articles database (auth on writes)
     ├── process-article/       # Claude Opus article generation
@@ -105,7 +106,7 @@ supabase/
     ├── fetch-article/         # GitHub file fetching
     ├── generate-illustration/ # OpenAI GPT Image editorial art
     ├── editorial-qc/          # Autonomous QC agent (Claude audits collection)
-    └── daily-article-agent/   # Autonomous daily article pipeline (pg_cron)
+    └── daily-article-agent/   # Staged article pipeline (research → write → publish)
 ```
 
 ### Content Collections
@@ -196,9 +197,16 @@ const articles = await getCollection('articles');
   - **Database Sync**: refresh DB from content
 - Edge Functions: `process-article`, `refine-article`, `publish-article`, `generate-illustration`, `editorial-qc`
 
-#### Autonomous AI Pipeline
+#### Autonomous AI Pipeline (Staged)
 - **Article creation**: source doc → Claude writes article → OpenAI generates illustration → both saved to DB → publish commits to GitHub → Vercel deploys
-- **Daily article agent**: `daily-article-agent` runs via `pg_cron` at 6 AM UTC daily → Claude with native `web_search` tool autonomously discovers trending health topics → picks the best one → deep research with web search fact-checking → writes full article → saves to DB → generates illustration (synchronous, waits for heroImage URL) → publishes to GitHub with illustration included → Vercel deploys. Logs to `daily_article_log` table. One run per day (rate-limited).
+- **Staged article agent**: `daily-article-agent` operates as a **3-stage pipeline**, each stage triggered by a 15-minute cron:
+  - **Stage 1 — Research** (~60s): Claude Sonnet with native `web_search` (10 searches max) discovers trending health topics, picks best one, deep-researches it. Saves research JSON to `daily_article_log.research_data`.
+  - **Stage 2 — Write** (~120s): Reads research data, Claude Sonnet/Opus writes full 2,500-3,000+ word article with web search fact-checking. Saves to `articles` table.
+  - **Stage 3 — Publish** (~60s): Generates editorial illustration (OpenAI GPT Image), commits .astro + .json to GitHub, triggers Vercel deploy. Runs **smart featured rotation** after publish.
+  - **Priority order**: finish existing articles before starting new ones (publish > write > research)
+  - **Rate limit**: one new article per hour. **Auto-stop at 100 articles**.
+  - **Stale cleanup**: marks timed-out runs as failed. **Concurrent guard**: prevents overlapping stages.
+- **Smart featured rotation**: after each publish, scores all articles on recency (40%), category diversity (20%), illustration quality (20%), read time (10%), and engagement proxy (10%). Auto-rotates featured article every 24h
 - **Quality control**: `editorial-qc` reviews full article collection holistically → identifies headline repetition, weak descriptions → auto-fixes via `articles-api`
 - **Illustration generation**: `generate-illustration` creates editorial art per article with house style prompt + category color palettes → stored in Supabase Storage
 - **All secrets** (ANTHROPIC_API_KEY, OPENAI_API_KEY, GITHUB_TOKEN, ADMIN_TOKEN) stored in Supabase secrets only — never in code
@@ -242,7 +250,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `fetch-article` | Fetches .astro file content from GitHub | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
-| `daily-article-agent` | Autonomous daily article pipeline: Claude with native `web_search` tool discovers trending health topics → picks best one → deep research with fact-checking → writes full article → saves to DB → publishes to GitHub. Runs daily via `pg_cron` at 6 AM UTC. Actions: `run`, `dry-run`, `status`. Rate-limited to one successful run per day. Uses Claude Sonnet 4.6 by default, Opus 4.6 with `model: "opus"`. | None (rate-limited internally) |
+| `daily-article-agent` | 3-stage article pipeline: research → write → illustrate+publish. Each cron invocation processes ONE stage (~60-120s). Cron fires every 15 min. Finishes existing articles before starting new ones. Auto-stops at 100 articles. Smart featured rotation after each publish. Actions: `run`, `dry-run`, `status`. Uses Claude Sonnet 4.6 by default, Opus 4.6 with `model: "opus"`. | None (rate-limited internally) |
 
 **Deploy commands:**
 ```bash
@@ -256,11 +264,12 @@ supabase functions deploy <function-name> --no-verify-jwt
 
 **Database tables:**
 - `articles` — main content table (see schema above)
-- `daily_article_log` — tracks daily article agent runs (run_date, topic, slug, title, status, error, search_queries, research_snippets)
+- `daily_article_log` — tracks article agent pipeline stages (run_date, topic, slug, title, status, error, search_queries, research_snippets, research_data)
 - `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source). Upsert via `/api/subscribe` endpoint
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
-- `daily-article-agent`: runs at 6 AM UTC daily, invokes the Edge Function via HTTP POST
+- `daily-article-agent`: runs every 15 minutes (`*/15 * * * *`), processes one pipeline stage per invocation
+- Temporary ramp-up until 100 articles reached, then ramp back to daily
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
 - View schedule: `SELECT * FROM cron.job WHERE jobname = 'daily-article-agent';`
 - View run history: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`

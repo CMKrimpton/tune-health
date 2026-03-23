@@ -127,12 +127,13 @@ src/
   - **Editorial QC Agent**: "Audit Only", "Dry Run (Preview Fixes)", "Audit & Auto-Fix" — Claude reviews all headlines/descriptions holistically with severity selector, pattern warnings, copy report, per-issue fix status
   - **Illustration Agent**: single-article generator, "Generate Missing", "Regenerate All" with cost confirmation
   - **Database Sync**: refresh DB from content
-- **Daily Article Agent** (`daily-article-agent`): fully autonomous daily editorial pipeline
-  - Runs daily at 6 AM UTC via `pg_cron`
-  - Claude with native `web_search` tool discovers trending health topics from the last 3 days
-  - Picks the most compelling topic, deep-researches it, writes a 2,500-3,000+ word investigative article
-  - Saves to DB, publishes to GitHub (triggers Vercel deploy), generates editorial illustration
-  - Rate-limited to one successful publish per day; logs to `daily_article_log` table
+- **Article Pipeline Agent** (`daily-article-agent`): autonomous 3-stage editorial pipeline
+  - **Stage 1 — Research** (~60s): Claude Sonnet with native `web_search` discovers trending health topics
+  - **Stage 2 — Write** (~120s): Claude writes 2,500-3,000+ word investigative article with fact-checking
+  - **Stage 3 — Publish** (~60s): OpenAI generates illustration, commits to GitHub, triggers Vercel deploy
+  - Cron fires every 15 min, processes ONE stage per invocation (prevents timeout). Capacity: ~32 articles/day
+  - **Smart featured rotation**: auto-rotates featured article based on recency, category diversity, and illustration quality
+  - Auto-stops at 100 articles; rate-limited to one new article per hour; logs to `daily_article_log` table
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app
@@ -226,9 +227,9 @@ The site is deployed on Vercel with automatic deployments:
   - `fetch-article` — GitHub file fetching
   - `generate-illustration` — AI illustration generation (OpenAI GPT Image 1.5) with batch support
   - `editorial-qc` — Autonomous editorial quality control (Claude audits full collection, auto-fixes headlines/descriptions/illustrations)
-  - `daily-article-agent` — Autonomous daily article pipeline: Claude with native `web_search` discovers trending topics → writes article → publishes. Scheduled via `pg_cron` at 6 AM UTC.
+  - `daily-article-agent` — 3-stage article pipeline (research → write → publish). Cron fires every 15 min, processes one stage per invocation. Smart featured rotation after each publish. Auto-stops at 100 articles.
 - **Storage**: `article-illustrations` bucket for AI-generated editorial art
-- **Cron**: `pg_cron` + `pg_net` schedule daily article generation (requires extensions enabled in Dashboard)
+- **Cron**: `pg_cron` + `pg_net` trigger article pipeline every 15 min (requires extensions enabled in Dashboard)
 
 ## Documentation
 
