@@ -1,0 +1,34 @@
+{
+  "title": "The 'Turbo Cancer' Claim Is Wrong. But the Real Story Is More Unsettling.",
+  "description": "Cancer cases crossed 2 million in the U.S. for the first time in 2024 — and the internet blamed the vaccine. The actual evidence points somewhere else entirely. A rigorous look at what the data show about COVID-19 infection, mRNA vaccines, and the oncology trends that were already in motion before any of this started.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Cancer",
+    "COVID-19",
+    "mRNA Vaccines",
+    "Oncology",
+    "Epidemiology"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "turbo cancer",
+    "COVID-19 cancer risk",
+    "mRNA vaccine cancer",
+    "cancer incidence 2025",
+    "early-onset cancer"
+  ],
+  "sortOrder": 1774275823514,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/covid-cancer-turbo-cancer-evidence.png",
+  "heroImageAlt": "Editorial illustration for The 'Turbo Cancer' Claim Is Wrong. But the Real Story Is More Unsettling."
+}
