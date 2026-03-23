@@ -56,12 +56,11 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
           <span class="block italic font-normal text-primary-600">Wherever it leads.</span>
         </h1>
 
-        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg mx-auto mb-8" style="line-height: 1.7;">
-          Independent health analysis for people who think for themselves.
-          Peer-reviewed journals and naturopathic claims — held to the same standard.
+        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-md mx-auto mb-8" style="line-height: 1.65;">
+          Independent health analysis for people who think for themselves. Peer-reviewed journals and naturopathic claims — same standard.
         </p>
 
-        <div class="hero-cta flex flex-col sm:flex-row gap-4 justify-center">
+        <div class="hero-cta flex flex-col sm:flex-row gap-3 justify-center">
           <a href="#featured" class="btn-primary magnetic">
             <span>Explore Articles</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,22 +72,23 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
       </div>
     </div>
 
-    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-      <span class="text-overline text-stone-400">Scroll to explore</span>
-      <div class="w-px h-10 bg-gradient-to-b from-stone-400 to-transparent animate-pulse"></div>
-    </div>
-
-    <div class="hidden lg:flex absolute bottom-8 right-10 gap-8 items-end">
-      <div class="text-right">
-        <span class="block font-serif text-2xl font-semibold counter" data-count={allArticles.length}>0</span>
-        <span class="text-overline text-stone-400">Published</span>
+    <div class="container-editorial mt-12 md:mt-16 flex items-center justify-between">
+      <div class="hidden md:flex gap-6 items-baseline">
+        <div class="flex items-baseline gap-1.5">
+          <span class="font-serif text-lg font-semibold counter" data-count={allArticles.length}>0</span>
+          <span class="text-overline text-stone-500">articles</span>
+        </div>
+        <span class="text-stone-700 dark:text-stone-600">·</span>
+        <div class="flex items-baseline gap-1.5">
+          <span class="font-serif text-lg font-semibold counter" data-count="7">0</span>
+          <span class="text-overline text-stone-500">categories</span>
+        </div>
+        <span class="text-stone-700 dark:text-stone-600">·</span>
+        <span class="text-overline text-stone-500">Est. 2024</span>
       </div>
-      <div class="text-right">
-        <span class="block font-serif text-2xl font-semibold counter" data-count="7">0</span>
-        <span class="text-overline text-stone-400">Categories</span>
-      </div>
-      <div class="text-right">
-        <span class="block text-xs text-stone-400 uppercase tracking-widest">Est. 2024</span>
+      <div class="flex items-center gap-2 text-stone-400">
+        <span class="text-overline">Scroll</span>
+        <div class="w-px h-5 bg-stone-400/50 animate-pulse"></div>
       </div>
     </div>
   </section>

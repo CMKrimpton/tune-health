@@ -534,8 +534,7 @@ body.menu-open {
    ========================================= */
 .hero {
   @apply relative flex flex-col justify-center;
-  @apply pt-24 md:pt-28 pb-16 overflow-hidden;
-  min-height: 85dvh;
+  @apply pt-24 md:pt-32 pb-12 md:pb-16 overflow-hidden;
 }
 
 .hero-bg {
