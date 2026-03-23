@@ -708,12 +708,42 @@ Use web search to verify key statistics, find additional evidence, and ensure ac
     }
 
     // ================================================================
-    // STEP 5: Publish to GitHub (skip on dry-run)
+    // STEP 5: Generate illustration (synchronous — we need the URL for GitHub)
+    // ================================================================
+    let heroImage: string | undefined;
+    let heroImageAlt: string | undefined;
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    if (supabaseUrl) {
+      try {
+        const illustrationRes = await fetch(
+          `${supabaseUrl}/functions/v1/generate-illustration`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "generate", slug }),
+            signal: AbortSignal.timeout(60000),
+          },
+        );
+        if (illustrationRes.ok) {
+          const illustrationData = await illustrationRes.json();
+          if (illustrationData.success && illustrationData.imageUrl) {
+            heroImage = illustrationData.imageUrl;
+            heroImageAlt = `Editorial illustration for ${article.metadata.title}`;
+          }
+        }
+      } catch {
+        // Non-fatal — article publishes with gradient fallback
+      }
+    }
+
+    // ================================================================
+    // STEP 6: Publish to GitHub (skip on dry-run)
     // ================================================================
     let commitInfo: { commitSha: string; commitUrl: string } | null = null;
 
     if (action !== "dry-run") {
-      const jsonMetadata = {
+      const jsonMetadata: Record<string, unknown> = {
         title: article.metadata.title,
         description: article.metadata.description,
         category: article.metadata.category,
@@ -727,21 +757,13 @@ Use web search to verify key statistics, find additional evidence, and ensure ac
         keywords: article.metadata.keywords,
       };
 
-      commitInfo = await publishToGitHub(slug, astroContent, jsonMetadata);
-    }
+      // Include heroImage if illustration was generated successfully
+      if (heroImage) {
+        jsonMetadata.heroImage = heroImage;
+        jsonMetadata.heroImageAlt = heroImageAlt;
+      }
 
-    // ================================================================
-    // STEP 6: Trigger illustration generation (fire and forget)
-    // ================================================================
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    if (supabaseUrl) {
-      fetch(`${supabaseUrl}/functions/v1/generate-illustration`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "generate", slug }),
-      }).catch(() => {
-        /* fire and forget */
-      });
+      commitInfo = await publishToGitHub(slug, astroContent, jsonMetadata);
     }
 
     // ================================================================
