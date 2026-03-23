@@ -46,17 +46,17 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
 
     <div class="container-editorial">
       <div class="max-w-narrow mx-auto text-center">
-        <div class="hero-badge inline-flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-medium tracking-wide uppercase text-stone-600 dark:text-stone-400 mb-8">
+        <div class="hero-badge inline-flex items-center gap-2 px-3 py-1.5 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-medium tracking-wide uppercase text-stone-600 dark:text-stone-400 mb-6">
           <span class="w-1.5 h-1.5 bg-primary-600 rounded-full animate-pulse"></span>
           <span>Spring 2026 — {allArticles.length} Articles Published</span>
         </div>
 
-        <h1 class="hero-title font-serif text-display-1 font-semibold mb-6 text-balance" transition:name="hero-title">
+        <h1 class="hero-title font-serif text-display-1 font-semibold mb-4 text-balance" transition:name="hero-title">
           <span class="block">Evidence.</span>
           <span class="block italic font-normal text-primary-600">Wherever it leads.</span>
         </h1>
 
-        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg mx-auto mb-10" style="line-height: 1.8;">
+        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg mx-auto mb-8" style="line-height: 1.7;">
           Independent health analysis for people who think for themselves.
           Peer-reviewed journals and naturopathic claims — held to the same standard.
         </p>
@@ -78,13 +78,13 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
       <div class="w-px h-10 bg-gradient-to-b from-stone-400 to-transparent animate-pulse"></div>
     </div>
 
-    <div class="hidden lg:flex absolute bottom-10 right-12 gap-10 items-end">
+    <div class="hidden lg:flex absolute bottom-8 right-10 gap-8 items-end">
       <div class="text-right">
-        <span class="block font-serif text-3xl font-semibold counter" data-count={allArticles.length}>0</span>
+        <span class="block font-serif text-2xl font-semibold counter" data-count={allArticles.length}>0</span>
         <span class="text-overline text-stone-400">Published</span>
       </div>
       <div class="text-right">
-        <span class="block font-serif text-3xl font-semibold counter" data-count="7">0</span>
+        <span class="block font-serif text-2xl font-semibold counter" data-count="7">0</span>
         <span class="text-overline text-stone-400">Categories</span>
       </div>
       <div class="text-right">
@@ -95,9 +95,9 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
 
   <!-- Featured Article -->
   {heroArticle && (
-    <section class="py-20 md:py-28 bg-stone-50 dark:bg-stone-900/50" id="featured">
+    <section class="py-14 md:py-20 bg-stone-50 dark:bg-stone-900/50" id="featured">
       <div class="container-editorial">
-        <div class="flex items-center gap-6 mb-12">
+        <div class="flex items-center gap-6 mb-8">
           <span class="section-label">Featured Story</span>
           <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
         </div>
@@ -109,14 +109,14 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
                 <img src={heroArticle.heroImage} alt={heroArticle.heroImageAlt || heroArticle.title} class="w-full h-full object-cover" loading="eager" />
               ) : (
                 <div class="absolute inset-0 flex items-end p-8">
-                  <span class="font-serif text-[8rem] lg:text-[12rem] font-bold text-white/[0.07] leading-none select-none">01</span>
+                  <span class="font-serif text-[6rem] lg:text-[8rem] font-bold text-white/[0.06] leading-none select-none">01</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div class="p-8 lg:p-12 flex flex-col justify-center">
-            <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-widest mb-6">
+          <div class="p-6 lg:p-8 flex flex-col justify-center">
+            <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-widest mb-4">
               <span class="text-primary-600">{heroArticle.category}</span>
               <span class="text-stone-300 dark:text-stone-600">/</span>
               <span class="text-stone-500">{heroArticle.readTime} min read</span>
@@ -169,12 +169,12 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
   </section>
 
   <!-- Latest Articles Grid -->
-  <section class="py-20 md:py-28" id="latest">
+  <section class="py-14 md:py-20" id="latest">
     <div class="container-editorial">
-      <div class="flex items-center justify-between mb-12">
+      <div class="flex items-center justify-between mb-8">
         <div>
           <span class="section-label">Latest Stories</span>
-          <h2 class="font-serif text-heading-2 font-semibold mt-2">Fresh Perspectives</h2>
+          <h2 class="font-serif text-heading-2 font-semibold mt-1">Fresh Perspectives</h2>
         </div>
         <a href="/articles" class="hidden md:inline-flex items-center gap-2 text-sm font-medium text-stone-500 hover:text-primary-600 transition-colors">
           View all {allArticles.length} articles
@@ -230,11 +230,11 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
   </section>
 
   <!-- About / Mission Section -->
-  <section class="py-24 md:py-32 bg-stone-900 dark:bg-stone-950 text-white" id="about">
+  <section class="py-16 md:py-24 bg-stone-900 dark:bg-stone-950 text-white" id="about">
     <div class="container-editorial">
       <div class="max-w-3xl mx-auto">
         <span class="section-label !text-primary-400 mb-6 block">Our Mission</span>
-        <h2 class="font-serif text-heading-1 font-semibold mb-10 leading-tight">Health Without the Hype</h2>
+        <h2 class="font-serif text-heading-1 font-semibold mb-8 leading-tight">Health Without the Hype</h2>
 
         <div class="font-body text-body-lg text-stone-300 space-y-6" style="line-height: 1.85;">
           <p>
@@ -252,17 +252,17 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
           </p>
         </div>
 
-        <div class="mt-14 pt-8 border-t border-stone-700/50 grid grid-cols-3 gap-6 max-w-md">
+        <div class="mt-10 pt-6 border-t border-stone-700/50 grid grid-cols-3 gap-6 max-w-md">
           <div>
-            <span class="block text-2xl font-serif font-semibold text-primary-400 mb-1">No</span>
+            <span class="block text-xl font-serif font-semibold text-primary-400 mb-1">No</span>
             <span class="text-xs text-stone-500 uppercase tracking-widest">Sponsors</span>
           </div>
           <div>
-            <span class="block text-2xl font-serif font-semibold text-primary-400 mb-1">No</span>
+            <span class="block text-xl font-serif font-semibold text-primary-400 mb-1">No</span>
             <span class="text-xs text-stone-500 uppercase tracking-widest">Sacred Cows</span>
           </div>
           <div>
-            <span class="block text-2xl font-serif font-semibold text-primary-400 mb-1">No</span>
+            <span class="block text-xl font-serif font-semibold text-primary-400 mb-1">No</span>
             <span class="text-xs text-stone-500 uppercase tracking-widest">Bullshit</span>
           </div>
         </div>
@@ -274,9 +274,9 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
   <AppPromo />
 
   <!-- Deep Dives -->
-  <section class="py-20 md:py-28 bg-stone-100 dark:bg-stone-900" id="deep-dives">
+  <section class="py-14 md:py-20 bg-stone-100 dark:bg-stone-900" id="deep-dives">
     <div class="container-editorial">
-      <div class="mb-10">
+      <div class="mb-8">
         <span class="section-label">Deep Dives</span>
         <h2 class="font-serif text-heading-2 font-semibold mt-1">Comprehensive Guides</h2>
       </div>
@@ -367,13 +367,13 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
   </section>
 
   <!-- Newsletter -->
-  <section class="py-20 md:py-28" id="newsletter">
+  <section class="py-14 md:py-20" id="newsletter">
     <div class="container-editorial">
       <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <div>
           <span class="section-label">Newsletter</span>
-          <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-4">Real Wealth Starts Here</h2>
-          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8" style="line-height: 1.8;">
+          <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-3">Real Wealth Starts Here</h2>
+          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-6" style="line-height: 1.7;">
             Weekly evidence-based health insights delivered to your inbox.
             No hype, no sales pitches — just the research that matters.
           </p>
