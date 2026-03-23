@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [8.3.0] - 2026-03-23
+
+### Fixed — Retroactive Dogma Audit
+- **6 health dogma violations corrected** across 3 published articles:
+  - `chronic-inflammation`: omega-6 seed oils as inflammatory (caveated as contested), omega-6/3 ratio removed as clinical marker (replaced with HOMA-IR)
+  - `nitric-oxide-paradox-aging-vasodilator`: antioxidant supplements as therapy in 3 locations (added Cochrane data: 78 trials, 296K participants, no benefit/possible harm; redirected to whole foods)
+  - `fermented-foods`: "moderate wine = heart healthy" (added sick-quitter confound + Mendelian randomization finding no safe cardiovascular level)
+- **75 other articles audited clean** — no meaningful dogma violations found
+
 ## [8.2.0] - 2026-03-23
 
 ### Added — Epistemic Integrity Framework
