@@ -697,8 +697,7 @@ Array of { "id": "section-id", "title": "Display Title" }.
 Estimated minutes (220 wpm, rounded up).
 
 ## Rules
-- Use web search to verify key claims and find additional evidence.
-- NEVER fabricate study data, statistics, or author names.
+- NEVER fabricate study data, statistics, or author names. Use the research data provided — it has already been web-verified.
 - Follow the editorial brief's angle, opening direction, emphasis points, and closing direction.
 - Structure: hook → evidence → mechanism → implications → honest unknowns.`;
 
@@ -1013,16 +1012,15 @@ ${((researchData.statistics as string[]) || []).join("\n")}
 
 Today's date: ${today}
 
-IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. Use web search to verify key statistics and find additional evidence. Return ONLY valid JSON.`;
+IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. The research data has been web-verified — write from it directly. Return ONLY valid JSON.`;
 
   const articleRaw = await claude({
     system: ARTICLE_WRITING_PROMPT,
     user: articleUserPrompt,
     model,
-    maxTokens: 16000,
+    maxTokens: 12000,
     temperature: 0.4,
-    webSearch: true,
-    maxSearches: 5,
+    // No web search for writing — research already did that. Saves ~60s.
   });
 
   const article = parseClaudeJSON(articleRaw) as {
