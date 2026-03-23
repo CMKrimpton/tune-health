@@ -409,9 +409,21 @@ async function generateWithFallback(opts: { system: string; user: string; models
   throw new Error(`All models failed. Last error: ${lastError}`);
 }
 
+// Model pen names — each model gets a human byline
+const MODEL_BYLINES: Record<string, { name: string; role: string }> = {
+  "claude-sonnet-4-6":        { name: "Max Quilici",      role: "Senior Health Correspondent" },
+  "claude-sonnet-4-20250514": { name: "Max Quilici",      role: "Senior Health Correspondent" },
+  "claude-opus-4-20250514":   { name: "Carl Lundin",      role: "Editor-at-Large" },
+  "grok-3":                   { name: "Linda Carnes",     role: "Investigative Health Reporter" },
+  "gemini-2.5-flash":         { name: "Christine Wright",  role: "Science & Evidence Desk" },
+};
+
+function getByline(model: string): { name: string; role: string } {
+  return MODEL_BYLINES[model] || { name: "alumi news Editorial", role: "Medical Review Board" };
+}
+
 // Pick a writer model — rotates to distribute across providers
 function pickWriterModel(): string[] {
-  // Rotation based on hour of day — ensures variety
   const hour = new Date().getUTCHours();
   if (hour % 3 === 0) return ["claude-sonnet-4-6", "grok-3", "gemini-2.5-flash"];
   if (hour % 3 === 1) return ["grok-3", "claude-sonnet-4-6", "gemini-2.5-flash"];
@@ -2015,7 +2027,7 @@ Make your final call. Publish, request revisions, or kill.`;
   // Fetch log entry scores for the articles table
   const { data: logScores } = await db
     .from("daily_article_log")
-    .select("editor_score, grok_score")
+    .select("editor_score, grok_score, model_used")
     .eq("id", logId)
     .single();
 
@@ -2084,7 +2096,7 @@ Make your final call. Publish, request revisions, or kill.`;
       description: finalDescription,
       category: metadata.category,
       publishDate: today,
-      author: { name: "alumi news Editorial", role: "Medical Review Board" },
+      author: getByline(logScores?.model_used || "claude-sonnet-4-6"),
       readTime,
       featured: false,
       draft: false,
