@@ -1,0 +1,34 @@
+{
+  "title": "The Pesticide Still Legal on American Crops Doubles Your Risk of Parkinson's. We Now Know Why.",
+  "description": "A landmark UCLA study — the largest epidemiological cohort of its kind, corroborated by mouse and zebrafish models — has identified chlorpyrifos, still legally sprayed on US crops and registered in over 100 countries, as a likely causal trigger for Parkinson's disease, with a 2.68-fold increased risk in exposed populations. The mechanism is specific and damning: chlorpyrifos disables the brain's protein waste-disposal system, allowing toxic alpha-synuclein to accumulate into the Lewy bodies that kill dopaminergic neurons. With 85% of Parkinson's cases having no known cause and the disease growing faster than any other neurological disorder, this may be the modifiable risk factor the field has been searching for — and regulators have been slow to act on.",
+  "category": "Environmental Health",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 14,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Long-term residential exposure",
+    "Those with the",
+    "Mice exposed to",
+    "Exposed mice also",
+    "Zebrafish experiments identified"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "Long-term residential exposure",
+    "Those with the",
+    "Mice exposed to",
+    "Exposed mice also",
+    "Zebrafish experiments identified"
+  ],
+  "sortOrder": 1774261406618,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/chlorpyrifos-parkinsons-disease-risk-autophagy.png",
+  "heroImageAlt": "Editorial illustration for The Pesticide Still Legal on American Crops Doubles Your Risk of Parkinson's. We Now Know Why."
+}
