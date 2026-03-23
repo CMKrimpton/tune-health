@@ -173,7 +173,7 @@ const articles = await getCollection('articles');
 
 #### Autonomous AI Pipeline
 - **Article creation**: source doc → Claude writes article → OpenAI generates illustration → both saved to DB → publish commits to GitHub → Vercel deploys
-- **Daily article agent**: `daily-article-agent` runs via `pg_cron` at 6 AM UTC daily → Claude with native `web_search` tool autonomously discovers trending health topics → picks the best one → deep research with web search fact-checking → writes full article → saves to DB → publishes to GitHub → triggers illustration generation. Logs to `daily_article_log` table. One run per day (rate-limited).
+- **Daily article agent**: `daily-article-agent` runs via `pg_cron` at 6 AM UTC daily → Claude with native `web_search` tool autonomously discovers trending health topics → picks the best one → deep research with web search fact-checking → writes full article → saves to DB → generates illustration (synchronous, waits for heroImage URL) → publishes to GitHub with illustration included → Vercel deploys. Logs to `daily_article_log` table. One run per day (rate-limited).
 - **Quality control**: `editorial-qc` reviews full article collection holistically → identifies headline repetition, weak descriptions → auto-fixes via `articles-api`
 - **Illustration generation**: `generate-illustration` creates editorial art per article with house style prompt + category color palettes → stored in Supabase Storage
 - **All secrets** (ANTHROPIC_API_KEY, OPENAI_API_KEY, GITHUB_TOKEN, ADMIN_TOKEN) stored in Supabase secrets only — never in code

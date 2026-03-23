@@ -19,6 +19,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`daily_article_log` table** — tracks each agent run: topic, slug, title, status, error, search queries, research snippets, timestamps
 - **`pg_cron` schedule** — daily at 6 AM UTC via `pg_net` HTTP POST to Edge Function
 - **New article: "The Shingles Shot That Quietly Became a Heart Drug"** — investigative article on the ACC.26 study showing 46% MACE reduction from shingles vaccination, Korean cohort (1.27M participants), ESC meta-analysis, VZV vascular damage mechanisms, dementia protection evidence, and skeptics' assessment. 13-minute read, Clinical Evidence category.
+### Fixed
+- **Illustration pipeline sync** — daily agent was committing article JSON to GitHub *before* illustration was generated (fire-and-forget), so heroImage never reached the static site. Now waits for illustration generation (up to 60s), gets the URL, and includes `heroImage`/`heroImageAlt` in the GitHub commit. Articles deploy with art from the first build.
+- **Large article card (01) missing title** — `.article-card-large` image had `lg:h-full` which filled the entire card, pushing `.article-card-content` out of view via `overflow-hidden`. Fixed with magazine-style overlay: content sits on top of the image with a gradient, scoped to `lg+` only (mobile keeps stacked layout).
+- **Newsletter input iOS auto-zoom** — `text-sm` (14px) → `text-base` (16px) to prevent Safari zoom on focus.
+
+### Changed
+- **UI tightening across the site** — reduced visual bloat for a more refined, magazine-like density:
+  - **Typography**: display-1 max 6rem→4.5rem, heading-1 3.5rem→2.75rem, heading-2 2.25rem→1.875rem, body-lg and overline slightly reduced
+  - **Container**: max-width 1400px→1240px, padding px-6/8/12→px-5/8/10
+  - **Nav**: height h-18/h-20→h-14/h-16
+  - **Hero**: full viewport (100dvh), stats + scroll indicator absolute-anchored at bottom
+  - **Section padding**: py-20/py-28→py-14/py-20, mission py-24/py-32→py-16/py-24
+  - **Cards**: content padding p-5/p-6→p-4/p-5, image aspect 16/10→16/9, featured image 4/5→4/3, featured card rounded-3xl→rounded-2xl
+  - **Buttons**: px-6 py-3→px-5 py-2.5
+  - **Card numbers**: opacity 15%→10%, sizes reduced one step throughout
+  - **Deep dives hero**: tightened padding
+
 ### Architecture
 - Daily article agent pipeline: Claude with native `web_search` tool → autonomous topic discovery & research → article writing with fact-checking → DB save → GitHub publish → illustration generation. No third-party search API — uses Anthropic's built-in server-side web search.
 - `pg_cron` + `pg_net` extensions for scheduled execution (must be enabled in Supabase Dashboard)

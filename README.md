@@ -90,7 +90,7 @@ src/
 - **View Transitions** - Smooth page-to-page animations
 
 ### Content
-- **40 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
+- **41 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
 - Content Collections with Zod schema validation
 - Type-safe article queries
 - Automatic reading time calculation
