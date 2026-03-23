@@ -1,0 +1,34 @@
+{
+  "title": "The Largest Fiber-Diabetes Trial in Years Found No Benefit. Then They Looked at the Microbiome.",
+  "description": "A 2025 randomized trial of 802 prediabetic patients found that eating more fiber didn't significantly lower blood sugar — until researchers stratified by gut microbiome composition, and the results split dramatically. The 'eat more fiber' prescription isn't wrong. It's just aimed at the wrong unit of analysis: the population, not the person.",
+  "category": "Nutrition",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Gut Microbiome",
+    "Dietary Fiber",
+    "Diabetes Prevention",
+    "Precision Nutrition",
+    "SCFAs"
+  ],
+  "gradient": {
+    "to": "teal-700",
+    "from": "emerald-600"
+  },
+  "keywords": [
+    "dietary fiber diabetes",
+    "gut microbiome prediabetes",
+    "SCFA insulin resistance",
+    "personalized nutrition",
+    "fiber RCT null result"
+  ],
+  "sortOrder": 1774271459706,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/dietary-fiber-gut-microbiome-diabetes-prevention-personalized.png",
+  "heroImageAlt": "Editorial illustration for The Largest Fiber-Diabetes Trial in Years Found No Benefit. Then They Looked at the Microbiome."
+}
