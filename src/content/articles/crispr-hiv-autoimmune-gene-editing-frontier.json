@@ -1,0 +1,34 @@
+{
+  "title": "CRISPR Was Supposed to Cut HIV Out of the Human Genome. It Can't — Yet. But the Failure Is Teaching Us Something Stranger.",
+  "description": "The first CRISPR therapy ever tested against HIV in humans looked promising — until the virus came back in every patient who stopped antiretrovirals. But the same platform that stumbled on HIV is now producing early remissions in lupus and systemic sclerosis, for a counterintuitive reason: you don't need to permanently edit every cell. You just need to reset the immune system and get out. A rigorous look at what CRISPR can and cannot do, and why the autoimmune pivot may be the field's most important accidental discovery.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "CRISPR",
+    "HIV",
+    "Autoimmune Disease",
+    "Gene Therapy",
+    "CAR-T"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "CRISPR HIV cure",
+    "EBT-101 trial",
+    "zugo-cel autoimmune",
+    "gene editing lupus",
+    "proviral latency"
+  ],
+  "sortOrder": 1774272379929,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/crispr-hiv-autoimmune-gene-editing-frontier.png",
+  "heroImageAlt": "Editorial illustration for CRISPR Was Supposed to Cut HIV Out of the Human Genome. It Can't — Yet. But the Failure Is Teaching Us Something Stranger."
+}

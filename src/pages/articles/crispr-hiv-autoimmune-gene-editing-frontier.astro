@@ -1,0 +1,140 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="CRISPR Was Supposed to Cut HIV Out of the Human Genome. It Can't — Yet. But the Failure Is Teaching Us Something Stranger."
+  description="The first CRISPR therapy ever tested against HIV in humans looked promising — until the virus came back in every patient who stopped antiretrovirals. But the same platform that stumbled on HIV is now producing early remissions in lupus and systemic sclerosis, for a counterintuitive reason: you don't need to permanently edit every cell. You just need to reset the immune system and get out. A rigorous look at what CRISPR can and cannot do, and why the autoimmune pivot may be the field's most important accidental discovery."
+  category="Clinical Evidence"
+  readTime="10 min read"
+  publishDate="March 2026"
+>
+  <!-- Feature Image -->
+  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 600'><defs><linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#1a0a2e'/><stop offset='100%' stop-color='#0a0a1a'/></linearGradient></defs><rect width='1200' height='600' fill='url(#bg)'/><circle cx='900' cy='150' r='180' fill='#7c3aed18'/><circle cx='300' cy='450' r='120' fill='#6d28d918'/><rect x='500' y='200' width='200' height='200' rx='8' fill='#4c1d9510' transform='rotate(30 600 300)'/></svg>
+  </svg>
+
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#introduction" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Moment of Rebound</a>
+      <a href="#the-reservoir-problem" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Reservoir Problem Nobody Solved</a>
+      <a href="#three-strategies" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Three Strategies, Three Sets of Problems</a>
+      <a href="#the-autoimmune-pivot" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Autoimmune Pivot Is Not a Consolation Prize</a>
+      <a href="#safety-architecture" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Safety Architecture Is Not Fully Built</a>
+      <a href="#what-the-mechanism-teaches" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What the Mechanism Is Actually Teaching</a>
+      <a href="#the-equity-problem" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Who Will It Work For</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="introduction" class="reveal">
+  <p>Somewhere in the bloodstream of a patient enrolled in trial NCT05144386, the CRISPR machinery was still present at 48 weeks. The dual guide RNAs had found their targets. The AAV9 vectors had delivered their payload. The Cas9 nuclease had made its cuts, flanking key segments of integrated HIV proviral DNA and physically excising them from the host genome. By every measurable indicator of the editing event itself, EBT-101 had worked. And then the antiretrovirals stopped — and HIV RNA climbed back.</p>
+  <p>This is not a story about a technology that failed. It is a story about a technology that worked precisely well enough to reveal a problem that predates it by decades. The virus did not evade the guide RNAs. It hid from them — tucked inside resting CD4+ T cells and macrophages and hematopoietic progenitors scattered across lymph nodes, gut-associated lymphoid tissue, and the central nervous system, transcriptionally silent, metabolically invisible, waiting. CRISPR cannot edit what it cannot find. That is not a CRISPR limitation. That is the HIV reservoir problem, and it has defeated every cure strategy that has ever confronted it.</p>
+  <p>What happened next is the more interesting story. The same platform, the same allogeneic engineering logic, a different disease — and early data that looks nothing like failure.</p>
+</section>
+
+<section id="the-reservoir-problem" class="reveal">
+  <h2>The Reservoir Problem Nobody Solved Before CRISPR and Nobody Has Solved Since</h2>
+  <p>HIV's central evolutionary achievement is not its mutation rate, though that is formidable. It is the provirus. When HIV infects a CD4+ T cell, its RNA genome is reverse-transcribed into DNA and integrated into the host chromosome, where it can persist indefinitely in a latent state. Antiretroviral therapy suppresses viral replication to undetectable levels but cannot touch integrated proviral DNA. Stop the drugs, and the reservoir reactivates. This has been true since the first effective ART regimens in the 1990s, and it remains true now.</p>
+  <p>EBT-101's approach — delivering CRISPR-Cas9 via AAV9 vectors to excise proviral DNA directly — is mechanistically sound. A 2019 study published in <em>Nature Communications</em> demonstrated that combining long-acting slow-effective release ART (LASER ART) with AAV9-delivered CRISPR-Cas9 excised 60–80% of integrated HIV DNA across multiple tissues including spleen, lymph nodes, and brain in a subset of humanized mice, with no detectable off-target effects and no viral rebound in virus-eradicated animals. That result, in mice, was striking enough to justify a human trial.</p>
+  <p>The human trial produced six participants, no serious adverse events, and four viral rebounds. A 2025 review in <em>Current Opinion in HIV and AIDS</em> identified the core problem plainly: low in vivo editing efficiency remains the central barrier, particularly for proviral excision strategies requiring transfection of all HIV-infected cells. The AAV9 vectors reach some cells. They do not reach all cells. The cells they miss are sufficient to rekindle infection when immune pressure is removed.</p>
+  <p>One participant was different. That person showed a delayed rebound of nearly 16 weeks — roughly four months after antiretroviral interruption — and a significant reduction in reservoir size. Rachel Presti, MD, PhD, medical director of the infectious disease clinical research unit at Washington University, St. Louis, described it with the precision of someone who knows exactly how much weight a single data point can bear: "Those exploratory endpoints promise that maybe there was some effect in at least one participant, and we're trying to figure out what was different about that person and how we can continue to make this better."</p>
+  <p>That sentence is where the HIV cure story actually lives right now. Not in the four rebounds. In the one outlier, and in the question of whether whatever biological circumstance produced that result can be identified, reproduced, and scaled.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>"CRISPR cannot edit what it cannot find. That is not a CRISPR limitation. That is the HIV reservoir problem, and it has defeated every cure strategy that has ever confronted it."</p></aside>
+
+<section id="three-strategies" class="reveal">
+  <h2>Three Strategies, Three Sets of Problems</h2>
+  <p>The field is pursuing parallel approaches, and each one runs into a different wall. The excise strategy — EBT-101's approach — confronts the reservoir problem directly. The protect strategy attempts to sidestep it by making new immune cells resistant to infection. The attack strategy tries to eliminate infected cells before they can reactivate.</p>
+  <p>The protect strategy has its own ceiling. A 2019 paper in the <em>New England Journal of Medicine</em> described transplantation of CRISPR-edited CCR5-ablated hematopoietic stem and progenitor cells into a patient with both HIV and acute lymphocytic leukemia. The cells engrafted for over 19 months with no gene-editing-related adverse events — but CCR5 disruption efficiency was only 5.2–8.28% of transplanted cells. That is nowhere near sufficient to confer protection. The logic of the protect strategy requires that CCR5-negative cells eventually outcompete CCR5-positive cells and dominate the immune repertoire, as happened naturally in the Berlin and London patients cured by allogeneic stem cell transplant from CCR5-Δ32 donors. At 5–8% editing efficiency, that competitive advantage never materializes.</p>
+  <p>The 2025 Ragon Institute study, published in <em>Nature Communications</em>, moved that number dramatically. Researchers at MIT, Harvard, and Massachusetts General Hospital edited the CCR5 gene in over 90% of human blood stem cells with minimal or no detectable off-target effects. CCR5-edited mice remained uninfected even after a second HIV exposure at five times the original dose. That is a genuine technical milestone. It is also, for now, a milestone in mice.</p>
+  <p>The CCR5 strategy carries a concern that deserves more than a footnote. A published study found that homozygosity for the CCR5-Δ32 mutation — the natural analog of what CRISPR aims to engineer — is associated with reduced life expectancy. The mechanism is not fully characterized, but CCR5 is not merely an HIV co-receptor; it plays roles in immune trafficking and neuroinflammation. Ablating it permanently in hematopoietic stem cells means every immune cell derived from those progenitors will lack CCR5 for the patient's lifetime. The long-term systemic consequences of that are not yet known. Additionally, CCR5 ablation only protects against R5-tropic HIV strains. CXCR4-tropic strains, which become more prevalent in late-stage disease, infect cells independently of CCR5 — and disrupting CXCR4 as an alternative impairs engraftment of stem cells in bone marrow, which is not a trade-off anyone wants to make.</p>
+  <p>HIV's mutation rate compounds every strategy. Guide RNAs designed against conserved regions of one HIV subtype may have multiple mismatches against sequences circulating in other patients or other geographies. Chantelle Ahlenstiel, PhD, senior research fellow in immunovirology at the Kirby Institute at UNSW Sydney, has been direct about this: "It will be important to design further gRNA that are highly conserved across all HIV subtypes in order to develop a globally applicable HIV gene therapy." That is a significant design constraint when the virus that circulates in sub-Saharan Africa is not the same virus that circulates in North America or Europe.</p>
+</section>
+
+<div class="info-card my-12 reveal">
+  <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">EBT-101 Phase 1/2 Trial: Key Parameters</h4>
+  <ul class="space-y-2 text-sm">
+    <li><strong>Trial ID:</strong> NCT05144386</li>
+    <li><strong>Mechanism:</strong> Dual guide RNA CRISPR-Cas9 delivered via AAV9 to excise integrated HIV proviral DNA</li>
+    <li><strong>Participants:</strong> 6 adults with HIV-1</li>
+    <li><strong>Safety:</strong> No serious adverse events or dose-limiting toxicities observed</li>
+    <li><strong>Viral rebound:</strong> HIV RNA rebounded in all 4 participants who underwent antiretroviral interruption</li>
+    <li><strong>Outlier result:</strong> 1 participant showed delayed rebound of ~16 weeks and significant reservoir size reduction</li>
+    <li><strong>EBT-101 detectability:</strong> Still present in bloodstream at 48 weeks post-infusion</li>
+    <li><strong>Presented at:</strong> International AIDS Conference 2024; European Society for Gene &amp; Cell Therapy 2023/2024</li>
+  </ul>
+</div>
+
+<section id="the-autoimmune-pivot" class="reveal">
+  <h2>The Autoimmune Pivot Is Not a Consolation Prize</h2>
+  <p>Here is the counterintuitive part. The biological property that makes CRISPR insufficient for HIV — its inability to reach and edit every relevant cell in the body — turns out to be largely irrelevant in autoimmune disease. Not because the delivery problem is solved, but because the therapeutic goal is different.</p>
+  <p>In lupus and systemic sclerosis, the pathological actors are autoreactive B cells — cells that have escaped tolerance checkpoints and are producing antibodies against the body's own tissues. The hypothesis underlying CRISPR CAR-T therapy in these conditions is not that you need to permanently eliminate every autoreactive B cell. It is that you need to deplete the B-cell compartment transiently and completely enough that when it reconstitutes from naive precursors, the autoreactive clones do not return. The immune system reboots. The pathological memory is erased.</p>
+  <p>This is the hit-and-run strategy, and it may be the optimal design rather than a compromise. Katy Rezvani, head of the Institute for Cell Therapy Discovery and Innovation at MD Anderson, has described the mechanism directly: "CAR T therapies have already demonstrated remarkable success in conditions like lupus and systemic sclerosis by selectively depleting autoreactive B cells, resulting in sustained immune reset." The CAR-T cells do not need to persist indefinitely. They need to do their job and clear.</p>
+  <p>CRISPR Therapeutics' allogeneic candidate zugo-cel — formerly CTX112, targeting CD19 — is now in a Phase 1 basket trial enrolling patients with systemic lupus erythematosus, systemic sclerosis, and inflammatory myositis. As of December 2025, four patients had received zugo-cel at 100 million cells: two with SLE, two with immune-mediated necrotizing myopathy with interstitial lung disease. Rapid and deep B-cell depletion was observed within one to two days of infusion and maintained over the first month. The therapy was well tolerated, with cell expansion comparable to oncology trials.</p>
+  <p>The allogeneic engineering is where CRISPR's specific contribution becomes visible. Zugo-cel's cells are CRISPR-edited to disrupt the T-cell receptor alpha chain (TRAC), preventing graft-versus-host disease from donor T cells. HLA-A, HLA-B, and CIITA are knocked out to reduce recognition and rejection by the host immune system. PD-1 disruption enhances CAR-T persistence and potency. These are not minor modifications — they are the difference between a therapy that requires a patient-specific manufacturing run and one that can be produced at scale from healthy donors and stored off the shelf.</p>
+  <p>The TyU19 data, published in <em>Cell Research</em> in 2025, represents the first clinical application of allogeneic CRISPR-edited anti-CD19 CAR-T cells in refractory SLE patients. The cells carried the same five CRISPR disruptions — TRAC, HLA-A, HLA-B, CIITA, and PD-1 — and demonstrated significant clinical remission with a favorable safety profile. These are small numbers. The follow-up is short. But the signal is real, and the mechanistic logic is coherent in a way that the HIV excision strategy, for all its elegance, has not yet demonstrated in humans.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>"The hit-and-run strategy works precisely because it does not need to be permanent. That is not a limitation of the design. That is the design."</p></aside>
+
+<section id="safety-architecture" class="reveal">
+  <h2>The Safety Architecture Is Not Fully Built</h2>
+  <p>The phrase "generally encouraging" appears in multiple characterizations of CRISPR's clinical safety profile. A careful reader should find that phrase unsettling, not reassuring. It is the language of a field that has not yet accumulated enough patient-years to know what it does not know.</p>
+  <p>The AAV9 vectors used in EBT-101 persist in the body long after the editing event is complete. There is no off-switch. Once the Cas9 machinery is delivered, it continues to be expressed until the AAV episome degrades — a process that can take months to years in non-dividing cells. The cumulative risk of off-target cuts during that window is not zero, and it is not fully characterized. A 2025 review in <em>Life (MDPI)</em> identified off-target effects, immunogenicity, and delivery of the large CRISPR-Cas9 complex as unresolved challenges across HIV gene therapy strategies. These are not theoretical concerns. They are engineering problems that have not been solved.</p>
+  <p>In autoimmune applications, the risk profile shifts but does not disappear. CRISPR-enhanced CAR-T cells in a patient whose immune system is already dysregulated carry cytokine release syndrome risk. The same inflammatory milieu that characterizes active lupus or systemic sclerosis is the milieu into which these cells are infused. Lymphodepletion conditioning — required before CAR-T infusion — adds its own toxicity burden. The zugo-cel trial's favorable tolerability data at one month is encouraging. One month is not a safety profile.</p>
+  <p>The 2025 death of a patient with Duchenne muscular dystrophy in a CRISPR trial run by the nonprofit Cure Rare Disease is the field's most sobering recent data point. The specifics of that case — the patient's baseline condition, the exact mechanism of the adverse event — are still being analyzed. What it establishes is that CRISPR-related clinical deaths are no longer hypothetical. The field has crossed that threshold. That does not mean the technology is unsafe. It means the technology is in the phase of development where the real safety data is being generated, in real patients, in real time.</p>
+  <p>Caribou Biosciences' decision to abandon its autoimmune CAR-T program entirely — driven by financial pressure rather than safety signals — illustrates a different kind of structural fragility. The companies developing these therapies are operating on venture timelines in a regulatory environment that requires decade-scale evidence. When the money runs out before the evidence accumulates, programs die regardless of their scientific merit. That is not a CRISPR problem. It is a biotech financing problem that CRISPR happens to be living inside.</p>
+</section>
+
+<div class="info-card my-12 reveal">
+  <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">CRISPR Autoimmune Applications: Current Landscape</h4>
+  <ul class="space-y-2 text-sm">
+    <li><strong>Zugo-cel (CTX112):</strong> CRISPR Therapeutics; Phase 1 basket trial; SLE, systemic sclerosis, inflammatory myositis; CD19-targeting allogeneic CAR-T</li>
+    <li><strong>CRISPR edits in zugo-cel:</strong> TRAC, HLA-A, HLA-B, CIITA, PD-1 disruption to prevent rejection and enhance persistence</li>
+    <li><strong>TyU19:</strong> Allogeneic anti-CD19 CAR-T; same five CRISPR disruptions; refractory SLE; significant clinical remission reported (<em>Cell Research</em>, 2025)</li>
+    <li><strong>B-cell depletion timeline:</strong> Within 1–2 days of zugo-cel infusion, maintained over first month</li>
+    <li><strong>Active CRISPR trials globally:</strong> Over 250, spanning HIV, SLE, systemic sclerosis, inflammatory myositis, immune thrombocytopenia, warm autoimmune hemolytic anemia</li>
+    <li><strong>Therapeutic logic:</strong> Transient B-cell depletion sufficient for durable remission via immune reconstitution from naive precursors</li>
+  </ul>
+</div>
+
+<section id="what-the-mechanism-teaches" class="reveal">
+  <h2>What the Mechanism Is Actually Teaching</h2>
+  <p>The productive failure of EBT-101 has clarified something important about the relationship between editing efficiency and therapeutic outcome. In HIV, you need to reach essentially every latently infected cell — a number estimated in the millions, distributed across anatomical compartments with varying AAV9 accessibility. In autoimmune disease, you need to deplete a population of cells that is circulating, accessible, and does not need to be permanently eliminated. The therapeutic bar is different by orders of magnitude.</p>
+  <p>This is not an argument that CRISPR cannot eventually work for HIV. The 2025 Ragon Institute data — 90% CCR5 editing efficiency in human hematopoietic stem cells, with protection maintained against five-times-dose HIV rechallenge in xenograft mice — represents a genuine advance in the protect strategy. The 2023 dual-CRISPR approach published in <em>Nature Communications</em>, combining CCR5 disruption with excision of an HIV DNA region essential for replication alongside LASER ART, eliminated HIV in over half of infected humanized mice with no off-target effects and no viral rebound. The mouse-to-human translation problem is real and persistent, but the mechanistic progress is not illusory.</p>
+  <p>Lipid nanoparticle delivery — identified in the 2025 <em>Current Opinion in HIV and AIDS</em> review as a promising next step beyond AAV9 — may eventually solve the distribution problem that AAV9 cannot. LNPs can be engineered for tissue tropism, can be administered repeatedly without the immunogenicity ceiling that limits AAV re-dosing, and do not persist indefinitely in the way AAV episomes do. Whether they can achieve sufficient penetration into the gut-associated lymphoid tissue and CNS compartments where HIV reservoirs concentrate is an open question. It is the right question.</p>
+  <p>Fyodor Urnov of the Innovative Genomics Institute at UC Berkeley has described gene editing as "the first-ever technology we have had to address disease at the DNA level." That framing is accurate and also incomplete. Addressing disease at the DNA level is necessary but not sufficient when the disease has evolved specifically to exploit the gap between what you can edit and what you need to edit. HIV has had 40 years of evolutionary pressure against every cure strategy humans have deployed. CRISPR is the most precise instrument yet brought to that fight. Precision is not the same as reach.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>"Precision is not the same as reach. HIV has had 40 years of evolutionary pressure against every cure strategy humans have deployed. CRISPR is the most precise instrument yet brought to that fight — and the fight is not over."</p></aside>
+
+<section id="the-equity-problem" class="reveal">
+  <h2>Who Will It Work For</h2>
+  <p>There are approximately 38 million people living with HIV globally. The majority are in sub-Saharan Africa. The HIV subtypes circulating in sub-Saharan Africa are not the subtypes that EBT-101's guide RNAs were designed against. The manufacturing infrastructure required to produce allogeneic CRISPR CAR-T therapies at clinical scale does not exist in sub-Saharan Africa. The regulatory pathways, the cold-chain logistics, the clinical monitoring infrastructure — none of it exists at the scale required to deliver a one-time gene therapy to the populations carrying the highest HIV burden on earth.</p>
+  <p>This is not a future problem that better technology will eventually solve. It is baked into the current development model. CRISPR therapeutics are being developed by companies that answer to investors who require return on capital. The markets where that return is achievable are wealthy markets: the United States, Europe, Japan. The patients in those markets with HIV are, by and large, well-managed on antiretroviral therapy. They are not the patients for whom an HIV cure is most urgently needed. They are the patients for whom an HIV cure is most commercially viable.</p>
+  <p>The autoimmune applications — lupus, systemic sclerosis, inflammatory myositis — affect patient populations that are disproportionately located in wealthier countries with functioning healthcare systems and insurance structures capable of absorbing the cost of a gene therapy. The first approved CRISPR therapy, Casgevy for sickle cell disease, carries a list price of $2.2 million per patient. There is no structural reason to expect CRISPR autoimmune therapies to be priced differently. There is every structural reason to expect them to be priced similarly or higher.</p>
+  <p>The equity problem in CRISPR HIV therapy is not that the technology is being developed in the wrong places. It is that the incentive structure of pharmaceutical development systematically produces therapies for the patients most able to pay, not the patients most in need. That structure predates CRISPR and will outlast it. The question the field is not asking loudly enough — not in the trial registrations, not in the investor presentations, not in the conference abstracts — is the one that matters most: if CRISPR eventually works for HIV, who will it work for?</p>
+  <p>The answer, under the current model, is not the 25 million people in sub-Saharan Africa who need it most. That is not a prediction about the technology. It is a description of the world the technology is being built inside.</p>
+</section>
+
+<div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal">
+  <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+    <strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice. The clinical trials and research findings described are ongoing and preliminary; results in small patient cohorts may not reflect outcomes in broader populations. Readers should consult qualified medical professionals regarding any health decisions. Alumi News does not endorse any specific therapy, trial, or commercial entity mentioned in this article.
+  </p>
+</div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">CRISPR</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">HIV</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Autoimmune Disease</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Gene Therapy</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">CAR-T</span>
+  </Fragment>
+</ArticleLayout>
