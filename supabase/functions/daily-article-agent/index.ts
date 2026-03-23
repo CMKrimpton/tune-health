@@ -1373,6 +1373,7 @@ Make your final call. Publish, request revisions, or kill.`;
       tags: metadata.tags,
       gradient: metadata.gradient,
       keywords: metadata.keywords,
+      sortOrder: Date.now(),
     };
 
     if (heroImage) {

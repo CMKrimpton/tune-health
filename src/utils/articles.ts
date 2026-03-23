@@ -18,6 +18,7 @@ export interface Article {
   heroImageAlt?: string;
   comingSoon: boolean;
   href: string;
+  sortOrder?: number;
   series?: string;
   seriesOrder?: number;
 }
@@ -36,6 +37,7 @@ function mapArticle(article: CollectionEntry<'articles'>): Article {
     heroImage: article.data.heroImage,
     heroImageAlt: article.data.heroImageAlt,
     comingSoon: article.data.comingSoon ?? false,
+    sortOrder: article.data.sortOrder,
     href: `/articles/${article.id.replace('.json', '')}`,
     series: article.data.series,
     seriesOrder: article.data.seriesOrder,
@@ -51,7 +53,13 @@ export async function getArticles(): Promise<Article[]> {
   return articles
     .filter((article) => !article.data.draft && !article.data.comingSoon)
     .map(mapArticle)
-    .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
+    .sort((a, b) => {
+      // Sort by sortOrder first (epoch ms — precise), then publishDate (day-level fallback)
+      const aOrder = (a as Article & { sortOrder?: number }).sortOrder || 0;
+      const bOrder = (b as Article & { sortOrder?: number }).sortOrder || 0;
+      if (bOrder !== aOrder) return bOrder - aOrder;
+      return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
+    });
 }
 
 /**
