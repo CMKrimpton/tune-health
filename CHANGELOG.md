@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.14.0] - 2026-03-22
+
+### Fixed
+- **HighlightShare popup visibility** — increased background opacity from 0.92 to 0.95 and enhanced shadow contrast for better visibility against both light and dark article content
+- **MobileNav hardcoded colors** — replaced raw RGB values (`rgb(120 113 108)`, `rgb(220 38 38)`) with Tailwind `theme()` tokens (`stone.500`, `primary.600`, etc.) for proper design system integration
+- **Drop cap color hardcoded** — replaced `#dc2626` / `#f87171` hex values with `theme('colors.primary.600')` / `theme('colors.primary.400')` for design system consistency
+- **View Transitions ignore reduced-motion** — added `@media (prefers-reduced-motion: reduce)` to disable article page transition animations for users who prefer reduced motion
+
+### Changed
+- **Font loading optimized** — added `preload` hint for Inter (critical UI font) to reduce render-blocking time
+
 ## [5.13.0] - 2026-03-22
 
 ### Added

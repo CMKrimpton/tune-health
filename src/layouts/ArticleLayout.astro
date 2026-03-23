@@ -286,4 +286,14 @@ const articleSeries = currentArticle?.series;
     animation-duration: 0.4s;
     animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(article-title),
+    ::view-transition-new(article-title),
+    ::view-transition-old(article-image),
+    ::view-transition-new(article-image) {
+      animation: none;
+    }
+  }
 </style>

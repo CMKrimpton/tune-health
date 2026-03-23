@@ -299,7 +299,7 @@
   float: left;
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
   font-weight: bold;
-  color: #dc2626;
+  color: theme('colors.primary.600');
   font-size: 6.1rem;
   line-height: 1;
   margin-right: 0.5rem;
@@ -308,7 +308,7 @@
 }
 
 .dark .article-content > section:first-child > p:first-of-type::first-letter {
-  color: #f87171;
+  color: theme('colors.primary.400');
 }
 
 @layer utilities {

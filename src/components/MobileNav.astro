@@ -48,17 +48,17 @@
     left: 0;
     right: 0;
     z-index: 50;
-    background: rgb(255 255 255 / 0.95);
+    background: rgb(250 250 249 / 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid rgb(231 229 228);
+    border-top: 1px solid theme('colors.stone.200');
     padding-bottom: env(safe-area-inset-bottom, 0px);
     will-change: transform;
   }
 
   :global(.dark) .mobile-nav {
     background: rgb(28 25 23 / 0.95);
-    border-top-color: rgb(68 64 60);
+    border-top-color: theme('colors.stone.700');
   }
 
   /* Only show on touch devices */
@@ -87,7 +87,7 @@
     min-width: 56px;
     min-height: 48px;
     border-radius: 8px;
-    color: rgb(120 113 108);
+    color: theme('colors.stone.500');
     transition: color 0.15s;
     -webkit-tap-highlight-color: transparent;
     background: none;
@@ -98,15 +98,15 @@
   }
 
   :global(.dark) .mobile-nav-item {
-    color: rgb(168 162 158);
+    color: theme('colors.stone.400');
   }
 
   .mobile-nav-item.active {
-    color: rgb(220 38 38);
+    color: theme('colors.primary.600');
   }
 
   :global(.dark) .mobile-nav-item.active {
-    color: rgb(248 113 113);
+    color: theme('colors.primary.400');
   }
 
   .mobile-nav-icon {
