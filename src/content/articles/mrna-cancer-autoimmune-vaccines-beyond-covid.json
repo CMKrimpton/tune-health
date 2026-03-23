@@ -1,0 +1,39 @@
+{
+  "title": "The Same Technology That Fought COVID Is Now Being Reprogrammed to Fight Cancer — and Teach Your Immune System to Stop Attacking You",
+  "description": "mRNA technology didn't just survive the pandemic — it graduated. Personalized cancer vaccines are cutting melanoma recurrence risk by 49% and generating T cells that persist for nearly four years in one of medicine's deadliest cancers. Now the same platform is being run in reverse: engineering immune tolerance to treat MS, rheumatoid arthritis, and lupus without suppressing the entire immune system. The science is extraordinary. The political threats to it are real.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "mRNA Vaccines",
+    "Cancer Immunotherapy",
+    "Autoimmune Disease",
+    "Personalized Medicine",
+    "Science Policy"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "mRNA cancer vaccine",
+    "personalized neoantigen vaccine",
+    "autoimmune tolerizing vaccine",
+    "KEYNOTE-942",
+    "BioNTech pancreatic cancer",
+    "mRNA-4157",
+    "immune checkpoint therapy",
+    "BARDA funding cuts",
+    "mRNA platform",
+    "regulatory T cells"
+  ],
+  "sortOrder": 1774272921161,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/mrna-cancer-autoimmune-vaccines-beyond-covid.png",
+  "heroImageAlt": "Editorial illustration for The Same Technology That Fought COVID Is Now Being Reprogrammed to Fight Cancer — and Teach Your Immune System to Stop Attacking You"
+}
