@@ -14,6 +14,8 @@ interface ArticleData {
   tags?: string[];
   readTime?: number;
   wordCount?: number;
+  heroImage?: string;
+  heroImageAlt?: string;
 }
 
 interface Props {
@@ -23,7 +25,7 @@ interface Props {
 
 const { type, article } = Astro.props;
 
-const siteUrl = 'https://alumi-news.vercel.app';
+const siteUrl = Astro.site?.origin || 'https://tune-health.vercel.app';
 const siteName = 'alumi news';
 const logo = `${siteUrl}/assets/logo.png`;
 
@@ -119,6 +121,13 @@ if (type === 'article' && article) {
     },
     articleSection: article.category,
     keywords: article.tags?.join(', '),
+    ...(article.heroImage && {
+      image: {
+        '@type': 'ImageObject',
+        url: article.heroImage,
+        ...(article.heroImageAlt && { description: article.heroImageAlt }),
+      },
+    }),
     ...(article.wordCount && { wordCount: article.wordCount }),
     ...(article.readTime && {
       timeRequired: `PT${article.readTime}M`,

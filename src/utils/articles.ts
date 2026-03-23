@@ -2,7 +2,7 @@
  * Article utilities for content collection integration
  */
 
-import { getCollection } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 
 export interface Article {
   slug: string;
@@ -22,8 +22,7 @@ export interface Article {
   seriesOrder?: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Astro content collection entries have dynamic shape
-function mapArticle(article: { id: string; data: any }): Article {
+function mapArticle(article: CollectionEntry<'articles'>): Article {
   return {
     slug: article.id.replace('.json', ''),
     title: article.data.title,

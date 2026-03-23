@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.12.0] - 2026-03-22
+
+### Fixed
+- **SEO structured data domain mismatch** — `SEO.astro` was generating all JSON-LD schemas (Organization, WebSite, BreadcrumbList, Article) pointing to `alumi-news.vercel.app` instead of `tune-health.vercel.app`. Now uses `Astro.site` for correct domain resolution
+- **Duplicate Footer and CommandPaletteWrapper** on reading list page — `reading-list.astro` rendered Footer and CommandPaletteWrapper twice, producing double footers
+- **Article schema missing `image` field** — Google rich results require an `image` property on Article schema. Added `ImageObject` with `heroImage` URL and alt text to structured data
+- **Type safety gap in article utilities** — `mapArticle()` used `data: any` instead of `CollectionEntry<'articles'>`, losing all type checking on the most-used function in the codebase
+- **Missing robots meta tag** — Added explicit `<meta name="robots" content="index, follow">` to `BaseLayout.astro` as defensive SEO measure
+
 ## [5.11.0] - 2026-03-22
 
 ### Added
