@@ -7,7 +7,7 @@
     "name": "alumi news Editorial",
     "role": "Medical Review Board"
   },
-  "readTime": 13,
+  "readTime": 15,
   "featured": false,
   "draft": false,
   "tags": [
@@ -28,7 +28,7 @@
     "Breast cancer cells",
     "Even brief exposure"
   ],
-  "sortOrder": 1774262428454,
+  "sortOrder": 1774262436898,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/fusobacterium-nucleatum-oral-bacteria-breast-cancer.png",
   "heroImageAlt": "Editorial illustration for The Bacterium in Your Gums Has Been Found in Breast Tumors. Now We Know What It Does There."
 }
