@@ -1,6 +1,6 @@
 {
-  "title": "The Window Is Twelve Years Wide. After That, the Damage Is Done.",
-  "description": "A landmark 2026 study tracked 218 children from birth to age 12 and identified the specific developmental window during which PFAS exposure most devastates bone density — with effect sizes rivaling diet, exercise, and genetics. With 158 million Americans drinking PFAS-contaminated water, this isn't a niche environmental story. It's a population-scale skeletal health crisis that won't show up as fractures for another thirty years.",
+  "title": "The Window to Build Strong Bones Opens Once. PFAS May Be Closing It.",
+  "description": "Between birth and age 20, you accumulate essentially all the bone mass you will ever have. A convergence of longitudinal studies now shows that PFAS — the synthetic chemicals in drinking water, food packaging, and cookware — measurably suppress that process during the exact developmental window it matters most. With the EPA signaling it may roll back its own drinking water limits, the question is no longer whether forever chemicals harm children's bones. It's whether anyone in power cares.",
   "category": "Environmental Health",
   "publishDate": "2026-03-23",
   "author": {
@@ -13,9 +13,9 @@
   "tags": [
     "A March 2026",
     "The bone density",
-    "Lead researcher Dr.",
-    "The PFAS–bone density",
-    "Exposures during later"
+    "The effect is",
+    "Timing of exposure",
+    "A 2023 USC"
   ],
   "gradient": {
     "to": "red-700",
@@ -24,11 +24,11 @@
   "keywords": [
     "A March 2026",
     "The bone density",
-    "Lead researcher Dr.",
-    "The PFAS–bone density",
-    "Exposures during later"
+    "The effect is",
+    "Timing of exposure",
+    "A 2023 USC"
   ],
-  "sortOrder": 1774260819241,
+  "sortOrder": 1774262834145,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pfas-forever-chemicals-adolescent-bone-density.png",
-  "heroImageAlt": "Editorial illustration for The Window Is Twelve Years Wide. After That, the Damage Is Done."
+  "heroImageAlt": "Editorial illustration for The Window to Build Strong Bones Opens Once. PFAS May Be Closing It."
 }
