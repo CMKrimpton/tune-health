@@ -29,6 +29,14 @@ function supabase() {
 }
 
 // ---------------------------------------------------------------------------
+// Pipeline constants
+// ---------------------------------------------------------------------------
+const MAX_CONCURRENT = 3;
+const STALE_MS = 8 * 60 * 1000;
+const ACTIVE = ["started","searching","writing","publishing","editor_reviewing","editor_qc","independence_review","researching","topic_selected"];
+const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","saved"];
+
+// ---------------------------------------------------------------------------
 // Claude API with native web search
 // ---------------------------------------------------------------------------
 interface ClaudeOptions {
@@ -48,7 +56,7 @@ async function claude(opts: ClaudeOptions): Promise<string> {
   const {
     system,
     user,
-    model = "claude-sonnet-4-20250514",
+    model = "claude-sonnet-4-6",
     maxTokens = 4096,
     temperature = 0.35,
     webSearch = false,
@@ -118,6 +126,40 @@ function parseClaudeJSON(text: string): unknown {
     if (match) return JSON.parse(match[0]);
     throw new Error("Failed to parse Claude response as JSON");
   }
+}
+
+// ---------------------------------------------------------------------------
+// Grok API (xAI) — independence review
+// ---------------------------------------------------------------------------
+async function grok(opts: { system: string; user: string; maxTokens?: number; temperature?: number }): Promise<string> {
+  const key = (Deno.env.get("XAI_API_KEY") || "").trim();
+  if (!key) throw new Error("XAI_API_KEY not set");
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+    body: JSON.stringify({
+      model: "grok-3",
+      messages: [{ role: "system", content: opts.system }, { role: "user", content: opts.user }],
+      max_tokens: opts.maxTokens || 2000,
+      temperature: opts.temperature || 0.4,
+    }),
+  });
+  if (!res.ok) throw new Error("Grok " + res.status);
+  const d = await res.json();
+  return d.choices?.[0]?.message?.content || "";
+}
+
+// ---------------------------------------------------------------------------
+// Self-chaining — fire-and-forget next stage invocation
+// ---------------------------------------------------------------------------
+function chainNextStage(logId: string) {
+  const u = Deno.env.get("SUPABASE_URL"), k = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!u || !k) return;
+  fetch(u + "/functions/v1/daily-article-agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + k },
+    body: JSON.stringify({ action: "chain", logId }),
+  }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
@@ -345,14 +387,14 @@ async function rotateFeatured(db: ReturnType<typeof supabase>): Promise<string |
 // ---------------------------------------------------------------------------
 const RESEARCH_PROMPT = `You are an editorial research agent for alumi news, a premium health editorial website whose slogan is "Evidence. Wherever it leads."
 
-Your job: use web search to discover what health topic is MOST searched, discussed, and trending in the last 3 days — then research it thoroughly.
+Your job: use web search to discover 3-5 trending health topics from the last 3 days, then research each one enough to give the Senior Editor real options.
 
 ## Process
-1. Search for trending health news, viral health stories, and the most-discussed health research from the last 72 hours
-2. Evaluate candidates by: scientific substance, trending momentum, counter-narrative potential, surprise factor
-3. Pick the SINGLE most compelling topic
-4. Deep-research that topic: find the key studies, statistics, expert positions, mechanisms, counter-arguments
-5. Return structured research findings
+1. Search broadly for trending health news, viral health stories, and the most-discussed health research from the last 72 hours
+2. Identify 3-5 distinct candidate topics with genuine scientific substance
+3. For EACH candidate: find at least 2 studies/sources, the core mechanism, key statistics, and counter-arguments
+4. Rank them by: scientific substance, trending momentum, counter-narrative potential, surprise factor
+5. Return ALL candidates ranked — the Senior Editor will make the final pick
 
 ## Selection Criteria (ranked)
 1. **Genuine scientific substance** — real studies, real data, not celebrity gossip or supplement hype
@@ -364,9 +406,38 @@ Your job: use web search to discover what health topic is MOST searched, discuss
 ## Output Format
 Return ONLY valid JSON (no code fences, no explanation):
 {
-  "topic": "The specific topic/angle",
+  "candidates": [
+    {
+      "rank": 1,
+      "topic": "The specific topic/angle",
+      "headline_draft": "A working headline (magazine-quality, not clickbait)",
+      "why": "1-2 sentences on why this topic is compelling",
+      "category": "One of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
+      "keyFindings": ["Finding 1...", "Finding 2..."],
+      "studies": [{ "title": "...", "journal": "...", "year": "...", "finding": "..." }],
+      "counterArguments": ["Skeptic point 1", "Skeptic point 2"],
+      "mechanism": "Brief explanation of the biological/physiological mechanism",
+      "statistics": ["Key statistic 1", "Key statistic 2"]
+    }
+  ],
+  "searchSummary": "Brief description of what you searched and the overall landscape"
+}`;
+
+// ---------------------------------------------------------------------------
+// Directed Research — single topic from queue
+// ---------------------------------------------------------------------------
+const DIRECTED_RESEARCH_PROMPT = `You are an editorial research agent for alumi news ("Evidence. Wherever it leads.").
+
+You have been assigned a SPECIFIC topic by the editorial team. Your job: deep-research it using web search and return structured findings.
+
+Find the key studies, statistics, expert positions, biological mechanisms, and counter-arguments. Be thorough — the writer needs real evidence to work with.
+
+## Output Format
+Return ONLY valid JSON (no code fences, no explanation):
+{
+  "topic": "The specific topic as researched",
   "headline_draft": "A working headline (magazine-quality, not clickbait)",
-  "why": "1-2 sentences on why this topic wins over alternatives",
+  "why": "1-2 sentences on why this topic is worth covering",
   "category": "One of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
   "keyFindings": ["Finding 1...", "Finding 2..."],
   "studies": [{ "title": "...", "journal": "...", "year": "...", "finding": "..." }],
@@ -384,19 +455,22 @@ const SENIOR_EDITOR_BRIEF_PROMPT = `You are the Senior Editor of alumi news — 
 Your voice: Think Ben Goldacre editing The New Yorker's science desk. Ruthless about evidence, allergic to clickbait, but deeply compelling.
 
 ## Your Job Right Now
-You're reviewing a research brief from your research team. You need to:
+Your research team has delivered multiple candidate topics. You need to:
 
-1. **Evaluate the topic** — Is this genuinely worth covering? Is the science real? Is it trending enough? Rate it 1-10.
-2. **Check collection balance** — Look at the existing article lineup. Is this category overrepresented? Is there a gap we should be filling instead?
-3. **Craft the angle** — What's the REAL story here? Not the obvious headline. The second-order insight. The thing that makes a reader stop and think.
-4. **Set the headline** — Write the FINAL headline. Magazine-quality. Specific. Magnetic. Not clickbait.
-5. **Write the creative brief** — Give the writer clear direction: tone, angle, what to emphasize, what to avoid, how to open, what the reader should feel.
-6. **Make the call** — approve, revise angle, or kill the story.
+1. **Score ALL candidates** — Rate each 1-10 on substance, timeliness, and counter-narrative potential.
+2. **Pick the winner** — Choose the single best topic considering collection balance, scientific depth, and reader value.
+3. **Check collection balance** — Is this category overrepresented? Is there a gap we should fill instead? This can override raw score.
+4. **Craft the angle** — What's the REAL story here? Not the obvious headline. The second-order insight.
+5. **Set the headline** — Write the FINAL headline. Magazine-quality. Specific. Magnetic. Not clickbait.
+6. **Write the creative brief** — Give the writer clear direction: tone, angle, what to emphasize, what to avoid, how to open, what the reader should feel.
+7. **Make the call** — approve or kill the entire batch (kill only if NONE of the candidates are worth covering).
 
 ## Output Format
 Return ONLY valid JSON:
 {
   "decision": "approve" | "kill",
+  "candidateScores": [{ "rank": 1, "topic": "...", "score": 8, "note": "why this score" }],
+  "chosenCandidate": 1,
   "topicScore": 8,
   "headline": "The final, polished headline",
   "slug": "url-friendly-slug",
@@ -415,17 +489,19 @@ Return ONLY valid JSON:
 
 const SENIOR_EDITOR_QC_PROMPT = `You are the Senior Editor of alumi news doing a FINAL quality check before publication. This is the last gate. Once you approve, this goes live to readers.
 
+IMPORTANT: This article has already passed editorial review and significant resources (research, writing, illustration) have been invested. Your job is to POLISH, not gatekeep. Prefer "publish" or "revise" over "kill". Only kill if the article has a fundamental factual error, ethical problem, or is genuinely unpublishable. A mediocre article that can be improved with revisions should get "revise", not "kill".
+
 Your standards:
 - Voice: Evidence over allegiance. Aggressively neutral. Smart friend who reads the studies.
 - Style: 60% exceptional journalism, 20% Bill Maher, 15% Christopher Hitchens, 15% Sam Harris.
 - Every claim must have a specific citation. No hand-waving.
-- NO filler phrases: "it's important to note," "interestingly," "it's worth mentioning" — kill on sight.
+- NO filler phrases: "it's important to note," "interestingly," "it's worth mentioning" — flag for revision.
 - Headline must be magnetic, specific, and honest.
 - Description must SELL the article without clickbait.
 - Minimum 2,500 words of substance, not padding.
 
 ## Your Job
-Review the article and return your editorial judgment.
+Review the article. Improve the headline and description if you can. Publish if ready, revise if fixable, kill ONLY as a last resort.
 
 ## Output Format
 Return ONLY valid JSON:
@@ -441,6 +517,27 @@ Return ONLY valid JSON:
   },
   "killReason": null,
   "reviseInstructions": null
+}`;
+
+// ---------------------------------------------------------------------------
+// Independence Review (Grok) — checks for institutional deference
+// ---------------------------------------------------------------------------
+const INDEPENDENCE_REVIEW_PROMPT = `You are an independent editorial reviewer. Your ONLY job: check this health article for signs of institutional capture, pharma framing, or pulled punches. You are NOT the editor — you are an outside skeptic.
+
+Flag ANY of these:
+1. **Pharma framing** — does the article uncritically frame drug/treatment as the solution? Does it bury side effects or cost?
+2. **Institutional deference** — does it treat CDC/FDA/WHO statements as gospel without noting their track record or conflicts of interest?
+3. **Pulled punches** — does it hedge on conclusions the evidence supports? Does it add unnecessary "more research needed" caveats when the data is clear?
+4. **Missing counter-narrative** — is there a credible contrarian view or inconvenient data point being ignored?
+5. **Industry-friendly language** — "safe and effective" without nuance, "FDA-approved" as if that ends discussion, "experts say" without naming who pays those experts.
+
+Be specific. Quote the problematic passages. If the article is genuinely balanced, say so.
+
+Return ONLY valid JSON:
+{
+  "verdict": "clean" | "minor_issues" | "major_issues",
+  "flags": [{ "type": "pharma_framing|institutional_deference|pulled_punch|missing_counter|industry_language", "quote": "the problematic text", "suggestion": "how to fix it" }],
+  "summary": "1-2 sentence overall assessment"
 }`;
 
 // ---------------------------------------------------------------------------
@@ -559,6 +656,7 @@ async function getExistingArticles(
 async function stageResearch(
   db: ReturnType<typeof supabase>,
   logId: string,
+  queuedTopic?: string,
 ): Promise<void> {
   const today = todayISO();
   const { titles } = await getExistingArticles(db);
@@ -568,35 +666,73 @@ async function stageResearch(
     .update({ status: "searching", created_at: new Date().toISOString() })
     .eq("id", logId);
 
-  const researchRaw = await claude({
-    system: RESEARCH_PROMPT,
-    user: `Today's date: ${today}
+  let research: Record<string, unknown>;
+
+  if (queuedTopic) {
+    // Directed research for a queued topic
+    const researchRaw = await claude({
+      system: DIRECTED_RESEARCH_PROMPT,
+      user: `Today's date: ${today}
+
+## ASSIGNED TOPIC
+${queuedTopic}
+
+## Existing Articles (DO NOT duplicate):
+${titles.map((t) => `- ${t}`).join("\n")}
+
+Deep-research this topic thoroughly. Find the key studies, statistics, expert positions, mechanisms, and counter-arguments. Return structured JSON.`,
+      model: "claude-sonnet-4-6",
+      maxTokens: 4000,
+      webSearch: true,
+      maxSearches: 10,
+    });
+
+    research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
+    research._fromQueue = true;
+  } else {
+    // Multi-candidate trending research
+    const researchRaw = await claude({
+      system: RESEARCH_PROMPT,
+      user: `Today's date: ${today}
 
 ## Your Task
-Search the web for the most trending, most-searched, most-discussed health topic from the last 3 days. Then thoroughly research the winner.
+Search the web for 3-5 trending, most-searched, most-discussed health topics from the last 3 days. Research each one enough to give the editor real options.
 
 ## Existing Articles (DO NOT duplicate these topics):
 ${titles.map((t) => `- ${t}`).join("\n")}
 
-Search broadly first (trending health news, viral health stories, health research breakthroughs this week), then deep-dive the most promising topic. Return structured JSON with your findings.`,
-    model: "claude-sonnet-4-20250514",
-    maxTokens: 4000,
-    webSearch: true,
-    maxSearches: 10,
-  });
+Search broadly first (trending health news, viral health stories, health research breakthroughs this week), then research each promising candidate. Return ALL candidates ranked in structured JSON.`,
+      model: "claude-sonnet-4-6",
+      maxTokens: 6000,
+      webSearch: true,
+      maxSearches: 10,
+    });
 
-  const research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
+    research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
+  }
+
+  // Build topic summary for log
+  const candidates = research.candidates as Array<Record<string, unknown>> | undefined;
+  const topicSummary = candidates
+    ? candidates.map((c, i) => `${i + 1}. ${c.topic}`).join(" | ")
+    : (research.topic as string);
 
   await db
     .from("daily_article_log")
     .update({
-      topic: research.topic as string,
+      topic: topicSummary,
       status: "research_done",
-      search_queries: ((research.keyFindings as string[]) || []).slice(0, 10),
-      research_snippets: (research.studies as unknown[]) || [],
+      search_queries: candidates
+        ? candidates.map((c) => c.headline_draft as string).slice(0, 10)
+        : ((research.keyFindings as string[]) || []).slice(0, 10),
+      research_snippets: candidates
+        ? candidates.flatMap((c) => (c.studies as unknown[]) || []).slice(0, 10)
+        : (research.studies as unknown[]) || [],
       research_data: research,
     })
     .eq("id", logId);
+
+  chainNextStage(logId);
 }
 
 // ---------------------------------------------------------------------------
@@ -614,9 +750,33 @@ async function stageEditorBrief(
 
   const { titles, categoryCounts } = await getExistingArticles(db);
 
-  const editorPrompt = `Review this research brief and create an editorial brief for the writer.
+  // Build editor prompt — multi-candidate or single-topic format
+  const candidates = researchData.candidates as Array<Record<string, unknown>> | undefined;
+  let researchSection: string;
 
-## RESEARCH BRIEF
+  if (candidates && candidates.length > 0) {
+    // Multi-candidate format
+    researchSection = candidates.map((c, i) => {
+      const studies = (c.studies as Array<{ title: string; journal: string; year: string; finding: string }>) || [];
+      return `### CANDIDATE ${i + 1} (Research rank: ${c.rank || i + 1})
+Topic: ${c.topic}
+Working headline: ${c.headline_draft}
+Category: ${c.category}
+Why: ${c.why}
+
+Key findings:
+${((c.keyFindings as string[]) || []).map((f: string, j: number) => `${j + 1}. ${f}`).join("\n")}
+
+Studies:
+${studies.map((s) => `- "${s.title}" (${s.journal}, ${s.year}): ${s.finding}`).join("\n")}
+
+Mechanism: ${c.mechanism || "Not provided"}
+Counter-arguments: ${((c.counterArguments as string[]) || []).map((a: string) => a).join("; ")}
+Key statistics: ${((c.statistics as string[]) || []).join("; ")}`;
+    }).join("\n\n");
+  } else {
+    // Single-topic format (from queue or legacy)
+    researchSection = `### RESEARCH BRIEF
 Topic: ${researchData.topic}
 Working headline: ${researchData.headline_draft}
 Category: ${researchData.category}
@@ -629,12 +789,15 @@ Studies:
 ${((researchData.studies as Array<{ title: string; journal: string; year: string; finding: string }>) || []).map((s) => `- "${s.title}" (${s.journal}, ${s.year}): ${s.finding}`).join("\n")}
 
 Mechanism: ${researchData.mechanism || "Not provided"}
+Counter-arguments: ${((researchData.counterArguments as string[]) || []).map((c: string) => `- ${c}`).join("\n")}
+Expert positions: ${((researchData.expertQuotes as string[]) || []).join("\n")}`;
+  }
 
-Counter-arguments:
-${((researchData.counterArguments as string[]) || []).map((c: string) => `- ${c}`).join("\n")}
+  const editorPrompt = `Review ${candidates ? `these ${candidates.length} research candidates` : "this research brief"} and create an editorial brief for the writer.
 
-Expert positions:
-${((researchData.expertQuotes as string[]) || []).join("\n")}
+## RESEARCH
+${researchSection}
+${researchData.searchSummary ? `\nSearch summary: ${researchData.searchSummary}` : ""}
 
 ## CURRENT COLLECTION BALANCE
 Category distribution (${titles.length} total articles):
@@ -644,13 +807,13 @@ ${Object.entries(categoryCounts).sort(([, a], [, b]) => (b as number) - (a as nu
 ${titles.slice(0, 30).map((t) => `- ${t}`).join("\n")}
 ${titles.length > 30 ? `... and ${titles.length - 30} more` : ""}
 
-Make your editorial call. Approve with a killer brief, or kill it with a reason.`;
+${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
   const editorRaw = await claude({
     system: SENIOR_EDITOR_BRIEF_PROMPT,
     user: editorPrompt,
-    model: "claude-sonnet-4-20250514",
-    maxTokens: 2000,
+    model: "claude-sonnet-4-6",
+    maxTokens: 2500,
     temperature: 0.4,
   });
 
@@ -668,20 +831,31 @@ Make your editorial call. Approve with a killer brief, or kill it with a reason.
     return;
   }
 
+  // Extract the chosen candidate's research data for the writer
+  let chosenResearch = researchData;
+  if (candidates && editorBrief.chosenCandidate != null) {
+    const idx = (editorBrief.chosenCandidate as number) - 1;
+    const chosen = candidates[idx] || candidates[0];
+    // Merge chosen candidate fields into top-level for downstream stages
+    chosenResearch = { ...researchData, ...chosen, _allCandidates: candidates };
+  }
+
   // Editor approved — store the brief alongside research data
   await db
     .from("daily_article_log")
     .update({
-      topic: (editorBrief.headline as string) || (researchData.topic as string),
+      topic: (editorBrief.headline as string) || (chosenResearch.topic as string),
       title: editorBrief.headline as string,
       slug: editorBrief.slug as string,
       status: "editor_approved",
       research_data: {
-        ...researchData,
+        ...chosenResearch,
         _editorBrief: editorBrief,
       },
     })
     .eq("id", logId);
+
+  chainNextStage(logId);
 }
 
 // ---------------------------------------------------------------------------
@@ -816,10 +990,75 @@ IMPORTANT: Use the headline, slug, and description from the editorial brief exac
       },
     })
     .eq("id", logId);
+
+  chainNextStage(logId);
 }
 
 // ---------------------------------------------------------------------------
-// STAGE 4: Senior Editor QC + Publish (~60s)
+// STAGE 4a: Independence Review (Grok) — non-fatal (~30s)
+// ---------------------------------------------------------------------------
+async function stageIndependenceReview(
+  db: ReturnType<typeof supabase>,
+  logId: string,
+  articleData: Record<string, unknown>,
+): Promise<void> {
+  await db
+    .from("daily_article_log")
+    .update({ status: "independence_review", created_at: new Date().toISOString() })
+    .eq("id", logId);
+
+  const metadata = articleData.metadata as Record<string, unknown>;
+  const htmlSnippet = ((articleData.html as string) || "").slice(0, 4000);
+
+  let reviewResult: Record<string, unknown> | null = null;
+  let skipReason: string | null = null;
+
+  try {
+    const reviewRaw = await grok({
+      system: INDEPENDENCE_REVIEW_PROMPT,
+      user: `## ARTICLE FOR REVIEW
+Title: ${metadata.title}
+Category: ${metadata.category}
+
+## ARTICLE TEXT (first 4000 chars):
+${htmlSnippet}
+
+Review this article for pharma framing, institutional deference, pulled punches, and missing counter-narratives.`,
+      maxTokens: 1500,
+      temperature: 0.3,
+    });
+
+    reviewResult = parseClaudeJSON(reviewRaw) as Record<string, unknown>;
+  } catch (err: unknown) {
+    // Non-fatal — if Grok fails, we skip and continue
+    skipReason = err instanceof Error ? err.message : "Grok unavailable";
+  }
+
+  // Store review in research_data alongside existing data
+  const { data: logEntry } = await db
+    .from("daily_article_log")
+    .select("research_data")
+    .eq("id", logId)
+    .single();
+
+  const existingResearch = (logEntry?.research_data as Record<string, unknown>) || {};
+
+  await db
+    .from("daily_article_log")
+    .update({
+      status: "independence_done",
+      research_data: {
+        ...existingResearch,
+        _independenceReview: reviewResult || { skipped: true, reason: skipReason },
+      },
+    })
+    .eq("id", logId);
+
+  chainNextStage(logId);
+}
+
+// ---------------------------------------------------------------------------
+// STAGE 4b: Senior Editor QC + Publish (~60s)
 // ---------------------------------------------------------------------------
 async function stageQCAndPublish(
   db: ReturnType<typeof supabase>,
@@ -827,6 +1066,7 @@ async function stageQCAndPublish(
   slug: string,
   articleData: Record<string, unknown>,
   action: string,
+  independenceReview?: Record<string, unknown> | null,
 ): Promise<{ commitSha?: string; commitUrl?: string; newFeatured?: string | null; qcResult?: Record<string, unknown> }> {
   const today = todayISO();
 
@@ -836,6 +1076,23 @@ async function stageQCAndPublish(
     .eq("id", logId);
 
   const metadata = articleData.metadata as Record<string, unknown>;
+
+  // Build independence review section for QC prompt
+  let independenceSection = "";
+  if (independenceReview && !independenceReview.skipped) {
+    const flags = (independenceReview.flags as Array<Record<string, string>>) || [];
+    if (flags.length > 0) {
+      independenceSection = `\n## INDEPENDENCE REVIEW (external reviewer)
+Verdict: ${independenceReview.verdict}
+Summary: ${independenceReview.summary}
+Flags:
+${flags.map((f) => `- [${f.type}] "${f.quote}" — Suggestion: ${f.suggestion}`).join("\n")}
+
+Consider these flags in your review. Address any legitimate concerns.\n`;
+    } else {
+      independenceSection = `\n## INDEPENDENCE REVIEW: Clean — no flags raised.\n`;
+    }
+  }
 
   // Senior Editor QC pass
   const qcPrompt = `Review this article before publication.
@@ -851,13 +1108,13 @@ ${((articleData.html as string) || "").slice(0, 3000)}
 
 ## TABLE OF CONTENTS
 ${((articleData.toc as Array<{ title: string }>) || []).map((t) => `- ${t.title}`).join("\n")}
-
+${independenceSection}
 Make your final call. Publish, request revisions, or kill.`;
 
   const qcRaw = await claude({
     system: SENIOR_EDITOR_QC_PROMPT,
     user: qcPrompt,
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     maxTokens: 1500,
     temperature: 0.3,
   });
@@ -1005,14 +1262,15 @@ Make your final call. Publish, request revisions, or kill.`;
 }
 
 // ===========================================================================
-// MAIN HANDLER — 4-stage pipeline with Senior Editor
+// MAIN HANDLER — 5-stage pipeline with Senior Editor + Independence Review
 // ===========================================================================
-// Each invocation processes ONE stage of ONE article.
+// Each invocation processes ONE stage. Up to MAX_CONCURRENT articles in parallel.
 // Priority: finish existing articles before starting new ones.
-//   1. "written"          → Senior Editor QC + publish
-//   2. "editor_approved"  → write the article
-//   3. "research_done"    → Senior Editor brief
-//   4. Nothing pending    → new research
+//   1. "independence_done" → Senior Editor QC + publish
+//   2. "written"           → Independence review (Grok)
+//   3. "editor_approved"   → write the article
+//   4. "research_done"     → Senior Editor brief
+//   5. Nothing pending     → check topic queue, then trending research
 // ===========================================================================
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -1022,7 +1280,7 @@ Deno.serve(async (req: Request) => {
   const db = supabase();
 
   try {
-    let body: { action?: string; model?: string; logId?: string } = {};
+    let body: { action?: string; model?: string; logId?: string; topic?: string; category?: string; priority?: number; queueId?: string; status?: string } = {};
     try {
       body = await req.json();
     } catch {
@@ -1036,13 +1294,68 @@ Deno.serve(async (req: Request) => {
         .from("daily_article_log")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(20);
 
       const { count: articleCount } = await db
         .from("articles")
         .select("*", { count: "exact", head: true });
 
-      return json({ logs: data || [], articleCount });
+      const { data: queue } = await db
+        .from("topic_queue")
+        .select("*")
+        .in("status", ["pending", "in_progress"])
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: true });
+
+      return json({ logs: data || [], articleCount, queue: queue || [] });
+    }
+
+    // ------ TOPIC QUEUE ACTIONS ------
+    if (action === "queue-topic") {
+      const { topic, category, priority } = body;
+      if (!topic) return json({ error: "topic is required" }, 400);
+      const { data: queueEntry, error: qErr } = await db
+        .from("topic_queue")
+        .insert({ topic, category: category || null, priority: priority || 50, expedite: body.expedite || false, notes: body.notes || null })
+        .select("id")
+        .single();
+      if (qErr) return json({ error: "Failed to queue topic", detail: qErr.message }, 500);
+      return json({ success: true, queueId: queueEntry.id, message: `Topic queued: "${topic}"` });
+    }
+
+    if (action === "list-queue") {
+      const { data: queue } = await db
+        .from("topic_queue")
+        .select("*")
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: true });
+      return json({ queue: queue || [] });
+    }
+
+    if (action === "update-queue") {
+      const { queueId } = body;
+      if (!queueId) return json({ error: "queueId is required" }, 400);
+      const updates: Record<string, unknown> = {};
+      if (body.topic) updates.topic = body.topic;
+      if (body.category) updates.category = body.category;
+      if (body.priority != null) updates.priority = body.priority;
+      if (body.status) updates.status = body.status;
+      const { error: uErr } = await db.from("topic_queue").update(updates).eq("id", queueId);
+      if (uErr) return json({ error: "Failed to update queue", detail: uErr.message }, 500);
+      return json({ success: true, queueId });
+    }
+
+    if (action === "delete-queue") {
+      const { queueId } = body;
+      if (!queueId) return json({ error: "queueId is required" }, 400);
+      await db.from("topic_queue").delete().eq("id", queueId);
+      return json({ success: true, queueId });
+    }
+
+    // ------ CHAIN — self-invocation to process next stage immediately ------
+    if (action === "chain") {
+      // Fall through to normal pipeline processing below
+      // The logId hint is just informational — we still pick by priority
     }
 
     // ------ RETRY — resume a failed run from its last good checkpoint ------
@@ -1063,13 +1376,16 @@ Deno.serve(async (req: Request) => {
       const research = (logEntry.research_data as Record<string, unknown>) || {};
       let resumeStatus: string;
 
-      if (research._article) {
-        // Article was written — resume at QC + Publish
+      if (research._independenceReview && research._article) {
+        // Independence review done — resume at QC + Publish
+        resumeStatus = "independence_done";
+      } else if (research._article) {
+        // Article was written — resume at Independence Review
         resumeStatus = "written";
       } else if (research._editorBrief) {
         // Editor brief exists — resume at Write
         resumeStatus = "editor_approved";
-      } else if (research.topic || research.keyFindings) {
+      } else if (research.topic || research.keyFindings || research.candidates) {
         // Research data exists — resume at Editor Brief
         resumeStatus = "research_done";
       } else {
@@ -1091,21 +1407,17 @@ Deno.serve(async (req: Request) => {
         logId,
         previousStatus: logEntry.status,
         resumeStatus,
-        message: `Reset to "${resumeStatus}" — next cron invocation will resume from this checkpoint.`,
+        message: `Reset to "${resumeStatus}" — next invocation will resume from this checkpoint.`,
       });
     }
 
-    // ------ Cleanup stale runs (>8 min) — self-healing for timeouts ------
-    const eightMinutesAgo = new Date(Date.now() - 8 * 60 * 1000).toISOString();
+    // ------ Cleanup stale runs — self-healing for timeouts ------
+    const staleThreshold = new Date(Date.now() - STALE_MS).toISOString();
     const { data: staleRuns } = await db
       .from("daily_article_log")
       .select("id, research_data")
-      .in("status", [
-        "started", "searching", "writing", "publishing", "editor_reviewing", "editor_qc",
-        // Legacy
-        "researching", "topic_selected", "saved",
-      ])
-      .lt("created_at", eightMinutesAgo);
+      .in("status", ACTIVE)
+      .lt("created_at", staleThreshold);
 
     if (staleRuns && staleRuns.length > 0) {
       for (const stale of staleRuns) {
@@ -1114,11 +1426,13 @@ Deno.serve(async (req: Request) => {
 
         // Self-healing: determine the best resumption checkpoint from saved data
         let resumeStatus: string | null = null;
-        if (research._article) {
+        if (research._independenceReview && research._article) {
+          resumeStatus = "independence_done";
+        } else if (research._article) {
           resumeStatus = "written";
         } else if (research._editorBrief) {
           resumeStatus = "editor_approved";
-        } else if (research.topic || research.keyFindings) {
+        } else if (research.topic || research.keyFindings || research.candidates) {
           resumeStatus = "research_done";
         }
 
@@ -1147,31 +1461,71 @@ Deno.serve(async (req: Request) => {
       .from("articles")
       .select("*", { count: "exact", head: true });
 
-    // ------ Guard: block if a stage is already in progress ------
+    // ------ Guard: block if MAX_CONCURRENT active stages running ------
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     const { data: activeRuns } = await db
       .from("daily_article_log")
       .select("id, status")
-      .in("status", [
-        "started", "searching", "writing", "publishing", "editor_reviewing", "editor_qc",
-        // Legacy
-        "researching", "topic_selected",
-      ])
-      .gte("created_at", twoMinutesAgo)
-      .limit(1);
+      .in("status", ACTIVE)
+      .gte("created_at", twoMinutesAgo);
 
-    if (activeRuns && activeRuns.length > 0) {
+    if (activeRuns && activeRuns.length >= MAX_CONCURRENT) {
       return json({
         skipped: true,
-        message: `A stage is currently running (status: ${(activeRuns[0] as { status: string }).status}). Skipping.`,
+        message: `${activeRuns.length} stages currently running (max ${MAX_CONCURRENT}). Skipping.`,
+        active: activeRuns.map((r: Record<string, unknown>) => r.status),
       });
     }
 
     const articleModel =
-      model === "opus" ? "claude-opus-4-6" : "claude-sonnet-4-6";
+      model === "sonnet" ? "claude-sonnet-4-6" : "claude-opus-4-6";
 
     // ================================================================
-    // PRIORITY 1: Finish — QC + publish any "written" entries
+    // PRIORITY 1: Finish — QC + publish any "independence_done" entries
+    // ================================================================
+    const { data: independenceDoneEntries } = await db
+      .from("daily_article_log")
+      .select("id, slug, research_data")
+      .eq("status", "independence_done")
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    if (independenceDoneEntries && independenceDoneEntries.length > 0) {
+      const entry = independenceDoneEntries[0] as { id: string; slug: string; research_data: Record<string, unknown> };
+      const articleData = (entry.research_data as Record<string, unknown>)?._article as Record<string, unknown>;
+      const independenceReview = (entry.research_data as Record<string, unknown>)?._independenceReview as Record<string, unknown> | null;
+
+      if (!articleData) {
+        await db
+          .from("daily_article_log")
+          .update({ status: "failed", error: "Missing article data for QC stage" })
+          .eq("id", entry.id);
+        return json({ error: "Missing article data" }, 500);
+      }
+
+      const result = await stageQCAndPublish(db, entry.id, entry.slug, articleData, action, independenceReview);
+
+      // Update topic_queue if this came from queue
+      const queueFlag = (entry.research_data as Record<string, unknown>)?._fromQueue;
+      if (queueFlag && result.commitSha) {
+        await db.from("topic_queue").update({ status: "completed" }).eq("status", "in_progress");
+      }
+
+      return json({
+        success: true,
+        stage: "editor_qc_publish",
+        slug: entry.slug,
+        qcDecision: (result.qcResult as Record<string, unknown>)?.decision,
+        qcScore: (result.qcResult as Record<string, unknown>)?.qualityScore,
+        independenceVerdict: independenceReview?.verdict || "skipped",
+        commit: result.commitSha ? { sha: result.commitSha, url: result.commitUrl } : null,
+        newFeatured: result.newFeatured,
+        articleCount: (articleCount || 0) + 1,
+      });
+    }
+
+    // ================================================================
+    // PRIORITY 2: Independence review for "written" entries
     // ================================================================
     const { data: writtenEntries } = await db
       .from("daily_article_log")
@@ -1187,27 +1541,23 @@ Deno.serve(async (req: Request) => {
       if (!articleData) {
         await db
           .from("daily_article_log")
-          .update({ status: "failed", error: "Missing article data for QC stage" })
+          .update({ status: "failed", error: "Missing article data for independence review" })
           .eq("id", entry.id);
         return json({ error: "Missing article data" }, 500);
       }
 
-      const result = await stageQCAndPublish(db, entry.id, entry.slug, articleData, action);
+      await stageIndependenceReview(db, entry.id, articleData);
 
       return json({
         success: true,
-        stage: "editor_qc_publish",
-        slug: entry.slug,
-        qcDecision: (result.qcResult as Record<string, unknown>)?.decision,
-        qcScore: (result.qcResult as Record<string, unknown>)?.qualityScore,
-        commit: result.commitSha ? { sha: result.commitSha, url: result.commitUrl } : null,
-        newFeatured: result.newFeatured,
-        articleCount: (articleCount || 0) + 1,
+        stage: "independence_review",
+        logId: entry.id,
+        message: "Independence review complete. Next: Senior Editor QC + publish.",
       });
     }
 
     // ================================================================
-    // PRIORITY 2: Advance — write any "editor_approved" entries
+    // PRIORITY 3: Advance — write any "editor_approved" entries
     // ================================================================
     const { data: approvedEntries } = await db
       .from("daily_article_log")
@@ -1225,12 +1575,12 @@ Deno.serve(async (req: Request) => {
         success: true,
         stage: "write",
         logId: entry.id,
-        message: "Article written. Next: Senior Editor QC + publish.",
+        message: "Article written. Next: independence review, then Senior Editor QC + publish.",
       });
     }
 
     // ================================================================
-    // PRIORITY 3: Review — editorial brief for any "research_done" entries
+    // PRIORITY 4: Review — editorial brief for any "research_done" entries
     // ================================================================
     const { data: researchedEntries } = await db
       .from("daily_article_log")
@@ -1253,21 +1603,36 @@ Deno.serve(async (req: Request) => {
     }
 
     // ================================================================
-    // PRIORITY 4: Start — research a fresh topic
+    // PRIORITY 5: Start — check topic queue, then trending research
     // ================================================================
-    // Only block if there's an article actively in the pipeline (any non-terminal status).
-    // Once all articles are published or failed, a new one starts immediately.
+    // Allow parallel: only block if we'd exceed MAX_CONCURRENT total pipeline items
     const { data: activePipeline } = await db
       .from("daily_article_log")
       .select("id, status")
-      .in("status", ["started", "searching", "research_done", "editor_reviewing", "editor_approved", "writing", "written", "editor_qc", "publishing"])
-      .limit(1);
+      .in("status", IN_PIPELINE);
 
-    if (activePipeline && activePipeline.length > 0) {
+    if (activePipeline && activePipeline.length >= MAX_CONCURRENT) {
       return json({
         skipped: true,
-        message: `Article already in pipeline (status: ${(activePipeline[0] as { status: string }).status}). Will start new research once it completes.`,
+        message: `${activePipeline.length} articles in pipeline (max ${MAX_CONCURRENT}). Will start new research once one completes.`,
+        pipeline: activePipeline.map((r: Record<string, unknown>) => r.status),
       });
+    }
+
+    // Check topic queue first
+    const { data: queuedTopics } = await db
+      .from("topic_queue")
+      .select("id, topic, category")
+      .eq("status", "pending")
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    const queuedTopic = queuedTopics?.[0] as { id: string; topic: string; category: string } | undefined;
+
+    // Mark queue item as in progress
+    if (queuedTopic) {
+      await db.from("topic_queue").update({ status: "in_progress" }).eq("id", queuedTopic.id);
     }
 
     // Create log entry and start research
@@ -1280,13 +1645,17 @@ Deno.serve(async (req: Request) => {
 
     if (!logEntry) throw new Error("Failed to create log entry");
 
-    await stageResearch(db, logEntry.id);
+    await stageResearch(db, logEntry.id, queuedTopic?.topic);
 
     return json({
       success: true,
       stage: "research",
       logId: logEntry.id,
-      message: "Research complete. Next: Senior Editor will review and create brief.",
+      fromQueue: !!queuedTopic,
+      queuedTopic: queuedTopic?.topic || null,
+      message: queuedTopic
+        ? `Directed research complete for queued topic: "${queuedTopic.topic}". Next: Senior Editor brief.`
+        : "Multi-candidate research complete. Next: Senior Editor will pick the best topic and create brief.",
     });
   } catch (err: unknown) {
     return json({
