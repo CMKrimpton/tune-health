@@ -1,0 +1,34 @@
+{
+  "title": "Bladder Cancer Killed People the Same Way for Forty Years. Five Trials Just Broke That.",
+  "description": "In a single twelve-month window, bladder cancer accumulated more FDA approvals and Phase 3 trial wins than it had in the previous four decades combined — including a drug-releasing implant with an 82% response rate and a combination therapy that cut death risk in half. The press releases are celebrating. The data has caveats they won't mention. Here's what actually changed, and what still might not hold.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Bladder Cancer",
+    "Oncology",
+    "Immunotherapy",
+    "Antibody-Drug Conjugates",
+    "Liquid Biopsy"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "bladder cancer treatment 2025",
+    "enfortumab vedotin pembrolizumab",
+    "TAR-200 Inlexzo",
+    "ctDNA liquid biopsy",
+    "BCG unresponsive NMIBC"
+  ],
+  "sortOrder": 1774277340541,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/bladder-cancer-treatment-revolution-2025.png",
+  "heroImageAlt": "Editorial illustration for Bladder Cancer Killed People the Same Way for Forty Years. Five Trials Just Broke That."
+}
