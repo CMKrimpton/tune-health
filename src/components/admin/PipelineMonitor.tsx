@@ -2,6 +2,36 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
+interface ResearchData {
+  topic?: string;
+  headline_draft?: string;
+  category?: string;
+  why?: string;
+  keyFindings?: string[];
+  studies?: Array<{ title: string; journal: string; year: string; finding: string }>;
+  _editorBrief?: {
+    decision: string;
+    topicScore: number;
+    headline: string;
+    slug: string;
+    description: string;
+    angle: string;
+    killReason: string | null;
+    brief?: {
+      tone: string;
+      openWith: string;
+      emphasize: string[];
+      avoid: string[];
+      closingDirection: string;
+    };
+  };
+  _article?: {
+    metadata: Record<string, unknown>;
+    html: string;
+    readTime: number;
+  };
+}
+
 interface PipelineLog {
   id: string;
   run_date: string;
@@ -11,13 +41,10 @@ interface PipelineLog {
   status: string;
   error: string | null;
   search_queries: string[] | null;
-  research_snippets: string[] | null;
+  research_snippets: Array<Record<string, string>> | null;
+  research_data: ResearchData | null;
   created_at: string;
-  updated_at: string;
-  qc_score?: number | null;
-  commit_url?: string | null;
-  editor_decision?: string | null;
-  editor_score?: number | null;
+  completed_at: string | null;
 }
 
 type PipelineStage = 'research' | 'editor_brief' | 'write' | 'qc_publish';
@@ -41,43 +68,23 @@ const ARTICLE_GOAL = 100;
 const POLL_INTERVAL = 15_000;
 
 const STAGES: StageConfig[] = [
-  {
-    key: 'research',
-    icon: '\uD83D\uDD0D',
-    label: 'Research',
-    statuses: ['started', 'searching', 'research_done'],
-  },
-  {
-    key: 'editor_brief',
-    icon: '\uD83D\uDCCB',
-    label: 'Editor Brief',
-    statuses: ['editor_reviewing', 'editor_approved'],
-  },
-  {
-    key: 'write',
-    icon: '\u270D\uFE0F',
-    label: 'Write',
-    statuses: ['writing', 'written'],
-  },
-  {
-    key: 'qc_publish',
-    icon: '\u2705',
-    label: 'QC + Publish',
-    statuses: ['editor_qc', 'publishing', 'published'],
-  },
+  { key: 'research', icon: '🔍', label: 'Research', statuses: ['started', 'searching', 'research_done'] },
+  { key: 'editor_brief', icon: '📋', label: 'Editor Brief', statuses: ['editor_reviewing', 'editor_approved'] },
+  { key: 'write', icon: '✍️', label: 'Write', statuses: ['writing', 'written'] },
+  { key: 'qc_publish', icon: '✅', label: 'QC + Publish', statuses: ['editor_qc', 'publishing', 'published'] },
 ];
 
 const STATUS_TEXT: Record<string, string> = {
   started: 'Initializing...',
   searching: 'Searching for trending topics...',
-  research_done: 'Research complete \u2014 awaiting editor',
+  research_done: 'Research complete — awaiting editor',
   editor_reviewing: 'Senior Editor reviewing...',
-  editor_approved: 'Editor approved \u2014 awaiting writer',
+  editor_approved: 'Editor approved — awaiting writer',
   writing: 'Writing article...',
-  written: 'Article written \u2014 awaiting QC',
+  written: 'Article written — awaiting QC',
   editor_qc: 'Senior Editor quality check...',
   publishing: 'Generating illustration & publishing...',
-  published: 'Published \u2713',
+  published: 'Published ✓',
   failed: 'Failed',
 };
 
@@ -88,49 +95,33 @@ const ACTIVE_STATUSES = new Set([
 // ─── Helpers ────────────────────────────────────────────────────────
 
 function getOverallStatus(logs: PipelineLog[]): 'running' | 'waiting' | 'failed' | 'idle' {
-  const active = logs.filter((l) => l.status !== 'published' && l.status !== 'failed');
-  if (active.some((l) => ACTIVE_STATUSES.has(l.status))) return 'running';
+  const nonTerminal = logs.filter(l => l.status !== 'published' && l.status !== 'failed');
+  if (nonTerminal.some(l => ACTIVE_STATUSES.has(l.status))) return 'running';
+  if (nonTerminal.length > 0) return 'waiting';
   const recent = logs[0];
-  if (recent?.status === 'failed') return 'failed';
-  if (active.length > 0) return 'waiting';
+  if (recent?.status === 'failed' && !isEditorKill(recent)) return 'failed';
   return 'idle';
 }
 
-function statusColor(status: 'running' | 'waiting' | 'failed' | 'idle'): string {
-  switch (status) {
-    case 'running': return '#16a34a';
-    case 'waiting': return '#f59e0b';
-    case 'failed': return '#dc2626';
-    case 'idle': return '#78716c';
-  }
+function isEditorKill(log: PipelineLog): boolean {
+  return log.status === 'failed' && (log.error || '').includes('Senior Editor killed');
 }
 
-function statusLabel(status: 'running' | 'waiting' | 'failed' | 'idle'): string {
-  switch (status) {
-    case 'running': return 'Running';
-    case 'waiting': return 'Waiting';
-    case 'failed': return 'Failed';
-    case 'idle': return 'Idle';
-  }
-}
-
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diff = Math.max(0, now - then);
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `${days}d`;
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const ms = Date.now() - new Date(dateStr).getTime();
+  if (isNaN(ms) || ms < 0) return 'just now';
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 function truncate(text: string, max: number): string {
-  if (text.length <= max) return text;
-  return text.slice(0, max - 1) + '\u2026';
+  return text.length <= max ? text : text.slice(0, max - 1) + '…';
 }
 
 function getStageForLog(log: PipelineLog): PipelineStage | null {
@@ -138,6 +129,14 @@ function getStageForLog(log: PipelineLog): PipelineStage | null {
     if (stage.statuses.includes(log.status)) return stage.key;
   }
   return null;
+}
+
+function getEditorScore(log: PipelineLog): number | null {
+  return log.research_data?._editorBrief?.topicScore ?? null;
+}
+
+function getEditorAngle(log: PipelineLog): string | null {
+  return log.research_data?._editorBrief?.angle ?? null;
 }
 
 function getAdminToken(): string {
@@ -156,8 +155,6 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [lastPoll, setLastPoll] = useState<Date>(new Date());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ─── Fetch status ────────────────────────────────────────────────
-
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch(`${apiBase}/daily-article-agent`, {
@@ -170,383 +167,308 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       if (data.logs) setLogs(data.logs);
       if (typeof data.articleCount === 'number') setArticleCount(data.articleCount);
       setLastPoll(new Date());
-    } catch {
-      // Silently fail — will retry on next poll
-    }
+    } catch { /* retry on next poll */ }
   }, [apiBase]);
-
-  // ─── Polling ─────────────────────────────────────────────────────
 
   useEffect(() => {
     intervalRef.current = setInterval(fetchStatus, POLL_INTERVAL);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchStatus]);
 
-  // ─── Live timer tick (forces re-render every 10s for timeAgo) ───
-
+  // Force re-render every 10s for live time updates
   const [, setTick] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 10_000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setTick(n => n + 1), 10_000);
+    return () => clearInterval(t);
   }, []);
-
-  // ─── Trigger run ─────────────────────────────────────────────────
 
   const triggerRun = async () => {
     setTriggering(true);
     try {
       await fetch(`${apiBase}/daily-article-agent`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAdminToken()}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'run' }),
       });
       setTimeout(fetchStatus, 2000);
-    } catch {
-      // Error handled by next poll
-    } finally {
-      setTriggering(false);
-    }
+    } catch { /* next poll */ }
+    finally { setTriggering(false); }
   };
-
-  // ─── Retry ───────────────────────────────────────────────────────
 
   const retryArticle = async (logId: string) => {
     setRetryingId(logId);
     try {
       await fetch(`${apiBase}/daily-article-agent`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAdminToken()}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'retry', logId }),
       });
       setTimeout(fetchStatus, 2000);
-    } catch {
-      // Error handled by next poll
-    } finally {
-      setRetryingId(null);
-    }
+    } catch { /* next poll */ }
+    finally { setRetryingId(null); }
   };
 
-  // ─── Derived data ────────────────────────────────────────────────
+  // ─── Derived ────────────────────────────────────────────────────
 
   const overallStatus = getOverallStatus(logs);
 
   const stageLogsMap: Record<PipelineStage, PipelineLog[]> = {
-    research: [],
-    editor_brief: [],
-    write: [],
-    qc_publish: [],
+    research: [], editor_brief: [], write: [], qc_publish: [],
   };
-
   const completedLogs: PipelineLog[] = [];
+  const editorKills: PipelineLog[] = [];
   const failedLogs: PipelineLog[] = [];
 
   for (const log of logs) {
     if (log.status === 'published') {
       completedLogs.push(log);
     } else if (log.status === 'failed') {
-      failedLogs.push(log);
+      if (isEditorKill(log)) {
+        editorKills.push(log);
+      } else {
+        failedLogs.push(log);
+      }
     } else {
       const stage = getStageForLog(log);
       if (stage) stageLogsMap[stage].push(log);
     }
   }
 
-  const completedDisplay = completedLogs.slice(0, 5);
   const progressPct = Math.min(100, Math.round((articleCount / ARTICLE_GOAL) * 100));
+  const statusColors: Record<string, string> = {
+    running: '#16a34a', waiting: '#f59e0b', failed: '#dc2626', idle: '#78716c',
+  };
 
-  // ─── Render ──────────────────────────────────────────────────────
+  // ─── Render ─────────────────────────────────────────────────────
 
   return (
-    <div className="pipeline-monitor">
+    <div style={{ padding: '0.5rem 0' }}>
       {/* ── Top Status Bar ── */}
       <div className="pipeline-status-bar">
-        <div className="pipeline-status-left">
-          <span
-            className="pipeline-status-dot"
-            style={{ backgroundColor: statusColor(overallStatus) }}
-          />
-          <span className="pipeline-status-label">{statusLabel(overallStatus)}</span>
-          <span className="pipeline-poll-time">
-            Polled {timeAgo(lastPoll.toISOString())} ago
+        <div className="pipeline-status-indicator">
+          <span className={`pipeline-status-dot ${overallStatus}`} />
+          <span style={{ color: statusColors[overallStatus], fontWeight: 600 }}>
+            {overallStatus.charAt(0).toUpperCase() + overallStatus.slice(1)}
+          </span>
+          <span style={{ color: '#57534e', fontSize: '0.75rem', marginLeft: '0.5rem' }}>
+            Polled {timeAgo(lastPoll.toISOString())}
           </span>
         </div>
 
-        <div className="pipeline-status-center">
-          <span className="pipeline-count">
-            {articleCount} / {ARTICLE_GOAL}
-          </span>
-          <div className="pipeline-progress">
-            <div
-              className="pipeline-progress-fill"
-              style={{ width: `${progressPct}%` }}
-            />
+        <div className="pipeline-progress-wrap">
+          <span className="pipeline-progress-count">{articleCount} / {ARTICLE_GOAL}</span>
+          <div className="pipeline-progress-bar">
+            <div className="pipeline-progress-fill" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
-        <div className="pipeline-status-right">
-          <span className="pipeline-auto-label">Auto: every 24h</span>
+        <div className="pipeline-quick-actions">
+          <span className="pipeline-auto-label">Auto: every 5 min</span>
           <button
-            className="pipeline-trigger-btn"
+            className="pipeline-trigger-btn primary"
             onClick={triggerRun}
             disabled={triggering || overallStatus === 'running'}
-            aria-label="Trigger pipeline run"
           >
-            {triggering ? (
-              <>
-                <span className="admin-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
-                Triggering...
-              </>
-            ) : (
-              'Trigger Run'
-            )}
+            {triggering ? 'Triggering…' : 'Trigger Run'}
           </button>
         </div>
       </div>
 
-      {/* ── Pipeline Stages ── */}
+      {/* ── 4-Stage Pipeline ── */}
       <div className="pipeline-container">
-        {STAGES.map((stage, i) => {
-          const stageLogs = stageLogsMap[stage.key];
+        {STAGES.map((stage) => {
+          const items = stageLogsMap[stage.key];
           return (
-            <div key={stage.key} className="pipeline-stage-wrapper">
-              <div className="pipeline-stage">
-                <div className="pipeline-stage-header">
-                  <span className="pipeline-stage-icon">{stage.icon}</span>
-                  <span className="pipeline-stage-label">{stage.label}</span>
-                  {stageLogs.length > 0 && (
-                    <span className="pipeline-stage-count">{stageLogs.length}</span>
-                  )}
-                </div>
-                <div className="pipeline-stage-body">
-                  {stageLogs.length === 0 ? (
-                    <div className="pipeline-empty">No items</div>
-                  ) : (
-                    stageLogs.map((log) => (
-                      <PipelineCard
-                        key={log.id}
-                        log={log}
-                        expanded={expandedId === log.id}
-                        onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)}
-                      />
-                    ))
-                  )}
-                </div>
+            <div key={stage.key} className="pipeline-stage">
+              <div className="pipeline-stage-header">
+                <span className="pipeline-stage-icon">{stage.icon}</span>
+                {stage.label}
+                <span className={`pipeline-stage-count${items.length > 0 ? ' has-items' : ''}`}>
+                  {items.length}
+                </span>
               </div>
-              {i < STAGES.length - 1 && (
-                <div className="pipeline-connector" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 12h14m-4-4l4 4-4 4" stroke="#44403c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              )}
+              <div className="pipeline-stage-body">
+                {items.length === 0 ? (
+                  <div className="pipeline-stage-empty">Waiting for articles</div>
+                ) : (
+                  items.map(log => (
+                    <PipelineCard
+                      key={log.id}
+                      log={log}
+                      expanded={expandedId === log.id}
+                      onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)}
+                    />
+                  ))
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* ── Completed Section ── */}
-      {completedDisplay.length > 0 && (
-        <div className="pipeline-completed">
+      {/* ── Recently Published ── */}
+      {completedLogs.length > 0 && (
+        <section>
           <h3 className="pipeline-section-title">
-            Recently Published
-            <span className="pipeline-section-count">{completedLogs.length}</span>
+            Recently Published — {completedLogs.length}
           </h3>
           <div className="pipeline-completed-list">
-            {completedDisplay.map((log) => (
-              <div key={log.id} className="pipeline-completed-item">
-                <div className="pipeline-completed-info">
-                  <span className="pipeline-completed-title">
+            {completedLogs.slice(0, 5).map(log => (
+              <div key={log.id} className="pipeline-card completed" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div className="pipeline-card-title" style={{ marginBottom: '0.25rem' }}>
                     {log.title || log.topic || 'Untitled'}
-                  </span>
-                  <span className="pipeline-completed-meta">
-                    {log.slug && <code className="pipeline-slug">/{log.slug}</code>}
-                    {log.qc_score != null && (
-                      <span className="pipeline-qc-badge">
-                        QC: {log.qc_score}
-                      </span>
-                    )}
-                    <span className="pipeline-completed-time">
-                      {timeAgo(log.updated_at)} ago
-                    </span>
-                  </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6875rem', color: '#78716c' }}>
+                    {log.slug && <code style={{ color: '#57534e' }}>/{log.slug}</code>}
+                    <span>{timeAgo(log.completed_at || log.created_at)}</span>
+                  </div>
                 </div>
-                {log.commit_url && (
+                {log.slug && (
                   <a
-                    href={log.commit_url}
+                    href={`/articles/${log.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="pipeline-commit-link"
-                    aria-label={`View commit for ${log.title || 'article'}`}
+                    className="pipeline-retry-btn"
+                    style={{ textDecoration: 'none' }}
                   >
-                    Commit
+                    View →
                   </a>
                 )}
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Failed Section ── */}
-      {failedLogs.length > 0 && (
-        <div className="pipeline-failed">
+      {/* ── Editor Decisions (kills) ── */}
+      {editorKills.length > 0 && (
+        <section>
           <h3 className="pipeline-section-title">
-            Failed
-            <span className="pipeline-section-count pipeline-section-count-error">
-              {failedLogs.length}
-            </span>
+            Editor Decisions — {editorKills.length} killed
+          </h3>
+          <div className="pipeline-completed-list">
+            {editorKills.map(log => {
+              const reason = (log.error || '').replace('Senior Editor killed: ', '');
+              return (
+                <div key={log.id} className="pipeline-card" style={{ borderLeftColor: '#f59e0b', borderLeftWidth: '3px' }}>
+                  <div className="pipeline-card-title" style={{ color: '#a8a29e' }}>
+                    {log.title || log.topic || 'Untitled'}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.375rem', fontStyle: 'italic' }}>
+                    Killed: {truncate(reason, 200)}
+                  </div>
+                  <div className="pipeline-card-time" style={{ marginTop: '0.25rem' }}>
+                    {timeAgo(log.completed_at || log.created_at)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── Actual Failures ── */}
+      {failedLogs.length > 0 && (
+        <section>
+          <h3 className="pipeline-section-title" style={{ color: '#dc2626' }}>
+            Errors — {failedLogs.length}
           </h3>
           <div className="pipeline-failed-list">
-            {failedLogs.map((log) => (
-              <div key={log.id} className="pipeline-failed-item">
-                <div className="pipeline-failed-info">
-                  <span className="pipeline-failed-title">
-                    {log.topic || log.title || 'Unknown topic'}
-                  </span>
-                  <span className="pipeline-failed-error">
-                    {log.error || 'Unknown error'}
-                  </span>
-                  <span className="pipeline-failed-time">
-                    {timeAgo(log.updated_at)} ago
-                  </span>
+            {failedLogs.map(log => (
+              <div key={log.id} className="pipeline-card failed">
+                <div className="pipeline-card-title">
+                  {log.title || log.topic || 'Unknown topic'}
                 </div>
-                <button
-                  className="pipeline-retry-btn"
-                  onClick={() => retryArticle(log.id)}
-                  disabled={retryingId === log.id}
-                  aria-label={`Retry ${log.topic || 'failed article'}`}
-                >
-                  {retryingId === log.id ? (
-                    <span className="admin-spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
-                  ) : (
-                    'Retry'
-                  )}
-                </button>
+                <div className="pipeline-card-error">
+                  {log.error || 'Unknown error'}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                  <span className="pipeline-card-time">
+                    {timeAgo(log.completed_at || log.created_at)}
+                  </span>
+                  <button
+                    className="pipeline-retry-btn"
+                    onClick={() => retryArticle(log.id)}
+                    disabled={retryingId === log.id}
+                  >
+                    {retryingId === log.id ? 'Retrying…' : 'Retry'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
 }
 
-// ─── Pipeline Card Sub-Component ────────────────────────────────────
+// ─── Pipeline Card ──────────────────────────────────────────────────
 
-interface PipelineCardProps {
-  log: PipelineLog;
-  expanded: boolean;
-  onToggle: () => void;
-}
-
-function PipelineCard({ log, expanded, onToggle }: PipelineCardProps) {
+function PipelineCard({ log, expanded, onToggle }: { log: PipelineLog; expanded: boolean; onToggle: () => void }) {
   const isActive = ACTIVE_STATUSES.has(log.status);
-  const displayTitle = log.title || log.topic || 'Pending topic...';
-  const statusText = log.status === 'failed'
-    ? (log.error || STATUS_TEXT.failed)
-    : (STATUS_TEXT[log.status] || log.status);
+  const displayTitle = log.title || log.topic || 'Pending topic…';
+  const statusText = STATUS_TEXT[log.status] || log.status;
+  const score = getEditorScore(log);
+  const angle = getEditorAngle(log);
 
   return (
     <div
-      className={`pipeline-card${isActive ? ' active' : ''}${log.status === 'failed' ? ' failed' : ''}`}
+      className={`pipeline-card${isActive ? ' active' : ''}`}
+      onClick={onToggle}
       role="button"
       tabIndex={0}
-      onClick={onToggle}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
-      aria-expanded={expanded}
-      aria-label={`${displayTitle} — ${statusText}`}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
     >
-      <div className="pipeline-card-header">
-        <span className="pipeline-card-title">{truncate(displayTitle, 48)}</span>
-        <span className="pipeline-card-time">{timeAgo(log.created_at)}</span>
-      </div>
+      <div className="pipeline-card-title">{truncate(displayTitle, 60)}</div>
+      <div className="pipeline-card-status">{statusText}</div>
+      <div className="pipeline-card-time">{timeAgo(log.created_at)}</div>
 
-      <div className="pipeline-card-status">
-        {isActive && <span className="pipeline-card-pulse" />}
-        <span className="pipeline-card-status-text">{statusText}</span>
-      </div>
-
-      {log.editor_score != null && (
-        <div className="pipeline-card-score">
-          <span className="pipeline-score-badge" style={{
-            backgroundColor: log.editor_score >= 7 ? '#052e16' : log.editor_score >= 4 ? '#422006' : '#450a0a',
-            color: log.editor_score >= 7 ? '#4ade80' : log.editor_score >= 4 ? '#fbbf24' : '#f87171',
-          }}>
-            Score: {log.editor_score}/10
+      {score !== null && (
+        <div className="pipeline-card-meta">
+          <span className={`pipeline-card-score ${score >= 7 ? 'high' : score >= 4 ? 'mid' : 'low'}`}>
+            Score: {score}/10
           </span>
-          {log.editor_decision && (
-            <span className="pipeline-decision-badge">
-              {log.editor_decision}
-            </span>
-          )}
         </div>
       )}
 
       {expanded && (
-        <div className="pipeline-card-details">
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #44403c', fontSize: '0.75rem' }}>
+          {angle && (
+            <div style={{ marginBottom: '0.5rem' }}>
+              <span style={{ color: '#78716c', fontWeight: 600 }}>Angle: </span>
+              <span style={{ color: '#a8a29e', fontStyle: 'italic' }}>{angle}</span>
+            </div>
+          )}
           {log.slug && (
-            <div className="pipeline-detail-row">
-              <span className="pipeline-detail-label">Slug</span>
-              <code className="pipeline-detail-value">{log.slug}</code>
+            <div style={{ marginBottom: '0.25rem' }}>
+              <span style={{ color: '#78716c' }}>Slug: </span>
+              <code style={{ color: '#57534e' }}>{log.slug}</code>
             </div>
           )}
-          <div className="pipeline-detail-row">
-            <span className="pipeline-detail-label">Status</span>
-            <span className="pipeline-detail-value">{log.status}</span>
+          <div style={{ marginBottom: '0.25rem' }}>
+            <span style={{ color: '#78716c' }}>Status: </span>
+            <span style={{ color: '#a8a29e' }}>{log.status}</span>
           </div>
-          <div className="pipeline-detail-row">
-            <span className="pipeline-detail-label">Run Date</span>
-            <span className="pipeline-detail-value">{log.run_date}</span>
+          <div>
+            <span style={{ color: '#78716c' }}>Started: </span>
+            <span style={{ color: '#a8a29e' }}>{new Date(log.created_at).toLocaleTimeString()}</span>
           </div>
-          <div className="pipeline-detail-row">
-            <span className="pipeline-detail-label">Created</span>
-            <span className="pipeline-detail-value">
-              {new Date(log.created_at).toLocaleString()}
-            </span>
-          </div>
-          <div className="pipeline-detail-row">
-            <span className="pipeline-detail-label">Updated</span>
-            <span className="pipeline-detail-value">
-              {new Date(log.updated_at).toLocaleString()}
-            </span>
-          </div>
+          {log.research_data?.category && (
+            <div style={{ marginTop: '0.25rem' }}>
+              <span style={{ color: '#78716c' }}>Category: </span>
+              <span style={{ color: '#a8a29e' }}>{log.research_data.category}</span>
+            </div>
+          )}
           {log.search_queries && log.search_queries.length > 0 && (
-            <div className="pipeline-detail-row pipeline-detail-row-col">
-              <span className="pipeline-detail-label">Search Queries</span>
-              <ul className="pipeline-detail-list">
-                {log.search_queries.map((q, i) => (
-                  <li key={i}>{q}</li>
+            <div style={{ marginTop: '0.5rem' }}>
+              <span style={{ color: '#78716c', fontWeight: 600 }}>Key Findings:</span>
+              <ul style={{ margin: '0.25rem 0 0 1rem', color: '#78716c' }}>
+                {log.search_queries.slice(0, 3).map((q, i) => (
+                  <li key={i} style={{ marginBottom: '0.125rem' }}>{truncate(String(q).replace(/<[^>]+>/g, ''), 100)}</li>
                 ))}
               </ul>
-            </div>
-          )}
-          {log.research_snippets && log.research_snippets.length > 0 && (
-            <div className="pipeline-detail-row pipeline-detail-row-col">
-              <span className="pipeline-detail-label">Research Snippets</span>
-              <ul className="pipeline-detail-list">
-                {log.research_snippets.slice(0, 3).map((s, i) => (
-                  <li key={i}>{truncate(s, 120)}</li>
-                ))}
-                {log.research_snippets.length > 3 && (
-                  <li className="pipeline-detail-more">
-                    +{log.research_snippets.length - 3} more
-                  </li>
-                )}
-              </ul>
-            </div>
-          )}
-          {log.error && (
-            <div className="pipeline-detail-row pipeline-detail-row-col">
-              <span className="pipeline-detail-label">Error</span>
-              <span className="pipeline-detail-error">{log.error}</span>
             </div>
           )}
         </div>
