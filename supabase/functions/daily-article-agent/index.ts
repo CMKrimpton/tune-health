@@ -1474,7 +1474,8 @@ Make your final call. Publish, request revisions, or kill.`;
     commitInfo = await publishToGitHub(slug, astroContent, jsonMetadata);
 
     // If this article replaces an older one, archive the old one
-    const replacesSlug = (researchData._editorBrief as Record<string, unknown>)?.replacesSlug as string | null;
+    const { data: logForReplace } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
+    const replacesSlug = ((logForReplace?.research_data as Record<string, unknown>)?._editorBrief as Record<string, unknown>)?.replacesSlug as string | null;
     if (replacesSlug) {
       await db.from("articles").update({ status: "archived", draft: true }).eq("slug", replacesSlug);
       console.log(`[Publish] Archived old article "${replacesSlug}" — replaced by "${slug}"`);
