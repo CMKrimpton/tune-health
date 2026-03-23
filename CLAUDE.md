@@ -58,7 +58,10 @@ src/
 │   ├── SEO.astro             # JSON-LD structured data
 │   ├── ArticleCTA.astro      # Category-contextual app CTA (article end)
 │   ├── AppPromo.astro        # Homepage alumi Health section (4-feature grid)
-│   ├── ShareButtons.astro    # Social share buttons (Twitter, LinkedIn, copy link)
+│   ├── ShareButtons.astro    # 8-platform share (X, LinkedIn, Facebook, Reddit, Bluesky, WhatsApp, Email, copy) + Web Share API
+│   ├── FloatingShareBar.astro # Sticky vertical share sidebar on article pages (desktop xl+)
+│   ├── ArticleReactions.astro # Emoji reactions (Insightful, Mind-blown, Rigorous, Practical) with localStorage
+│   ├── HighlightShare.astro  # Select text to share quote popup (X, Bluesky, copy)
 │   ├── SeriesNav.astro       # Series prev/next navigation with progress dots
 │   ├── BookmarkButton.astro  # localStorage reading list / bookmark toggle
 │   └── admin/
@@ -69,6 +72,7 @@ src/
 │   ├── about.astro           # About / mission / editorial standards
 │   ├── 404.astro             # Custom 404 page
 │   ├── rss.xml.ts            # RSS feed (via @astrojs/rss)
+│   ├── reading-list.astro    # Bookmarked articles page (reads localStorage)
 │   ├── subscribe.astro       # Newsletter subscription page
 │   ├── admin/
 │   │   ├── login.astro       # Admin token login (SSR)
@@ -281,9 +285,14 @@ The magazine funnels readers to the **alumi Health** app (`https://tune-sigma.ve
 - Progress dots showing position in series, "Part X of Y" counter
 - Deep Dives page (`/deep-dives`) dynamically renders published series from content collection
 
-#### Social Share & Bookmarks
-- `ShareButtons.astro`: Twitter, LinkedIn, copy link on every article
-- `BookmarkButton.astro`: localStorage-based reading list toggle
+#### Social Sharing & Interaction
+- `ShareButtons.astro`: 8-platform sharing (X, LinkedIn, Facebook, Reddit, Bluesky, WhatsApp, Email, copy link) with `variant` prop (`"inline"` | `"vertical"`) and native Web Share API on mobile. Uses `Astro.site` for correct URL resolution. Each platform icon has brand-color hover state
+- `FloatingShareBar.astro`: sticky vertical share bar fixed to left edge of article pages on xl+ screens. Glass morphism styling, appears when `#article-content` is in view, hides at footer
+- `ArticleReactions.astro`: emoji reaction bar (Insightful, Mind-blown, Rigorous, Practical) with localStorage persistence per slug. Users can toggle multiple reactions. Pop animation on click + count bump
+- `HighlightShare.astro`: when users select 10–400 chars of article text, a dark tooltip popup appears near the selection with options to share the quote on X, Bluesky, or copy with `"quote" — alumi news` attribution. Only triggers within `#article-content`
+- `BookmarkButton.astro`: localStorage-based reading list toggle per article
+- `/reading-list` page: shows all bookmarked articles from localStorage with article cards, per-item remove, and "Clear all". Linked from SideNav and Footer
+- **Social follow links** in Footer: RSS, X/Twitter, Bluesky buttons with hover-lift effect
 
 #### SEO & Structured Data
 - JSON-LD schema generation (Article, WebSite, Organization, BreadcrumbList)
@@ -291,6 +300,7 @@ The magazine funnels readers to the **alumi Health** app (`https://tune-sigma.ve
 - Open Graph and Twitter Card meta tags
 - Canonical URLs
 - RSS feed at `/rss.xml` via `@astrojs/rss`
+- RSS autodiscovery `<link rel="alternate">` in BaseLayout `<head>`
 - Sitemap via `@astrojs/sitemap`
 - Breadcrumbs on article pages (Home > Articles > Category)
 - Custom 404 page with article recommendations

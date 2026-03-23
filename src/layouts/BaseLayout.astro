@@ -60,6 +60,9 @@ const canonicalUrl = canonical || Astro.url.pathname;
   <link rel="manifest" href="/manifest.json">
   <link rel="canonical" href={`${siteUrl}${canonicalUrl}`}>
 
+  <!-- RSS Autodiscovery -->
+  <link rel="alternate" type="application/rss+xml" title="alumi news RSS Feed" href={`${siteUrl}/rss.xml`}>
+
   <!-- View Transitions -->
   <ViewTransitions />
 

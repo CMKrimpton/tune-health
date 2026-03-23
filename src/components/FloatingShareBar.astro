@@ -1,0 +1,135 @@
+---
+/**
+ * FloatingShareBar — sticky vertical share sidebar on article pages (desktop only).
+ * Appears after scrolling past the hero, fixed to the left edge of the article.
+ * Uses the same ShareButtons component in vertical orientation.
+ */
+import ShareButtons from './ShareButtons.astro';
+
+interface Props {
+  title: string;
+  url: string;
+  description?: string;
+}
+
+const { title, url, description = '' } = Astro.props;
+---
+
+<aside class="floating-share-bar" id="floatingShareBar" aria-label="Share this article">
+  <div class="floating-share-inner">
+    <span class="floating-share-label">Share</span>
+    <ShareButtons title={title} url={url} description={description} variant="vertical" />
+  </div>
+</aside>
+
+<style>
+  .floating-share-bar {
+    display: none;
+    position: fixed;
+    z-index: 30;
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+  }
+
+  .floating-share-bar.visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+  }
+
+  @media (min-width: 1280px) {
+    .floating-share-bar {
+      display: block;
+      top: 50%;
+      left: max(1rem, calc((100vw - 1240px) / 2 - 72px));
+      transform: translateY(-50%) translateX(-12px);
+    }
+
+    .floating-share-bar.visible {
+      transform: translateY(-50%) translateX(0);
+    }
+  }
+
+  .floating-share-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0.5rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(214, 211, 209, 0.5);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  :global(.dark) .floating-share-inner {
+    background: rgba(28, 25, 23, 0.9);
+    border-color: rgba(68, 64, 60, 0.5);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .floating-share-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #a8a29e;
+    writing-mode: horizontal-tb;
+    margin-bottom: 0.25rem;
+  }
+</style>
+
+<script>
+  function initFloatingShareBar() {
+    const bar = document.getElementById('floatingShareBar');
+    if (!bar) return;
+
+    const articleContent = document.getElementById('article-content');
+    if (!articleContent) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            bar.classList.add('visible');
+          } else {
+            // Only hide when scrolled above the article
+            const rect = articleContent.getBoundingClientRect();
+            if (rect.top > window.innerHeight) {
+              bar.classList.remove('visible');
+            }
+          }
+        });
+      },
+      { threshold: 0, rootMargin: '-100px 0px -20% 0px' }
+    );
+
+    observer.observe(articleContent);
+
+    // Also hide when near the bottom (footer area)
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const rect = articleContent.getBoundingClientRect();
+          const isAbove = rect.bottom < 200;
+          const isBelow = rect.top > window.innerHeight;
+
+          if (isAbove || isBelow) {
+            bar.classList.remove('visible');
+          } else {
+            bar.classList.add('visible');
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+  }
+
+  initFloatingShareBar();
+  document.addEventListener('astro:after-swap', initFloatingShareBar);
+</script>

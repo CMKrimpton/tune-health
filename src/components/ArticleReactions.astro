@@ -1,0 +1,233 @@
+---
+/**
+ * ArticleReactions — emoji reaction bar for articles.
+ * Users can react with multiple emoji types. Reactions persist in localStorage.
+ * Animated feedback on click with count display.
+ */
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+---
+
+<div class="article-reactions" data-reactions-slug={slug} aria-label="React to this article">
+  <span class="reactions-label">Was this useful?</span>
+
+  <div class="reactions-row">
+    <button class="reaction-btn" data-reaction="insightful" aria-label="Mark as insightful">
+      <span class="reaction-emoji" aria-hidden="true">🔥</span>
+      <span class="reaction-name">Insightful</span>
+      <span class="reaction-count" data-count="insightful">0</span>
+    </button>
+
+    <button class="reaction-btn" data-reaction="mind-blown" aria-label="Mark as mind-blown">
+      <span class="reaction-emoji" aria-hidden="true">🧠</span>
+      <span class="reaction-name">Mind-blown</span>
+      <span class="reaction-count" data-count="mind-blown">0</span>
+    </button>
+
+    <button class="reaction-btn" data-reaction="well-researched" aria-label="Mark as well-researched">
+      <span class="reaction-emoji" aria-hidden="true">📚</span>
+      <span class="reaction-name">Rigorous</span>
+      <span class="reaction-count" data-count="well-researched">0</span>
+    </button>
+
+    <button class="reaction-btn" data-reaction="practical" aria-label="Mark as practical">
+      <span class="reaction-emoji" aria-hidden="true">💡</span>
+      <span class="reaction-name">Practical</span>
+      <span class="reaction-count" data-count="practical">0</span>
+    </button>
+  </div>
+</div>
+
+<style>
+  .article-reactions {
+    @apply mt-10 pt-8 border-t border-stone-200 dark:border-stone-800;
+    @apply text-center;
+  }
+
+  .reactions-label {
+    @apply block text-sm font-medium text-stone-500 dark:text-stone-400 mb-4;
+  }
+
+  .reactions-row {
+    @apply flex items-center justify-center gap-2 sm:gap-3 flex-wrap;
+  }
+
+  .reaction-btn {
+    @apply flex items-center gap-1.5 sm:gap-2;
+    @apply px-3 sm:px-4 py-2 sm:py-2.5 rounded-full;
+    @apply bg-stone-100 dark:bg-stone-800;
+    @apply border border-transparent;
+    @apply text-stone-600 dark:text-stone-400;
+    @apply transition-all duration-200 ease-out;
+    @apply cursor-pointer select-none;
+  }
+
+  .reaction-btn:hover {
+    @apply bg-stone-200 dark:bg-stone-700;
+    @apply border-stone-300 dark:border-stone-600;
+    transform: translateY(-1px);
+  }
+
+  .reaction-btn:active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .reaction-btn.reacted {
+    @apply bg-primary-50 dark:bg-primary-900/20;
+    @apply border-primary-200 dark:border-primary-800;
+    @apply text-primary-700 dark:text-primary-300;
+  }
+
+  .reaction-emoji {
+    font-size: 1.125rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+  }
+
+  .reaction-btn:hover .reaction-emoji {
+    transform: scale(1.15);
+  }
+
+  .reaction-btn.reacted .reaction-emoji {
+    transform: scale(1.1);
+  }
+
+  .reaction-btn.animating .reaction-emoji {
+    animation: reaction-pop 0.4s ease;
+  }
+
+  .reaction-name {
+    @apply text-xs font-medium;
+    @apply hidden sm:inline;
+  }
+
+  .reaction-count {
+    @apply text-xs font-semibold tabular-nums;
+    @apply min-w-[1ch];
+  }
+
+  .reaction-count:empty,
+  .reaction-count[data-value="0"] {
+    display: none;
+  }
+
+  @keyframes reaction-pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.4); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1.1); }
+  }
+
+  @keyframes count-bump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+</style>
+
+<script>
+  function initReactions() {
+    const STORAGE_KEY = 'alumi-reactions';
+
+    function getReactions(): Record<string, Record<string, number>> {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function getUserReactions(): Record<string, string[]> {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY + '-user') || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function saveReactions(data: Record<string, Record<string, number>>) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function saveUserReactions(data: Record<string, string[]>) {
+      localStorage.setItem(STORAGE_KEY + '-user', JSON.stringify(data));
+    }
+
+    document.querySelectorAll<HTMLElement>('[data-reactions-slug]').forEach((container) => {
+      const slug = container.dataset.reactionsSlug;
+      if (!slug) return;
+      if (container.dataset.bound === 'reactions') return;
+      container.dataset.bound = 'reactions';
+
+      const allReactions = getReactions();
+      const userReactions = getUserReactions();
+      const articleReactions = allReactions[slug] || {};
+      const userArticleReactions = userReactions[slug] || [];
+
+      // Set initial counts and active states
+      container.querySelectorAll<HTMLButtonElement>('.reaction-btn').forEach((btn) => {
+        const type = btn.dataset.reaction;
+        if (!type) return;
+
+        const countEl = btn.querySelector('.reaction-count') as HTMLElement;
+        const count = articleReactions[type] || 0;
+
+        if (count > 0) {
+          countEl.textContent = String(count);
+          countEl.dataset.value = String(count);
+        }
+
+        if (userArticleReactions.includes(type)) {
+          btn.classList.add('reacted');
+        }
+
+        btn.addEventListener('click', () => {
+          const reactions = getReactions();
+          const userRx = getUserReactions();
+
+          if (!reactions[slug]) reactions[slug] = {};
+          if (!userRx[slug]) userRx[slug] = [];
+
+          const isReacted = userRx[slug].includes(type);
+
+          if (isReacted) {
+            // Remove reaction
+            reactions[slug][type] = Math.max((reactions[slug][type] || 1) - 1, 0);
+            userRx[slug] = userRx[slug].filter((r: string) => r !== type);
+            btn.classList.remove('reacted');
+          } else {
+            // Add reaction
+            reactions[slug][type] = (reactions[slug][type] || 0) + 1;
+            userRx[slug].push(type);
+            btn.classList.add('reacted');
+
+            // Pop animation
+            btn.classList.add('animating');
+            setTimeout(() => btn.classList.remove('animating'), 400);
+          }
+
+          saveReactions(reactions);
+          saveUserReactions(userRx);
+
+          // Update count display
+          const newCount = reactions[slug][type] || 0;
+          countEl.textContent = newCount > 0 ? String(newCount) : '';
+          countEl.dataset.value = String(newCount);
+
+          // Count bump animation
+          if (newCount > 0) {
+            countEl.style.animation = 'none';
+            countEl.offsetHeight; // trigger reflow
+            countEl.style.animation = 'count-bump 0.3s ease';
+          }
+        });
+      });
+    });
+  }
+
+  initReactions();
+  document.addEventListener('astro:after-swap', initReactions);
+</script>

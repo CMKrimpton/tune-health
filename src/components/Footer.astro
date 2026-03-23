@@ -102,6 +102,60 @@ const latestArticles = articles.slice(0, 4);
       </a>
     </div>
 
+    <!-- Social & Follow -->
+    <div class="pt-8 border-t border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
+      <div>
+        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-3">Follow & Subscribe</h4>
+        <div class="flex items-center gap-3">
+          <!-- RSS Feed -->
+          <a
+            href="/rss.xml"
+            class="footer-social-btn"
+            aria-label="RSS Feed"
+            title="RSS Feed"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M6.503 20.752c0 1.794-1.456 3.248-3.251 3.248-1.796 0-3.252-1.454-3.252-3.248 0-1.794 1.456-3.248 3.252-3.248 1.795.001 3.251 1.454 3.251 3.248zm-6.503-12.572v4.811c6.05.062 10.96 4.966 11.022 11.009h4.817c-.062-8.71-7.118-15.758-15.839-15.82zm0-8.18v4.819c12.484.074 22.592 10.175 22.661 22.66h4.823c-.074-15.14-12.345-27.404-27.484-27.479z"/>
+            </svg>
+          </a>
+          <!-- X / Twitter -->
+          <a
+            href="https://x.com/aluminews"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-social-btn"
+            aria-label="Follow on X"
+            title="Follow on X"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </a>
+          <!-- Bluesky -->
+          <a
+            href="https://bsky.app/profile/aluminews.bsky.social"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-social-btn"
+            aria-label="Follow on Bluesky"
+            title="Follow on Bluesky"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.785 2.627 3.62 3.501 6.204 3.254-3.96.582-6.71 2.483-4.058 6.77 2.953 4.327 6.227 1.726 7.23-.278.998 2.004 3.57 4.605 7.23.278 2.652-4.287-.098-6.188-4.058-6.77 2.584.247 5.42-.627 6.204-3.254.246-.83.624-5.79.624-6.479 0-.688-.139-1.86-.902-2.203-.66-.299-1.664-.621-4.3 1.24C12.04 4.747 9.087 8.686 12 10.8z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/reading-list" class="inline-flex items-center gap-2 text-sm text-stone-400 hover:text-white transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Reading List
+        </a>
+      </div>
+    </div>
+
     <!-- Bottom bar -->
     <div class="pt-8 border-t border-stone-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div class="flex items-center gap-4">
@@ -116,3 +170,16 @@ const latestArticles = articles.slice(0, 4);
     </div>
   </div>
 </footer>
+
+<style>
+  .footer-social-btn {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center;
+    @apply bg-stone-800 text-stone-400;
+    @apply hover:bg-stone-700 hover:text-white;
+    @apply transition-all duration-200;
+  }
+
+  .footer-social-btn:hover {
+    transform: translateY(-1px);
+  }
+</style>

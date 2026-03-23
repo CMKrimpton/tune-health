@@ -60,10 +60,15 @@ src/
 │   └── ArticleLayout.astro   # Reusable article template
 ├── components/
 │   ├── Header.astro          # Navigation with glass dropdown menu
-│   ├── Footer.astro          # Site footer
+│   ├── Footer.astro          # Site footer with social follow links
 │   ├── SideNav.astro         # Magazine-style sidebar (26+ links)
 │   ├── CommandPalette.tsx    # React command palette (⌘K)
 │   ├── FloatingTOC.astro     # Floating table of contents
+│   ├── FloatingShareBar.astro # Sticky vertical share sidebar (desktop)
+│   ├── ShareButtons.astro    # 8-platform share buttons + Web Share API
+│   ├── ArticleReactions.astro # Emoji reactions with localStorage
+│   ├── HighlightShare.astro  # Select-text-to-share popup
+│   ├── BookmarkButton.astro  # localStorage reading list toggle
 │   ├── ArticleCard.astro     # Article preview cards
 │   ├── Newsletter.astro      # Newsletter signup
 │   ├── Breadcrumbs.astro     # Navigation breadcrumbs
@@ -72,6 +77,7 @@ src/
 │   ├── index.astro           # Homepage
 │   ├── articles/             # Article pages & index
 │   ├── deep-dives.astro      # Deep dive series page
+│   ├── reading-list.astro    # Bookmarked articles page
 │   └── subscribe.astro       # Newsletter subscription
 ├── utils/
 │   ├── articles.ts           # Article collection helpers
@@ -157,8 +163,17 @@ src/
 - Reduced motion support (`prefers-reduced-motion`)
 - Semantic HTML structure
 
+### Social Sharing & Interaction
+- **8-platform share buttons** — X, LinkedIn, Facebook, Reddit, Bluesky, WhatsApp, Email, and copy link on every article
+- **Native Web Share API** — mobile devices get an OS-level share sheet (Messages, AirDrop, etc.)
+- **Floating share sidebar** — sticky vertical share bar on the left edge of article pages (desktop xl+ screens)
+- **Highlight-to-share** — select article text to share the quote on X/Bluesky or copy with attribution
+- **Article reactions** — emoji reaction bar (Insightful, Mind-blown, Rigorous, Practical) with localStorage persistence
+- **Reading List page** (`/reading-list`) — view and manage all bookmarked articles. Linked from SideNav and Footer
+- **Social follow links** — RSS, X/Twitter, and Bluesky follow buttons in Footer
+- **RSS autodiscovery** — `<link rel="alternate">` in `<head>` for feed reader auto-detection
+
 ### Additional
-- **Social share buttons** (Twitter, LinkedIn, copy link) on every article
 - **Reading list** — localStorage bookmark system with toggle on articles
 - **About page** — mission statement, editorial standards, and brand tone
 - **Custom 404 page** with article recommendations

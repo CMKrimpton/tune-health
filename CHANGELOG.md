@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.10.0] - 2026-03-22
+
+### Added
+- **Expanded social sharing** (`ShareButtons.astro`) — now supports 8 platforms: X/Twitter, LinkedIn, Facebook, Reddit, Bluesky, WhatsApp, Email (mailto with prefilled body), and copy link. Each platform icon highlights in its brand color on hover. Reddit and Bluesky hidden on small screens to prevent overflow
+- **Native Web Share API** — on mobile devices, a "More" share button taps into the OS share sheet (Messages, AirDrop, etc.). Only renders when `navigator.share` is available
+- **Floating share sidebar** (`FloatingShareBar.astro`) — sticky vertical share bar fixed to the left edge of article pages on xl+ screens. Glass morphism styling, appears when article content is in view, hides at footer
+- **Article reactions** (`ArticleReactions.astro`) — emoji reaction bar (Insightful, Mind-blown, Rigorous, Practical) with localStorage persistence per article slug. Pop animation on click, toggle on/off, count display
+- **Highlight-to-share** (`HighlightShare.astro`) — when users select 10–400 characters of article text, a dark tooltip popup appears with options to share the quote on X, Bluesky, or copy with attribution. Only triggers within article content
+- **Reading List page** (`/reading-list`) — full page for viewing all bookmarked articles from localStorage. Shows article cards with hero images, category, read time. Per-article remove button + "Clear all" with confirmation. Empty state with CTA
+- **Social follow links in Footer** — RSS, X/Twitter, and Bluesky follow buttons with hover-lift effect in a new "Follow & Subscribe" section
+- **RSS autodiscovery** — `<link rel="alternate" type="application/rss+xml">` in BaseLayout `<head>` so feed readers auto-detect the RSS feed
+- **Reading List + RSS links in SideNav** — bookmark icon link to `/reading-list` and RSS icon link to `/rss.xml` in the sidebar "More" section
+
+### Fixed
+- **Share URL domain** — ShareButtons now uses correct `tune-health.vercel.app` via `Astro.site` (was hardcoded to `aluminews.com`)
+- **Package version sync** — bumped from 5.8.0 to 5.10.0 to match changelog
+
+### Changed
+- **ShareButtons** supports `variant` prop (`"inline"` | `"vertical"`) and `description` prop for richer share text
+- **ArticleLayout** now includes FloatingShareBar, ArticleReactions, and HighlightShare components
+- **Footer** has new social/follow section above the bottom bar
+- **SideNav** "More" section expanded with Reading List and RSS Feed links
+
 ## [5.9.0] - 2026-03-22
 
 ### Added

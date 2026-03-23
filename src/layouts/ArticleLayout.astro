@@ -11,6 +11,9 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import ShareButtons from '../components/ShareButtons.astro';
 import SeriesNav from '../components/SeriesNav.astro';
 import BookmarkButton from '../components/BookmarkButton.astro';
+import FloatingShareBar from '../components/FloatingShareBar.astro';
+import ArticleReactions from '../components/ArticleReactions.astro';
+import HighlightShare from '../components/HighlightShare.astro';
 import { fade, slide } from 'astro:transitions';
 import { getRelatedArticles, getArticleGradientStyle, getArticles } from '../utils/articles';
 
@@ -148,13 +151,16 @@ const articleSeries = currentArticle?.series;
         <!-- Share & Tags -->
         <div class="mt-14 pt-8 border-t border-stone-200 dark:border-stone-800 reveal">
           <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <ShareButtons title={title} url={`/articles/${slug}`} />
+            <ShareButtons title={title} url={`/articles/${slug}`} description={description} />
             <BookmarkButton slug={slug} title={title} />
           </div>
           <div class="flex flex-wrap gap-2">
             <slot name="tags" />
           </div>
         </div>
+
+        <!-- Article Reactions -->
+        <ArticleReactions slug={slug} />
 
         <!-- Author Card -->
         <div class="author-card mt-10 reveal">
@@ -219,6 +225,8 @@ const articleSeries = currentArticle?.series;
 
   <Footer slot="footer" />
   <FloatingTOC />
+  <FloatingShareBar title={title} url={`/articles/${slug}`} description={description} />
+  <HighlightShare articleUrl={`/articles/${slug}`} />
   <CommandPaletteWrapper />
 </BaseLayout>
 
