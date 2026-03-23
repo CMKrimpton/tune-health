@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [7.0.0] - 2026-03-23
+
+### Added — Cost Tracking
+- **Per-call API cost tracking** — every Claude, Grok, and Gemini call logs input/output tokens and calculates USD cost using model-specific pricing
+- **`cost_usd` + `token_usage` columns** on `daily_article_log` — cumulative cost per article, per-call breakdown (model, stage, tokens, cost)
+- **Dashboard cost stats** — Total AI Spend and Avg Cost/Article stat cards on admin dashboard. Per-article cost in pipeline cards and completed articles list. Running total with color-coded thresholds ($20/$50)
+- **`backfill-costs` action** — estimates costs for all pre-tracking articles based on pipeline stage completion. Backfilled 98 log entries (~$20.58 estimated total)
+- **Spending limit detection** — Claude API 400 errors with "usage limits" now surface as `SPENDING_LIMIT:` prefix instead of raw error text
+
+### Added — Article Variety System
+- **7 article archetypes** — deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy. Each has distinct word count range, structural rules, and pull-quote/info-card guidance
+- **Voice modulation** — register (clinical/conversational/provocative), density (data-heavy/narrative-driven/balanced), pacing (slow-build/rapid-fire/crescendo). Set per article by editor brief
+- **Banned AI patterns** — explicit list of overused phrases ("The honest answer is...", "What is not in dispute...", "In short...") and structural patterns (every article opening with myth inversion, every closing with paradox, uniform citation formula)
+- **Tone matching by subject type** — institutional failures get pointed language, mechanism discoveries get intellectual curiosity, practical health gets directness without drama. Not everything is an exposé
+- **Headline variety rules** — banned "The [X] That..." (40% of headlines), "Your [Body] Is [Claim]" (7+), "Nobody/Science [dramatic verb]" framing. Good models: direct claims, questions, mechanism-forward, understated
+- **QC headline rewriting** — QC stage actively rewrites headlines starting with "The" or using conspiracy framing
+- **Series candidate flagging** — editor brief can flag topics with natural multi-part potential
+- **Writing temperature 0.4 → 0.5** for more natural variation
+
+### Fixed — Duplicate Detection
+- **Bidirectional overlap check** — old filter only checked candidate→existing (40% threshold). Now checks both directions and takes the max (30% threshold)
+- **Stop-word filtering** — common health/science terms ("brain", "health", "study", "evidence", etc.) no longer inflate word counts and mask real overlap
+- **Broader fingerprinting** — old filter only used title + slug + keywords. Now includes tags + description for much richer subject matching
+- **Archived 5 duplicate articles** — cannabis-mental-health, adhd-sleep-brain, glp1-addiction-craving-mechanism, gut-microbiome-circadian-clock-sleep, pfas-forever-chemicals-adolescent-bone-density
+- **Fixed corrupted metadata** on 8 articles — sentence fragments in tags/keywords replaced with proper short terms
+
+### Changed
+- **Crons paused** — Anthropic API spending limit reached (resets 2026-04-01). Both `article-scout` and `article-produce` unscheduled
+- **Admin dashboard layout** — 8 stat cards in 2 rows of 4 (was 6 in 1 row)
+- **Article count** — 66 published (was 71, removed 5 duplicates)
+
 ## [6.1.0] - 2026-03-23
 
 ### Fixed (critical — post-6.0 stabilization)

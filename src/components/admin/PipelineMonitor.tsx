@@ -70,6 +70,7 @@ interface PipelineLog {
   research_data: ResearchData | null;
   created_at: string;
   completed_at: string | null;
+  cost_usd: number | string | null;
 }
 
 interface QueueItem {
@@ -191,6 +192,13 @@ function getAdminToken(): string {
   return match ? decodeURIComponent(match[1]) : '';
 }
 
+function formatCost(value: number | string | null | undefined): string {
+  const n = parseFloat(String(value ?? '0')) || 0;
+  if (n === 0) return '-';
+  if (n < 0.01) return '<$0.01';
+  return `$${n.toFixed(2)}`;
+}
+
 // ─── Component ──────────────────────────────────────────────────────
 
 export default function PipelineMonitor({ initialLogs, initialArticleCount, apiBase }: Props) {
@@ -206,6 +214,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [newExpedite, setNewExpedite] = useState(false);
   const [queueing, setQueueing] = useState(false);
   const [killingId, setKillingId] = useState<string | null>(null);
+  const [totalCost, setTotalCost] = useState<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchStatus = useCallback(async () => {
@@ -220,6 +229,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       if (data.logs) setLogs(data.logs);
       if (typeof data.articleCount === 'number') setArticleCount(data.articleCount);
       if (data.queue) setQueue(data.queue);
+      if (typeof data.totalCost === 'number') setTotalCost(data.totalCost);
       setLastPoll(new Date());
     } catch { /* retry on next poll */ }
   }, [apiBase]);
@@ -369,6 +379,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           </div>
         </div>
 
+        {totalCost > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.5rem', background: '#1c1917', borderRadius: '6px', border: '1px solid #44403c' }}>
+            <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>Total Spend</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: totalCost > 50 ? '#f87171' : totalCost > 20 ? '#f59e0b' : '#a8a29e', fontVariantNumeric: 'tabular-nums' }}>
+              ${totalCost.toFixed(2)}
+            </span>
+          </div>
+        )}
+
         <div className="pipeline-quick-actions">
           <span className="pipeline-auto-label">Self-chaining + 5m cron</span>
           <button
@@ -513,6 +532,11 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                           Independence: {indScore}/10
                         </span>
                       )}
+                      {log.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
+                        <span style={{ color: '#a8a29e', fontVariantNumeric: 'tabular-nums' }}>
+                          {formatCost(log.cost_usd)}
+                        </span>
+                      )}
                       <span>{timeAgo(log.completed_at || log.created_at)}</span>
                     </div>
                   </div>
@@ -622,7 +646,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
       <div className="pipeline-card-status">{statusText}</div>
       <div className="pipeline-card-time">{timeAgo(log.created_at)}</div>
 
-      {(score !== null || indScore !== null) && (
+      {(score !== null || indScore !== null || (log.cost_usd && parseFloat(String(log.cost_usd)) > 0)) && (
         <div className="pipeline-card-meta">
           {score !== null && (
             <span className={`pipeline-card-score ${score >= 7 ? 'high' : score >= 4 ? 'mid' : 'low'}`}>
@@ -632,6 +656,11 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
           {indScore !== null && (
             <span className={`pipeline-card-score ${indScore >= 7 ? 'high' : indScore >= 4 ? 'mid' : 'low'}`} style={{ marginLeft: '0.5rem' }}>
               Independence: {indScore}/10
+            </span>
+          )}
+          {log.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
+            <span style={{ marginLeft: '0.5rem', color: '#a8a29e', fontSize: '0.6875rem', fontVariantNumeric: 'tabular-nums' }}>
+              {formatCost(log.cost_usd)}
             </span>
           )}
         </div>

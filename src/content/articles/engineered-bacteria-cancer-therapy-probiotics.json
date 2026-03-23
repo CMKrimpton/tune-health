@@ -11,22 +11,24 @@
   "featured": false,
   "draft": false,
   "tags": [
-    "A March 2026",
-    "Columbia University's 2023",
-    "The ProCAR system",
-    "A 2025 Nature",
-    "A 2025 Advanced"
+    "Clinical Evidence",
+    "Cancer Therapy",
+    "Synthetic Biology",
+    "Probiotics",
+    "Immunotherapy",
+    "Tumor Targeting"
   ],
   "gradient": {
     "to": "red-700",
     "from": "rose-600"
   },
   "keywords": [
-    "A March 2026",
-    "Columbia University's 2023",
-    "The ProCAR system",
-    "A 2025 Nature",
-    "A 2025 Advanced"
+    "engineered bacteria cancer",
+    "bacterial cancer therapy",
+    "ProCAR system",
+    "tumor colonization",
+    "synthetic biology oncology",
+    "living drug factories"
   ],
   "sortOrder": 1774263050595,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/engineered-bacteria-cancer-therapy-probiotics.png",

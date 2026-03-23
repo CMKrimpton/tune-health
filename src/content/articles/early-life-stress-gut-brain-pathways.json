@@ -11,18 +11,24 @@
   "featured": false,
   "draft": false,
   "tags": [
-    "Studies in both",
-    "Crucially, researchers discovered",
-    "This pathway specificity"
+    "Mental Health",
+    "Gut-Brain Axis",
+    "Childhood Stress",
+    "IBS",
+    "Microbiome",
+    "Neurogastroenterology"
   ],
   "gradient": {
     "to": "red-700",
     "from": "rose-600"
   },
   "keywords": [
-    "Studies in both",
-    "Crucially, researchers discovered",
-    "This pathway specificity"
+    "early life stress",
+    "gut-brain pathways",
+    "irritable bowel syndrome",
+    "chronic constipation",
+    "childhood adversity",
+    "stress gut disorders"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/early-life-stress-gut-brain-pathways.png",
   "heroImageAlt": "Editorial illustration for The Same Childhood Stress Gives One Person IBS and Another Chronic Constipation. New Research Finally Explains Why."

@@ -11,20 +11,24 @@
   "featured": false,
   "draft": false,
   "tags": [
-    "Researchers identified a",
-    "This 'sleep-like' intrusion",
-    "The finding suggests",
-    "Stimulant medications (amphetamines,"
+    "Neuroscience",
+    "ADHD",
+    "Sleep Architecture",
+    "Neural Oscillations",
+    "Stimulants",
+    "Consciousness"
   ],
   "gradient": {
     "to": "red-700",
     "from": "rose-600"
   },
   "keywords": [
-    "Researchers identified a",
-    "This 'sleep-like' intrusion",
-    "The finding suggests",
-    "Stimulant medications (amphetamines,"
+    "ADHD wakefulness",
+    "sleep-like neural activity",
+    "attention deficit",
+    "neural oscillations",
+    "stimulant mechanism",
+    "consciousness regulation"
   ],
   "sortOrder": 1774262053046,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/adhd-wakefulness-sleep-neural-activity.png",

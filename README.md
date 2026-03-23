@@ -115,8 +115,8 @@ src/
 
 ### Admin Mission Control (`/admin`)
 - Token-based authentication with logout (server-side only, no `PUBLIC_` prefix)
-- **Dashboard**: 6 stat cards, 3 tab panels (Pipeline, Articles, AI Agents)
-- **Pipeline Monitor**: 5-stage visual pipeline (Research → Editor → Write → Grok Review → QC+Publish) with model badges, topic queue management, kill buttons, independence scores
+- **Dashboard**: 8 stat cards (Total, Published, Drafts, Featured, Illustrated, Avg Read Time, Total AI Spend, Avg Cost/Article), 3 tab panels (Pipeline, Articles, AI Agents)
+- **Pipeline Monitor**: 5-stage visual pipeline (Research → Editor → Write → Grok Review → QC+Publish) with model badges, per-article cost tracking, topic queue management, kill buttons, independence scores
 - **Articles Manager**: search, filter, sort, inline editing, bulk actions, featured toggle
 - **AI Agents**: editorial QC, illustration agent, DB sync, editor decision log
 - **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish
@@ -124,16 +124,17 @@ src/
 ### Autonomous AI Newsroom
 Four AI companies, five models, two independent jobs:
 
-- **Scout** (cron: every 15 min): **Gemini 2.5 Flash** (Google Search) discovers 10 topics across recent + landmark timeframes. **Sonnet 4.6** structures best 5 into candidates. Editor scores, picks winner. Unchosen auto-save to queue. Hard `isDuplicate()` filter blocks overlapping subjects. Full off-limits list (ALL articles + queue). Category balance prioritizes underserved areas
+- **Scout** (cron: every 15 min): **Gemini 2.5 Flash** (Google Search) discovers 10 topics across recent + landmark timeframes. **Sonnet 4.6** structures best 5 into candidates with suggested archetype. Editor scores, picks winner. Unchosen auto-save to queue. Hard `isDuplicate()` filter (bidirectional 30% overlap + stop-word filtering). Full off-limits list (ALL articles + queue). Category balance prioritizes underserved areas
 - **Produce** (cron: every 3 min): editor picks best topic from queue → self-chains through:
-  1. **Editor Brief** (Sonnet 4.6) — creative direction, overlap detection, can replace older articles
-  2. **Write** (Sonnet 4.6) — full JSON response (html + metadata + tags + svg + toc). Category sanitized against whitelist
+  1. **Editor Brief** (Sonnet 4.6) — assigns article archetype (7 types: deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), voice modulation (register, density, pacing), subject-appropriate tone. Overlap detection, can replace older articles
+  2. **Write** (Sonnet 4.6, temp 0.5) — follows archetype + voice modulation. Banned AI-pattern list enforced. Variable word counts per archetype. Category sanitized against whitelist
   3. **Grok Independence Review** (Grok 3, xAI) — checks pharma framing, institutional deference, pulled punches. Suggests rewrites
-  4. **QC + Publish** (Sonnet 4.6 + OpenAI GPT Image) — polish headline, generate illustration, commit to GitHub
+  4. **QC + Publish** (Sonnet 4.6 + OpenAI GPT Image) — rewrites overused headline patterns ("The [X]...", "Nobody/Science [dramatic verb]"), generate illustration, commit to GitHub
+- **Cost tracking**: every API call logs token usage + USD cost. Dashboard shows per-article cost and total spend. `backfill-costs` action estimates historical costs
 - **Featured rotation**: twice daily (12h). Quality-gated: must have illustration, score >30. Weighted by editor score, recency, independence score, category diversity
 - **Topic queue**: vetted ideas always ready. Admin can add manually with priority/expedite. Hard dedup on inserts
-- **Error handling**: `safeStage()` fails hard (no rollback loops), 135s API timeouts, category sanitization
-- **65+ articles published**, 0 duplicates, diverse categories
+- **Error handling**: `safeStage()` fails hard (no rollback loops), 135s API timeouts, spending limit detection, category sanitization
+- **66 articles published**, diverse categories, ~$0.21 avg cost/article
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app

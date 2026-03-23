@@ -11,22 +11,24 @@
   "featured": false,
   "draft": false,
   "tags": [
-    "Fusobacterium nucleatum, a",
-    "A January 2026",
-    "In animal models",
-    "F. nucleatum damages",
-    "BRCA1-mutant breast cells"
+    "Clinical Evidence",
+    "Oral Microbiome",
+    "Breast Cancer",
+    "Gum Disease",
+    "BRCA1",
+    "Fusobacterium"
   ],
   "gradient": {
     "to": "red-700",
     "from": "rose-600"
   },
   "keywords": [
-    "Fusobacterium nucleatum, a",
-    "A January 2026",
-    "In animal models",
-    "F. nucleatum damages",
-    "BRCA1-mutant breast cells"
+    "Fusobacterium nucleatum",
+    "gum disease breast cancer",
+    "oral bacteria metastasis",
+    "BRCA1 mutation",
+    "periodontal cancer link",
+    "tumor microenvironment"
   ],
   "sortOrder": 1774265880843,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/fusobacterium-nucleatum-gum-disease-breast-cancer-mechanism.png",

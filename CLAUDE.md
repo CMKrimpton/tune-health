@@ -183,7 +183,7 @@ const articles = await getCollection('articles');
 
 #### Admin Mission Control (/admin)
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix)
-- **Dashboard**: 6 stat cards, 3 tab panels (Pipeline, Articles, AI Agents)
+- **Dashboard**: 8 stat cards (Total, Published, Drafts, Featured, Illustrated, Avg Read Time, Total AI Spend, Avg Cost/Article), 3 tab panels (Pipeline, Articles, AI Agents)
 - **Pipeline tab** (React island: `PipelineMonitor`):
   - 5-stage visual pipeline: Research → Editor → Write → Grok Review → QC+Publish
   - Model badges per stage (Sonnet 4.6, Grok 3) with color coding
@@ -201,20 +201,21 @@ const articles = await getCollection('articles');
 Two independent cron jobs power the newsroom:
 
 **Job 1 — Scout** (cron: `*/15 * * * *`, action: `scout`):
-Two-model discovery: Gemini 2.5 Flash (Google Search) finds 10 topics across recent + landmark timeframes, Sonnet 4.6 structures the best 5 into candidates. Editor scores them, unchosen auto-save to topic queue. Sees ALL article titles + queue in off-limits list. Category balance prioritizes underserved areas. Hard `isDuplicate()` filter blocks any candidate that overlaps >40% with existing articles.
+Two-model discovery: Gemini 2.5 Flash (Google Search) finds 10 topics across recent + landmark timeframes, Sonnet 4.6 structures the best 5 into candidates (with suggested archetype per topic). Editor scores them, unchosen auto-save to topic queue. Sees ALL article titles + queue in off-limits list. Category balance prioritizes underserved areas. Hard `isDuplicate()` filter with bidirectional 30% word overlap check + stop-word filtering.
 
 **Job 2 — Produce** (cron: `*/3 * * * *`, action: `produce`):
 Picks the best topic from the queue, self-chains through 4 production stages:
-  - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, crafts creative brief. Can flag `replacesSlug` to replace an older article.
-  - **Write** (~90s): Sonnet 4.6 returns full JSON (html + metadata + svg + toc + readTime). Category sanitized against 9-value whitelist.
+  - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, assigns **article archetype** (deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), sets **voice modulation** (register, density, pacing), crafts creative brief. Can flag `replacesSlug` to replace an older article. Subject-appropriate tone matching (not everything is an exposé).
+  - **Write** (~90s, temp 0.5): Sonnet 4.6 follows archetype + voice modulation. Banned pattern list prevents AI-sounding uniformity. Variable word counts per archetype (1,200–2,400). Category sanitized against 9-value whitelist.
   - **Grok Independence Review** (~30s): Grok 3 (xAI) checks for pharma framing, institutional deference, pulled punches. Provides rewrite suggestions.
-  - **QC + Publish** (~60s): Sonnet 4.6 polishes headline/description (defaults to publish, max 1 revision). OpenAI GPT Image generates illustration. Commits .astro + .json to GitHub. Featured rotation.
+  - **QC + Publish** (~60s): Sonnet 4.6 polishes headline/description (actively rewrites "The [X]..." and "Nobody/Science [dramatic verb]" patterns). Defaults to publish, max 1 revision. OpenAI GPT Image generates illustration. Commits .astro + .json to GitHub. Featured rotation.
 
 **Self-chaining**: each stage triggers the next via HTTP POST. Cron is just the initial trigger.
-**Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill via UI.
-**Duplicate filter**: `isDuplicate()` — programmatic >40% word overlap check against ALL articles + queue. Runs before editor sees candidates AND before queue inserts.
+**Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill via UI. Spending limit errors surface immediately with `SPENDING_LIMIT:` prefix.
+**Duplicate filter**: `isDuplicate()` — bidirectional 30% word overlap with stop-word filtering. Checks title + slug + keywords + tags + description against ALL articles + queue. Runs before editor sees candidates AND before queue inserts.
 **Category sanitization**: validates against whitelist of 9 categories.
 **Article ordering**: `sortOrder` field (epoch ms) ensures newest articles always appear first.
+**Cost tracking**: every API call (Claude, Grok, Gemini) logs input/output tokens and USD cost to `daily_article_log.cost_usd` + `token_usage` (jsonb breakdown). Dashboard shows per-article and total spend.
 
 - **Smart featured rotation**: twice daily (12h). Scores: editor quality (25%), recency (30%), independence score (15%), illustration (10%), read time (10%), category diversity (10%). Must have illustration and score >30 to qualify.
 - **Quality control**: `editorial-qc` reviews full article collection holistically → identifies issues → auto-fixes via `articles-api`
@@ -261,7 +262,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `fetch-article` | Fetches .astro file content from GitHub | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
-| `daily-article-agent` | Two-job newsroom: `scout` (discovers topics, fills queue) + `produce` (editor picks, self-chains through write → Grok review → QC → publish). Also: `status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`. Models: Sonnet 4.6 (research/editor/write/QC), Grok 3 (independence review). | None (rate-limited internally) |
+| `daily-article-agent` | Two-job newsroom: `scout` (discovers topics, fills queue) + `produce` (editor picks, self-chains through write → Grok review → QC → publish). Also: `status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`. Models: Sonnet 4.6 (research/editor/write/QC), Grok 3 (independence review). Per-call cost tracking. | None (rate-limited internally) |
 
 **Deploy commands:**
 ```bash
@@ -275,13 +276,13 @@ supabase functions deploy <function-name> --no-verify-jwt
 
 **Database tables:**
 - `articles` — main content table. Key columns: `slug`, `title`, `description`, `category`, `tags[]`, `keywords[]`, `article_html`, `hero_image`, `status`, `independence_score`, `editor_score`, `pipeline_log_id` (FK to daily_article_log)
-- `daily_article_log` — tracks pipeline stages. Key columns: `topic`, `slug`, `title`, `status`, `error`, `research_data` (jsonb), `editor_score`, `grok_score`, `model_used`, `revision_count`, `source` (trending/queue), `stage_started_at`
+- `daily_article_log` — tracks pipeline stages. Key columns: `topic`, `slug`, `title`, `status`, `error`, `research_data` (jsonb), `editor_score`, `grok_score`, `model_used`, `revision_count`, `source` (trending/queue), `stage_started_at`, `cost_usd` (numeric, cumulative per article), `token_usage` (jsonb, per-call breakdown)
 - `topic_queue` — editorial topic backlog. Key columns: `topic`, `notes`, `category`, `priority`, `expedite`, `source` (manual/trending), `status` (queued/assigned/in_progress/completed/skipped), `editor_score`, `research_summary`
 - `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source)
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
-- `article-scout`: every 15 min (`*/15 * * * *`) — discovers topics, fills queue
-- `article-produce`: every 3 min (`*/3 * * * *`) — picks from queue, self-chains through production
+- `article-scout`: every 15 min (`*/15 * * * *`) — discovers topics, fills queue (currently **paused** — API spending limit)
+- `article-produce`: every 3 min (`*/3 * * * *`) — picks from queue, self-chains through production (currently **paused** — API spending limit)
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
 - View schedule: `SELECT * FROM cron.job;`
 - View run history: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`

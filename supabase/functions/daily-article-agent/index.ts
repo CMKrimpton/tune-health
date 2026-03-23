@@ -37,6 +37,49 @@ const ACTIVE = ["started","searching","writing","publishing","editor_reviewing",
 const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","saved"];
 
 // ---------------------------------------------------------------------------
+// API usage tracking & cost calculation
+// ---------------------------------------------------------------------------
+interface ApiUsage {
+  model: string;
+  stage: string;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+
+// Pricing per million tokens (USD)
+const PRICING: Record<string, { input: number; output: number }> = {
+  "claude-sonnet-4-6":       { input: 3,    output: 15 },
+  "claude-sonnet-4-20250514": { input: 3,   output: 15 },
+  "claude-opus-4-20250514":  { input: 15,   output: 75 },
+  "grok-3":                  { input: 3,    output: 15 },
+  "gemini-2.5-flash":        { input: 0.15, output: 0.60 },
+};
+
+function calcCost(model: string, inputTokens: number, outputTokens: number): number {
+  const p = PRICING[model] || PRICING["claude-sonnet-4-6"];
+  return (inputTokens * p.input + outputTokens * p.output) / 1_000_000;
+}
+
+async function addCostToLog(
+  db: ReturnType<typeof supabase>,
+  logId: string,
+  usage: ApiUsage,
+) {
+  const { data: current } = await db
+    .from("daily_article_log")
+    .select("cost_usd, token_usage")
+    .eq("id", logId)
+    .maybeSingle();
+  const currentCost = parseFloat(current?.cost_usd ?? "0") || 0;
+  const currentUsage = (current?.token_usage as ApiUsage[]) || [];
+  await db.from("daily_article_log").update({
+    cost_usd: Math.round((currentCost + usage.costUsd) * 10000) / 10000,
+    token_usage: [...currentUsage, usage],
+  }).eq("id", logId);
+}
+
+// ---------------------------------------------------------------------------
 // Claude API with native web search
 // ---------------------------------------------------------------------------
 interface ClaudeOptions {
@@ -49,7 +92,9 @@ interface ClaudeOptions {
   maxSearches?: number;
 }
 
-async function claude(opts: ClaudeOptions): Promise<string> {
+interface ApiResult { text: string; usage: ApiUsage }
+
+async function claude(opts: ClaudeOptions, stage = "unknown"): Promise<ApiResult> {
   const key = (Deno.env.get("ANTHROPIC_API_KEY") || "").trim();
   if (!key) throw new Error("ANTHROPIC_API_KEY not configured");
 
@@ -92,11 +137,15 @@ async function claude(opts: ClaudeOptions): Promise<string> {
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(135_000), // 135s — Supabase Edge Functions timeout at ~150s
+    signal: AbortSignal.timeout(135_000),
   });
 
   if (!res.ok) {
     const errText = await res.text();
+    // Surface spending limit errors clearly so pipeline can bail early
+    if (res.status === 400 && errText.includes("usage limits")) {
+      throw new Error("SPENDING_LIMIT: Anthropic API usage limit reached. Pipeline paused until limit resets.");
+    }
     throw new Error(`Claude API ${res.status}: ${errText.slice(0, 500)}`);
   }
 
@@ -112,7 +161,21 @@ async function claude(opts: ClaudeOptions): Promise<string> {
 
   const fullText = textParts.join("\n");
   if (!fullText.trim()) throw new Error("Empty Claude response");
-  return fullText;
+
+  const u = data.usage || {};
+  const inputTokens = u.input_tokens || 0;
+  const outputTokens = u.output_tokens || 0;
+
+  return {
+    text: fullText,
+    usage: {
+      model,
+      stage,
+      inputTokens,
+      outputTokens,
+      costUsd: calcCost(model, inputTokens, outputTokens),
+    },
+  };
 }
 
 function parseClaudeJSON(text: string): unknown {
@@ -202,14 +265,15 @@ async function safeStage(
 // ---------------------------------------------------------------------------
 // Grok API (xAI) — independence review
 // ---------------------------------------------------------------------------
-async function grok(opts: { system: string; user: string; maxTokens?: number; temperature?: number }): Promise<string> {
+async function grok(opts: { system: string; user: string; maxTokens?: number; temperature?: number }, stage = "independence"): Promise<ApiResult> {
   const key = (Deno.env.get("XAI_API_KEY") || "").trim();
   if (!key) throw new Error("XAI_API_KEY not set");
+  const model = "grok-3";
   const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
     body: JSON.stringify({
-      model: "grok-3",
+      model,
       messages: [{ role: "system", content: opts.system }, { role: "user", content: opts.user }],
       max_tokens: opts.maxTokens || 2000,
       temperature: opts.temperature || 0.4,
@@ -217,13 +281,20 @@ async function grok(opts: { system: string; user: string; maxTokens?: number; te
   });
   if (!res.ok) throw new Error("Grok " + res.status);
   const d = await res.json();
-  return d.choices?.[0]?.message?.content || "";
+  const text = d.choices?.[0]?.message?.content || "";
+  const u = d.usage || {};
+  const inputTokens = u.prompt_tokens || 0;
+  const outputTokens = u.completion_tokens || 0;
+  return {
+    text,
+    usage: { model, stage, inputTokens, outputTokens, costUsd: calcCost(model, inputTokens, outputTokens) },
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Gemini API (Google) — topic discovery & web search
 // ---------------------------------------------------------------------------
-async function gemini(opts: { system: string; user: string; maxTokens?: number; temperature?: number }): Promise<string> {
+async function gemini(opts: { system: string; user: string; maxTokens?: number; temperature?: number }, stage = "research"): Promise<ApiResult> {
   const key = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
   if (!key) throw new Error("GOOGLE_API_KEY not set");
   const model = "gemini-2.5-flash";
@@ -252,7 +323,13 @@ async function gemini(opts: { system: string; user: string; maxTokens?: number; 
   const parts = data.candidates?.[0]?.content?.parts || [];
   const text = parts.map((p: { text?: string }) => p.text || "").join("");
   if (!text.trim()) throw new Error("Empty Gemini response");
-  return text;
+  const um = data.usageMetadata || {};
+  const inputTokens = um.promptTokenCount || 0;
+  const outputTokens = um.candidatesTokenCount || 0;
+  return {
+    text,
+    usage: { model, stage, inputTokens, outputTokens, costUsd: calcCost(model, inputTokens, outputTokens) },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -585,6 +662,18 @@ const SENIOR_EDITOR_BRIEF_PROMPT = `You are the Senior Editor of alumi news — 
 
 Your voice: Think Ben Goldacre editing The New Yorker's science desk. Ruthless about evidence, allergic to clickbait, deeply compelling. Skeptical of pharma, government agencies, and alternative health equally.
 
+## TONE MATCHING (CRITICAL)
+The tone must fit the SUBJECT. Not every article is a scandal. Not every finding is a "hidden truth." Match the energy:
+
+- **Genuine institutional failure** (pharma fraud, funding bias, suppressed data) → pointed, investigative, controlled anger OK
+- **New mechanism discovery** (how GLP-1 works in the brain, microbiome-sleep link) → intellectual curiosity, "isn't this fascinating" energy, wonder
+- **Clinical evidence review** (meta-analysis, trial results) → measured, authoritative, "here's what the data actually says"
+- **Emerging/preliminary science** (single study, animal models) → cautious excitement, clear about limitations, "early but interesting"
+- **Practical health** (exercise, nutrition, sleep hygiene) → direct, useful, no drama needed — just tell people what works and why
+- **Contrarian/myth-busting** (only when the myth genuinely exists) → confident, evidence-first, but don't manufacture outrage where there isn't any
+
+The AI default is to frame EVERYTHING as a hidden scandal. Resist this. A study about yawning and brain temperature doesn't need "Nobody is talking about this" energy. It's just interesting science. Let it be interesting.
+
 ## Your Job Right Now
 Your research team has delivered candidate topics. You need to:
 
@@ -592,9 +681,51 @@ Your research team has delivered candidate topics. You need to:
 2. **Check for overlap with existing articles** — This is CRITICAL. For EACH candidate, check if we already have an article covering the same subject area. If we do, compare: is the new angle genuinely better? If yes, the new piece can REPLACE the old one. If no, kill that candidate.
 3. **Pick the winner** — considering collection balance, depth, and reader value.
 4. **Craft the angle** — The second-order insight. The thing that makes a reader stop scrolling.
-5. **Set the headline** — Magazine-quality. Specific. Magnetic. Not clickbait.
-6. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction.
-7. **Make the call** — approve or kill the entire batch.
+5. **Set the headline** — Magazine-quality. Specific. Honest. NOT clickbait.
+
+## HEADLINE RULES (CRITICAL — read every time)
+40% of our existing headlines start with "The." This is now BANNED as the default. Vary the structure.
+
+**Banned headline patterns (overused — find alternatives):**
+- "The [Noun] That [Dramatic Verb]..." — way overused. Dozens of these already.
+- "Your [Body Part] Is [Dramatic Claim]" — we have 7+ of these. Stop.
+- "[Subject]. Nobody Is Talking About It." / "...Nobody Wants to Fund" / "...Science Ignores" / "...Medicine Barely Noticed" — this framing implies conspiracy. We're a science publication, not a blog.
+- "[Study] Just [Dramatic Verb]" — "Just Delivered Bad News", "Just Collapsed", "Just Exposed" — breathless language.
+- "[Dramatic Claim]. That Explains Everything." — melodramatic.
+- Two-sentence headlines where the second sentence is a short dramatic kicker — overused.
+
+**Good headline models (vary across these):**
+- Direct claim: "Exercise Beats SSRIs for Moderate Depression"
+- Question: "Can a Soil Bacterium Replace Vancomycin?"
+- Mechanism-forward: "How GLP-1 Drugs Quiet the Brain's Reward Circuitry"
+- Person/study-forward: "A Harvard Lab Accidentally Discovered Why Sleep Clears Amyloid"
+- Number-forward: "Three Genes. 75% of Preventable Drug Reactions."
+- Understated: "Mirtazapine Deserves Better Than Its Reputation"
+- Ironic/dry: "The Placebo Worked Better"
+
+The goal: if you read 10 headlines in a row, they should feel like they came from different writers at the same magazine — not from the same headline generator.
+6. **Assign the article archetype** — This determines the article's fundamental form and feel. NOT every article should be written the same way. Match the archetype to the material.
+7. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction.
+8. **Make the call** — approve or kill the entire batch.
+9. **Flag series potential** — If a topic is so rich it naturally breaks into 2-4 standalone pieces (e.g., a drug class with distinct mechanisms, a condition with distinct subtopics), flag it. Don't force a series, but don't ignore natural multi-part material either.
+
+## Article Archetypes
+Choose ONE. This is the most important editorial decision — it shapes the entire article's form.
+
+- **"deep-investigation"** — Multi-source, methodical build. For complex topics with competing evidence, institutional failures, or layered mechanisms. 2,000-2,400 words. Opens with a scene or observation. Builds slowly. Lots of evidence. This is your prestige format.
+- **"the-explainer"** — "Here's how X actually works." Didactic but not boring. Uses analogies, metaphors, step-by-step breakdowns. Good for mechanisms, biological processes, "why does X happen" topics. 1,600-2,000 words. Can be warmer, more patient.
+- **"provocation"** — Short, sharp, opinion-forward (backed by evidence). Takes a clear position and defends it. More conversational, more Hitchens. Good for institutional failures, bad science, overdue corrections. 1,200-1,600 words. Gets in, makes the case, gets out.
+- **"case-study"** — Built around ONE study, one patient scenario, or one specific situation. Zooms in tight, then pulls out to implications. Good for breakthrough papers, unusual clinical presentations, single dramatic findings. 1,400-1,800 words.
+- **"profile"** — Centers a researcher, lab, or clinical program doing interesting work. Human angle first, science through the lens of the person. Good for pioneering work, contrarian researchers, underfunded fields. 1,600-2,000 words.
+- **"the-roundup"** — Covers multiple angles of a broader question. Shorter sections, more ground covered. Good for "state of the science" pieces, emerging fields, topics where 5 recent papers tell a story together. 1,800-2,200 words.
+- **"myth-autopsy"** — Dissects a specific widely-held belief. Opens with the myth stated plainly, then dismantles it with evidence. This is ONE archetype, not the default. Only use when the topic genuinely IS a myth worth debunking. 1,600-2,000 words.
+
+## Voice Modulation
+Set these dials for each article:
+
+- **register**: "clinical" | "conversational" | "provocative" — How formal vs. casual the prose should feel.
+- **density**: "data-heavy" | "narrative-driven" | "balanced" — Ratio of evidence citations to storytelling.
+- **pacing**: "slow-build" | "rapid-fire" | "crescendo" — Does the article build methodically, hit fast, or start quiet and escalate?
 
 ## Overlap Rules
 - Same drug/condition/study as an existing article? That's overlap. Kill it UNLESS the new angle is substantially better.
@@ -609,18 +740,26 @@ Return ONLY valid JSON:
   "candidateScores": [{ "rank": 1, "topic": "...", "score": 8, "note": "why this score", "overlapsExisting": "slug-of-overlapping-article or null" }],
   "chosenCandidate": 1,
   "topicScore": 8,
-  "headline": "The final, polished headline",
+  "headline": "The final headline — DO NOT start with 'The' by default. Match the tone to the subject: understated for nuanced science, direct for clear findings, pointed for institutional failures. See HEADLINE RULES above.",
   "slug": "url-friendly-slug",
-  "description": "2-3 sentence SEO description that SELLS the article. Specific. Surprising.",
+  "description": "2-3 sentence description. Specific about what the reader will learn. Match the subject's weight — don't hype a quiet study, don't underplay a major finding.",
   "angle": "The specific editorial angle",
   "replacesSlug": null,
+  "archetype": "deep-investigation | the-explainer | provocation | case-study | profile | the-roundup | myth-autopsy",
+  "wordCount": { "min": 1600, "max": 2000 },
   "brief": {
-    "tone": "Specific tone guidance for this piece",
-    "openWith": "How to open — a specific scene, stat, or provocation",
+    "tone": "Specific tone guidance for THIS piece — not generic. What makes this article's voice different from the last one?",
+    "register": "clinical | conversational | provocative",
+    "density": "data-heavy | narrative-driven | balanced",
+    "pacing": "slow-build | rapid-fire | crescendo",
+    "openWith": "How to open — a SPECIFIC scene, stat, question, anecdote, or provocation. NOT 'here's what everyone thinks, but actually...' unless this is a myth-autopsy",
     "emphasize": ["Key point 1", "Key point 2", "Key point 3"],
     "avoid": ["What NOT to do", "Clichés to avoid"],
-    "closingDirection": "How to end"
+    "closingDirection": "How to end — NOT always a twist/paradox. Options: quiet observation, direct challenge, unanswered question, call to action, historical echo, clinical implication",
+    "structuralNotes": "Any specific structural choices: should this skip info-cards? Use more/fewer pull-quotes? Open with a scene that returns at the end? Use short rapid-fire sections?"
   },
+  "seriesCandidate": false,
+  "seriesNotes": null,
   "categoryOverride": null,
   "killReason": null
 }`;
@@ -633,8 +772,10 @@ Your standards:
 - Voice: Evidence over allegiance. Aggressively neutral. Smart friend who reads the studies.
 - Style: 60% exceptional journalism, 20% Bill Maher, 15% Christopher Hitchens, 15% Sam Harris.
 - Every claim should cite evidence. No hand-waving.
-- Headline must be magnetic, specific, and honest.
-- Description must SELL the article without clickbait.
+- Headline must be specific and honest. If it starts with "The" or uses "Nobody/Science/Medicine [dramatic verb]" framing, rewrite it. We have too many of those. Prefer direct claims, mechanisms, questions, or understated phrasing.
+- Description must intrigue without clickbait. No "you won't believe" energy.
+- Articles come in different archetypes (investigations, explainers, provocations, case studies, etc.) — do NOT penalize an article for being shorter or structured differently than the default long-form investigation. A tight 1,300-word provocation is as valid as a 2,200-word deep dive.
+- Watch for AI-sounding prose: uniform sentence length, overuse of "it's important to note," mechanical evidence presentation, every paragraph following the same rhythm. If you catch it, note it but don't kill for it.
 
 ## Your Job
 Improve the headline and description if you can. Then PUBLISH. Your default decision should be "publish." Only use "revise" if the article has a SERIOUS factual error. Never revise for style, length, or minor issues — just fix the headline/description and publish.
@@ -685,19 +826,75 @@ Return ONLY valid JSON:
 // ---------------------------------------------------------------------------
 // Article Writer
 // ---------------------------------------------------------------------------
-const ARTICLE_WRITING_PROMPT = `You are a senior health journalist at alumi news, a premium editorial publication. You are writing a piece assigned by your Senior Editor. Follow the editorial brief precisely.
+const ARTICLE_WRITING_PROMPT = `You are a senior health journalist at alumi news, a premium editorial publication. You are writing a piece assigned by your Senior Editor. Follow the editorial brief precisely — especially the archetype, voice modulation, and structural notes. These shape the article's form. Every article should feel like it was written by the same publication but NOT by the same person on the same day.
 
-## Editorial Voice
+## Core Editorial Standards (apply to ALL archetypes)
 - Evidence over allegiance. Aggressively neutral. Smart friend who reads the studies.
 - Direct, slightly irreverent, never condescending.
-- Writing style: 60% exceptional journalism, 20% Bill Maher, 15% Christopher Hitchens, 15% Sam Harris.
 - Oxford comma. US English. No emojis.
 - Every claim must cite a specific study, statistic, or source. Include author names, journal names, sample sizes, effect sizes where possible.
 - Balanced perspective: treat mainstream medicine and alternative health with the same skepticism.
-- Vary sentence length dramatically. Some very short. Some longer and analytical.
-- NO filler: no "it's important to note," no "interestingly," no "it's worth mentioning."
-- Target 1,800-2,200 words. Dense and substantive, not padded.
-- 8-12 specific evidence citations minimum.
+- NEVER fabricate study data, statistics, or author names.
+- Writing style: 60% exceptional journalism, 20% Bill Maher, 15% Christopher Hitchens, 15% Sam Harris. This means: occasional dry wit, willingness to call bullshit directly, no hedging when the evidence is clear, and genuine intellectual pleasure in the subject matter.
+- Sentence rhythm matters. Vary length dramatically. A three-word sentence after a complex one hits differently. Use fragments. Let a paragraph breathe with a single image. Don't write in uniform 15-20 word sentences — that's the AI giveaway.
+- Write like a human with opinions and taste, not like a summarization engine. If something is absurd, say so. If a finding is genuinely exciting, let that come through. If a study is weak, don't dress it up with diplomatic language.
+- No throat-clearing. Start paragraphs with the point, not with setup for the point.
+
+## Voice Modulation (from the editorial brief)
+The brief specifies register, density, and pacing. These are NOT decorative — they fundamentally change how you write.
+
+**Register:**
+- "clinical" → precise, measured, formal sentence structures. Third person. Academic rhythm. Think: NEJM editorial meets literary nonfiction.
+- "conversational" → second person OK, contractions, rhetorical questions, asides. Think: smart friend explaining over coffee.
+- "provocative" → first person plural OK, pointed observations, controlled anger where warranted. Think: Hitchens on a topic he cares about.
+
+**Density:**
+- "data-heavy" → lead with numbers, cite early and often. 10-15 citations. Tables of evidence OK. The data IS the story.
+- "narrative-driven" → evidence woven into story. Fewer but more carefully placed citations (6-8). Scenes, characters, moments.
+- "balanced" → standard mix. 8-12 citations. Evidence and narrative in roughly equal proportion.
+
+**Pacing:**
+- "slow-build" → long opening, patient development, payoff comes late. Good for investigations.
+- "rapid-fire" → short paragraphs, quick transitions, high information density. Get in, make the case, get out.
+- "crescendo" → starts quiet/observational, builds in intensity and stakes toward the end.
+
+## Article Archetypes (from the editorial brief)
+The archetype determines your article's fundamental FORM. Respect it.
+
+**"deep-investigation"** — Multi-source, methodical. 5-7 sections. Multiple evidence threads that converge. Pull quotes and info cards work well here.
+**"the-explainer"** — Didactic but engaging. Use analogies and metaphors liberally. Step-by-step is OK. Can use numbered lists within sections. Fewer pull quotes (0-2), info cards useful.
+**"provocation"** — Short, sharp. 3-5 sections max. Take a clear position in the opening and defend it. No hedge. No "both sides" unless one side is wrong. Pull quotes optional (0-1). Skip info cards unless they serve the argument.
+**"case-study"** — Zoom in tight on one study/case, then pull out. Open with the specific (the patient, the lab, the moment). Keep the scope narrow. 4-5 sections. 1-2 pull quotes, 1 info card max.
+**"profile"** — Human angle first. Open with a scene involving the person/lab. Science through their lens. 4-6 sections. Pull quotes from the subject's own words.
+**"the-roundup"** — Multiple shorter sections (6-8), each covering a distinct angle or paper. Less narrative continuity needed. Can use subheadings within sections. Info cards useful for comparing across studies.
+**"myth-autopsy"** — State the myth plainly, then dismantle. Open with the myth as people actually believe it. Then the evidence. 4-6 sections. This is the ONLY archetype that should use the "here's what you thought... but actually" structure.
+
+## BANNED PATTERNS — DO NOT USE
+These phrases and structures have been overused. Find different ways to express the same ideas.
+
+**Banned phrases:**
+- "The honest answer is..."
+- "What is not in dispute..."
+- "In short..."
+- "What emerges from the research..."
+- "The research has produced..."
+- "This is not a theoretical construct"
+- "It's important to note" / "It's worth mentioning" / "Interestingly"
+- "Consistent with..." as a transition between paragraphs
+- "The mechanism by which..."
+
+**Banned structural patterns:**
+- Opening with "For X years/decades, people have been told..." followed by "But the science shows..." — unless this is a myth-autopsy archetype.
+- Ending EVERY article with a paradox or ironic twist. Some articles should end quietly. Some should end with a direct statement. Some with a question. Vary the exit.
+- Presenting EVERY study with the exact formula: "[N] participants, published in [Journal], [Year], found that..." — Vary citation style. Sometimes lead with the finding. Sometimes name the researcher. Sometimes embed the citation in the narrative.
+- Using pull quotes that all follow the pattern: "[Mechanism statement] — [evidence] — [implication]." Pull quotes should feel like they were plucked from the text because they were striking, not because they follow a template.
+- Starting every article with a declarative statement that frames the topic as a misconception.
+
+**Vary instead:**
+- Citation style: "Researchers at [University] discovered..." / "A [Year] paper in [Journal] upended..." / "The finding — [N] subjects, [effect size] — landed quietly" / "As [Researcher] put it in [Journal]..." / Just state the fact and parenthetically cite (Author, Journal, Year).
+- Openings: scene, question, direct claim, historical moment, a number, a quiet observation, dialogue, a thought experiment.
+- Closings: direct challenge, unanswered question, quiet observation, clinical implication, callback to opening, a single image, a fact that lingers.
+- Transitions: not every section needs a bridge. Sometimes a hard cut is better.
 
 ## Output Format
 Return ONLY valid JSON:
@@ -718,12 +915,11 @@ Article body HTML using these patterns:
 </section>
 
 The FIRST section: id="introduction", NO h2 tag (CSS drop cap on first paragraph).
-Opening: Start with a specific, vivid scene, study finding, or provocative observation.
 
-Pull quotes (2-3):
+Pull quotes (0-3, as appropriate for archetype):
 <aside class="pull-quote reveal"><p>"Quote text."</p></aside>
 
-Info cards (1-2):
+Info cards (0-2, as appropriate for archetype):
 <div class="info-card my-12 reveal">
   <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">Card Title</h4>
   <ul class="space-y-2 text-sm"><li><strong>Label:</strong> Value</li></ul>
@@ -761,10 +957,10 @@ Array of { "id": "section-id", "title": "Display Title" }.
 ### readTime field
 Estimated minutes (220 wpm, rounded up).
 
-## Rules
-- NEVER fabricate study data, statistics, or author names.
-- Follow the editorial brief's angle, opening direction, emphasis points, and closing direction.
-- Structure: hook → evidence → mechanism → implications → honest unknowns.`;
+## Final Rules
+- Follow the editorial brief's archetype, angle, opening direction, emphasis points, and closing direction.
+- Respect the word count range from the brief. Not every article needs to be 2,000 words. A tight 1,300-word provocation is better than a padded 2,000-word one.
+- The article should feel like it was CHOSEN to be this form — not forced into a template.`;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -829,7 +1025,7 @@ async function stageResearch(
 
   if (queuedTopic) {
     // Directed research for a queued topic
-    const researchRaw = await claude({
+    const { text: researchRaw, usage: researchUsage } = await claude({
       system: DIRECTED_RESEARCH_PROMPT,
       user: `Today's date: ${today}
 
@@ -848,11 +1044,12 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
 
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
     research._fromQueue = true;
+    await addCostToLog(db, logId, researchUsage);
   } else {
     // TWO-MODEL SCOUT: Gemini discovers via Google Search, Sonnet structures into candidates
 
     // Step 1: Gemini searches the web for trending health topics
-    const geminiFindings = await gemini({
+    const { text: geminiFindings, usage: geminiUsage } = await gemini({
       system: "You are a health science researcher. Find the most compelling, evidence-based health stories. Every topic must be backed by real studies. No celebrity health, no supplement hype.",
       user: `Find 10 compelling health stories we should cover. Mix of recent (last 30 days) and landmark (last 5 years).
 
@@ -865,14 +1062,17 @@ ${titles.length > 30 ? `...and ${titles.length - 30} more (avoid ALL similar sub
 For each: headline, key finding, source, why it matters. Plain text, numbered 1-10.`,
       maxTokens: 4000,
       temperature: 0.4,
-    });
+    }, "scout-gemini");
+    await addCostToLog(db, logId, geminiUsage);
 
     // Step 2: Sonnet structures Gemini's raw findings into candidate JSON
-    const researchRaw = await claude({
-      system: `You structure raw research findings into JSON. Return ONLY valid JSON, no explanation.`,
-      user: `From these research findings, pick the 5 BEST topics that are NOT in the off-limits list. Prioritize: diversity across categories, scientific substance, counter-narrative potential. Return ONLY this JSON (5 candidates max):
+    const { text: researchRaw, usage: structureUsage } = await claude({
+      system: `You structure raw research findings into JSON. For each candidate, also suggest how the article should be treated — is it a deep investigation, a quick explainer, a provocative opinion piece, a case study about one key paper, or a roundup of recent findings? This affects the entire downstream pipeline. Return ONLY valid JSON, no explanation.`,
+      user: `From these research findings, pick the 5 BEST topics that are NOT in the off-limits list. Prioritize: diversity across categories, scientific substance, counter-narrative potential. For each topic, suggest a treatment — how should this article be shaped?
 
-{"candidates":[{"rank":1,"topic":"...","headline_draft":"...","why":"...","category":"Neuroscience|Mental Health|Longevity|Clinical Evidence|Environmental Health|Nutrition|Fitness|Sleep Science|Pharmacology","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."]}]}
+Return ONLY this JSON (5 candidates max):
+
+{"candidates":[{"rank":1,"topic":"...","headline_draft":"...","why":"...","category":"Neuroscience|Mental Health|Longevity|Clinical Evidence|Environmental Health|Nutrition|Fitness|Sleep Science|Pharmacology","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."],"suggestedTreatment":"deep-investigation|the-explainer|provocation|case-study|profile|the-roundup|myth-autopsy","treatmentReason":"Why this treatment suits this topic"}]}
 
 ## RAW FINDINGS:
 ${geminiFindings}
@@ -884,7 +1084,8 @@ ${titles.map((t) => `- ${t}`).join("\n")}
 ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 3).map(([cat]) => `- ${cat}`).join("\n") || "All categories well-covered"}`,
       model: "claude-sonnet-4-6",
       maxTokens: 4000,
-    });
+    }, "scout-structure");
+    await addCostToLog(db, logId, structureUsage);
 
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
   }
@@ -932,35 +1133,67 @@ async function stageEditorBrief(
   // Before the editor even sees candidates, programmatically remove
   // any that overlap with existing articles or queued topics.
   // This is the ONLY line of defense — do not rely on AI judgment.
-  const { data: existingArticles } = await db.from("articles").select("title, slug, keywords, category").eq("status", "published");
+  //
+  // Strategy: bidirectional word overlap with stop-word filtering.
+  // Checks BOTH directions (candidate→existing AND existing→candidate)
+  // and flags if either exceeds 30%. Includes tags + description.
+  const { data: existingArticles } = await db.from("articles").select("title, slug, keywords, tags, description, category").eq("status", "published");
   const { data: queuedItems } = await db.from("topic_queue").select("topic").in("status", ["queued", "assigned", "in_progress"]);
 
-  // Build a set of "subject fingerprints" — key nouns from each existing article
-  const existingFingerprints: string[][] = [];
-  for (const a of (existingArticles || []) as Array<{ title: string; slug: string; keywords: string[] | null; category: string }>) {
-    const words = [
-      ...a.title.toLowerCase().split(/[\s\-:,—–]+/),
-      ...(a.slug || "").split("-"),
-      ...(a.keywords || []).map(k => k.toLowerCase()),
-    ].filter(w => w.length > 3);
-    existingFingerprints.push([...new Set(words)]);
+  // Common health/science words that inflate word counts without indicating topic uniqueness
+  const STOP_WORDS = new Set([
+    "that", "this", "with", "from", "have", "been", "your", "what", "when", "just",
+    "more", "most", "than", "also", "about", "into", "does", "will", "could", "would",
+    "should", "every", "their", "these", "those", "some", "other", "only", "first",
+    "still", "even", "much", "many", "very", "between", "being", "after", "before",
+    "here", "there", "where", "while", "each", "both", "through", "over", "under",
+    // Generic health/science terms
+    "health", "study", "research", "evidence", "science", "brain", "body", "human",
+    "people", "patients", "treatment", "medical", "clinical", "risk", "effect",
+    "effects", "years", "shows", "found", "according", "actually", "problem",
+    "really", "everything", "explains", "never", "time", "new", "like",
+  ]);
+
+  function extractSubjectWords(text: string): Set<string> {
+    return new Set(
+      text.toLowerCase()
+        .split(/[\s\-:,—–.'"?!()]+/)
+        .filter(w => w.length > 3 && !STOP_WORDS.has(w))
+    );
+  }
+
+  // Build fingerprints from title + slug + keywords + tags + description
+  const existingFingerprints: { words: Set<string>; title: string }[] = [];
+  for (const a of (existingArticles || []) as Array<{ title: string; slug: string; keywords: string[] | null; tags: string[] | null; description: string | null; category: string }>) {
+    const raw = [
+      a.title,
+      (a.slug || "").replace(/-/g, " "),
+      ...(a.keywords || []),
+      ...(a.tags || []),
+      a.description || "",
+    ].join(" ");
+    existingFingerprints.push({ words: extractSubjectWords(raw), title: a.title });
   }
   for (const q of (queuedItems || []) as Array<{ topic: string }>) {
-    const words = q.topic.toLowerCase().split(/[\s\-:,—–]+/).filter(w => w.length > 3);
-    existingFingerprints.push([...new Set(words)]);
+    existingFingerprints.push({ words: extractSubjectWords(q.topic), title: q.topic });
   }
 
   function isDuplicate(topic: string, headline: string): boolean {
-    const candidateWords = new Set([
-      ...topic.toLowerCase().split(/[\s\-:,—–]+/),
-      ...headline.toLowerCase().split(/[\s\-:,—–]+/),
-    ].filter(w => w.length > 3));
+    const candidateWords = extractSubjectWords(`${topic} ${headline}`);
     if (candidateWords.size === 0) return false;
 
     for (const fp of existingFingerprints) {
-      const overlap = fp.filter(w => candidateWords.has(w)).length;
-      // If >40% of the candidate's significant words match an existing article → duplicate
-      if (overlap >= Math.max(3, Math.ceil(candidateWords.size * 0.4))) return true;
+      if (fp.words.size === 0) continue;
+      // Bidirectional overlap: check both directions, take the higher %
+      const candidateArr = [...candidateWords];
+      const existingArr = [...fp.words];
+      const overlapCount = candidateArr.filter(w => fp.words.has(w)).length;
+      const reverseCount = existingArr.filter(w => candidateWords.has(w)).length;
+      const candidatePct = overlapCount / candidateWords.size;
+      const existingPct = reverseCount / fp.words.size;
+      const maxPct = Math.max(candidatePct, existingPct);
+      // 30% bidirectional overlap OR 3+ matching subject words → duplicate
+      if (maxPct >= 0.30 && overlapCount >= 2) return true;
     }
     return false;
   }
@@ -1054,13 +1287,14 @@ ${titles.length > 30 ? `... and ${titles.length - 30} more` : ""}
 
 ${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
-  const editorRaw = await claude({
+  const { text: editorRaw, usage: editorUsage } = await claude({
     system: SENIOR_EDITOR_BRIEF_PROMPT,
     user: editorPrompt,
     model: "claude-sonnet-4-6",
     maxTokens: 2500,
     temperature: 0.4,
-  });
+  }, "editor-brief");
+  await addCostToLog(db, logId, editorUsage);
 
   const editorBrief = parseClaudeJSON(editorRaw) as Record<string, unknown>;
 
@@ -1158,7 +1392,12 @@ async function stageWrite(
     .update({ status: "writing", stage_started_at: new Date().toISOString(), model_used: model })
     .eq("id", logId);
 
-  const articleUserPrompt = `Write a comprehensive, investigative article following this editorial brief from the Senior Editor.
+  const archetype = (editorBrief?.archetype as string) || "deep-investigation";
+  const wordCount = editorBrief?.wordCount as { min?: number; max?: number } | undefined;
+  const wordMin = wordCount?.min || 1800;
+  const wordMax = wordCount?.max || 2200;
+
+  const articleUserPrompt = `Write an article following this editorial brief from the Senior Editor. The archetype and voice modulation are critical — they determine the article's form, not just its content.
 
 ## EDITORIAL BRIEF
 Headline: ${editorBrief?.headline || researchData.headline_draft}
@@ -1167,12 +1406,20 @@ Description: ${editorBrief?.description || "Write a compelling 2-3 sentence desc
 Angle: ${editorBrief?.angle || "Follow the research"}
 Category: ${editorBrief?.categoryOverride || researchData.category}
 
+### Article Form
+Archetype: ${archetype}
+Word count target: ${wordMin}-${wordMax} words
+Register: ${brief?.register || "conversational"}
+Density: ${brief?.density || "balanced"}
+Pacing: ${brief?.pacing || "slow-build"}
+
 ### Writer's Direction
 Tone: ${brief?.tone || "Standard editorial voice"}
 Open with: ${brief?.openWith || "A compelling hook"}
 Emphasize: ${((brief?.emphasize as string[]) || []).map((e: string) => `- ${e}`).join("\n") || "Key findings"}
 Avoid: ${((brief?.avoid as string[]) || []).map((a: string) => `- ${a}`).join("\n") || "Clichés and filler"}
 Closing direction: ${brief?.closingDirection || "End with honest unknowns"}
+Structural notes: ${brief?.structuralNotes || "Use your judgment based on the archetype"}
 
 ## RESEARCH DATA
 Topic: ${researchData.topic}
@@ -1197,13 +1444,14 @@ Today's date: ${today}
 
 IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. Return ONLY valid JSON.`;
 
-  const articleRaw = await claude({
+  const { text: articleRaw, usage: writeUsage } = await claude({
     system: ARTICLE_WRITING_PROMPT,
     user: articleUserPrompt,
     model,
     maxTokens: 8192,
-    temperature: 0.4,
-  });
+    temperature: 0.5,
+  }, "write");
+  await addCostToLog(db, logId, writeUsage);
 
   const article = parseClaudeJSON(articleRaw) as {
     html: string;
@@ -1298,7 +1546,7 @@ async function stageIndependenceReview(
   let skipReason: string | null = null;
 
   try {
-    const reviewRaw = await grok({
+    const { text: reviewRaw, usage: grokUsage } = await grok({
       system: INDEPENDENCE_REVIEW_PROMPT,
       user: `## ARTICLE FOR REVIEW
 Title: ${metadata.title}
@@ -1311,6 +1559,7 @@ Review this article for pharma framing, institutional deference, pulled punches,
       maxTokens: 1500,
       temperature: 0.3,
     });
+    await addCostToLog(db, logId, grokUsage);
 
     reviewResult = parseClaudeJSON(reviewRaw) as Record<string, unknown>;
   } catch (err: unknown) {
@@ -1398,13 +1647,14 @@ ${((articleData.toc as Array<{ title: string }>) || []).map((t) => `- ${t.title}
 ${independenceSection}
 Make your final call. Publish, request revisions, or kill.`;
 
-  const qcRaw = await claude({
+  const { text: qcRaw, usage: qcUsage } = await claude({
     system: SENIOR_EDITOR_QC_PROMPT,
     user: qcPrompt,
     model: "claude-sonnet-4-6",
     maxTokens: 1500,
     temperature: 0.3,
-  });
+  }, "qc");
+  await addCostToLog(db, logId, qcUsage);
 
   const qcResult = parseClaudeJSON(qcRaw) as Record<string, unknown>;
 
@@ -1645,7 +1895,14 @@ Deno.serve(async (req: Request) => {
         .order("priority", { ascending: true })
         .order("created_at", { ascending: true });
 
-      return json({ logs: data || [], articleCount, queue: queue || [] });
+      // Calculate total spend across all logs
+      const { data: costData } = await db
+        .from("daily_article_log")
+        .select("cost_usd");
+      const totalCost = (costData || []).reduce((sum: number, row: { cost_usd: number | string | null }) =>
+        sum + (parseFloat(String(row.cost_usd ?? "0")) || 0), 0);
+
+      return json({ logs: data || [], articleCount, queue: queue || [], totalCost: Math.round(totalCost * 100) / 100 });
     }
 
     // ------ TOPIC QUEUE ACTIONS ------
@@ -1688,6 +1945,106 @@ Deno.serve(async (req: Request) => {
       if (!queueId) return json({ error: "queueId is required" }, 400);
       await db.from("topic_queue").delete().eq("id", queueId);
       return json({ success: true, queueId });
+    }
+
+    // ------ BACKFILL COSTS — estimate costs for pre-tracking articles ------
+    if (action === "backfill-costs") {
+      // Estimated token counts per stage (based on pipeline prompts + typical responses)
+      // Format: [inputTokens, outputTokens, model]
+      const STAGE_ESTIMATES: Record<string, [number, number, string]> = {
+        "scout-gemini":    [1200, 3000, "gemini-2.5-flash"],
+        "scout-structure": [5000, 2500, "claude-sonnet-4-6"],
+        "editor-brief":    [6000, 1800, "claude-sonnet-4-6"],
+        "write":           [8000, 6500, "claude-sonnet-4-6"],
+        "independence":    [5500, 1200, "grok-3"],
+        "qc":              [4500, 1000, "claude-sonnet-4-6"],
+      };
+
+      // Which stages completed based on final status
+      const STAGES_BY_STATUS: Record<string, string[]> = {
+        "published":          ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc"],
+        "publishing":         ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc"],
+        "editor_qc":          ["scout-gemini", "scout-structure", "editor-brief", "write", "independence"],
+        "independence_done":  ["scout-gemini", "scout-structure", "editor-brief", "write", "independence"],
+        "independence_review":["scout-gemini", "scout-structure", "editor-brief", "write"],
+        "written":            ["scout-gemini", "scout-structure", "editor-brief", "write"],
+        "writing":            ["scout-gemini", "scout-structure", "editor-brief"],
+        "editor_approved":    ["scout-gemini", "scout-structure", "editor-brief"],
+        "editor_reviewing":   ["scout-gemini", "scout-structure"],
+        "research_done":      ["scout-gemini", "scout-structure"],
+        "searching":          ["scout-gemini"],
+        "started":            [],
+      };
+
+      // For failed articles, estimate based on the error message to guess last completed stage
+      function guessStagesForFailed(error: string | null, researchData: Record<string, unknown> | null): string[] {
+        if (!researchData && !error) return ["scout-gemini"];
+        if (researchData?._independenceReview) return ["scout-gemini", "scout-structure", "editor-brief", "write", "independence"];
+        if (researchData?._article) return ["scout-gemini", "scout-structure", "editor-brief", "write"];
+        if (researchData?._editorBrief) return ["scout-gemini", "scout-structure", "editor-brief"];
+        if (researchData?.candidates || researchData?.topic) return ["scout-gemini", "scout-structure"];
+        // API limit errors = at least one call was attempted
+        if (error?.includes("Claude API") || error?.includes("SPENDING_LIMIT")) return ["scout-gemini"];
+        return [];
+      }
+
+      const { data: allLogs } = await db
+        .from("daily_article_log")
+        .select("id, status, error, research_data, cost_usd, source")
+        .or("cost_usd.is.null,cost_usd.eq.0");
+
+      if (!allLogs || allLogs.length === 0) {
+        return json({ message: "No logs need backfilling", updated: 0 });
+      }
+
+      let updated = 0;
+      let totalEstimated = 0;
+
+      for (const log of allLogs as Array<{ id: string; status: string; error: string | null; research_data: Record<string, unknown> | null; cost_usd: number | null; source: string | null }>) {
+        let stages: string[];
+        if (log.status === "failed") {
+          stages = guessStagesForFailed(log.error, log.research_data);
+        } else {
+          stages = STAGES_BY_STATUS[log.status] || [];
+        }
+
+        // Queue-sourced articles skip gemini (directed research uses claude with web search instead)
+        const fromQueue = log.source === "queue" || log.research_data?._fromQueue;
+        if (fromQueue) {
+          stages = stages.filter(s => s !== "scout-gemini").map(s =>
+            s === "scout-structure" ? "editor-brief" : s // queue uses one claude call for research, roughly editor-brief cost
+          );
+          // Add the directed research call (claude with web search, ~= write cost)
+          if (stages.length > 0) stages = ["write", ...stages.slice(1)];
+        }
+
+        let cost = 0;
+        const usageEntries: ApiUsage[] = [];
+        for (const stage of stages) {
+          const est = STAGE_ESTIMATES[stage];
+          if (!est) continue;
+          const [input, output, m] = est;
+          const stageCost = calcCost(m, input, output);
+          cost += stageCost;
+          usageEntries.push({ model: m, stage, inputTokens: input, outputTokens: output, costUsd: Math.round(stageCost * 10000) / 10000 });
+        }
+
+        if (cost > 0) {
+          await db.from("daily_article_log").update({
+            cost_usd: Math.round(cost * 10000) / 10000,
+            token_usage: usageEntries,
+          }).eq("id", log.id);
+          updated++;
+          totalEstimated += cost;
+        }
+      }
+
+      return json({
+        message: `Backfilled cost estimates for ${updated} log entries`,
+        updated,
+        totalEstimated: Math.round(totalEstimated * 100) / 100,
+        note: "These are estimates based on typical token counts per stage. Actual costs may vary ±20%.",
+      });
     }
 
     // ------ KILL — admin force-kills a pipeline entry ------
