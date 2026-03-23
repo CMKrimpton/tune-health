@@ -200,10 +200,10 @@ const articles = await getCollection('articles');
 
 Two independent cron jobs power the newsroom:
 
-**Job 1 — Scout** (cron: `*/15 * * * *`, action: `scout`):
-Two-model discovery: Gemini 2.5 Flash (Google Search) finds 10 topics across recent + landmark timeframes, Sonnet 4.6 structures the best 5 into candidates (with suggested archetype per topic). Editor scores them, unchosen auto-save to topic queue. Sees ALL article titles + queue in off-limits list. Category balance prioritizes underserved areas. Hard `isDuplicate()` filter with bidirectional 30% word overlap check + stop-word filtering.
+**Job 1 — Scout** (3 crons/day: `scout-gemini` 6am UTC, `scout-sonnet` 2pm, `scout-grok` 10pm):
+Three-model discovery — each finds 20 topics, all deduped and inserted directly into `topic_queue`. Gemini (Google Search, trending topics), Sonnet (web search, editorial potential), Grok (contrarian, independent perspective). No expensive structuring step — raw findings parsed directly. Per-scout dedup against all articles + queue + within-batch. Category balance prioritizes underserved areas. ~$0.14/day total scout cost.
 
-**Job 2 — Produce** (cron: `*/3 * * * *`, action: `produce`):
+**Job 2 — Produce** (cron: `0 * * * *`, hourly, action: `produce`):
 Picks the best topic from the queue, self-chains through 4 production stages:
   - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, assigns **article archetype** (deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), picks **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated), sets density + pacing. Hard category balance rule: underserved categories (<5%) get priority over overserved (>15%) unless score gap >3. Can flag `replacesSlug` to replace an older article.
   - **Write** (~90s, temp 0.5): Sonnet 4.6 follows archetype + tone preset. Epistemic integrity framework: evidence hierarchy (recent > famous), known dogma traps list, contrarian checkpoint (Ray Peat et al.), follow-the-money rule, ban on "studies show" without specifics. Anti-AI rules enforced. Deterministic category gradients + programmatic SVG. Variable word counts per archetype (1,200–2,400). Category sanitized against 9-value whitelist.
@@ -281,8 +281,10 @@ supabase functions deploy <function-name> --no-verify-jwt
 - `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source)
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
-- `article-scout`: every 15 min (`*/15 * * * *`) — discovers topics, fills queue (currently **paused** — API spending limit)
-- `article-produce`: every 3 min (`*/3 * * * *`) — picks from queue, self-chains through production (currently **paused** — API spending limit)
+- `scout-gemini`: daily 6am UTC — Gemini discovers 20 topics via Google Search
+- `scout-sonnet`: daily 2pm UTC — Sonnet discovers 20 topics via web search
+- `scout-grok`: daily 10pm UTC — Grok discovers 20 topics (contrarian perspective)
+- `article-produce`: every hour (`0 * * * *`) — editor picks best topic, self-chains through production
 - `featured-rotation`: every 6 hours (`0 */6 * * *`) — independent featured article rotation (runs even when production crons are paused)
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
 - View schedule: `SELECT * FROM cron.job;`

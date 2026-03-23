@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [8.4.0] - 2026-03-23
+
+### Changed — Multi-Model Scout Architecture (92% cost reduction)
+- **3 daily scouts replace 96** — Gemini (6am UTC, Google Search), Sonnet (2pm, web search), Grok (10pm, contrarian perspective). Each finds 20 topics. ~$0.14/day total vs ~$9.55/day before
+- **No Sonnet structuring step** — raw findings parsed directly, no expensive intermediate API call. Editor brief stage handles scoring during production
+- **Per-scout dedup** — each topic checked against all articles + queue before insertion. Within-batch dedup prevents same-scout duplicates
+- **Produce cron: hourly** — editor picks best topic from queue every hour. Self-chaining handles multi-stage production. Up to 24 articles/day
+- **Monthly cost**: ~$25/month at 2 articles/day (was ~$300/month)
+- **Migration**: new pg_cron jobs (scout-gemini, scout-sonnet, scout-grok, article-produce). Old high-frequency crons removed
+
 ## [8.3.0] - 2026-03-23
 
 ### Fixed — Full Collection Audit (all 78 articles read in full)

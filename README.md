@@ -124,8 +124,8 @@ src/
 ### Autonomous AI Newsroom
 Four AI companies, five models, two independent jobs:
 
-- **Scout** (cron: every 15 min): **Gemini 2.5 Flash** (Google Search) discovers 10 topics across recent + landmark timeframes. **Sonnet 4.6** structures best 5 into candidates. Editor scores, picks winner. Unchosen auto-save to queue. Hard `isDuplicate()` filter (bidirectional 30% overlap + stop-word filtering). Hard category balance rule: underserved categories (<5%) get priority unless score gap >3
-- **Produce** (cron: every 3 min): editor picks best topic from queue → self-chains through:
+- **Scout** (3 crons/day): **Gemini** (6am, Google Search), **Sonnet** (2pm, web search), **Grok** (10pm, contrarian). Each finds 20 topics, deduped and inserted directly into topic_queue. No expensive structuring step. ~$0.14/day total. Category balance prioritizes underserved areas
+- **Produce** (cron: hourly): editor picks best topic from queue → self-chains through:
   1. **Editor Brief** (Sonnet 4.6) — assigns archetype (7 types) + **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated) + density + pacing. Overlap detection, can replace older articles
   2. **Write** (Sonnet 4.6, temp 0.5) — follows archetype + tone preset. Anti-AI rules enforced. Deterministic category gradients + programmatic SVG (no AI tokens on visuals). Variable word counts per archetype
   3. **Grok Independence Review** (Grok 3, xAI) — reviews FULL article. When `major_issues` flagged, Claude applies rewrite suggestions. PubMed citation verification runs in parallel

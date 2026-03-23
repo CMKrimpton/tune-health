@@ -2422,59 +2422,131 @@ Deno.serve(async (req: Request) => {
       "claude-sonnet-4-6"; // Sonnet 4.6 — Opus times out on Edge Functions (~150s limit). Upgrade when longer timeout available.
 
     // ==============================================================
-    // JOB 1: SCOUT — discover topics and fill the queue
-    // Independent of production — has its own guard
-    // Triggered by: cron (every 15 min) or action="scout"
+    // JOB 1: SCOUT — multi-model topic discovery, adds to queue
+    // 3 scouts/day (Gemini, Sonnet, Grok), each finds 20 topics
+    // Runs isDuplicate on each before inserting into topic_queue
+    // Triggered by: cron (3x/day) or action="scout"
+    // Pass scoutModel: "gemini" | "sonnet" | "grok" (default: "gemini")
     // ==============================================================
     if (action === "scout") {
-      const { data: activePipeline } = await db
-        .from("daily_article_log")
-        .select("id")
-        .in("status", ["started", "searching"])
-        .gte("stage_started_at", new Date(Date.now() - 2 * 60 * 1000).toISOString());
+      const scoutModel = (body.scoutModel as string) || "gemini";
+      const { titles, categoryCounts } = await getExistingArticles(db);
 
-      if (activePipeline && activePipeline.length > 0) {
-        return json({ skipped: true, message: "Scout already running." });
+      // Get existing queue + articles for dedup
+      const { data: existingArticles } = await db.from("articles").select("title, slug, keywords, tags, description, category").eq("status", "published");
+      const { data: queuedItems } = await db.from("topic_queue").select("topic").in("status", ["queued", "assigned", "in_progress"]);
+
+      // Build dedup fingerprints (same logic as editor stage)
+      const STOP_WORDS_SCOUT = new Set([
+        "that", "this", "with", "from", "have", "been", "your", "what", "when", "just",
+        "more", "most", "than", "also", "about", "into", "does", "will", "could", "would",
+        "should", "every", "their", "these", "those", "some", "other", "only", "first",
+        "health", "study", "research", "evidence", "science", "brain", "body", "human",
+        "people", "patients", "treatment", "medical", "clinical", "risk", "effect",
+        "effects", "years", "shows", "found", "actually", "problem", "really", "new",
+      ]);
+      function scoutExtract(text: string): Set<string> {
+        return new Set(text.toLowerCase().split(/[\s\-:,—–.'"?!()]+/).filter(w => w.length > 3 && !STOP_WORDS_SCOUT.has(w)));
+      }
+      const fingerprints: Set<string>[] = [];
+      for (const a of (existingArticles || []) as Array<{ title: string; slug: string; keywords: string[] | null; tags: string[] | null; description: string | null }>) {
+        fingerprints.push(scoutExtract([a.title, (a.slug || "").replace(/-/g, " "), ...(a.keywords || []), ...(a.tags || []), a.description || ""].join(" ")));
+      }
+      for (const q of (queuedItems || []) as Array<{ topic: string }>) {
+        fingerprints.push(scoutExtract(q.topic));
+      }
+      function isScoutDupe(topic: string): boolean {
+        const words = scoutExtract(topic);
+        if (words.size === 0) return false;
+        for (const fp of fingerprints) {
+          if (fp.size === 0) continue;
+          const overlap = [...words].filter(w => fp.has(w)).length;
+          const reverse = [...fp].filter(w => words.has(w)).length;
+          if (Math.max(overlap / words.size, reverse / fp.size) >= 0.30 && overlap >= 2) return true;
+        }
+        return false;
       }
 
-      const today = todayISO();
-      const { data: logEntry } = await db
-        .from("daily_article_log")
-        .insert({ run_date: today, status: "started", source: "trending", stage_started_at: new Date().toISOString() })
-        .select("id")
-        .single();
+      const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / (titles.length || 1) < 0.08).map(([cat]) => cat);
+      const missing = VALID_CATEGORIES.filter(c => !categoryCounts[c]);
+      const priorityCats = [...underserved, ...missing];
 
-      if (!logEntry) throw new Error("Failed to create log entry");
+      const scoutPrompt = `Find 20 compelling, evidence-based health stories. Mix of recent (last 30 days) and landmark (last 5 years). Every topic must be backed by real studies — no celebrity health, no supplement hype.
 
-      const { ok, error } = await safeStage(db, logEntry.id, "Scout", () =>
-        stageResearch(db, logEntry.id));
-      if (!ok) return json({ error: "Scout failed", detail: error }, 500);
+PRIORITY CATEGORIES (need more articles): ${priorityCats.join(", ") || "all balanced"}
 
-      // Research found candidates — editor picks best, rest go to queue.
-      // Run editor brief immediately to sort candidates into queue.
-      const { data: entry } = await db
-        .from("daily_article_log")
-        .select("id, research_data")
-        .eq("id", logEntry.id)
-        .single();
+ALREADY COVERED (${titles.length} articles — avoid these subjects):
+${titles.map(t => `- ${t.split(" (")[0]}`).join("\n")}
 
-      if (entry?.research_data) {
-        const { ok: ok2, error: err2 } = await safeStage(db, entry.id, "Scout Editor", () =>
-          stageEditorBrief(db, entry.id, entry.research_data as Record<string, unknown>));
-        if (!ok2) return json({ error: "Scout editor failed", detail: err2 }, 500);
+For each topic return: a one-line topic description, suggested category, and why it matters. Number them 1-20. Plain text, no JSON.`;
+
+      let rawFindings: string;
+      let scoutCost: ApiUsage;
+
+      if (scoutModel === "gemini") {
+        const r = await gemini({ system: "You are a health science researcher with access to Google Search. Find the most compelling stories. Prioritize recent meta-analyses, large cohort studies, and findings that challenge conventional wisdom.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-gemini");
+        rawFindings = r.text; scoutCost = r.usage;
+      } else if (scoutModel === "grok") {
+        const r = await grok({ system: "You are a health science researcher. Find stories the mainstream misses — contrarian findings, underfunded research, industry-inconvenient data. Prioritize independence and surprise.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-grok");
+        rawFindings = r.text; scoutCost = r.usage;
+      } else {
+        const r = await claude({ system: "You are a health science researcher. Find stories with strong evidence and editorial potential. Look for mechanism discoveries, policy failures, and emerging fields.", user: scoutPrompt, model: "claude-sonnet-4-6", maxTokens: 4000, temperature: 0.5, webSearch: true, maxSearches: 8 }, "scout-sonnet");
+        rawFindings = r.text; scoutCost = r.usage;
       }
 
-      const { count: queueCount } = await db
-        .from("topic_queue")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "queued");
+      // Parse raw findings directly — no expensive Sonnet structuring step.
+      // The editor brief stage (during produce) handles editorial scoring.
+      // Simple extraction: split by numbered lines, clean up.
+      const topics: Array<{ topic: string; category: string; why: string }> = [];
+      const lines = rawFindings.split("\n").filter(l => l.trim());
+      let current: { topic: string; category: string; why: string } | null = null;
+
+      for (const line of lines) {
+        const numbered = line.match(/^\d+[\.\)]\s*(.+)/);
+        if (numbered) {
+          if (current) topics.push(current);
+          const text = numbered[1].trim();
+          // Try to extract category from the line
+          const catMatch = VALID_CATEGORIES.find(c => text.toLowerCase().includes(c.toLowerCase()));
+          current = { topic: text, category: catMatch || "", why: "" };
+        } else if (current && !current.why && line.trim().length > 20) {
+          current.why = line.trim().slice(0, 200);
+        }
+      }
+      if (current) topics.push(current);
+
+      // Dedup and insert into queue
+      let added = 0;
+      let dupes = 0;
+      for (const t of topics) {
+        if (isScoutDupe(t.topic)) { dupes++; continue; }
+        // Validate category
+        const cat = VALID_CATEGORIES.find(c => (t.category || "").toLowerCase().includes(c.toLowerCase())) || null;
+        await db.from("topic_queue").insert({
+          topic: t.topic,
+          category: cat,
+          notes: `${scoutModel} scout: ${t.why || ""}. Treatment: ${t.suggestedTreatment || "TBD"}`,
+          priority: 50,
+          source: "trending",
+          research_summary: t.why || null,
+        });
+        // Add to fingerprints so subsequent topics in same batch don't dupe each other
+        fingerprints.push(scoutExtract(t.topic));
+        added++;
+      }
+
+      const { count: queueCount } = await db.from("topic_queue").select("*", { count: "exact", head: true }).eq("status", "queued");
 
       return json({
         success: true,
         stage: "scout",
-        logId: logEntry.id,
+        scoutModel,
+        found: topics.length,
+        added,
+        duplicatesFiltered: dupes,
         queueSize: queueCount || 0,
-        message: `Scout complete. ${queueCount || 0} topics now in queue.`,
+        cost: scoutCost.costUsd,
+        message: `${scoutModel} scout: found ${topics.length}, added ${added} to queue (${dupes} dupes filtered). Queue: ${queueCount || 0} topics.`,
       });
     }
 
