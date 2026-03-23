@@ -1,0 +1,32 @@
+{
+  "title": "The Chemicals in Your Child's Blood Are Quietly Stealing Their Bones",
+  "description": "PFAS — the 'forever chemicals' in drinking water, food packaging, and cookware — are detectable in 97% of Americans. New research links early-life exposure to measurably weaker bones in adolescents, during the exact developmental window when peak bone mass is set for life. A 10% deficit at peak bone mass roughly doubles fracture risk in old age. The damage may already be done.",
+  "category": "Environmental Health",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 14,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Early-life PFAS exposure",
+    "The effect appears",
+    "Adolescence is a",
+    "Certain PFAS compounds,"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "Early-life PFAS exposure",
+    "The effect appears",
+    "Adolescence is a",
+    "Certain PFAS compounds,"
+  ],
+  "sortOrder": 1774265553713,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pfas-childhood-exposure-bone-density-adolescents.png",
+  "heroImageAlt": "Editorial illustration for The Chemicals in Your Child's Blood Are Quietly Stealing Their Bones"
+}
