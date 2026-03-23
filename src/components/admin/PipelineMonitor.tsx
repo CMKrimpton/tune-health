@@ -128,21 +128,34 @@ const STAGES: StageConfig[] = [
   { key: 'qc_publish', icon: '✅', label: 'QC + Publish', model: 'Sonnet + GPT Image', modelColor: '#f97316', statuses: ['editor_qc', 'publishing', 'published'] },
 ];
 
-const STATUS_TEXT: Record<string, string> = {
-  started: 'Initializing...',
-  searching: 'Finding 3-5 trending topics...',
-  research_done: 'Research complete — awaiting editor pick',
-  editor_reviewing: 'Senior Editor picking best topic...',
-  editor_approved: 'Editor approved — queued for writing',
-  writing: 'Sonnet 4.6 writing article...',
-  written: 'Written — awaiting independence review',
-  independence_review: 'Grok checking editorial independence...',
-  independence_done: 'Independence reviewed — awaiting QC',
-  editor_qc: 'Senior Editor final QC...',
-  publishing: 'Generating illustration & publishing...',
-  published: 'Published',
-  failed: 'Failed',
-};
+// Current primary writer model based on UTC hour (matches backend pickWriterModel)
+function getCurrentWriterModel(): { name: string; color: string } {
+  const hour = new Date().getUTCHours();
+  if (hour % 3 === 0) return { name: 'Sonnet', color: '#f97316' };
+  if (hour % 3 === 1) return { name: 'Grok', color: '#3b82f6' };
+  return { name: 'Gemini', color: '#fbbf24' };
+}
+
+function getStatusText(status: string, log?: PipelineLog): string {
+  const modelName = log?.model_used ? (PEN_NAMES[log.model_used] || log.model_used.split('-')[0]) : null;
+  const writerModel = getCurrentWriterModel();
+  const map: Record<string, string> = {
+    started: 'Initializing...',
+    searching: 'Gemini searching + Sonnet structuring...',
+    research_done: 'Research complete — awaiting editor',
+    editor_reviewing: 'Senior Editor scoring candidates...',
+    editor_approved: 'Approved — queued for writing',
+    writing: `${modelName || writerModel.name} writing article...`,
+    written: 'Written — awaiting Grok review',
+    independence_review: 'Grok 3 reviewing independence...',
+    independence_done: 'Reviewed — awaiting QC',
+    editor_qc: 'Sonnet final QC + headline polish...',
+    publishing: 'GPT Image illustrating + GitHub commit...',
+    published: 'Published',
+    failed: 'Failed',
+  };
+  return map[status] || status;
+}
 
 const ACTIVE_STATUSES = new Set([
   'started', 'searching', 'editor_reviewing', 'writing', 'independence_review', 'editor_qc', 'publishing',
@@ -274,8 +287,27 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     finally { setTriggering(false); }
   };
 
+  const triggerSingleScout = async (model: string) => {
+    setScouting(model);
+    setScoutResult(null);
+    try {
+      const res = await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ action: 'scout', scoutModel: model }),
+      });
+      const data = await res.json();
+      setScoutResult(`${model}: ${data.message || data.error || 'done'}`);
+    } catch (err) {
+      setScoutResult(`${model}: ${err instanceof Error ? err.message : 'failed'}`);
+    }
+    setScouting(null);
+    setTimeout(fetchStatus, 2000);
+  };
+
   const triggerScout = async () => {
     const models = ['gemini', 'sonnet', 'grok'];
+    setScoutResult(null);
     for (const model of models) {
       setScouting(model);
       try {
@@ -433,14 +465,32 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         )}
 
         <div className="pipeline-quick-actions">
-          <span className="pipeline-auto-label">Hourly produce + 3 daily scouts</span>
-          <button
-            className="pipeline-trigger-btn"
-            onClick={triggerScout}
-            disabled={scouting !== null}
-          >
-            {scouting ? `Scouting (${scouting})\u2026` : 'Scout Now'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.5625rem', color: '#57534e', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '0.25rem' }}>Scout</span>
+            {[
+              { id: 'gemini', label: 'Gemini', color: '#fbbf24' },
+              { id: 'sonnet', label: 'Sonnet', color: '#f97316' },
+              { id: 'grok', label: 'Grok', color: '#3b82f6' },
+            ].map(s => (
+              <button
+                key={s.id}
+                className="pipeline-trigger-btn"
+                onClick={() => triggerSingleScout(s.id)}
+                disabled={scouting !== null}
+                style={{ padding: '0.3125rem 0.625rem', fontSize: '0.6875rem', borderColor: scouting === s.id ? s.color : undefined, color: scouting === s.id ? s.color : undefined }}
+              >
+                {scouting === s.id ? '\u2026' : s.label}
+              </button>
+            ))}
+            <button
+              className="pipeline-trigger-btn"
+              onClick={triggerScout}
+              disabled={scouting !== null}
+              style={{ padding: '0.3125rem 0.625rem', fontSize: '0.6875rem' }}
+            >
+              {scouting ? `${scouting}\u2026` : 'All 3'}
+            </button>
+          </div>
           <button
             className="pipeline-trigger-btn primary"
             onClick={triggerRun}
@@ -463,13 +513,16 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       <div className="pipeline-container">
         {STAGES.map((stage) => {
           const items = stageLogsMap[stage.key];
+          const writerInfo = getCurrentWriterModel();
+          const displayModel = stage.key === 'write' ? `${writerInfo.name} (primary)` : stage.model;
+          const displayColor = stage.key === 'write' ? writerInfo.color : stage.modelColor;
           return (
             <div key={stage.key} className="pipeline-stage">
               <div className="pipeline-stage-header">
                 <span className="pipeline-stage-icon">{stage.icon}</span>
                 <span>{stage.label}</span>
-                <span style={{ fontSize: '0.5625rem', color: stage.modelColor, fontWeight: 600, marginLeft: '0.25rem', opacity: 0.8 }}>
-                  {stage.model}
+                <span style={{ fontSize: '0.5625rem', color: displayColor, fontWeight: 600, marginLeft: '0.25rem', opacity: 0.8 }}>
+                  {displayModel}
                 </span>
                 <span className={`pipeline-stage-count${items.length > 0 ? ' has-items' : ''}`}>
                   {items.length}
@@ -703,13 +756,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: PipelineLog; expanded: boolean; onToggle: () => void; onKill: () => void; killing: boolean }) {
   const isActive = ACTIVE_STATUSES.has(log.status);
   const displayTitle = log.title || log.topic || 'Pending topic\u2026';
-  const statusText = STATUS_TEXT[log.status] || log.status;
+  const statusText = getStatusText(log.status, log);
   const score = getEditorScore(log);
   const angle = getEditorAngle(log);
   const indScore = getIndependenceScore(log);
   const indReview = log.research_data?._independenceReview;
   const candidates = log.research_data?.candidates;
   const candidateScores = log.research_data?._editorBrief?.candidateScores;
+  const penName = log.model_used ? PEN_NAMES[log.model_used] : null;
+  const modelShort = log.model_used ? log.model_used.replace('claude-', '').replace('-20250514', '') : null;
 
   return (
     <div
@@ -720,8 +775,15 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
     >
       <div className="pipeline-card-title">{truncate(displayTitle, 60)}</div>
-      <div className="pipeline-card-status">{statusText}</div>
-      <div className="pipeline-card-time">{timeAgo(log.created_at)}</div>
+      <div className="pipeline-card-status">
+        {statusText}
+        {penName && <span style={{ marginLeft: '0.375rem', color: '#a78bfa', fontWeight: 500 }}>by {penName}</span>}
+      </div>
+      <div className="pipeline-card-time">
+        {timeAgo(log.created_at)}
+        {modelShort && <span style={{ marginLeft: '0.375rem', color: '#57534e' }}>{modelShort}</span>}
+        {log.source && <span style={{ marginLeft: '0.375rem', color: '#57534e' }}>{log.source}</span>}
+      </div>
 
       {(score !== null || indScore !== null || (log.cost_usd && parseFloat(String(log.cost_usd)) > 0)) && (
         <div className="pipeline-card-meta">
