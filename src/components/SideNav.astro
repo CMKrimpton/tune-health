@@ -11,7 +11,7 @@ const categories = await getCategories();
 const publishedSeries = await getAllSeries();
 ---
 
-<aside class="side-nav" id="sideNav">
+<aside class="side-nav" id="sideNav" aria-label="Sidebar navigation">
   <!-- Hover trigger zone -->
   <div class="side-nav-trigger" id="sideNavTrigger"></div>
 
@@ -250,11 +250,15 @@ const publishedSeries = await getAllSeries();
 </style>
 
 <script>
+  let sideNavController: AbortController | null = null;
+
   function initSideNav() {
+    if (sideNavController) sideNavController.abort();
+    sideNavController = new AbortController();
+    const signal = sideNavController.signal;
+
     const sideNav = document.getElementById('sideNav');
     const trigger = document.getElementById('sideNavTrigger');
-    const searchBtn = document.getElementById('sideNavSearch');
-    const themeBtn = document.getElementById('sideNavTheme');
 
     if (!sideNav || !trigger) return;
 
@@ -276,54 +280,38 @@ const publishedSeries = await getAllSeries();
       }, 300);
     }
 
-    // Trigger zone hover
-    trigger.addEventListener('mouseenter', openNav);
+    trigger.addEventListener('mouseenter', openNav, { signal });
 
-    // Panel hover keeps it open
     sideNav.querySelector('.side-nav-panel')?.addEventListener('mouseenter', () => {
       clearTimeout(closeTimeout);
-    });
+    }, { signal });
 
-    // Close when leaving the whole component
-    sideNav.addEventListener('mouseleave', closeNav);
+    sideNav.addEventListener('mouseleave', closeNav, { signal });
 
-    // Search button - trigger command palette
-    searchBtn?.addEventListener('click', () => {
-      const cmdkTrigger = document.getElementById('cmdkTrigger');
-      cmdkTrigger?.click();
-    });
+    // Search button → command palette
+    document.getElementById('sideNavSearch')?.addEventListener('click', () => {
+      document.getElementById('cmdkTrigger')?.click();
+    }, { signal });
 
     // Theme toggle
-    themeBtn?.addEventListener('click', () => {
-      (window as any).toggleTheme?.();
-    });
+    document.getElementById('sideNavTheme')?.addEventListener('click', () => {
+      (window as unknown as { toggleTheme?: () => void }).toggleTheme?.();
+    }, { signal });
 
-    // Active page tracking based on current URL
-    const links = sideNav.querySelectorAll('.side-nav-link');
+    // Active page tracking — cleaner matching logic
     const currentPath = window.location.pathname;
+    const isActive = (href: string) => {
+      if (href === '/') return currentPath === '/';
+      const cleanHref = href.split('?')[0].split('#')[0]; // strip query/hash
+      return currentPath === cleanHref || currentPath.startsWith(cleanHref + '/');
+    };
 
-    links.forEach(link => {
+    sideNav.querySelectorAll('.side-nav-link').forEach(link => {
       const href = link.getAttribute('href');
-      if (!href) return;
-
-      // Exact match for home
-      if (href === '/' && currentPath === '/') {
-        link.classList.add('active');
-      }
-      // Exact match for other pages
-      else if (href !== '/' && currentPath === href) {
-        link.classList.add('active');
-      }
-      // Prefix match for nested pages (like /articles/mirtazapine-guide matches /articles)
-      else if (href !== '/' && !href.includes('?') && !href.includes('#') && currentPath.startsWith(href + '/')) {
-        link.classList.add('active');
-      }
+      if (href && isActive(href)) link.classList.add('active');
     });
   }
 
-  // Run on load
   initSideNav();
-
-  // Re-run after View Transitions
   document.addEventListener('astro:after-swap', initSideNav);
 </script>

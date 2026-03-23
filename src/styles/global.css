@@ -6,6 +6,39 @@
    TUNE HEALTH - Premium Editorial Design
    ========================================= */
 
+/* Prevent white flash during View Transitions by keeping the background consistent */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.2s;
+  animation-timing-function: ease-out;
+}
+
+::view-transition-old(root) {
+  animation-name: vt-fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: vt-fade-in;
+}
+
+@keyframes vt-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Reduced motion: instant swap with no animation */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 @layer base {
   html {
     /* Native smooth scroll for anchor links only - much faster than JS scroll hijacking */
@@ -57,8 +90,8 @@
   .btn-editorial {
     @apply inline-flex items-center justify-center gap-2;
     @apply px-5 py-2.5 rounded-full font-sans font-semibold text-sm;
-    @apply transition-all duration-300 ease-editorial;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.3s ease;
   }
 
   .btn-primary {
@@ -485,11 +518,15 @@
   @apply fixed top-0 left-0 right-0 z-40;
   @apply bg-stone-50/95 dark:bg-stone-950/95 backdrop-blur-md;
   @apply border-b border-transparent;
-  @apply transition-all duration-300;
+  transition: border-color 0.15s ease, transform 0.3s ease;
 }
 
 .nav-header.scrolled {
   @apply border-stone-200 dark:border-stone-800;
+}
+
+.nav-header.header-hidden {
+  transform: translateY(-100%);
 }
 
 .nav-inner {
@@ -596,7 +633,8 @@ body.menu-open {
 .featured-card {
   @apply grid grid-cols-1 lg:grid-cols-2;
   @apply bg-white dark:bg-stone-900 rounded-2xl overflow-hidden;
-  @apply shadow-editorial transition-all duration-500 ease-editorial;
+  @apply shadow-editorial;
+  transition: box-shadow 0.4s ease, border-color 0.3s ease;
   @apply border border-stone-100 dark:border-stone-800;
 }
 
@@ -620,7 +658,7 @@ body.menu-open {
 .article-card {
   @apply relative bg-white dark:bg-stone-900;
   @apply rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800;
-  @apply transition-all duration-500 ease-editorial;
+  transition: box-shadow 0.4s ease, border-color 0.3s ease;
 }
 
 .article-card:hover {
@@ -821,7 +859,8 @@ body.menu-open {
   @apply bg-stone-900/90 dark:bg-white/90 text-white dark:text-stone-900;
   @apply flex items-center justify-center;
   @apply opacity-0 invisible translate-y-4;
-  @apply transition-all duration-300 shadow-lg backdrop-blur-sm;
+  @apply shadow-lg backdrop-blur-sm;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease, background-color 0.2s ease;
 }
 
 .back-to-top.visible {
@@ -1316,7 +1355,7 @@ header a[href="/"]:hover .text-primary-600 {
 .side-nav-logo {
   @apply font-serif text-2xl font-semibold mb-10;
   @apply opacity-0 transform -translate-x-4;
-  @apply transition-all duration-300 delay-100;
+  transition: opacity 0.25s ease-out 50ms, transform 0.25s ease-out 50ms;
 }
 
 .side-nav.open .side-nav-logo {
@@ -1330,12 +1369,12 @@ header a[href="/"]:hover .text-primary-600 {
 
 .side-nav-scroll {
   @apply opacity-0 transform -translate-x-4;
-  @apply transition-all duration-300;
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 
 .side-nav.open .side-nav-scroll {
   @apply opacity-100 translate-x-0;
-  transition-delay: 150ms;
+  transition-delay: 100ms;
 }
 
 .side-nav-label {
@@ -1354,8 +1393,8 @@ header a[href="/"]:hover .text-primary-600 {
   @apply text-stone-600 dark:text-stone-400;
   @apply hover:bg-stone-100 dark:hover:bg-stone-800;
   @apply hover:text-stone-900 dark:hover:text-white;
-  @apply transition-all duration-200;
   @apply text-left;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .side-nav-link.active {

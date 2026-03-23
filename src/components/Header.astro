@@ -156,8 +156,8 @@ const currentPath = Astro.url.pathname;
     @apply w-screen max-w-md lg:max-w-2xl;
     @apply opacity-0 invisible;
     @apply transform -translate-y-2;
-    @apply transition-all duration-300 ease-out;
     @apply z-50;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
   }
 
   .menu-dropdown.open {
@@ -166,7 +166,14 @@ const currentPath = Astro.url.pathname;
 </style>
 
 <script>
+  let headerController: AbortController | null = null;
+
   function initHeader() {
+    // Clean up previous listeners to prevent leaks across View Transitions
+    if (headerController) headerController.abort();
+    headerController = new AbortController();
+    const signal = headerController.signal;
+
     const menuBtn = document.getElementById('menuToggleBtn');
     const menuDropdown = document.getElementById('menuDropdown');
     const menuWrapper = document.getElementById('menuDropdownWrapper');
@@ -174,6 +181,7 @@ const currentPath = Astro.url.pathname;
     if (!menuBtn || !menuDropdown || !menuWrapper) return;
 
     let isOpen = false;
+    let isHovering = false;
     let closeTimeout: ReturnType<typeof setTimeout> | null = null;
 
     function openMenu() {
@@ -192,57 +200,42 @@ const currentPath = Astro.url.pathname;
       menuDropdown.classList.remove('open');
     }
 
-    function scheduleClose() {
-      closeTimeout = setTimeout(() => {
-        closeMenu();
-      }, 150);
-    }
-
-    // Open on hover (mouseenter)
+    // Open on hover
     menuWrapper.addEventListener('mouseenter', () => {
+      isHovering = true;
       openMenu();
-    });
+    }, { signal });
 
-    // Close on mouse leave (with delay)
+    // Close on mouse leave with guard against race condition
     menuWrapper.addEventListener('mouseleave', () => {
-      scheduleClose();
-    });
+      isHovering = false;
+      closeTimeout = setTimeout(() => {
+        if (!isHovering) closeMenu();
+      }, 250); // Match CSS transition duration
+    }, { signal });
 
-    // Also support click for mobile/touch
+    // Click toggle for mobile/touch
     menuBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (isOpen) {
-        closeMenu();
-      } else {
-        openMenu();
-      }
-    });
+      if (isOpen) closeMenu(); else openMenu();
+    }, { signal });
 
     // Close on escape
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        closeMenu();
-      }
-    });
+      if (e.key === 'Escape' && isOpen) closeMenu();
+    }, { signal });
 
-    // Close when clicking a link
+    // Close when clicking a link inside the dropdown
     menuDropdown.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        closeMenu();
-      });
+      link.addEventListener('click', () => closeMenu(), { signal });
     });
 
-    // Close when clicking outside (important for touch devices)
+    // Close on outside click (touch devices)
     document.addEventListener('click', (e) => {
-      if (isOpen && !menuWrapper.contains(e.target as Node)) {
-        closeMenu();
-      }
-    });
+      if (isOpen && !menuWrapper.contains(e.target as Node)) closeMenu();
+    }, { signal });
   }
 
-  // Run on load
   initHeader();
-
-  // Re-run after View Transitions
   document.addEventListener('astro:after-swap', initHeader);
 </script>

@@ -111,6 +111,12 @@
     font-weight: 500;
   }
 
+  .floating-toc-list a:focus-visible {
+    outline: 2px solid rgb(220 38 38);
+    outline-offset: 1px;
+    border-radius: 4px;
+  }
+
   :global(.dark) .floating-toc-list a.active {
     background: rgb(220 38 38 / 0.15);
   }
@@ -184,6 +190,10 @@
       font-size: 0.75rem;
       font-weight: 500;
       white-space: nowrap;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
     }
 
     .floating-toc-collapse {
@@ -194,7 +204,13 @@
 </style>
 
 <script>
+  let tocController: AbortController | null = null;
+
   function initFloatingTOC() {
+    if (tocController) tocController.abort();
+    tocController = new AbortController();
+    const signal = tocController.signal;
+
     const toc = document.getElementById('floatingTOC');
     const tocList = document.getElementById('tocList');
     const tocProgress = document.getElementById('tocProgress');
@@ -285,7 +301,7 @@
       }
     };
 
-    // Scroll listener
+    // Scroll listener with cleanup
     let ticking = false;
     window.addEventListener('scroll', () => {
       if (!ticking) {
@@ -296,12 +312,12 @@
         });
         ticking = true;
       }
-    }, { passive: true });
+    }, { passive: true, signal });
 
     // Collapse toggle
     tocCollapse?.addEventListener('click', () => {
       toc.classList.toggle('collapsed');
-    });
+    }, { signal });
 
     // Initial check
     checkTOCVisibility();

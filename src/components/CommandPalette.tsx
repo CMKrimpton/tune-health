@@ -131,6 +131,14 @@ export default function CommandPalette() {
     }
   }, [addToRecent]);
 
+  // Lock body scroll when palette is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [open]);
+
   // Get current page sections for article pages
   const [sections, setSections] = useState<Array<{ id: string; title: string }>>([]);
 
@@ -152,7 +160,7 @@ export default function CommandPalette() {
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => setOpen(false)}
+        onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
       />
 
       {/* Dialog */}

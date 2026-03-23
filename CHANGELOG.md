@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.16.0] - 2026-03-22
+
+### Added
+- **Sticky header hide/show on scroll** — on article pages (desktop), header slides up when scrolling down and reappears when scrolling up (like Medium/Substack). Maximizes reading real estate. 8px dead zone prevents jitter
+- **View Transition anti-flash CSS** — custom `::view-transition-old(root)` / `::view-transition-new(root)` keyframes with 200ms cross-fade prevent the white flash that occurred between page navigations
+- **FloatingTOC keyboard accessibility** — added `:focus-visible` ring on TOC links and mobile pill text truncation (`max-width: 180px` with ellipsis) to prevent overflow on narrow screens
+- **404 page noindex** — `<meta name="robots" content="noindex, nofollow">` prevents search engines from indexing error pages
+
+### Fixed
+- **Event listener memory leak across all nav components** — Header, SideNav, MobileNav, FloatingTOC, and BaseLayout core interactions now use `AbortController` to clean up old event listeners before re-attaching on View Transitions. Previously, every page navigation stacked duplicate listeners (N listeners after N navigations)
+- **Header menu close race condition** — added `isHovering` state guard so rapid hover→leave→hover cycles no longer cause unpredictable menu state. Close timeout increased from 150ms to 250ms to match CSS transition
+- **MobileNav scroll jitter on iOS** — added 8px dead zone to scroll delta detection, preventing momentum scroll oscillation from rapidly toggling the nav bar visibility
+- **CommandPalette scroll lock** — body scroll now locked (`overflow: hidden`) when palette is open, preventing background page from scrolling behind the modal backdrop
+- **CommandPalette backdrop click** — fixed click event bubbling by checking `e.target === e.currentTarget` instead of always closing on backdrop click
+- **SideNav active link matching** — rewrote matching logic to properly handle query params and hash fragments. Added `aria-label` for accessibility
+- **Subscribe page fake newsletter handler** — replaced `setTimeout` mock with real `/api/subscribe` API call with error handling
+- **Subscribe page hardcoded stats** — "46+" articles and "7" categories now dynamically pulled from content collection
+
+### Changed
+- **Header transition refined** — replaced `transition-all duration-300` (caused white flash during View Transitions) with targeted `transition: border-color 0.15s, transform 0.3s`. Only the properties that need to animate now animate
+- **All nav transitions optimized** — replaced 15+ `transition-all` usages with specific property transitions (background-color, box-shadow, opacity, transform) across cards, buttons, SideNav links, back-to-top. Eliminates unnecessary property watching and reduces visual jank
+- **Menu dropdown shadow** — upgraded from generic `shadow-2xl` to editorial-quality custom shadow with directional depth (`0 20px 60px`)
+- **SideNav stagger timing** — reduced logo delay from 100ms to 50ms, scroll delay from 150ms to 100ms for snappier feel
+
 ## [5.15.0] - 2026-03-22
 
 ### Added

@@ -122,59 +122,60 @@
 </style>
 
 <script>
+  let mobileNavController: AbortController | null = null;
+
   function initMobileNav() {
+    if (mobileNavController) mobileNavController.abort();
+    mobileNavController = new AbortController();
+    const signal = mobileNavController.signal;
+
     const nav = document.getElementById('mobileNav');
     if (!nav) return;
 
-    // Highlight active item based on current path
+    // Highlight active item
     const currentPath = window.location.pathname;
-    const items = nav.querySelectorAll('.mobile-nav-item[data-nav]');
-
-    items.forEach(item => {
+    nav.querySelectorAll('.mobile-nav-item[data-nav]').forEach(item => {
       item.classList.remove('active');
-      const navTarget = (item as HTMLElement).dataset.nav;
-      if (!navTarget) return;
-
-      if (navTarget === 'home' && currentPath === '/') {
-        item.classList.add('active');
-      } else if (navTarget === 'articles' && currentPath.startsWith('/articles')) {
-        item.classList.add('active');
-      } else if (navTarget === 'reading-list' && currentPath === '/reading-list') {
-        item.classList.add('active');
-      } else if (navTarget === 'deep-dives' && currentPath === '/deep-dives') {
-        item.classList.add('active');
-      }
+      const target = (item as HTMLElement).dataset.nav;
+      if (!target) return;
+      if (target === 'home' && currentPath === '/') item.classList.add('active');
+      else if (target === 'articles' && currentPath.startsWith('/articles')) item.classList.add('active');
+      else if (target === 'reading-list' && currentPath === '/reading-list') item.classList.add('active');
+      else if (target === 'deep-dives' && currentPath === '/deep-dives') item.classList.add('active');
     });
 
-    // Search button triggers command palette
-    const searchBtn = document.getElementById('mobileSearchBtn');
-    searchBtn?.addEventListener('click', () => {
-      const cmdkTrigger = document.getElementById('cmdkTrigger') || document.getElementById('cmdkTriggerMobile');
-      cmdkTrigger?.click();
-    });
+    // Search triggers command palette
+    document.getElementById('mobileSearchBtn')?.addEventListener('click', () => {
+      (document.getElementById('cmdkTrigger') || document.getElementById('cmdkTriggerMobile'))?.click();
+    }, { signal });
 
-    // Hide mobile nav when scrolling down, show when scrolling up
+    // Scroll hide/show with dead zone to prevent iOS momentum jitter
     let lastScrollY = window.scrollY;
     let ticking = false;
+    const SCROLL_DEAD_ZONE = 8; // Ignore scroll deltas smaller than this
+
+    nav.style.transition = 'transform 0.25s ease';
 
     window.addEventListener('scroll', () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
-          if (currentScrollY > lastScrollY && currentScrollY > 200) {
-            nav.style.transform = 'translateY(100%)';
-          } else {
-            nav.style.transform = 'translateY(0)';
+          const delta = currentScrollY - lastScrollY;
+
+          // Ignore tiny movements (momentum scroll oscillation)
+          if (Math.abs(delta) > SCROLL_DEAD_ZONE) {
+            if (delta > 0 && currentScrollY > 200) {
+              nav.style.transform = 'translateY(100%)';
+            } else {
+              nav.style.transform = 'translateY(0)';
+            }
+            lastScrollY = currentScrollY;
           }
-          lastScrollY = currentScrollY;
           ticking = false;
         });
         ticking = true;
       }
-    }, { passive: true });
-
-    // Add transition for smooth hide/show
-    nav.style.transition = 'transform 0.25s ease';
+    }, { passive: true, signal });
   }
 
   initMobileNav();

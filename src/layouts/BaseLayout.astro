@@ -141,8 +141,14 @@ const canonicalUrl = canonical || Astro.url.pathname;
   </script>
 
   <script>
+    let coreController: AbortController | null = null;
+
     // Core interactions - runs on every page
     function initInteractions() {
+      if (coreController) coreController.abort();
+      coreController = new AbortController();
+      const signal = coreController.signal;
+
       const header = document.getElementById('header');
       const scrollProgress = document.getElementById('scrollProgress');
       const backToTop = document.getElementById('backToTop');
@@ -150,19 +156,39 @@ const canonicalUrl = canonical || Astro.url.pathname;
       const menuToggle = document.getElementById('menuToggle');
       const mobileMenu = document.getElementById('mobileMenu');
 
+      // Sticky header hide/show on scroll (like Medium/Substack)
+      let lastScrollY = window.scrollY;
+      const HEADER_DEAD_ZONE = 8;
+      const isArticlePage = !!document.getElementById('article-content');
+
       // Header scroll effect
       let ticking = false;
       const updateScroll = () => {
         const scrollY = window.scrollY;
 
-        // Header
+        // Scrolled state (glass border + backdrop)
         if (scrollY > 50) {
           header?.classList.add('scrolled');
         } else {
           header?.classList.remove('scrolled');
         }
 
-        // Progress bar — use visualViewport height when available (handles iOS address bar)
+        // Sticky hide/show — only on article pages, desktop only
+        if (isArticlePage && header && window.innerWidth >= 1024) {
+          const delta = scrollY - lastScrollY;
+          if (Math.abs(delta) > HEADER_DEAD_ZONE) {
+            if (delta > 0 && scrollY > 300) {
+              header.classList.add('header-hidden');
+            } else {
+              header.classList.remove('header-hidden');
+            }
+            lastScrollY = scrollY;
+          }
+        } else {
+          header?.classList.remove('header-hidden');
+        }
+
+        // Progress bar
         if (scrollProgress) {
           const vh = window.visualViewport?.height ?? window.innerHeight;
           const docHeight = document.documentElement.scrollHeight - vh;
@@ -187,24 +213,24 @@ const canonicalUrl = canonical || Astro.url.pathname;
           requestAnimationFrame(updateScroll);
           ticking = true;
         }
-      }, { passive: true });
+      }, { passive: true, signal });
 
       // Theme toggle
       themeToggle?.addEventListener('click', () => {
         (window as unknown as { toggleTheme?: () => void }).toggleTheme?.();
-      });
+      }, { signal });
 
       // Mobile menu
       menuToggle?.addEventListener('click', () => {
         menuToggle.classList.toggle('active');
         mobileMenu?.classList.toggle('active');
         document.body.classList.toggle('menu-open');
-      });
+      }, { signal });
 
       // Back to top
       backToTop?.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
+      }, { signal });
 
       // Escape key
       document.addEventListener('keydown', (e) => {
@@ -213,9 +239,9 @@ const canonicalUrl = canonical || Astro.url.pathname;
           menuToggle?.classList.remove('active');
           document.body.classList.remove('menu-open');
         }
-      });
+      }, { signal });
 
-      // Reveal animations — only observe elements not already active
+      // Reveal animations
       const reveals = document.querySelectorAll('.reveal:not(.active)');
       const revealObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {

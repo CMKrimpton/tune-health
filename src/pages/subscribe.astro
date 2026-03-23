@@ -4,6 +4,10 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SideNav from '../components/SideNav.astro';
+import { getArticles, getCategories } from '../utils/articles';
+
+const articles = await getArticles();
+const categories = await getCategories();
 ---
 
 <BaseLayout
@@ -83,11 +87,11 @@ import SideNav from '../components/SideNav.astro';
       <aside class="subscribe-aside">
         <div class="subscribe-stats">
           <div class="stat-item">
-            <span class="stat-number">46+</span>
+            <span class="stat-number">{articles.length}+</span>
             <span class="stat-label">Articles Published</span>
           </div>
           <div class="stat-item">
-            <span class="stat-number">7</span>
+            <span class="stat-number">{categories.length}</span>
             <span class="stat-label">Categories</span>
           </div>
           <div class="stat-item">
@@ -261,32 +265,56 @@ import SideNav from '../components/SideNav.astro';
 
 <script>
   const form = document.getElementById('subscribeForm');
-  form?.addEventListener('submit', (e) => {
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const input = form.querySelector('input[type="email"]') as HTMLInputElement;
     const button = form.querySelector('button') as HTMLButtonElement;
+    if (!input || !button) return;
 
-    if (input && button) {
-      const originalHTML = button.innerHTML;
-      button.innerHTML = '<span>Subscribing...</span>';
-      button.disabled = true;
-      input.disabled = true;
+    const email = input.value.trim();
+    if (!email) return;
 
-      setTimeout(() => {
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<span>Subscribing...</span>';
+    button.disabled = true;
+    input.disabled = true;
+
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'subscribe-page' }),
+      });
+
+      if (res.ok) {
         button.innerHTML = `
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path d="M5 13l4 4L19 7" stroke-width="2"/>
           </svg>
           <span>You're on the list!</span>
         `;
-
+        input.value = '';
         setTimeout(() => {
           button.innerHTML = originalHTML;
           button.disabled = false;
           input.disabled = false;
-          input.value = '';
+        }, 4000);
+      } else {
+        const data = await res.json();
+        button.innerHTML = `<span>${data.error || 'Try again'}</span>`;
+        setTimeout(() => {
+          button.innerHTML = originalHTML;
+          button.disabled = false;
+          input.disabled = false;
         }, 3000);
-      }, 800);
+      }
+    } catch {
+      button.innerHTML = '<span>Error — try again</span>';
+      setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.disabled = false;
+        input.disabled = false;
+      }, 3000);
     }
   });
 </script>
