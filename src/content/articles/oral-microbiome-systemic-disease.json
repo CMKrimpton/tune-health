@@ -1,0 +1,34 @@
+{
+  "title": "The Most Dangerous Microbiome in Your Body Isn't in Your Gut. It's in Your Mouth.",
+  "description": "While the world obsessed over gut bacteria, a quieter microbial ecosystem was seeding inflammation in hearts, joints, and brains. A new synthesis of 30+ systematic reviews confirms the oral microbiome as a mechanistically plausible driver of cardiovascular disease, type 2 diabetes, Alzheimer's, and rheumatoid arthritis — and the pathogen implicated in Alzheimer's has been found in brain tissue. Correlation isn't causation, but 72 square centimeters of inflamed gum tissue bleeding into your bloodstream daily is not a metaphor. Your dentist may be your most underrated physician.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Oral Microbiome",
+    "Periodontal Disease",
+    "Cardiovascular Health",
+    "Alzheimer's Disease",
+    "Systemic Inflammation"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "oral microbiome",
+    "periodontal disease systemic effects",
+    "P. gingivalis Alzheimer's",
+    "oral bacteria cardiovascular disease",
+    "periodontitis diabetes"
+  ],
+  "sortOrder": 1774283716151,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/oral-microbiome-systemic-disease.png",
+  "heroImageAlt": "Editorial illustration for The Most Dangerous Microbiome in Your Body Isn't in Your Gut. It's in Your Mouth."
+}
