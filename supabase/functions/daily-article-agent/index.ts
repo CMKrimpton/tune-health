@@ -1022,7 +1022,7 @@ Deno.serve(async (req: Request) => {
   const db = supabase();
 
   try {
-    let body: { action?: string; model?: string } = {};
+    let body: { action?: string; model?: string; logId?: string } = {};
     try {
       body = await req.json();
     } catch {
@@ -1045,11 +1045,61 @@ Deno.serve(async (req: Request) => {
       return json({ logs: data || [], articleCount });
     }
 
-    // ------ Cleanup stale runs (>8 min) ------
+    // ------ RETRY — resume a failed run from its last good checkpoint ------
+    if (action === "retry") {
+      const { logId } = body;
+      if (!logId) return json({ error: "logId is required for retry action" }, 400);
+
+      const { data: logEntry, error: logError } = await db
+        .from("daily_article_log")
+        .select("*")
+        .eq("id", logId)
+        .maybeSingle();
+
+      if (logError || !logEntry) {
+        return json({ error: "Log entry not found", detail: logError?.message }, 404);
+      }
+
+      const research = (logEntry.research_data as Record<string, unknown>) || {};
+      let resumeStatus: string;
+
+      if (research._article) {
+        // Article was written — resume at QC + Publish
+        resumeStatus = "written";
+      } else if (research._editorBrief) {
+        // Editor brief exists — resume at Write
+        resumeStatus = "editor_approved";
+      } else if (research.topic || research.keyFindings) {
+        // Research data exists — resume at Editor Brief
+        resumeStatus = "research_done";
+      } else {
+        // Nothing salvageable — restart from scratch
+        resumeStatus = "started";
+      }
+
+      await db
+        .from("daily_article_log")
+        .update({
+          status: resumeStatus,
+          error: null,
+          created_at: new Date().toISOString(),
+        })
+        .eq("id", logId);
+
+      return json({
+        success: true,
+        logId,
+        previousStatus: logEntry.status,
+        resumeStatus,
+        message: `Reset to "${resumeStatus}" — next cron invocation will resume from this checkpoint.`,
+      });
+    }
+
+    // ------ Cleanup stale runs (>8 min) — self-healing for timeouts ------
     const eightMinutesAgo = new Date(Date.now() - 8 * 60 * 1000).toISOString();
     const { data: staleRuns } = await db
       .from("daily_article_log")
-      .select("id")
+      .select("id, research_data")
       .in("status", [
         "started", "searching", "writing", "publishing", "editor_reviewing", "editor_qc",
         // Legacy
@@ -1059,10 +1109,36 @@ Deno.serve(async (req: Request) => {
 
     if (staleRuns && staleRuns.length > 0) {
       for (const stale of staleRuns) {
-        await db
-          .from("daily_article_log")
-          .update({ status: "failed", error: "Timed out (stale run)", completed_at: new Date().toISOString() })
-          .eq("id", (stale as { id: string }).id);
+        const staleId = (stale as { id: string }).id;
+        const research = ((stale as { research_data: Record<string, unknown> | null }).research_data) || {};
+
+        // Self-healing: determine the best resumption checkpoint from saved data
+        let resumeStatus: string | null = null;
+        if (research._article) {
+          resumeStatus = "written";
+        } else if (research._editorBrief) {
+          resumeStatus = "editor_approved";
+        } else if (research.topic || research.keyFindings) {
+          resumeStatus = "research_done";
+        }
+
+        if (resumeStatus) {
+          // Timeout with salvageable data — reset to checkpoint instead of failing
+          await db
+            .from("daily_article_log")
+            .update({
+              status: resumeStatus,
+              error: null,
+              created_at: new Date().toISOString(),
+            })
+            .eq("id", staleId);
+        } else {
+          // No salvageable data — mark as failed
+          await db
+            .from("daily_article_log")
+            .update({ status: "failed", error: "Timed out (stale run — no checkpoint data)", completed_at: new Date().toISOString() })
+            .eq("id", staleId);
+        }
       }
     }
 
