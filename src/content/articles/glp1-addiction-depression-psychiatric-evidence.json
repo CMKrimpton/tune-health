@@ -1,0 +1,34 @@
+{
+  "title": "The Drug That Might Cure Addiction Has a Psychiatric Safety Problem Nobody Can Explain",
+  "description": "Semaglutide is outperforming every approved addiction medication in large-scale data — cutting opioid overdose rates by 40% and AUD hospitalization by 36%. A separate cohort study found the same drug nearly doubles the risk of major depression. Both findings are real. Both are unexplained. This is what happens when a blockbuster drug outruns the science trying to understand it.",
+  "category": "Pharmacology",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 16,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "A landmark 2024",
+    "A Finnish cohort",
+    "A 2025 phase",
+    "A 2024 meta-analysis",
+    "A Lancet Psychiatry"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "A landmark 2024",
+    "A Finnish cohort",
+    "A 2025 phase",
+    "A 2024 meta-analysis",
+    "A Lancet Psychiatry"
+  ],
+  "sortOrder": 1774261723043,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/glp1-addiction-depression-psychiatric-evidence.png",
+  "heroImageAlt": "Editorial illustration for The Drug That Might Cure Addiction Has a Psychiatric Safety Problem Nobody Can Explain"
+}

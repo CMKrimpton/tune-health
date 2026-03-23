@@ -1,0 +1,140 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="The Drug That Might Cure Addiction Has a Psychiatric Safety Problem Nobody Can Explain"
+  description="Semaglutide is outperforming every approved addiction medication in large-scale data — cutting opioid overdose rates by 40% and AUD hospitalization by 36%. A separate cohort study found the same drug nearly doubles the risk of major depression. Both findings are real. Both are unexplained. This is what happens when a blockbuster drug outruns the science trying to understand it."
+  category="Pharmacology"
+  readTime="16 min read"
+  publishDate="March 2026"
+>
+  <!-- Feature Image -->
+  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
+    <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><rect width="1200" height="600" fill="url(#bg)"/><circle cx="600" cy="300" r="120" fill="#dc262610" stroke="#dc262630" stroke-width="1"/>
+  </svg>
+
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#introduction" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Mechanism Is the Story</a>
+      <a href="#the-addiction-signal" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Addiction Signal: Strong, Consistent, and Still Not Enough</a>
+      <a href="#the-depression-signal" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Depression Signal: Weaker, More Contested, and Harder to Dismiss</a>
+      <a href="#the-structural-scandal" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Population That Was Never Studied</a>
+      <a href="#the-recovery-problem" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What Addiction Recovery Actually Requires</a>
+      <a href="#what-the-regulators-know" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What the Regulators Know, and When They Knew It</a>
+      <a href="#the-honest-condition" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Honest Condition of Medicine at the Edge</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="introduction" class="reveal">
+  <p>In a Finnish cohort of 227,866 people with alcohol use disorder, followed for a median of 8.8 years, semaglutide was associated with a 36% reduced risk of AUD hospitalization — an adjusted hazard ratio of 0.64. That number, published by Lähteenvuo and colleagues in <em>JAMA Psychiatry</em> in 2025, is not a rounding error or a subgroup artifact. It is larger than the effect of acamprosate. Larger than naltrexone. Larger than disulfiram. Every medication currently approved for alcohol use disorder, outperformed by a drug approved for none of it, in the largest dataset ever assembled for this question. The authors called for urgent clinical trials. The addiction medicine field called it a landmark. The press called it a miracle.</p>
+  <p>Now hold that number in your head, and consider this one: a propensity-score matched cohort of 162,253 patients with obesity, published in <em>Scientific Reports</em> in 2024, found that GLP-1 receptor agonist treatment was associated with a 98% increased risk of any psychiatric disorder, a 195% higher risk of major depression, and a 108% increased risk of anxiety. Same drug class. Different dataset. Equally large. Equally rigorous by the standards of observational medicine. Pointing in the opposite direction.</p>
+  <p>Both findings are real. Neither is fully explained. The field has not reconciled them. And physicians are writing prescriptions right now.</p>
+</section>
+
+<section id="the-mechanism-is-the-story" class="reveal">
+  <h2>The Mechanism Is the Story</h2>
+  <p>To understand why this contradiction is not merely a statistical curiosity but a genuine scientific emergency, you need to understand where in the brain these drugs are acting — and why that location makes the contradiction almost inevitable.</p>
+  <p>GLP-1, glucagon-like peptide-1, is synthesized in two places: by intestinal L-cells in the gut, and by preproglucagon neurons in the nucleus tractus solitarius in the brainstem. The brainstem neurons project directly into the mesolimbic dopamine circuit — the nucleus accumbens, the ventral tegmental area, the amygdala, the hippocampus, the prefrontal cortex. These are not peripheral metabolic structures. They are the core architecture of reward, motivation, stress response, and emotional memory. GLP-1 receptors are expressed throughout this system, and semaglutide, unlike earlier GLP-1 drugs, crosses the blood-brain barrier with sufficient efficiency to bind them.</p>
+  <p>What happens when those receptors are activated? The dopaminergic neurons in the VTA are attenuated. Reward salience — the neurochemical signal that makes food, alcohol, opioids, and nicotine feel compelling — is dampened. The hedonic pull of a drink or a hit is reduced not because the drug blocks the receptor for that substance, as naltrexone does for opioids, but because it turns down the gain on the entire reward circuit. The signal gets quieter. The craving loses its urgency.</p>
+  <p>This is mechanistically elegant. It is also, as Dr. Anna Lembke of Stanford has pointed out, precisely the kind of broad-spectrum intervention that should give us pause. "We need to understand this better before widespread addiction use," she has said, raising concern about emotional blunting — the possibility that a drug which dampens the reward salience of heroin also dampens the reward salience of a conversation with your child, a piece of music, a reason to get out of bed. The mechanism that makes semaglutide promising for addiction is the same mechanism that might make it harmful for mood. You cannot separate them at the level of the receptor.</p>
+  <p>GLP-1 signaling also modulates corticotropin-releasing hormone neurons in the paraventricular nucleus of the hypothalamus, implicating the HPA axis — the body's primary stress-response system. It promotes hippocampal neurogenesis, modulates serotonin, GABA, and glutamate release, and reduces neuroinflammation and microglial activity. The net effect, as a 2025 analysis in <em>Nature Mental Health</em> reviewing 278 preclinical and 96 clinical studies concluded, is a broad recalibration of the brain's reward and stress-response architecture. That phrase — broad recalibration — is doing a lot of work. It means we are not talking about a targeted intervention. We are talking about a system-level adjustment whose downstream consequences we cannot fully predict.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>"The mechanism that makes semaglutide promising for addiction is the same mechanism that might make it harmful for mood. You cannot separate them at the level of the receptor."</p></aside>
+
+<section id="the-addiction-signal" class="reveal">
+  <h2>The Addiction Signal: Strong, Consistent, and Still Not Enough</h2>
+  <p>The evidence that semaglutide reduces addictive behavior is, by the standards of this field, unusually consistent. The Finnish cohort finding is the headline, but it is not alone. A 2024 analysis by Qeadan and colleagues in <em>Addiction</em>, drawing on 1.3 million patient records, found that GLP-1 drug users with opioid use disorder had a 40% lower rate of opioid overdose compared to non-users, and those with alcohol use disorder had a 50% lower rate of alcohol intoxication. A separate large-scale analysis in <em>Nature Communications</em> in 2024, examining insurance records from over 800,000 patients, found significantly lower rates of AUD diagnoses among GLP-1 users compared to those taking other diabetes medications. Over 30 animal studies have demonstrated reduced drug-seeking behavior for alcohol, opioids, nicotine, and cocaine. Preclinical data show GLP-1 receptor agonists reduce nicotine self-administration, reinstatement of nicotine seeking, and self-administration of heroin, fentanyl, and oxycodone in rodent models.</p>
+  <p>Then there is the Hendershot RCT. Published in <em>JAMA Psychiatry</em> in 2025, it is the first randomized controlled trial of semaglutide specifically for alcohol use disorder. Double-blind, placebo-controlled, 9 weeks, n=48. Low-dose semaglutide significantly reduced laboratory alcohol self-administration (β = -0.48, P=.01), drinks per drinking day, and weekly alcohol craving versus placebo, with medium-to-large effect sizes. Semaglutide also reduced cigarettes per day in a subgroup of current smokers, suggesting the cross-addiction signal is real and not substance-specific.</p>
+  <p>This sounds like a verdict. It is not. The Hendershot trial did not show significant reductions in total drinking days or average drinks per calendar day — the outcomes that matter most clinically. The sample size of 48 is too small to draw conclusions about safety or efficacy at population scale. Nine weeks is not a treatment course; it is a pilot. And the animal-to-human translation record for GLP-1 drugs in addiction is not clean: exenatide, the first GLP-1 agonist tested in an AUD RCT, showed no significant effect on alcohol consumption in its primary analysis. The rodent models did not predict that failure.</p>
+  <p>The observational data — the Finnish cohort, the Qeadan analysis, the Nature Communications study — are large and consistent, but they carry a methodological problem that cannot be waved away. Healthy-user bias in GLP-1 prescribing is severe. Patients who access these drugs are systematically different from those who don't: they are more likely to be engaged with the healthcare system, more motivated to change health behaviors, more likely to have stable housing and insurance, and more likely to be reducing alcohol intake for reasons entirely unrelated to the drug. The Finnish study used propensity-score matching and controlled for numerous confounders, but no observational design fully eliminates this problem. The authors themselves called for randomized controlled trials. That call has not yet been answered at the scale required.</p>
+</section>
+
+<div class="info-card my-12 reveal">
+  <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">The Evidentiary Hierarchy: What We Actually Know</h4>
+  <ul class="space-y-2 text-sm">
+    <li><strong>Strongest addiction signal:</strong> Finnish cohort (Lähteenvuo et al., <em>JAMA Psychiatry</em>, 2025) — n=227,866, aHR 0.64 for AUD hospitalization, outperforms all approved AUD medications. Observational; healthy-user bias unresolved.</li>
+    <li><strong>Only AUD RCT:</strong> Hendershot et al. (<em>JAMA Psychiatry</em>, 2025) — n=48, 9 weeks, significant reduction in drinks per drinking day and craving, but primary clinical endpoints (total drinking days, drinks per calendar day) not met.</li>
+    <li><strong>Opioid overdose signal:</strong> Qeadan et al. (<em>Addiction</em>, 2024) — 1.3 million records, 40% lower overdose rate. Real-world data; confounding substantial.</li>
+    <li><strong>Psychiatric harm signal:</strong> <em>Scientific Reports</em> cohort (2024) — n=162,253, 98% increased psychiatric disorder risk, 195% increased major depression risk. Propensity-matched; mechanism unexplained.</li>
+    <li><strong>Regulatory status:</strong> EMA and MHRA safety reviews ongoing. FDA preliminary evaluation (2023) found no causal link to suicidal ideation; investigation not closed.</li>
+    <li><strong>Critical gap:</strong> Virtually all psychiatric studies exclude people with serious mental illness — the population most likely to be affected.</li>
+  </ul>
+</div>
+
+<section id="the-depression-signal" class="reveal">
+  <h2>The Depression Signal: Weaker, More Contested, and Harder to Dismiss</h2>
+  <p>The mood disorder evidence is a different kind of mess. It is not a clean contradiction; it is a field arguing with itself using incompatible methodologies and arriving at incompatible conclusions.</p>
+  <p>On the positive side: a 2024 meta-analysis found significant reductions in depression and anxiety scale scores among GLP-1 receptor agonist users compared to controls. A 2026 systematic review in <em>Diabetes, Obesity and Metabolism</em> concluded GLP-1 receptor agonists show "modest antidepressant effects" and "potential therapeutic benefit in disorders of reward regulation." A 2026 Swedish national cohort study in <em>The Lancet Psychiatry</em> suggested semaglutide and liraglutide "might be useful dually effective therapeutic options" for anxiety and depression co-occurring with diabetes and obesity. A post-hoc analysis of the STEP 1, 2, 3, and 5 trials published in <em>JAMA Internal Medicine</em> in 2024 found a statistically significant reduction in depressive symptoms with semaglutide — estimated treatment difference of -0.56 on standard scales.</p>
+  <p>That last number deserves scrutiny. An estimated treatment difference of -0.56 on a depression scale is statistically significant in a large trial. It is also clinically negligible. The minimum clinically important difference on the PHQ-9, the most commonly used depression scale, is generally considered to be around 5 points. The STEP trial authors themselves noted that improvements in quality of life occurred independent of degree of weight loss — which is interesting — but the effect size is so small that it could be entirely explained by improved glycemic control, reduced systemic inflammation, or the simple fact that losing weight makes people feel better about themselves. The direct psychiatric mechanism is not established by these numbers.</p>
+  <p>Against this: the <em>Scientific Reports</em> cohort finding of a 98% increased risk of any psychiatric disorder and a 195% increased risk of major depression. A VigiBase pharmacovigilance analysis of 2,061,901 adverse drug reports found significant signals for anxiety (adjusted reporting odds ratio 1.26), depressed mood disorders (aROR 1.70), and suicidality (aROR 1.45) specifically with semaglutide — signals large enough to prompt formal safety reviews by the EMA and MHRA, both of which remain ongoing. The FDA investigated reports of suicidal ideation in 2023 and issued a preliminary evaluation suggesting no causal link. The word "preliminary" is doing important work in that sentence.</p>
+  <p>Methodological explanations for the <em>Scientific Reports</em> finding have been proposed: the study population may have had higher baseline psychiatric risk; the propensity matching may have been insufficient; the outcome ascertainment may have been biased by increased healthcare contact among GLP-1 users. None of these explanations fully resolves the finding. A 195% increased risk of major depression is not a rounding error that disappears under methodological scrutiny. It is a signal that demands a mechanistic account, and no one has provided one that is fully satisfying.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>"A 195% increased risk of major depression is not a rounding error that disappears under methodological scrutiny. It is a signal that demands a mechanistic account, and no one has provided one that is fully satisfying."</p></aside>
+
+<section id="the-structural-scandal" class="reveal">
+  <h2>The Population That Was Never Studied</h2>
+  <p>There is a structural problem underneath all of this that receives far less attention than it deserves. Virtually every psychiatric study of GLP-1 receptor agonists has excluded people with serious mental illness — schizophrenia, bipolar disorder, treatment-resistant depression, active substance use disorders. The STEP trials excluded them. The observational cohorts are confounded by their underrepresentation. The Hendershot RCT enrolled participants with alcohol use disorder but excluded those with current major psychiatric diagnoses.</p>
+  <p>This is not a minor methodological footnote. People with serious mental illness have dramatically elevated rates of obesity, type 2 diabetes, and substance use disorder. They are the population for whom the metabolic benefits of GLP-1 drugs might be most consequential, and the population for whom the psychiatric risks might be most severe. Roger S. McIntyre of the University of Toronto has written in <em>Expert Opinion on Pharmacotherapy</em> that GLP-1 receptor agonists "have potential to transform health outcomes for persons with bipolar disorder, schizophrenia, major depressive disorder and other serious mental illnesses by lengthening healthspan and reducing excess and premature mortality." That may be true. We do not know, because those patients were not in the studies.</p>
+  <p>The 2026 systematic review in <em>Diabetes, Obesity and Metabolism</em> named this directly, noting that findings are "constrained by limited sample diversity and underrepresentation of individuals with psychiatric illness." The Nature Mental Health analysis of 374 combined studies reached the same conclusion. The evidence base does not apply to the highest-need patients. It was built without them.</p>
+  <p>This is not an accident of research design. Clinical trials exclude people with serious mental illness because they are harder to recruit, harder to retain, more likely to have adverse events that complicate interpretation, and more likely to be on concomitant medications that confound results. These are real methodological concerns. They are also a choice — a choice that has produced an evidence base systematically blind to the population most at risk from both the disease and the treatment.</p>
+</section>
+
+<section id="the-recovery-problem" class="reveal">
+  <h2>What Addiction Recovery Actually Requires</h2>
+  <p>The addiction medicine implications and the mood disorder implications are distinct problems and should not be collapsed into a single "mental health" claim. The addiction signal is stronger, more consistent across study designs, and more mechanistically coherent. The mood disorder signal is weaker, more confounded, and more contested. But there is a point where they intersect, and it is worth sitting with.</p>
+  <p>Addiction recovery, in the clinical and experiential sense, is not simply the cessation of drug use. It involves the gradual rebuilding of a capacity for pleasure, motivation, and meaning that has been degraded by years of substance-driven dopamine dysregulation. The mesolimbic system, chronically flooded by drugs, downregulates its own receptors. Recovery, in part, is the slow process of those receptors recovering their sensitivity — of food tasting good again, of relationships feeling rewarding, of ordinary life becoming worth living without chemical amplification.</p>
+  <p>A drug that broadly dampens reward salience may be working against that process in ways we cannot yet measure. Dr. Lembke's concern about emotional blunting is not a fringe position; it is a mechanistically grounded worry about what happens when you reduce the gain on a system that is already struggling to generate sufficient signal. The patients who report feeling "flat" or "indifferent" on GLP-1 drugs — a phenomenon noted in clinical practice if not yet systematically studied — may be experiencing exactly what the mechanism predicts. Whether that flatness is a therapeutic feature (reducing craving) or a harmful side effect (reducing the capacity for recovery) depends on a question we do not yet have the tools to answer.</p>
+  <p>Dr. Lorenzo Leggio of NIDA has framed the mechanism optimistically: "We believe that these medications are active in the brain and similar to their actions on food, they also curb their craving for addictive drugs." That is almost certainly true. The question Leggio's framing does not address is what else gets curbed in the process.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>"Whether that flatness is a therapeutic feature or a harmful side effect depends on a question we do not yet have the tools to answer."</p></aside>
+
+<div class="info-card my-12 reveal">
+  <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">Key Expert Positions</h4>
+  <ul class="space-y-2 text-sm">
+    <li><strong>Dr. Anna Lembke (Stanford):</strong> "These molecules demonstrate exciting early promise in stemming the rising tide of addictive disorders. But we still need more evidence, including longer-term studies." Separately raised concern about emotional blunting and the need to understand reward-dampening effects before widespread addiction use.</li>
+    <li><strong>Dr. Christian Hendershot (USC Institute for Addiction Science):</strong> "It's too soon to endorse off-label use for addiction. We need rigorous randomized controlled trials first."</li>
+    <li><strong>Dr. Lorenzo Leggio (NIDA):</strong> "We believe that these medications are active in the brain and similar to their actions on food, they also curb their craving for addictive drugs."</li>
+    <li><strong>Lähteenvuo et al. (Finnish JAMA Psychiatry study authors):</strong> "Semaglutide and liraglutide may be effective in the treatment of AUD, and clinical trials are urgently needed to confirm these findings."</li>
+    <li><strong>Roger S. McIntyre (University of Toronto):</strong> GLP-1 receptor agonists "have potential to transform health outcomes for persons with bipolar disorder, schizophrenia, major depressive disorder and other serious mental illnesses."</li>
+  </ul>
+</div>
+
+<section id="what-the-regulators-know" class="reveal">
+  <h2>What the Regulators Know, and When They Knew It</h2>
+  <p>The regulatory picture is not reassuring, but it is not alarming in the way a product recall is alarming. It is alarming in the way that a genuinely open question is alarming when the stakes are high enough.</p>
+  <p>The FDA investigated reports of suicidal ideation in GLP-1 receptor agonist users in 2023 and issued a preliminary evaluation suggesting no causal link. The EMA opened a formal safety review. The MHRA opened a formal safety review. Both remain ongoing as of this writing. The VigiBase pharmacovigilance signal — drawn from 2,061,901 adverse drug reports, finding adjusted reporting odds ratios of 1.70 for depressed mood disorders and 1.45 for suicidality specifically with semaglutide — is not a causal finding. Pharmacovigilance databases are hypothesis-generating, not hypothesis-confirming. But signals of that magnitude in a dataset of that size are not noise. They are the reason the EMA and MHRA opened their reviews in the first place.</p>
+  <p>Meanwhile, there are 13 ongoing clinical trials of semaglutide for cognitive disorders. The addiction trials are multiplying. The prescriptions are being written. Dr. Hendershot, whose own RCT produced the most rigorous addiction data we have, has said explicitly: "It's too soon to endorse off-label use for addiction. We need rigorous randomized controlled trials first." That statement was made after his trial was published. The off-label prescribing is happening anyway.</p>
+</section>
+
+<section id="the-honest-condition" class="reveal">
+  <h2>The Honest Condition of Medicine at the Edge</h2>
+  <p>What we have, in 2026, is this: a drug acting on the brain's core reward and stress architecture, generating simultaneously the most promising addiction signal in a generation and an unexplained psychiatric harm signal, in a field that is not equipped to reconcile them. The positive findings are real. The negative findings are real. The mechanism is plausible in both directions. The evidence base was built without the patients who need it most. The regulatory investigations are open. The RCT evidence is thin. The observational evidence is large, consistent, and methodologically compromised in ways that cannot be fully corrected.</p>
+  <p>The 2026 systematic review in <em>Diabetes, Obesity and Metabolism</em> concluded that GLP-1 receptor agonists show "modest antidepressant effects, inconsistent associations with suicidality, and potential therapeutic benefit in disorders of reward regulation," while noting that findings are constrained by "limited sample diversity and underrepresentation of individuals with psychiatric illness." That sentence is an accurate summary of the literature. It is also, if you read it carefully, a description of a field that does not yet know what it is doing.</p>
+  <p>This is not a criticism of the researchers. The Finnish cohort study is excellent work. The Hendershot RCT is the right trial done as well as it could be done at this stage. The mechanistic story is genuinely compelling and worth pursuing. The problem is not the quality of the science. The problem is the speed of the prescriptions relative to the speed of the science — and the fact that the patients currently being prescribed semaglutide off-label for opioid use disorder or alcohol use disorder are not the patients who were in any of these studies.</p>
+  <p>Physicians are prescribing semaglutide for addiction today, without the RCT evidence to support it, while regulators are still investigating whether it causes psychiatric harm in the populations most likely to receive it. The science is not ready. The prescriptions are already written. That gap — between what we know and what we are doing — is not a failure of medicine. It is the honest condition of medicine at the edge of what it knows. The discomfort of sitting with that gap, rather than resolving it prematurely in either direction, is the only intellectually defensible position available. It is also, for the patients on the other side of those prescriptions, something considerably more than an academic exercise.</p>
+</section>
+
+<div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal">
+  <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+    <strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice. The studies cited represent the current state of published research as of March 2026 and should not be interpreted as clinical guidance. Individuals with questions about GLP-1 receptor agonist medications, addiction treatment, or psychiatric health should consult a qualified healthcare provider. Semaglutide is not approved by the FDA, EMA, or MHRA for the treatment of addiction or substance use disorders. Regulatory investigations into the psychiatric safety of GLP-1 receptor agonists are ongoing.
+  </p>
+</div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">A landmark 2024</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">A Finnish cohort</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">A 2025 phase</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">A 2024 meta-analysis</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">A Lancet Psychiatry</span>
+  </Fragment>
+</ArticleLayout>
