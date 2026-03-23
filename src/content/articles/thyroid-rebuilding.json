@@ -1,0 +1,35 @@
+{
+  "title": "Rebuilding the Thyroid: Precision Medicine, AI, and the Gland of 2035",
+  "description": "Microbiome transplants, AI-guided diagnostics, polygenic risk scores, and genetically stratified T3 therapy are converging to transform thyroid care. The science is ready. The practice is catching up.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 12,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Thyroid Series",
+    "Precision Medicine",
+    "AI Diagnostics",
+    "Microbiome",
+    "Future of Medicine"
+  ],
+  "gradient": {
+    "from": "emerald-500",
+    "to": "teal-600"
+  },
+  "keywords": [
+    "thyroid precision medicine",
+    "FMT thyroid",
+    "AI thyroid diagnostics",
+    "polygenic risk",
+    "T3 therapy",
+    "DIO2",
+    "microbiome intervention"
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-rebuilding.png",
+  "heroImageAlt": "Editorial illustration for Rebuilding the Thyroid: Precision Medicine, AI, and the Gland of 2035"
+}

@@ -1,0 +1,35 @@
+{
+  "title": "The Poisoned Well: Industrial Chemicals and the Slow-Motion Assault on Your Thyroid",
+  "description": "PFAS, fluoride, perchlorate, BPA, and pesticides are conducting a coordinated chemical assault on thyroid function at the population level. The regulatory framework designed to stop them was never built for the job.",
+  "category": "Environmental Health",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 13,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Thyroid Series",
+    "PFAS",
+    "Environmental Toxins",
+    "Endocrine Disruptors",
+    "Fluoride"
+  ],
+  "gradient": {
+    "from": "amber-500",
+    "to": "orange-600"
+  },
+  "keywords": [
+    "PFAS",
+    "thyroid disruptors",
+    "fluoride",
+    "perchlorate",
+    "BPA",
+    "phthalates",
+    "endocrine disruption"
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-poisoned-well.png",
+  "heroImageAlt": "Editorial illustration for The Poisoned Well: Industrial Chemicals and the Slow-Motion Assault on Your Thyroid"
+}

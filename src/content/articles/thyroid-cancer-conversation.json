@@ -1,0 +1,35 @@
+{
+  "title": "The Cancer That Wasn't \u2014 and the One That Was",
+  "description": "Thyroid cancer incidence tripled in three decades, but most of the epidemic was an artifact of detection. The real story is a field reckoning with overdiagnosis at one end and a molecular revolution transforming treatment at the other.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 11,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Thyroid Series",
+    "Cancer",
+    "Overdiagnosis",
+    "Molecular Medicine",
+    "Surgery"
+  ],
+  "gradient": {
+    "from": "violet-600",
+    "to": "purple-700"
+  },
+  "keywords": [
+    "thyroid cancer",
+    "overdiagnosis",
+    "active surveillance",
+    "BRAF mutation",
+    "thermal ablation",
+    "papillary carcinoma",
+    "ATA guidelines"
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-cancer-conversation.png",
+  "heroImageAlt": "Editorial illustration for The Cancer That Wasn't \u2014 and the One That Was"
+}

@@ -1,0 +1,34 @@
+{
+  "title": "The Fetal Blueprint: The Screening Failure That Is Costing Children Their Cognitive Futures",
+  "description": "For the first half of pregnancy, a baby's brain develops entirely on the mother's thyroid. Iodine deficiency is resurging in wealthy nations, maternal hypothyroidism is linked to autism risk, and universal screening still isn't happening.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 11,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Thyroid Series",
+    "Pregnancy",
+    "Autism",
+    "Iodine Deficiency",
+    "Fetal Development"
+  ],
+  "gradient": {
+    "from": "rose-600",
+    "to": "red-700"
+  },
+  "keywords": [
+    "thyroid pregnancy",
+    "iodine deficiency",
+    "autism thyroid",
+    "fetal brain development",
+    "maternal hypothyroidism",
+    "prenatal screening"
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-fetal-blueprint.png",
+  "heroImageAlt": "Editorial illustration for The Fetal Blueprint: The Screening Failure That Is Costing Children Their Cognitive Futures"
+}
