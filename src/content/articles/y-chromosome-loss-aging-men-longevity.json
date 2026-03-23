@@ -1,0 +1,31 @@
+{
+  "title": "Half of Aging Men Are Losing a Chromosome. It May Be Killing Them.",
+  "description": "A growing fraction of men's cells silently discard the Y chromosome as they age — and researchers have linked this loss to Alzheimer's disease, multiple cancers, heart failure, and early death. The Y chromosome was dismissed as genetic junk for decades. New evidence suggests it may be one of the most important aging clocks in the male body — and that smoking and metabolic stress are accelerating its disappearance.",
+  "category": "Longevity",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 14,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Aging men",
+    "LOY has",
+    "The loss",
+    "Researchers suspect"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "Aging men",
+    "LOY has",
+    "The loss",
+    "Researchers suspect"
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/y-chromosome-loss-aging-men-longevity.png",
+  "heroImageAlt": "Editorial illustration for Half of Aging Men Are Losing a Chromosome. It May Be Killing Them."
+}
