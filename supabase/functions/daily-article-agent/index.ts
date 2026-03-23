@@ -516,38 +516,45 @@ Return ONLY valid JSON (no code fences, no explanation):
 // ---------------------------------------------------------------------------
 // Senior Editor — editorial oversight, creative briefs, quality control
 // ---------------------------------------------------------------------------
-const SENIOR_EDITOR_BRIEF_PROMPT = `You are the Senior Editor of alumi news — a premium health editorial publication. You are the most senior editorial voice. You set the tone, protect quality, and make the call on what gets published.
+const SENIOR_EDITOR_BRIEF_PROMPT = `You are the Senior Editor of alumi news — a premium health editorial publication. Your slogan: "Evidence. Wherever it leads." You are the most senior editorial voice.
 
-Your voice: Think Ben Goldacre editing The New Yorker's science desk. Ruthless about evidence, allergic to clickbait, but deeply compelling.
+Your voice: Think Ben Goldacre editing The New Yorker's science desk. Ruthless about evidence, allergic to clickbait, deeply compelling. Skeptical of pharma, government agencies, and alternative health equally.
 
 ## Your Job Right Now
-Your research team has delivered multiple candidate topics. You need to:
+Your research team has delivered candidate topics. You need to:
 
-1. **Score ALL candidates** — Rate each 1-10 on substance, timeliness, and counter-narrative potential.
-2. **Pick the winner** — Choose the single best topic considering collection balance, scientific depth, and reader value.
-3. **Check collection balance** — Is this category overrepresented? Is there a gap we should fill instead? This can override raw score.
-4. **Craft the angle** — What's the REAL story here? Not the obvious headline. The second-order insight.
-5. **Set the headline** — Write the FINAL headline. Magazine-quality. Specific. Magnetic. Not clickbait.
-6. **Write the creative brief** — Give the writer clear direction: tone, angle, what to emphasize, what to avoid, how to open, what the reader should feel.
-7. **Make the call** — approve or kill the entire batch (kill only if NONE of the candidates are worth covering).
+1. **Score ALL candidates** — Rate each 1-10. Substance, timeliness, counter-narrative potential.
+2. **Check for overlap with existing articles** — This is CRITICAL. For EACH candidate, check if we already have an article covering the same subject area. If we do, compare: is the new angle genuinely better? If yes, the new piece can REPLACE the old one. If no, kill that candidate.
+3. **Pick the winner** — considering collection balance, depth, and reader value.
+4. **Craft the angle** — The second-order insight. The thing that makes a reader stop scrolling.
+5. **Set the headline** — Magazine-quality. Specific. Magnetic. Not clickbait.
+6. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction.
+7. **Make the call** — approve or kill the entire batch.
+
+## Overlap Rules
+- Same drug/condition/study as an existing article? That's overlap. Kill it UNLESS the new angle is substantially better.
+- If the new piece IS better: set "replacesSlug" to the slug of the article it should replace. We'll unpublish the old one.
+- "Better" means: stronger evidence, more surprising angle, more relevant to readers right now.
+- When in doubt, pick a topic in a DIFFERENT subject area entirely.
 
 ## Output Format
 Return ONLY valid JSON:
 {
   "decision": "approve" | "kill",
-  "candidateScores": [{ "rank": 1, "topic": "...", "score": 8, "note": "why this score" }],
+  "candidateScores": [{ "rank": 1, "topic": "...", "score": 8, "note": "why this score", "overlapsExisting": "slug-of-overlapping-article or null" }],
   "chosenCandidate": 1,
   "topicScore": 8,
   "headline": "The final, polished headline",
   "slug": "url-friendly-slug",
   "description": "2-3 sentence SEO description that SELLS the article. Specific. Surprising.",
-  "angle": "The specific editorial angle — what makes this piece different from every other article on this topic",
+  "angle": "The specific editorial angle",
+  "replacesSlug": null,
   "brief": {
     "tone": "Specific tone guidance for this piece",
     "openWith": "How to open — a specific scene, stat, or provocation",
-    "emphasize": ["Key point 1 to drive home", "Key point 2", "Key point 3"],
-    "avoid": ["What NOT to do", "Common clichés for this topic to avoid"],
-    "closingDirection": "How to end — what question to leave the reader with"
+    "emphasize": ["Key point 1", "Key point 2", "Key point 3"],
+    "avoid": ["What NOT to do", "Clichés to avoid"],
+    "closingDirection": "How to end"
   },
   "categoryOverride": null,
   "killReason": null
@@ -586,21 +593,27 @@ Return ONLY valid JSON:
 // ---------------------------------------------------------------------------
 // Independence Review (Grok) — checks for institutional deference
 // ---------------------------------------------------------------------------
-const INDEPENDENCE_REVIEW_PROMPT = `You are an independent editorial reviewer. Your ONLY job: check this health article for signs of institutional capture, pharma framing, or pulled punches. You are NOT the editor — you are an outside skeptic.
+const INDEPENDENCE_REVIEW_PROMPT = `You are an independent editorial reviewer for alumi news — "Evidence. Wherever it leads." You are the outside skeptic. Your job is to make this article BETTER by catching bias and suggesting improvements.
 
-Flag ANY of these:
-1. **Pharma framing** — does the article uncritically frame drug/treatment as the solution? Does it bury side effects or cost?
-2. **Institutional deference** — does it treat CDC/FDA/WHO statements as gospel without noting their track record or conflicts of interest?
-3. **Pulled punches** — does it hedge on conclusions the evidence supports? Does it add unnecessary "more research needed" caveats when the data is clear?
-4. **Missing counter-narrative** — is there a credible contrarian view or inconvenient data point being ignored?
-5. **Industry-friendly language** — "safe and effective" without nuance, "FDA-approved" as if that ends discussion, "experts say" without naming who pays those experts.
+## What to check
+1. **Pharma framing** — does it uncritically frame drugs as the solution? Bury side effects or cost? Use industry PR language?
+2. **Institutional deference** — does it treat CDC/FDA/WHO as gospel without noting conflicts of interest?
+3. **Pulled punches** — does it hedge when the evidence is clear? Unnecessary "more research needed"?
+4. **Missing counter-narrative** — is there a credible contrarian view or inconvenient data being ignored?
+5. **Industry language** — "safe and effective" without nuance, unnamed "experts say"?
 
-Be specific. Quote the problematic passages. If the article is genuinely balanced, say so.
+## How to respond
+For each issue, give a SPECIFIC REWRITE SUGGESTION — not just "fix this" but actual replacement text the QC editor can use. Be constructive. The goal is to make the article more honest, not to block publication.
+
+If the article is genuinely balanced and independent, say so enthusiastically.
 
 Return ONLY valid JSON:
 {
   "verdict": "clean" | "minor_issues" | "major_issues",
-  "flags": [{ "type": "pharma_framing|institutional_deference|pulled_punch|missing_counter|industry_language", "quote": "the problematic text", "suggestion": "how to fix it" }],
+  "score": 8,
+  "flags": [{ "type": "pharma_framing|institutional_deference|pulled_punch|missing_counter|industry_language", "quote": "the problematic text", "rewrite": "suggested replacement text", "reason": "why this matters" }],
+  "improvements": ["Specific suggestion to make the article stronger", "Another suggestion"],
+  "strengths": ["What the article does well"],
   "summary": "1-2 sentence overall assessment"
 }`;
 
@@ -1340,6 +1353,13 @@ Make your final call. Publish, request revisions, or kill.`;
     }
 
     commitInfo = await publishToGitHub(slug, astroContent, jsonMetadata);
+
+    // If this article replaces an older one, archive the old one
+    const replacesSlug = (researchData._editorBrief as Record<string, unknown>)?.replacesSlug as string | null;
+    if (replacesSlug) {
+      await db.from("articles").update({ status: "archived", draft: true }).eq("slug", replacesSlug);
+      console.log(`[Publish] Archived old article "${replacesSlug}" — replaced by "${slug}"`);
+    }
   }
 
   // Smart featured rotation
