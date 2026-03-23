@@ -675,9 +675,17 @@ const ARTICLE_WRITING_PROMPT = `You are a senior health journalist at alumi news
 - 8-12 specific evidence citations minimum.
 
 ## Output Format
-Return ONLY the article body as raw HTML. NO JSON, NO metadata, NO SVG. Just the HTML sections.
+Return ONLY valid JSON:
+{
+  "html": "...",
+  "metadata": { ... },
+  "svg": "...",
+  "toc": [ ... ],
+  "readTime": number
+}
 
-Use these patterns:
+### html field
+Article body HTML using these patterns:
 
 <section id="section-slug" class="reveal">
   <h2>Section Title</h2>
@@ -702,6 +710,31 @@ End with disclaimer:
     <strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.
   </p>
 </div>
+
+### metadata field
+{
+  "title": "Use the headline from the editorial brief",
+  "slug": "Use the slug from the editorial brief",
+  "description": "Use the description from the editorial brief",
+  "category": "One of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
+  "tags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"],
+  "gradient": { "from": "color-weight", "to": "color-weight" },
+  "featured": false,
+  "readTime": <number>,
+  "publishDate": "${todayISO()}",
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
+}
+
+Gradient options: rose-600/red-700, violet-600/purple-700, emerald-500/teal-600, emerald-600/teal-700, amber-500/orange-600, sky-500/blue-600, indigo-500/purple-600, lime-500/green-600
+
+### svg field
+Minimal dark background with 2-3 abstract shapes. Keep under 500 chars. Example: <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><rect width="1200" height="600" fill="url(#bg)"/><circle cx="600" cy="300" r="80" fill="#dc262620"/>
+
+### toc field
+Array of { "id": "section-id", "title": "Display Title" }.
+
+### readTime field
+Estimated minutes (220 wpm, rounded up).
 
 ## Rules
 - NEVER fabricate study data, statistics, or author names.
@@ -1092,64 +1125,36 @@ ${((researchData.statistics as string[]) || []).join("\n")}
 
 Today's date: ${today}
 
-Write the article. Return ONLY the article HTML — no JSON wrapper, no metadata, no SVG. Just the raw HTML sections starting with <section id="introduction">.`;
+IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. Return ONLY valid JSON.`;
 
-  // Call 1: Write the article HTML only — fast, no JSON overhead
-  const articleHtml = await claude({
+  const articleRaw = await claude({
     system: ARTICLE_WRITING_PROMPT,
     user: articleUserPrompt,
     model,
-    maxTokens: 6000,
+    maxTokens: 8192,
     temperature: 0.4,
   });
 
-  // Build metadata from editor brief — no API call needed
-  const slug = (editorBrief?.slug as string) || "untitled";
-  const title = (editorBrief?.headline as string) || (researchData.headline_draft as string) || "Untitled";
-  const description = (editorBrief?.description as string) || "";
-  const VALID_CATEGORIES = ["Neuroscience", "Mental Health", "Longevity", "Clinical Evidence", "Environmental Health", "Nutrition", "Fitness", "Sleep Science", "Pharmacology"];
-  const rawCategory = (editorBrief?.categoryOverride as string) || (researchData.category as string) || "";
-  const category = VALID_CATEGORIES.find(c => rawCategory.toLowerCase().includes(c.toLowerCase())) || "Clinical Evidence";
-  // Build tags from category + topic keywords (NOT from keyFindings — those are sentences)
-  const tagSource = [
-    category,
-    ...(title.split(/[\s:—–\-,]+/).filter(w => w.length > 3 && w[0] === w[0].toUpperCase())),
-  ];
-  const tags = [...new Set(tagSource)].slice(0, 5);
-  const wordCount = articleHtml.split(/\s+/).length;
-  const readTime = Math.max(5, Math.ceil(wordCount / 220));
-
-  // Extract TOC from HTML section headers
-  const tocMatches = [...articleHtml.matchAll(/<section id="([^"]+)"[\s\S]*?<h2>([^<]+)<\/h2>/g)];
-  const toc = tocMatches.map(m => ({ id: m[1], title: m[2] }));
-  // Always include introduction
-  if (!toc.find(t => t.id === "introduction")) {
-    toc.unshift({ id: "introduction", title: "Introduction" });
-  }
-
-  // Minimal SVG placeholder — illustration agent generates real image at publish
-  const svg = `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><rect width="1200" height="600" fill="url(#bg)"/><circle cx="600" cy="300" r="120" fill="#dc262610" stroke="#dc262630" stroke-width="1"/>`;
-
-  const article = {
-    html: articleHtml.trim(),
-    metadata: {
-      title,
-      slug,
-      description,
-      category,
-      tags,
-      gradient: { from: "rose-600", to: "red-700" },
-      featured: false,
-      readTime,
-      publishDate: today,
-      keywords: tags,
-    },
-    svg,
-    toc,
-    readTime,
+  const article = parseClaudeJSON(articleRaw) as {
+    html: string;
+    metadata: Record<string, unknown>;
+    svg: string;
+    toc: { id: string; title: string }[];
+    readTime: number;
   };
+
+  const slug = (editorBrief?.slug as string) || (article.metadata.slug as string);
+  const readTime = article.readTime || (article.metadata.readTime as number) || 10;
+
+  // Override metadata with editor's headline/description
+  if (editorBrief?.headline) article.metadata.title = editorBrief.headline as string;
+  if (editorBrief?.description) article.metadata.description = editorBrief.description as string;
   if (editorBrief?.slug) article.metadata.slug = editorBrief.slug as string;
-  if (editorBrief?.categoryOverride) article.metadata.category = editorBrief.categoryOverride as string;
+
+  // Sanitize category to valid values only
+  const VALID_CATEGORIES = ["Neuroscience", "Mental Health", "Longevity", "Clinical Evidence", "Environmental Health", "Nutrition", "Fitness", "Sleep Science", "Pharmacology"];
+  const rawCat = (editorBrief?.categoryOverride as string) || (article.metadata.category as string) || (researchData.category as string) || "";
+  article.metadata.category = VALID_CATEGORIES.find(c => rawCat.toLowerCase().includes(c.toLowerCase())) || "Clinical Evidence";
 
   // Save article to database as draft (editor QC hasn't happened yet)
   const dbArticle = {
