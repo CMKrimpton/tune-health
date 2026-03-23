@@ -2,7 +2,7 @@
 
 A premium health and wellness editorial website featuring science-backed articles on mental health, nutrition, fitness, sleep science, and longevity.
 
-**Live Site:** https://alumi-news.vercel.app
+**Live Site:** https://tune-health.vercel.app
 
 ## Tech Stack
 
@@ -90,7 +90,7 @@ src/
 - **View Transitions** - Smooth page-to-page animations
 
 ### Content
-- **41 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
+- **46 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
 - Content Collections with Zod schema validation
 - Type-safe article queries
 - Automatic reading time calculation

@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.8.0] - 2026-03-23
+
+### Added
+- **Thyroid Series (Parts 2–6)** — 5 deep-dive articles published from source docs with AI-generated editorial illustrations:
+  - **Part 2: "The War Within"** (`thyroid-war-within`) — Hashimoto's, Graves', gut-thyroid axis, molecular mimicry, selenium, microbiome signatures. 15 min read. Clinical Evidence.
+  - **Part 3: "The Poisoned Well"** (`thyroid-poisoned-well`) — PFAS, fluoride, perchlorate, BPA, phthalates, pesticides, mixture toxicology, regulatory failure. 13 min read. Environmental Health.
+  - **Part 4: "The Fetal Blueprint"** (`thyroid-fetal-blueprint`) — Maternal thyroid dependency, iodine deficiency resurgence, autism link (2x risk with uncontrolled hypothyroidism), IQ effects, universal screening failure. 11 min read. Clinical Evidence.
+  - **Part 5: "The Cancer That Wasn't"** (`thyroid-cancer-conversation`) — Overdiagnosis paradox, active surveillance, thermal ablation, BRAF/RET/NTRK molecular targeting, 2025 ATA guidelines. 11 min read. Clinical Evidence.
+  - **Part 6: "Rebuilding the Thyroid"** (`thyroid-rebuilding`) — IMITHOT FMT trial, AI-assisted diagnostics, polygenic risk scores, DIO2-guided T3 therapy, precision medicine vision for 2035. 12 min read. Clinical Evidence.
+- Total published articles: 46
+
+### Fixed
+- **Production URL** — README updated from stale `alumi-news.vercel.app` to correct `tune-health.vercel.app`
+
 ## [5.7.0] - 2026-03-22
 
 ### Added
