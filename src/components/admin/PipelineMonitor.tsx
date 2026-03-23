@@ -370,6 +370,40 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     finally { setQueueing(false); }
   };
 
+  const produceFromQueue = async (queueId: string, topic: string) => {
+    if (!confirm(`Produce "${topic.replace(/\*\*/g, '').slice(0, 80)}" now? This will start the full pipeline.`)) return;
+    setTriggering(true);
+    try {
+      // First expedite this item so it's picked first
+      await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ action: 'update-queue', queueId, expedite: true, priority: 0 }),
+      });
+      // Then trigger produce
+      await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ action: 'produce' }),
+      });
+      setTimeout(fetchStatus, 3000);
+    } catch { /* next poll */ }
+    finally { setTriggering(false); }
+  };
+
+  const updateQueueItem = async (queueId: string, updates: Record<string, unknown>) => {
+    try {
+      await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ action: 'update-queue', queueId, ...updates }),
+      });
+      // Optimistic update for expedite/priority
+      setQueue(prev => prev.map(q => q.id === queueId ? { ...q, ...updates } as QueueItem : q));
+      setTimeout(fetchStatus, 1000);
+    } catch { /* next poll */ }
+  };
+
   const deleteQueueItem = async (queueId: string) => {
     try {
       await fetch(`${apiBase}/daily-article-agent`, {
@@ -601,27 +635,73 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           <div className="pipeline-completed-list">
             {queue.map(item => {
               const isActive = item.status === 'in_progress' || item.status === 'assigned';
+              const isQueued = item.status === 'queued';
+              const cleanTopic = item.topic.replace(/\*\*/g, '').replace(/^[\s\-]*Topic\s*Description\s*:?\s*/i, '').trim();
               return (
-                <div key={item.id} className="pipeline-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeftColor: item.expedite ? '#dc2626' : isActive ? '#16a34a' : '#44403c', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85 }}>
-                  <div style={{ flex: 1 }}>
-                    <div className="pipeline-card-title" style={{ fontSize: '0.8125rem' }}>{item.topic}</div>
-                    <div style={{ fontSize: '0.6875rem', color: '#78716c', display: 'flex', gap: '0.5rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
-                      {item.category && <span>{item.category}</span>}
-                      {item.expedite && <span style={{ color: '#dc2626', fontWeight: 600 }}>EXPEDITE</span>}
-                      {isActive && <span style={{ color: '#16a34a', fontWeight: 600 }}>{item.status.toUpperCase()}</span>}
-                      <span style={{ color: '#57534e' }}>P{item.priority}</span>
-                      <span style={{ color: '#57534e' }}>{item.source}</span>
+                <div key={item.id} className="pipeline-card" style={{ borderLeftColor: item.expedite ? '#dc2626' : isActive ? '#16a34a' : '#44403c', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="pipeline-card-title" style={{ fontSize: '0.8125rem' }}>{cleanTopic}</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#78716c', display: 'flex', gap: '0.5rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                        {item.category && <span>{item.category}</span>}
+                        {item.expedite && <span style={{ color: '#dc2626', fontWeight: 600 }}>EXPEDITE</span>}
+                        {isActive && <span style={{ color: '#16a34a', fontWeight: 600 }}>{item.status.toUpperCase()}</span>}
+                        <span style={{ color: '#57534e' }}>P{item.priority}</span>
+                        <span style={{ color: '#57534e' }}>{item.source}</span>
+                      </div>
                     </div>
+                    {/* ── Queue Item Controls ── */}
+                    {isQueued && (
+                      <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignItems: 'center' }}>
+                        <button
+                          className="pipeline-retry-btn"
+                          onClick={() => produceFromQueue(item.id, item.topic)}
+                          disabled={triggering || overallStatus === 'running'}
+                          style={{ color: '#4ade80', borderColor: '#166534', fontWeight: 600, fontSize: '0.6875rem' }}
+                          title="Produce this topic now"
+                        >
+                          {'\u25B6'} Produce
+                        </button>
+                        <button
+                          className="pipeline-retry-btn"
+                          onClick={() => updateQueueItem(item.id, { expedite: !item.expedite })}
+                          style={{ color: item.expedite ? '#dc2626' : '#a8a29e', borderColor: item.expedite ? '#7f1d1d' : '#44403c', fontSize: '0.6875rem' }}
+                          title={item.expedite ? 'Remove expedite' : 'Expedite (jump to front)'}
+                        >
+                          {item.expedite ? '\u2B07 Normal' : '\u26A1 Expedite'}
+                        </button>
+                        <button
+                          className="pipeline-retry-btn"
+                          onClick={() => updateQueueItem(item.id, { priority: Math.max(1, item.priority - 10) })}
+                          style={{ fontSize: '0.6875rem', padding: '0.25rem 0.375rem' }}
+                          title="Raise priority (lower number = higher priority)"
+                        >
+                          {'\u2191'}
+                        </button>
+                        <button
+                          className="pipeline-retry-btn"
+                          onClick={() => updateQueueItem(item.id, { priority: Math.min(100, item.priority + 10) })}
+                          style={{ fontSize: '0.6875rem', padding: '0.25rem 0.375rem' }}
+                          title="Lower priority"
+                        >
+                          {'\u2193'}
+                        </button>
+                        <button
+                          className="pipeline-retry-btn"
+                          onClick={() => { if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
+                          style={{ color: '#f87171', borderColor: '#7f1d1d', fontSize: '0.6875rem' }}
+                          title="Delete from queue"
+                        >
+                          {'\u2715'}
+                        </button>
+                      </div>
+                    )}
+                    {isActive && (
+                      <span style={{ fontSize: '0.625rem', color: '#16a34a', fontWeight: 600, padding: '0.25rem 0.5rem', background: '#052e16', borderRadius: '0.25rem', whiteSpace: 'nowrap' }}>
+                        {item.status === 'in_progress' ? 'Producing\u2026' : 'Assigned'}
+                      </span>
+                    )}
                   </div>
-                  {item.status === 'queued' && (
-                    <button
-                      onClick={() => deleteQueueItem(item.id)}
-                      style={{ background: 'none', border: 'none', color: '#78716c', cursor: 'pointer', fontSize: '1rem', padding: '0.25rem' }}
-                      aria-label="Remove from queue"
-                    >
-                      {'\u00d7'}
-                    </button>
-                  )}
                 </div>
               );
             })}
