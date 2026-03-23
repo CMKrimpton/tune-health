@@ -1,7 +1,7 @@
 {
-  "name": "Tune Health",
-  "short_name": "Tune Health",
-  "description": "Where Science Meets Wellness - Evidence-based health insights",
+  "name": "alumi news",
+  "short_name": "alumi news",
+  "description": "Evidence. Wherever it leads. Independent health analysis.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fafaf9",
