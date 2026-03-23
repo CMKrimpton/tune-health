@@ -1,5 +1,8 @@
 import type { APIRoute } from 'astro';
 
+// Server-rendered API route (not prerendered)
+export const prerender = false;
+
 /**
  * Newsletter subscription endpoint.
  * Stores emails in Supabase `newsletter_subscribers` table.
@@ -14,8 +17,16 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const body = await request.json();
-    const email = body?.email?.trim().toLowerCase();
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    const email = (body?.email as string)?.trim().toLowerCase();
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(

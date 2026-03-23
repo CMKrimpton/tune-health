@@ -1177,12 +1177,11 @@ header a[href="/"]:hover .text-primary-600 {
     min-width: 44px;
   }
 
-  /* Larger tap targets for mobile nav */
+  /* Larger tap targets for mobile nav — use min-height only, don't override display
+     (display: flex here was overriding Tailwind's hidden class on the ⌘K trigger) */
   .nav-inner a,
   .nav-inner button {
     min-height: 44px;
-    display: flex;
-    align-items: center;
   }
 }
 
