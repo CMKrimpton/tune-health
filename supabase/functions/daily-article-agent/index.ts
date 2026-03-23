@@ -1268,8 +1268,10 @@ async function stageEditorBrief(
     existingFingerprints.push({ words: extractSubjectWords(q.topic), title: q.topic });
   }
 
-  function isDuplicate(topic: string, headline: string): boolean {
-    const candidateWords = extractSubjectWords(`${topic} ${headline}`);
+  function isDuplicate(topic: string, headline: string, extras?: { category?: string; keyFindings?: string[]; mechanism?: string }): boolean {
+    // Build candidate fingerprint from ALL available info (topic + headline + category + findings + mechanism)
+    const candidateText = [topic, headline, extras?.category || "", extras?.mechanism || "", ...(extras?.keyFindings || [])].join(" ");
+    const candidateWords = extractSubjectWords(candidateText);
     if (candidateWords.size === 0) return false;
 
     for (const fp of existingFingerprints) {
@@ -1294,7 +1296,11 @@ async function stageEditorBrief(
   if (candidates) {
     const before = candidates.length;
     candidates = candidates.filter(c =>
-      !isDuplicate((c.topic as string) || "", (c.headline_draft as string) || "")
+      !isDuplicate((c.topic as string) || "", (c.headline_draft as string) || "", {
+        category: c.category as string,
+        keyFindings: c.keyFindings as string[],
+        mechanism: c.mechanism as string,
+      })
     );
     if (candidates.length < before) {
       console.log(`[Editor] Filtered ${before - candidates.length} duplicate candidates (${before} → ${candidates.length})`);
@@ -1310,7 +1316,11 @@ async function stageEditorBrief(
     }
   } else if (researchData.topic) {
     // Single topic — check it too
-    if (isDuplicate((researchData.topic as string) || "", (researchData.headline_draft as string) || "")) {
+    if (isDuplicate((researchData.topic as string) || "", (researchData.headline_draft as string) || "", {
+      category: researchData.category as string,
+      keyFindings: researchData.keyFindings as string[],
+      mechanism: researchData.mechanism as string,
+    })) {
       await db.from("daily_article_log").update({
         status: "failed",
         error: `Topic "${researchData.topic}" is a duplicate of an existing article.`,
