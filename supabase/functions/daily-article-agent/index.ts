@@ -514,7 +514,7 @@ End with disclaimer:
 Gradient options: rose-600/red-700, violet-600/purple-700, emerald-500/teal-600, emerald-600/teal-700, amber-500/orange-600, sky-500/blue-600, indigo-500/purple-600, lime-500/green-600
 
 ### svg field
-SVG inner content (no outer <svg>). Dark gradient background. Abstract scientific motif. Glow filters, geometric shapes, organic curves. Colors matching gradient.
+SVG inner content (no outer <svg> tag — the wrapper provides viewBox="0 0 1200 600"). CRITICAL: All coordinates must use the full 1200x600 canvas. The background <rect> MUST be width="1200" height="600". Dark gradient background. Abstract scientific/molecular motif. Include glow filters, geometric shapes, organic curves. Use colors matching the gradient. Think: data visualization meets abstract art.
 
 ### toc field
 Array of { "id": "section-id", "title": "Display Title" }.
