@@ -775,7 +775,7 @@ async function stageResearch(
   queuedTopic?: string,
 ): Promise<void> {
   const today = todayISO();
-  const { titles } = await getExistingArticles(db);
+  const { titles, categoryCounts } = await getExistingArticles(db);
 
   // Also get recent pipeline topics (including killed/failed) to avoid repeating
   const { data: recentLogs } = await db
@@ -828,46 +828,39 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
 
     // Step 1: Gemini searches the web for trending health topics
     const geminiFindings = await gemini({
-      system: "You are a health news researcher with access to Google Search. Find the most significant, trending, and searched health stories across multiple time horizons. For each topic: the specific study or finding, the journal or source, key statistics, and why it matters. Substance only — no celebrity gossip, no supplement hype.",
-      user: `Search the web and find health topics across 8 categories. Every topic must be a DIFFERENT subject area — no two about the same drug, condition, or study.
+      system: "You are a world-class health science researcher. Your job is to build a comprehensive editorial calendar. Search broadly and deeply. Every topic must be backed by real studies, real data. No celebrity health, no supplement hype, no clickbait. Focus on findings that challenge conventional wisdom, reveal hidden mechanisms, or have major public health implications.",
+      user: `Build a list of the 100 most important health stories a premium editorial publication should cover. Search the web thoroughly.
 
-BEST/TRENDING (most significant, discussed, or viral):
-A1 — 3 best from last 3 days (breaking news, just-published studies)
-A2 — 3 best from last 30 days (recent but may have been missed)
-A3 — 3 best from last 365 days (important stories that deserve deeper coverage)
-A4 — 3 best from last 1000 days (landmark studies, paradigm shifts still underreported)
+SECTION A — 50 most important, discussed, and searched health news from the last 30 DAYS
+SECTION B — 50 most important landmark discoveries and paradigm shifts from the last 5 YEARS
 
-MOST SEARCHED (what people are actively searching for):
-B1 — 3 most searched from last 3 days
-B2 — 3 most searched from last 30 days
-B3 — 3 most searched from last 365 days
-B4 — 3 most searched from last 1000 days
+Requirements:
+- Every topic must be a COMPLETELY DIFFERENT subject (different drug, different condition, different mechanism)
+- Cover ALL of these categories: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology
+- Prioritize categories we have FEWER articles in: ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 5).map(([cat, count]) => `${cat} (only ${count})`).join(", ") || "all balanced"}
+- DO NOT include anything related to these subjects — we already covered them:
+${titles.map((t) => `  - ${t}`).join("\n")}
 
-That's 24 topics total. Label each set clearly (A1, A2, etc).
-
-OFF-LIMITS (already covered, already queued, or recently tried — do NOT repeat these subject areas):
-${titles.slice(0, 20).map((t) => `- ${t}`).join("\n")}
-${queueTopics.slice(0, 15).map((t) => `- QUEUED: ${t}`).join("\n")}
-${recentTopics.slice(0, 8).map((t) => `- TRIED: ${t}`).join("\n")}
-
-For each topic: the headline, the key finding, the source/study, key statistics, and why it's compelling. Plain text, not JSON.`,
-      maxTokens: 6000,
+For each topic give: a one-line headline, the key finding, the source, and a one-sentence "why it matters." Plain text, numbered list.`,
+      maxTokens: 8000,
       temperature: 0.4,
     });
 
     // Step 2: Sonnet structures Gemini's raw findings into candidate JSON
     const researchRaw = await claude({
       system: `You structure raw research findings into JSON. Return ONLY valid JSON, no explanation.`,
-      user: `Pick the best 5 topics from these 24 research findings (covering 3-day to 1000-day time horizons). Prioritize diversity — pick from different time horizons and categories. Drop any that overlap with OFF-LIMITS. Return ONLY this JSON:
+      user: `Pick the 10 best topics from these 100 research findings. Prioritize: diversity across categories, scientific substance, counter-narrative potential. Drop any that overlap with OFF-LIMITS. Return ONLY this JSON:
 
 {"candidates":[{"rank":1,"topic":"...","headline_draft":"...","why":"...","category":"Neuroscience|Mental Health|Longevity|Clinical Evidence|Environmental Health|Nutrition|Fitness|Sleep Science|Pharmacology","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."]}]}
 
 ## RAW FINDINGS:
 ${geminiFindings}
 
-## OFF-LIMITS (do not include topics in same subject area as these):
-${titles.slice(0, 15).map((t) => `- ${t}`).join("\n")}
-${queueTopics.slice(0, 15).map((t) => `- QUEUED: ${t}`).join("\n")}`,
+## OFF-LIMITS (do not include topics in same subject area):
+${titles.map((t) => `- ${t}`).join("\n")}
+
+## PRIORITY CATEGORIES (need more articles):
+${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 3).map(([cat]) => `- ${cat}`).join("\n") || "All categories well-covered"}`,
       model: "claude-sonnet-4-6",
       maxTokens: 4000,
     });
@@ -914,8 +907,75 @@ async function stageEditorBrief(
 
   const { titles, categoryCounts } = await getExistingArticles(db);
 
-  // Build editor prompt — multi-candidate or single-topic format
-  const candidates = researchData.candidates as Array<Record<string, unknown>> | undefined;
+  // ── HARD DUPLICATE FILTER ──────────────────────────────────────
+  // Before the editor even sees candidates, programmatically remove
+  // any that overlap with existing articles or queued topics.
+  // This is the ONLY line of defense — do not rely on AI judgment.
+  const { data: existingArticles } = await db.from("articles").select("title, slug, keywords, category").eq("status", "published");
+  const { data: queuedItems } = await db.from("topic_queue").select("topic").in("status", ["queued", "assigned", "in_progress"]);
+
+  // Build a set of "subject fingerprints" — key nouns from each existing article
+  const existingFingerprints: string[][] = [];
+  for (const a of (existingArticles || []) as Array<{ title: string; slug: string; keywords: string[] | null; category: string }>) {
+    const words = [
+      ...a.title.toLowerCase().split(/[\s\-:,—–]+/),
+      ...(a.slug || "").split("-"),
+      ...(a.keywords || []).map(k => k.toLowerCase()),
+    ].filter(w => w.length > 3);
+    existingFingerprints.push([...new Set(words)]);
+  }
+  for (const q of (queuedItems || []) as Array<{ topic: string }>) {
+    const words = q.topic.toLowerCase().split(/[\s\-:,—–]+/).filter(w => w.length > 3);
+    existingFingerprints.push([...new Set(words)]);
+  }
+
+  function isDuplicate(topic: string, headline: string): boolean {
+    const candidateWords = new Set([
+      ...topic.toLowerCase().split(/[\s\-:,—–]+/),
+      ...headline.toLowerCase().split(/[\s\-:,—–]+/),
+    ].filter(w => w.length > 3));
+    if (candidateWords.size === 0) return false;
+
+    for (const fp of existingFingerprints) {
+      const overlap = fp.filter(w => candidateWords.has(w)).length;
+      // If >40% of the candidate's significant words match an existing article → duplicate
+      if (overlap >= Math.max(3, Math.ceil(candidateWords.size * 0.4))) return true;
+    }
+    return false;
+  }
+
+  // Filter candidates BEFORE the editor sees them
+  let candidates = researchData.candidates as Array<Record<string, unknown>> | undefined;
+
+  if (candidates) {
+    const before = candidates.length;
+    candidates = candidates.filter(c =>
+      !isDuplicate((c.topic as string) || "", (c.headline_draft as string) || "")
+    );
+    if (candidates.length < before) {
+      console.log(`[Editor] Filtered ${before - candidates.length} duplicate candidates (${before} → ${candidates.length})`);
+    }
+    if (candidates.length === 0) {
+      // All candidates were duplicates — kill this run
+      await db.from("daily_article_log").update({
+        status: "failed",
+        error: `All ${before} candidates were duplicates of existing articles. Scout needs to find different topics.`,
+        completed_at: new Date().toISOString(),
+      }).eq("id", logId);
+      return;
+    }
+  } else if (researchData.topic) {
+    // Single topic — check it too
+    if (isDuplicate((researchData.topic as string) || "", (researchData.headline_draft as string) || "")) {
+      await db.from("daily_article_log").update({
+        status: "failed",
+        error: `Topic "${researchData.topic}" is a duplicate of an existing article.`,
+        completed_at: new Date().toISOString(),
+      }).eq("id", logId);
+      return;
+    }
+  }
+
   let researchSection: string;
 
   if (candidates && candidates.length > 0) {
@@ -1028,21 +1088,10 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
       });
 
     if (unchosenTopics.length > 0) {
-      // Dedup: skip topics that are too similar to existing queue items or articles
-      const { data: existingQueue } = await db.from("topic_queue").select("topic").in("status", ["queued", "assigned", "in_progress"]);
-      const existingTopicWords = (existingQueue || []).map((q: { topic: string }) => q.topic.toLowerCase());
-      const articleTopicWords = titles.map(t => t.toLowerCase());
-      const allExisting = [...existingTopicWords, ...articleTopicWords];
-
-      const deduped = unchosenTopics.filter((t: Record<string, unknown>) => {
-        const topic = (t.topic as string).toLowerCase();
-        const topicWords = topic.split(/\s+/).filter(w => w.length > 4);
-        // Check if >50% of significant words overlap with any existing topic
-        return !allExisting.some(existing => {
-          const matchCount = topicWords.filter(w => existing.includes(w)).length;
-          return matchCount >= Math.ceil(topicWords.length * 0.5);
-        });
-      });
+      // Use the same isDuplicate check from above
+      const deduped = unchosenTopics.filter((t: Record<string, unknown>) =>
+        !isDuplicate((t.topic as string) || "", (t.topic as string) || "")
+      );
 
       if (deduped.length > 0) {
         await db.from("topic_queue").insert(deduped).select();
