@@ -90,3 +90,110 @@ const latestArticles: Article[] = showLatest ? (await getArticles()).slice(0, 3)
     <span class="text-xs text-stone-400">Press ⌘K to search</span>
   </div>
 </div>
+
+<style>
+  /* Glass Dropdown Inner */
+  .menu-dropdown-inner {
+    @apply bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl;
+    @apply border border-stone-200/50 dark:border-stone-700/50;
+    @apply rounded-2xl shadow-2xl;
+    @apply p-8;
+  }
+
+  /* Menu Sections */
+  .menu-section {
+    @apply mb-8 last:mb-0;
+  }
+
+  .menu-section-label {
+    @apply block text-[10px] font-semibold uppercase tracking-widest;
+    @apply text-stone-400 dark:text-stone-500 mb-3;
+  }
+
+  /* Menu Grid */
+  .menu-grid {
+    @apply grid grid-cols-2 lg:grid-cols-4 gap-2;
+  }
+
+  .menu-item {
+    @apply flex items-center gap-3;
+    @apply px-4 py-4 rounded-xl;
+    @apply bg-stone-50 dark:bg-stone-800/50;
+    @apply hover:bg-stone-100 dark:hover:bg-stone-800;
+    @apply transition-colors;
+  }
+
+  .menu-item-icon {
+    @apply w-10 h-10 rounded-lg;
+    @apply bg-white dark:bg-stone-700;
+    @apply flex items-center justify-center;
+    @apply text-stone-500 dark:text-stone-400;
+    @apply shadow-sm;
+  }
+
+  .menu-item-text {
+    @apply text-sm font-medium text-stone-700 dark:text-stone-200;
+  }
+
+  .menu-item.active {
+    @apply bg-primary-50 dark:bg-primary-900/20;
+    @apply ring-1 ring-primary-200 dark:ring-primary-800/50;
+  }
+
+  .menu-item.active .menu-item-icon {
+    @apply bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400;
+  }
+
+  .menu-item.active .menu-item-text {
+    @apply text-primary-700 dark:text-primary-300;
+  }
+
+  /* Topics */
+  .menu-topics {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .menu-topic {
+    @apply px-3 py-1.5 rounded-full;
+    @apply text-xs font-medium;
+    @apply bg-stone-100 dark:bg-stone-800;
+    @apply text-stone-600 dark:text-stone-400;
+    @apply hover:bg-primary-100 hover:text-primary-700;
+    @apply dark:hover:bg-primary-900/30 dark:hover:text-primary-400;
+    @apply transition-colors;
+  }
+
+  /* Featured */
+  .menu-featured {
+    @apply space-y-2;
+  }
+
+  .menu-featured-item {
+    @apply flex items-center gap-4;
+    @apply p-4 rounded-xl;
+    @apply bg-gradient-to-r from-stone-50 to-transparent;
+    @apply dark:from-stone-800/50 dark:to-transparent;
+    @apply hover:from-primary-50 dark:hover:from-primary-900/20;
+    @apply transition-colors;
+  }
+
+  .menu-featured-badge {
+    @apply px-2 py-0.5 rounded text-[10px] font-semibold uppercase;
+    @apply bg-primary-100 text-primary-700;
+    @apply dark:bg-primary-900/30 dark:text-primary-400;
+  }
+
+  .menu-featured-title {
+    @apply block text-sm font-medium text-stone-700 dark:text-stone-200;
+  }
+
+  .menu-featured-meta {
+    @apply block text-xs text-stone-400;
+  }
+
+  /* Footer */
+  .menu-footer {
+    @apply pt-6 mt-6 border-t border-stone-200 dark:border-stone-700;
+    @apply text-center;
+  }
+</style>
