@@ -360,6 +360,65 @@ async function gemini(opts: { system: string; user: string; maxTokens?: number; 
 }
 
 // ---------------------------------------------------------------------------
+// Universal model dispatch — call any model through one interface
+// ---------------------------------------------------------------------------
+type ModelProvider = "anthropic" | "xai" | "google";
+
+const MODEL_PROVIDERS: Record<string, ModelProvider> = {
+  "claude-sonnet-4-6": "anthropic",
+  "claude-sonnet-4-20250514": "anthropic",
+  "claude-opus-4-20250514": "anthropic",
+  "grok-3": "xai",
+  "gemini-2.5-flash": "google",
+};
+
+// Ordered fallback chain: try Anthropic → Grok → Gemini
+const WRITER_FALLBACK_CHAIN = ["claude-sonnet-4-6", "grok-3", "gemini-2.5-flash"];
+
+async function generate(opts: { system: string; user: string; model: string; maxTokens?: number; temperature?: number; stage?: string }): Promise<ApiResult> {
+  const provider = MODEL_PROVIDERS[opts.model];
+  if (provider === "anthropic") {
+    return claude({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
+  } else if (provider === "xai") {
+    return grok({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
+  } else if (provider === "google") {
+    return gemini({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
+  }
+  throw new Error(`Unknown model: ${opts.model}`);
+}
+
+// Try models in order, falling back on failure (especially spending limits)
+async function generateWithFallback(opts: { system: string; user: string; models: string[]; maxTokens?: number; temperature?: number; stage?: string }): Promise<ApiResult & { modelUsed: string }> {
+  let lastError = "";
+  for (const model of opts.models) {
+    try {
+      const result = await generate({ ...opts, model });
+      return { ...result, modelUsed: model };
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err.message : "Unknown error";
+      // If it's a spending limit, try next model
+      if (lastError.includes("SPENDING_LIMIT") || lastError.includes("usage limits") || lastError.includes("rate_limit")) {
+        console.log(`[Fallback] ${model} unavailable (${lastError.slice(0, 50)}), trying next...`);
+        continue;
+      }
+      // For other errors (bad JSON, timeout), also try next
+      console.log(`[Fallback] ${model} failed (${lastError.slice(0, 50)}), trying next...`);
+      continue;
+    }
+  }
+  throw new Error(`All models failed. Last error: ${lastError}`);
+}
+
+// Pick a writer model — rotates to distribute across providers
+function pickWriterModel(): string[] {
+  // Rotation based on hour of day — ensures variety
+  const hour = new Date().getUTCHours();
+  if (hour % 3 === 0) return ["claude-sonnet-4-6", "grok-3", "gemini-2.5-flash"];
+  if (hour % 3 === 1) return ["grok-3", "claude-sonnet-4-6", "gemini-2.5-flash"];
+  return ["gemini-2.5-flash", "grok-3", "claude-sonnet-4-6"];
+}
+
+// ---------------------------------------------------------------------------
 // PubMed citation verification — non-blocking, stores results in log
 // ---------------------------------------------------------------------------
 async function verifyPubMedCitations(
@@ -1450,13 +1509,14 @@ ${(() => {
 
 ${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
-  const { text: editorRaw, usage: editorUsage } = await claude({
+  const { text: editorRaw, usage: editorUsage } = await generateWithFallback({
     system: SENIOR_EDITOR_BRIEF_PROMPT,
     user: editorPrompt,
-    model: "claude-sonnet-4-6",
+    models: WRITER_FALLBACK_CHAIN,
     maxTokens: 2500,
     temperature: 0.4,
-  }, "editor-brief");
+    stage: "editor-brief",
+  });
   await addCostToLog(db, logId, editorUsage);
 
   const editorBrief = parseClaudeJSON(editorRaw) as Record<string, unknown>;
@@ -1544,7 +1604,7 @@ async function stageWrite(
   db: ReturnType<typeof supabase>,
   logId: string,
   researchData: Record<string, unknown>,
-  model: string,
+  models: string[],
 ): Promise<void> {
   const today = todayISO();
   const editorBrief = researchData._editorBrief as Record<string, unknown>;
@@ -1552,7 +1612,7 @@ async function stageWrite(
 
   await db
     .from("daily_article_log")
-    .update({ status: "writing", stage_started_at: new Date().toISOString(), model_used: model })
+    .update({ status: "writing", stage_started_at: new Date().toISOString(), model_used: models[0] })
     .eq("id", logId);
 
   const archetype = (editorBrief?.archetype as string) || "deep-investigation";
@@ -1607,14 +1667,18 @@ Today's date: ${today}
 
 IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. Return ONLY valid JSON.`;
 
-  const { text: articleRaw, usage: writeUsage } = await claude({
+  const { text: articleRaw, usage: writeUsage, modelUsed } = await generateWithFallback({
     system: ARTICLE_WRITING_PROMPT,
     user: articleUserPrompt,
-    model,
+    models,
     maxTokens: 8192,
     temperature: 0.5,
-  }, "write");
+    stage: "write",
+  });
   await addCostToLog(db, logId, writeUsage);
+
+  // Track which model actually wrote this article
+  await db.from("daily_article_log").update({ model_used: modelUsed }).eq("id", logId);
 
   const article = parseClaudeJSON(articleRaw) as {
     html: string;
@@ -1758,13 +1822,14 @@ Review this COMPLETE article for pharma framing, institutional deference, pulled
           .map((f, i) => `${i + 1}. [${f.type}] Find: "${f.quote}" → Replace with: "${f.rewrite}" (Reason: ${f.reason})`)
           .join("\n");
 
-        const { text: revisedRaw, usage: revisionUsage } = await claude({
+        const { text: revisedRaw, usage: revisionUsage } = await generateWithFallback({
           system: `You are applying editorial corrections flagged by an independent reviewer. Apply each suggested rewrite where it genuinely improves the article's independence and honesty. Preserve the editorial voice and HTML structure. If a suggestion would weaken the article or is wrong, skip it. Return ONLY the corrected HTML — no JSON wrapper, no explanation.`,
           user: `## CORRECTIONS TO APPLY\n${rewritePrompt}\n\n## CURRENT ARTICLE HTML\n${articleHtml}`,
-          model: "claude-sonnet-4-6",
+          models: WRITER_FALLBACK_CHAIN,
           maxTokens: 8192,
           temperature: 0.2,
-        }, "independence-revision");
+          stage: "independence-revision",
+        });
         await addCostToLog(db, logId, revisionUsage);
 
         // The response should be raw HTML
@@ -2418,8 +2483,9 @@ Deno.serve(async (req: Request) => {
       .from("articles")
       .select("*", { count: "exact", head: true });
 
-    const articleModel =
-      "claude-sonnet-4-6"; // Sonnet 4.6 — Opus times out on Edge Functions (~150s limit). Upgrade when longer timeout available.
+    // Multi-model rotation — cycles through Sonnet, Grok, Gemini based on hour
+    // All models get the same prompts, same rules, same editorial standards
+    const writerModels = pickWriterModel();
 
     // ==============================================================
     // JOB 1: SCOUT — multi-model topic discovery, adds to queue
@@ -2585,7 +2651,7 @@ For each topic return: a one-line topic description, suggested category, and why
           return safeStage(db, e.id, "Independence Review", () => stageIndependenceReview(db, e.id, artData));
         }],
         ["editor_approved", "Write", async (e: { id: string; research_data: Record<string, unknown> }) => {
-          return safeStage(db, e.id, "Write", () => stageWrite(db, e.id, e.research_data, articleModel));
+          return safeStage(db, e.id, "Write", () => stageWrite(db, e.id, e.research_data, writerModels));
         }],
       ] as const) {
         const { data: entries } = await db

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [8.5.0] - 2026-03-23
+
+### Added — Multi-Model Writer Rotation
+- **`generateWithFallback()`** — universal dispatch that routes to Anthropic, xAI, or Google with automatic fallback. If one provider hits spending limits, rate limits, or errors, it tries the next. Same prompts, same editorial rules for all models
+- **Writer rotation** — cycles primary model by hour (Sonnet → Grok → Gemini). Ensures variety in article voice and no single provider dependency
+- **`WRITER_FALLBACK_CHAIN`** — ordered fallback: Sonnet → Grok → Gemini Flash. Applied to editor brief, write, and independence revision stages
+- **Model tracking** — `model_used` in daily_article_log records which model actually wrote each article for quality comparison
+
 ## [8.4.0] - 2026-03-23
 
 ### Changed — Multi-Model Scout Architecture (92% cost reduction)
