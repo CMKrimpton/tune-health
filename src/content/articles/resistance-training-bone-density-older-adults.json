@@ -1,0 +1,34 @@
+{
+  "title": "The Safest Thing You Can Do for Your Bones After 60 Is the Thing Your Doctor Is Afraid to Prescribe",
+  "description": "Osteoporosis kills more women than breast and ovarian cancer combined — yet the most effective non-drug intervention remains systematically under-prescribed because clinicians fear injury. Decades of randomized trial data now show that heavy resistance training at high intensity is not only safe for older adults with low bone mass, it is dramatically more effective than the moderate exercise guidelines most patients receive. The question is no longer whether lifting works. It's why medicine keeps pretending otherwise.",
+  "category": "Fitness",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Osteoporosis",
+    "Bone Density",
+    "Resistance Training",
+    "Aging",
+    "Clinical Evidence"
+  ],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [
+    "resistance training bone density",
+    "osteoporosis exercise",
+    "LIFTMOR trial",
+    "hip fracture prevention",
+    "high intensity training older adults"
+  ],
+  "sortOrder": 1774275064715,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/resistance-training-bone-density-older-adults.png",
+  "heroImageAlt": "Editorial illustration for The Safest Thing You Can Do for Your Bones After 60 Is the Thing Your Doctor Is Afraid to Prescribe"
+}
