@@ -177,6 +177,11 @@ async function safeStage(
   stageName: string,
   fn: () => Promise<unknown>,
 ): Promise<{ ok: boolean; result?: unknown; error?: string }> {
+  // Pre-flight: check the article hasn't been killed (race condition guard)
+  const { data: check } = await db.from("daily_article_log").select("status").eq("id", logId).maybeSingle();
+  if (check?.status === "failed") {
+    return { ok: false, error: "Article was killed — skipping stage" };
+  }
   try {
     const result = await fn();
     return { ok: true, result };
