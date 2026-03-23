@@ -101,7 +101,7 @@ src/
 - **All navigation is collection-driven** — topics, series, and featured articles auto-populate from content collection
 
 ### Content
-- **46 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
+- **Published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
 - **Series support** — multi-part article series with `series`/`seriesOrder` fields, prev/next navigation, and progress indicators
 - **Deep Dives page** dynamically renders published series (e.g., 6-part Thyroid Deep Dive) alongside coming-soon series
 - Content Collections with Zod schema validation
@@ -151,9 +151,10 @@ src/
 ### Performance
 - Zero JavaScript by default (Islands Architecture)
 - React only loads for Command Palette and Admin Portal
-- Native CSS animations (60fps)
-- Passive scroll listeners
-- iOS-optimized: opacity-only reveal animations on touch, `100dvh` viewport units, `visualViewport` API for scroll progress
+- Native CSS animations (60fps) with targeted property transitions (no `transition-all` on critical elements)
+- Passive scroll listeners with AbortController cleanup across View Transitions (no listener leaks)
+- iOS-optimized: opacity-only reveal animations on touch, `100dvh` viewport units, `visualViewport` API for scroll progress, 8px dead zone on mobile nav scroll hide
+- View Transition anti-flash CSS with custom cross-fade keyframes
 
 ### SEO & Accessibility
 - JSON-LD structured data (Article, Organization, BreadcrumbList)
@@ -172,7 +173,6 @@ src/
 - **Native Web Share API** — mobile devices get an OS-level share sheet (Messages, AirDrop, etc.)
 - **Floating share sidebar** — sticky vertical share bar on the left edge of article pages (desktop xl+ screens)
 - **Highlight-to-share** — select article text to share the quote on X/Bluesky or copy with attribution
-- **Article reactions** — emoji reaction bar (Insightful, Mind-blown, Rigorous, Practical) with localStorage persistence
 - **Reading List page** (`/reading-list`) — view and manage all bookmarked articles. Linked from SideNav and Footer
 - **Social follow links** — RSS, X/Twitter, and Bluesky follow buttons in Footer
 - **RSS autodiscovery** — `<link rel="alternate">` in `<head>` for feed reader auto-detection
@@ -180,12 +180,14 @@ src/
 ### Additional
 - **Reading list** — localStorage bookmark system with toggle on articles
 - **About page** — mission statement, editorial standards, and brand tone
-- **Custom 404 page** with article recommendations
-- Newsletter subscription form
+- **Custom 404 page** with article recommendations (noindex for SEO)
+- **Newsletter subscription** — real API endpoint (`/api/subscribe`) saves to Supabase `newsletter_subscribers` table with email validation and error handling
+- **Sticky header** — hides on scroll down, reappears on scroll up on article pages (desktop)
 - Article reading progress indicator
 - PWA-ready with manifest.json
 - Print stylesheet
 - Safe area support for notched devices
+- **Content-Security-Policy** header restricting scripts, styles, fonts, images, and connections
 
 ## Design System
 

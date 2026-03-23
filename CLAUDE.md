@@ -62,7 +62,6 @@ src/
 │   ├── AppPromo.astro        # Homepage alumi Health section (4-feature grid)
 │   ├── ShareButtons.astro    # 8-platform share (X, LinkedIn, Facebook, Reddit, Bluesky, WhatsApp, Email, copy) + Web Share API
 │   ├── FloatingShareBar.astro # Sticky vertical share sidebar on article pages (desktop xl+)
-│   ├── ArticleReactions.astro # Emoji reactions (Insightful, Mind-blown, Rigorous, Practical) with localStorage
 │   ├── HighlightShare.astro  # Select text to share quote popup (X, Bluesky, copy)
 │   ├── SeriesNav.astro       # Series prev/next navigation with progress dots
 │   ├── BookmarkButton.astro  # localStorage reading list / bookmark toggle
@@ -302,7 +301,6 @@ The magazine funnels readers to the **alumi Health** app (`https://tune-sigma.ve
 #### Social Sharing & Interaction
 - `ShareButtons.astro`: 8-platform sharing (X, LinkedIn, Facebook, Reddit, Bluesky, WhatsApp, Email, copy link) with `variant` prop (`"inline"` | `"vertical"`) and native Web Share API on mobile. Uses `Astro.site` for correct URL resolution. Each platform icon has brand-color hover state
 - `FloatingShareBar.astro`: sticky vertical share bar fixed to left edge of article pages on xl+ screens. Glass morphism styling, appears when `#article-content` is in view, hides at footer
-- `ArticleReactions.astro`: emoji reaction bar (Insightful, Mind-blown, Rigorous, Practical) with localStorage persistence per slug. Users can toggle multiple reactions. Pop animation on click + count bump
 - `HighlightShare.astro`: when users select 10–400 chars of article text, a dark tooltip popup appears near the selection with options to share the quote on X, Bluesky, or copy with `"quote" — alumi news` attribution. Only triggers within `#article-content`
 - `BookmarkButton.astro`: localStorage-based reading list toggle per article
 - `/reading-list` page: shows all bookmarked articles from localStorage with article cards, per-item remove, and "Clear all". Linked from SideNav and Footer
@@ -368,7 +366,7 @@ When writing CSS in this project, follow these rules to avoid build errors:
 - **Safe areas**: `env(safe-area-inset-*)` used for notch/home indicator (back-to-top, Command Palette)
 - **Touch targets**: 44px minimum on `@media (pointer: coarse)` for all interactive elements
 - **Scroll progress bar**: uses `visualViewport.height` instead of `innerHeight` to handle iOS address bar changes
-- **Security headers**: `vercel.json` adds X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy
+- **Security headers**: `vercel.json` adds X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, Content-Security-Policy
 
 ### UX Guidelines
 - **Hover effects on large elements**: Only use shadow/glow changes, NO scale or translate

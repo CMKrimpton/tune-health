@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.18.0] - 2026-03-23
+
+### Fixed
+- **Newsletter API not saving in production** — `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_URL` were missing from Vercel env vars. Set via CLI. Verified: emails now save to `newsletter_subscribers` table in production
+- **OG image URLs relative instead of absolute** — social platforms (Twitter, LinkedIn, Facebook) cannot resolve relative paths. Now prepends site URL when image doesn't start with `http`
+- **manifest.json wrong branding** — still said "Tune Health" instead of "alumi news"
+- **robots.txt wrong sitemap URL** — pointed to nonexistent `tunehealth.com` domain. Corrected to `tune-health.vercel.app/sitemap-index.xml`
+- **Double search icon on iPhone** — `.nav-inner button { display: flex }` in touch media query was overriding Tailwind's `hidden` class on the ⌘K trigger button. Removed the display override
+
+### Removed
+- **Article reactions system** — localStorage-only emoji counters that displayed personal clicks as "counts," appearing as social proof with no backend aggregation. Replaced with nothing — a serious magazine doesn't need fake engagement metrics
+
+### Changed
+- **All animations slowed 25%** — Tailwind duration scale overridden (200→250ms, 300→375ms, 500→625ms, 700→875ms), all raw CSS durations scaled proportionally. View Transitions, reveals, cards, SideNav, buttons all feel smoother
+- **Grain texture tightened** — noise overlay `baseFrequency` 0.65 → 0.78 (~20% finer grain)
+- **Vanity stats removed** — article counts, category counts, and "Est. 2024" removed from homepage hero, footer, articles index, and subscribe page. Subscribe page stats replaced with reader-relevant "Weekly / Free / Zero Sponsors"
+- **Subscribe page** — wired to real `/api/subscribe` endpoint (was fake setTimeout)
+
 ## [5.17.0] - 2026-03-22
 
 ### Fixed
