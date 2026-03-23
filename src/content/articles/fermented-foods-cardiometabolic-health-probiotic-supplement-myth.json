@@ -1,0 +1,34 @@
+{
+  "title": "You've Been Buying the Extract. The Evidence Says Eat the Food.",
+  "description": "A $50 billion supplement industry has convinced us that probiotic capsules deliver the benefits of fermented foods in a cleaner, more convenient form. A Stanford RCT and 19 prospective cohorts suggest that's exactly backwards — and the mechanism explains why no pill can replicate what kimchi, kefir, and yogurt actually do to your cardiovascular system.",
+  "category": "Nutrition",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Fermented Foods",
+    "Probiotics",
+    "Cardiometabolic Health",
+    "Supplement Industry",
+    "Inflammation"
+  ],
+  "gradient": {
+    "to": "teal-700",
+    "from": "emerald-600"
+  },
+  "keywords": [
+    "fermented foods",
+    "probiotic supplements",
+    "cardiometabolic health",
+    "kimchi kefir yogurt",
+    "NF-kB inflammation"
+  ],
+  "sortOrder": 1774274727635,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/fermented-foods-cardiometabolic-health-probiotic-supplement-myth.png",
+  "heroImageAlt": "Editorial illustration for You've Been Buying the Extract. The Evidence Says Eat the Food."
+}
