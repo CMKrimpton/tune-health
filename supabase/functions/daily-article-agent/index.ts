@@ -31,7 +31,7 @@ function supabase() {
 // ---------------------------------------------------------------------------
 // Pipeline constants
 // ---------------------------------------------------------------------------
-const MAX_CONCURRENT = 3;
+const MAX_CONCURRENT = 1; // Serial until pipeline is proven stable
 const STALE_MS = 5 * 60 * 1000;
 const ACTIVE = ["started","searching","writing","publishing","editor_reviewing","editor_qc","independence_review","researching","topic_selected"];
 const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","saved"];
@@ -229,14 +229,9 @@ async function grok(opts: { system: string; user: string; maxTokens?: number; te
 // ---------------------------------------------------------------------------
 // Self-chaining — fire-and-forget next stage invocation
 // ---------------------------------------------------------------------------
-function chainNextStage(logId: string) {
-  const u = Deno.env.get("SUPABASE_URL"), k = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!u || !k) return;
-  fetch(u + "/functions/v1/daily-article-agent", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + k },
-    body: JSON.stringify({ action: "chain", logId }),
-  }).catch(() => {});
+function chainNextStage(_logId: string) {
+  // Disabled — cron-only mode for stability. Cron runs every 5 min.
+  return;
 }
 
 // ---------------------------------------------------------------------------
@@ -631,7 +626,7 @@ const ARTICLE_WRITING_PROMPT = `You are a senior health journalist at alumi news
 - Balanced perspective: treat mainstream medicine and alternative health with the same skepticism.
 - Vary sentence length dramatically. Some very short. Some longer and analytical.
 - NO filler: no "it's important to note," no "interestingly," no "it's worth mentioning."
-- Minimum 2,500 words, target 3,000+. This is a substantial investigation.
+- Target 1,800-2,200 words. Dense and substantive, not padded.
 - 8-12 specific evidence citations minimum.
 
 ## Output Format
@@ -688,7 +683,7 @@ End with disclaimer:
 Gradient options: rose-600/red-700, violet-600/purple-700, emerald-500/teal-600, emerald-600/teal-700, amber-500/orange-600, sky-500/blue-600, indigo-500/purple-600, lime-500/green-600
 
 ### svg field
-SVG inner content (no outer <svg> tag — the wrapper provides viewBox="0 0 1200 600"). CRITICAL: All coordinates must use the full 1200x600 canvas. The background <rect> MUST be width="1200" height="600". Dark gradient background. Abstract scientific/molecular motif. Include glow filters, geometric shapes, organic curves. Use colors matching the gradient. Think: data visualization meets abstract art.
+MINIMAL SVG only. Just a dark gradient rect 1200x600 with 2-3 simple shapes. Example: <rect width="1200" height="600" fill="url(#bg)"/><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><circle cx="600" cy="300" r="80" fill="#dc262620"/>. Keep under 500 characters.
 
 ### toc field
 Array of { "id": "section-id", "title": "Display Title" }.
@@ -737,6 +732,16 @@ async function stageResearch(
   const today = todayISO();
   const { titles } = await getExistingArticles(db);
 
+  // Also get recent pipeline topics (including killed/failed) to avoid repeating
+  const { data: recentLogs } = await db
+    .from("daily_article_log")
+    .select("topic")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const recentTopics = (recentLogs || [])
+    .map((l: { topic: string | null }) => l.topic)
+    .filter((t): t is string => !!t);
+
   await db
     .from("daily_article_log")
     .update({ status: "searching", created_at: new Date().toISOString() })
@@ -772,16 +777,17 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
       user: `Today's date: ${today}
 
 ## Your Task
-Search the web for 3-5 trending, most-searched, most-discussed health topics from the last 3 days. Research each one enough to give the editor real options.
+Find 3 trending health topics from the last 3 days. Each must be a DIFFERENT subject area.
 
-## Existing Articles (DO NOT duplicate these topics):
-${titles.map((t) => `- ${t}`).join("\n")}
+## OFF-LIMITS (already covered or recently tried):
+${titles.slice(0, 20).map((t) => `- ${t}`).join("\n")}
+${recentTopics.slice(0, 10).map((t) => `- TRIED: ${t}`).join("\n")}
 
-Search broadly first (trending health news, viral health stories, health research breakthroughs this week), then research each promising candidate. Return ALL candidates ranked in structured JSON.`,
+Return 3 candidates across different categories. Keep research brief — editor picks, then we deep-dive.`,
       model: "claude-sonnet-4-6",
-      maxTokens: 6000,
+      maxTokens: 4000,
       webSearch: true,
-      maxSearches: 5,
+      maxSearches: 3,
     });
 
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
@@ -1018,7 +1024,7 @@ IMPORTANT: Use the headline, slug, and description from the editorial brief exac
     system: ARTICLE_WRITING_PROMPT,
     user: articleUserPrompt,
     model,
-    maxTokens: 12000,
+    maxTokens: 8192,
     temperature: 0.4,
     // No web search for writing — research already did that. Saves ~60s.
   });
