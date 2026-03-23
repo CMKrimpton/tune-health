@@ -591,19 +591,18 @@ async function publishToGitHub(
 // Smart featured rotation
 // ---------------------------------------------------------------------------
 async function rotateFeatured(db: ReturnType<typeof supabase>): Promise<string | null> {
-  // Early exit: check if current featured is still fresh (< 12h old)
-  // Avoids the expensive full-collection scoring query on every publish
+  // Check when the current featured article was last set using updated_at
+  // (featured=true is set via update, so updated_at reflects when it became featured)
   const { data: currentFeaturedCheck } = await db
     .from("articles")
-    .select("published_at, publish_date")
+    .select("updated_at")
     .eq("featured", true)
     .eq("status", "published")
     .maybeSingle();
 
-  if (currentFeaturedCheck) {
-    const publishedAt = currentFeaturedCheck.published_at || currentFeaturedCheck.publish_date;
-    const age = Date.now() - new Date(publishedAt).getTime();
-    if (age < 12 * 60 * 60 * 1000) return null; // Still fresh, skip scoring
+  if (currentFeaturedCheck?.updated_at) {
+    const featuredSince = Date.now() - new Date(currentFeaturedCheck.updated_at).getTime();
+    if (featuredSince < 12 * 60 * 60 * 1000) return null; // Featured <12h ago, skip
   }
 
   const { data: articles } = await db
@@ -617,13 +616,6 @@ async function rotateFeatured(db: ReturnType<typeof supabase>): Promise<string |
 
   const currentFeatured = articles.find((a: Record<string, unknown>) => a.featured);
   const now = Date.now();
-
-  // Rotate every 12 hours (twice a day)
-  if (currentFeatured) {
-    const publishedAt = (currentFeatured.published_at as string) || (currentFeatured.publish_date as string);
-    const featuredAge = now - new Date(publishedAt).getTime();
-    if (featuredAge < 12 * 60 * 60 * 1000) return null;
-  }
 
   const scored = articles.map((a: Record<string, unknown>) => {
     const publishedAt = (a.published_at as string) || (a.publish_date as string);
@@ -2036,6 +2028,18 @@ Deno.serve(async (req: Request) => {
       body = { action: "run" };
     }
     const { action = "run", model } = body;
+
+    // ------ ROTATE FEATURED — standalone, works even when crons are paused ------
+    if (action === "rotate-featured") {
+      const newFeatured = await rotateFeatured(db);
+      return json({
+        success: true,
+        newFeatured,
+        message: newFeatured
+          ? `Featured rotated to: ${newFeatured}`
+          : "No rotation needed (current featured is still fresh or no eligible articles)",
+      });
+    }
 
     // ------ STATUS ------
     if (action === "status") {
