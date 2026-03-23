@@ -1,0 +1,33 @@
+{
+  "title": "Ozempic Is Doing Something to the Reward Circuit That Nobody Fully Planned For",
+  "description": "Semaglutide was designed to lower blood sugar and shrink waistlines. Now a landmark Lancet Psychiatry study of 96,000 patients, a placebo-controlled JAMA Psychiatry trial, and data from over 4 million real-world users suggest it may also be suppressing addiction, depression, and anxiety — possibly by quieting the brain's dopamine reward circuit directly. The evidence is striking. The confounding is real. The counterevidence exists. And the implications are either transformative or a very expensive cautionary tale.",
+  "category": "Mental Health",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "A landmark March",
+    "A Nature Communications",
+    "A 2025 randomized",
+    "Epic Research data",
+    "The FDA conducted"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "A landmark March",
+    "A Nature Communications",
+    "A 2025 randomized",
+    "Epic Research data",
+    "The FDA conducted"
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/semaglutide-psychiatric-benefits-addiction-depression.png",
+  "heroImageAlt": "Editorial illustration for Ozempic Is Doing Something to the Reward Circuit That Nobody Fully Planned For"
+}
