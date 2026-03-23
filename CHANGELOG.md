@@ -8,12 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [8.3.0] - 2026-03-23
 
-### Fixed — Retroactive Dogma Audit
-- **6 health dogma violations corrected** across 3 published articles:
-  - `chronic-inflammation`: omega-6 seed oils as inflammatory (caveated as contested), omega-6/3 ratio removed as clinical marker (replaced with HOMA-IR)
-  - `nitric-oxide-paradox-aging-vasodilator`: antioxidant supplements as therapy in 3 locations (added Cochrane data: 78 trials, 296K participants, no benefit/possible harm; redirected to whole foods)
-  - `fermented-foods`: "moderate wine = heart healthy" (added sick-quitter confound + Mendelian randomization finding no safe cardiovascular level)
-- **75 other articles audited clean** — no meaningful dogma violations found
+### Fixed — Full Collection Audit (all 78 articles read in full)
+
+**Critical content fixes:**
+- `nitric-oxide-paradox-aging-vasodilator`: Complete editorial overhaul — removed Ray Peat citation, reframed CO2 from "true primary vasodilator" to "underappreciated contributor", added eNOS/iNOS distinction throughout, removed sildenafil/minoxidil aging claims (no clinical evidence), replaced tetracycline anti-aging recommendation with proper caveats, fixed self-contradicting pull-quote, added Cochrane antioxidant data
+- `chronic-inflammation`: omega-6 seed oils caveated, omega-6/3 ratio replaced with HOMA-IR
+- `fermented-foods`: moderate wine claim corrected with sick-quitter confound + Mendelian randomization
+
+**Moderate content fixes:**
+- `gut-microbiome-brain`: Added BBB caveat to gut serotonin claim (doesn't cross into brain), softened "50% of dopamine precursors" to "substantial proportion"
+- `deja-vu-neuroscience-memory-system`: Dopamine relabeled from "excitatory neurotransmitter" to "neuromodulator"
+- `brain-overheating-yawn-thermoregulation`: Removed "without a single contradicting result" overclaim
+- `hardware-of-awe-musical-frisson-neuroscience`: Replaced "genuinely addicted in the technical neurochemical sense" with accurate reward circuit framing
+- `depression-energy-problem`: Exercise "more effective than antidepressants" changed to "comparable to"
+- `the-serotonin-deception`: Added Cipriani 2018 counterpoint (116K participants) to the active-placebo overclaim
+- `neuroscience-of-itch-social-contagion`: Mirror neuron mechanism changed from stated fact to unconfirmed hypothesis
+
+**Broken tags fixed (9 articles):**
+- adhd-wakefulness-sleep-neural-activity, engineered-bacteria-cancer-therapy-probiotics, fusobacterium-nucleatum-gum-disease-breast-cancer-mechanism, non-hormonal-menopause-fezolinetant-elinzanetant-nk3, glp1-discontinuation-rebound-real-world-vs-trials, paternal-preconception-health-pregnancy-outcomes, early-life-stress-gut-brain-pathways, chlorpyrifos-parkinsons-risk-autophagy-mechanism, prediabetes-reversal-without-weight-loss
+
+**Truncation fixes:**
+- `engineered-bacteria-cancer-therapy-probiotics`: Completed truncated disclaimer
+- `chlorpyrifos-parkinsons-risk-autophagy-mechanism`: Completed truncated article ending + added missing disclaimer
 
 ## [8.2.0] - 2026-03-23
 
