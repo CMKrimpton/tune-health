@@ -21,6 +21,8 @@ const {
 
 const siteUrl = 'https://tune-health.vercel.app';
 const canonicalUrl = canonical || Astro.url.pathname;
+// Ensure OG image is always an absolute URL for social platforms
+const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
 ---
 
 <!DOCTYPE html>
@@ -40,7 +42,7 @@ const canonicalUrl = canonical || Astro.url.pathname;
   <meta property="og:url" content={`${siteUrl}${canonicalUrl}`}>
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
-  <meta property="og:image" content={ogImage}>
+  <meta property="og:image" content={resolvedOgImage}>
   <meta property="og:site_name" content="alumi news">
 
   <!-- Twitter Card -->
@@ -48,7 +50,7 @@ const canonicalUrl = canonical || Astro.url.pathname;
   <meta name="twitter:site" content="@aluminews">
   <meta name="twitter:title" content={title}>
   <meta name="twitter:description" content={description}>
-  <meta name="twitter:image" content={ogImage}>
+  <meta name="twitter:image" content={resolvedOgImage}>
 
   <!-- Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
