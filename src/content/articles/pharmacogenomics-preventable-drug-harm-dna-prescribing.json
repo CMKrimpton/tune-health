@@ -1,0 +1,39 @@
+{
+  "title": "Three Genes Are Behind Three-Quarters of All Preventable Drug Harm. We've Known for Years.",
+  "description": "A 1.3-million-report analysis of UK adverse drug reactions found that 75% of all genetically preventable harm traces back to just three genes — and a test that could flag them costs less than a single hospital admission. So why is your doctor still guessing? The story of pharmacogenomics is not about the future of medicine. It's about a failure happening right now.",
+  "category": "Pharmacology",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Pharmacogenomics",
+    "Adverse Drug Reactions",
+    "Precision Medicine",
+    "Health Equity",
+    "Psychiatric Medications"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "pharmacogenomics",
+    "CYP2D6",
+    "CYP2C19",
+    "SLCO1B1",
+    "adverse drug reactions",
+    "preventable harm",
+    "pharmacovigilance",
+    "PREPARE trial",
+    "drug metabolism",
+    "health disparities"
+  ],
+  "sortOrder": 1774273907255,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pharmacogenomics-preventable-drug-harm-dna-prescribing.png",
+  "heroImageAlt": "Editorial illustration for Three Genes Are Behind Three-Quarters of All Preventable Drug Harm. We've Known for Years."
+}
