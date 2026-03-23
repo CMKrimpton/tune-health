@@ -4,10 +4,6 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SideNav from '../components/SideNav.astro';
-import { getArticles, getCategories } from '../utils/articles';
-
-const articles = await getArticles();
-const categories = await getCategories();
 ---
 
 <BaseLayout
@@ -87,16 +83,16 @@ const categories = await getCategories();
       <aside class="subscribe-aside">
         <div class="subscribe-stats">
           <div class="stat-item">
-            <span class="stat-number">{articles.length}+</span>
-            <span class="stat-label">Articles Published</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-number">{categories.length}</span>
-            <span class="stat-label">Categories</span>
-          </div>
-          <div class="stat-item">
             <span class="stat-number">Weekly</span>
             <span class="stat-label">Delivery</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">Free</span>
+            <span class="stat-label">Always</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">Zero</span>
+            <span class="stat-label">Sponsors</span>
           </div>
         </div>
 
