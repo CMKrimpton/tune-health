@@ -1,0 +1,34 @@
+{
+  "title": "The Bacterium Living in Your Gums May Be Rewriting Your Breast Cancer Risk",
+  "description": "A 2026 Johns Hopkins study traced a common gum disease pathogen — Fusobacterium nucleatum — from the mouth to breast tissue, where it damages DNA, suppresses immune cells, and accelerates tumor growth. The evidence is preclinical but mechanistically precise, and the implications for women carrying BRCA1 mutations are particularly unsettling. Here's what the science actually shows — and what it doesn't yet justify doing.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "A 2026 Johns",
+    "When F. nucleatum",
+    "BRCA1-mutant breast cells",
+    "The bacterium was",
+    "F. nucleatum suppresses"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "A 2026 Johns",
+    "When F. nucleatum",
+    "BRCA1-mutant breast cells",
+    "The bacterium was",
+    "F. nucleatum suppresses"
+  ],
+  "sortOrder": 1774261207922,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/fusobacterium-nucleatum-oral-microbiome-breast-cancer.png",
+  "heroImageAlt": "Editorial illustration for The Bacterium Living in Your Gums May Be Rewriting Your Breast Cancer Risk"
+}
