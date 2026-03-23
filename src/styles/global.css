@@ -469,7 +469,7 @@
 
 .loader-progress {
   @apply h-full bg-primary-600 rounded-full;
-  animation: loaderProgress 1.5s ease-in-out forwards;
+  animation: loaderProgress 0.5s ease-in-out forwards;
 }
 
 @keyframes loaderProgress {

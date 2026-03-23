@@ -1,0 +1,149 @@
+---
+/**
+ * ShareButtons — minimal share row for article pages.
+ * Twitter/X, LinkedIn, and copy-link with clipboard feedback.
+ */
+
+interface Props {
+  title: string;
+  url: string;
+}
+
+const { title, url } = Astro.props;
+
+const encodedTitle = encodeURIComponent(title);
+const encodedUrl = encodeURIComponent(`https://aluminews.com${url}`);
+const twitterHref = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`;
+const linkedInHref = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+---
+
+<div class="flex items-center gap-3" aria-label="Share this article">
+  <!-- Twitter / X -->
+  <a
+    href={twitterHref}
+    target="_blank"
+    rel="noopener noreferrer"
+    class="share-btn"
+    aria-label={`Share "${title}" on X`}
+  >
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  </a>
+
+  <!-- LinkedIn -->
+  <a
+    href={linkedInHref}
+    target="_blank"
+    rel="noopener noreferrer"
+    class="share-btn"
+    aria-label={`Share "${title}" on LinkedIn`}
+  >
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    </svg>
+  </a>
+
+  <!-- Copy link -->
+  <button
+    class="share-btn"
+    data-share-copy
+    data-share-url={`https://aluminews.com${url}`}
+    aria-label="Copy article link to clipboard"
+  >
+    <svg class="w-4 h-4 share-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+      <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <svg class="w-4 h-4 share-check-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+      <path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="share-copy-label text-xs ml-1 hidden">Copied!</span>
+  </button>
+</div>
+
+<style>
+  .share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    color: var(--tw-stone-400, #a8a29e);
+    transition: color 0.15s ease, background-color 0.15s ease;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+  }
+
+  .share-btn:hover {
+    color: var(--tw-stone-600, #57534e);
+    background-color: var(--tw-stone-100, #f5f5f4);
+  }
+
+  :global(.dark) .share-btn:hover {
+    color: var(--tw-stone-300, #d6d3d1);
+    background-color: var(--tw-stone-800, #292524);
+  }
+
+  /* Expanded state for copy feedback */
+  .share-btn[data-share-copy].copied {
+    width: auto;
+    padding-left: 0.5rem;
+    padding-right: 0.75rem;
+    color: #16a34a;
+  }
+
+  :global(.dark) .share-btn[data-share-copy].copied {
+    color: #4ade80;
+  }
+</style>
+
+<script>
+  function initShareButtons() {
+    document.querySelectorAll<HTMLButtonElement>('[data-share-copy]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const url = btn.getAttribute('data-share-url');
+        if (!url) return;
+
+        try {
+          await navigator.clipboard.writeText(url);
+        } catch {
+          // Fallback for older browsers
+          const textarea = document.createElement('textarea');
+          textarea.value = url;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
+
+        // Show feedback
+        const copyIcon = btn.querySelector('.share-copy-icon') as HTMLElement;
+        const checkIcon = btn.querySelector('.share-check-icon') as HTMLElement;
+        const label = btn.querySelector('.share-copy-label') as HTMLElement;
+
+        btn.classList.add('copied');
+        copyIcon?.classList.add('hidden');
+        checkIcon?.classList.remove('hidden');
+        label?.classList.remove('hidden');
+
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          copyIcon?.classList.remove('hidden');
+          checkIcon?.classList.add('hidden');
+          label?.classList.add('hidden');
+        }, 2000);
+      });
+    });
+  }
+
+  // Run on initial load
+  initShareButtons();
+
+  // Re-run after Astro view transitions
+  document.addEventListener('astro:after-swap', initShareButtons);
+</script>

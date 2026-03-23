@@ -1,0 +1,98 @@
+---
+/**
+ * BookmarkButton — save articles to a localStorage reading list.
+ * Renders as a small icon button that toggles bookmark state.
+ */
+interface Props {
+  slug: string;
+  title: string;
+  class?: string;
+}
+
+const { slug, title, class: className = '' } = Astro.props;
+---
+
+<button
+  class:list={['bookmark-btn', className]}
+  data-bookmark-slug={slug}
+  data-bookmark-title={title}
+  aria-label={`Save "${title}" to reading list`}
+  title="Save to reading list"
+>
+  <svg class="bookmark-icon-outline w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <svg class="bookmark-icon-filled w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+  </svg>
+</button>
+
+<style>
+  .bookmark-btn {
+    @apply w-9 h-9 rounded-lg flex items-center justify-center;
+    @apply text-stone-400 dark:text-stone-500;
+    @apply hover:text-primary-600 dark:hover:text-primary-400;
+    @apply hover:bg-stone-100 dark:hover:bg-stone-800;
+    @apply transition-colors duration-200;
+  }
+
+  .bookmark-btn.bookmarked {
+    @apply text-primary-600 dark:text-primary-400;
+  }
+
+  .bookmark-btn.bookmarked .bookmark-icon-outline {
+    display: none;
+  }
+
+  .bookmark-btn.bookmarked .bookmark-icon-filled {
+    display: block;
+  }
+</style>
+
+<script>
+  function initBookmarks() {
+    const STORAGE_KEY = 'alumi-reading-list';
+
+    function getReadingList(): string[] {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveReadingList(list: string[]) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    document.querySelectorAll('[data-bookmark-slug]').forEach((btn) => {
+      const el = btn as HTMLElement;
+      const slug = el.dataset.bookmarkSlug;
+      if (!slug) return;
+
+      // Set initial state
+      const list = getReadingList();
+      if (list.includes(slug)) {
+        el.classList.add('bookmarked');
+      }
+
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const current = getReadingList();
+        const idx = current.indexOf(slug);
+        if (idx > -1) {
+          current.splice(idx, 1);
+          el.classList.remove('bookmarked');
+        } else {
+          current.push(slug);
+          el.classList.add('bookmarked');
+        }
+        saveReadingList(current);
+      });
+    });
+  }
+
+  initBookmarks();
+  document.addEventListener('astro:after-swap', initBookmarks);
+</script>

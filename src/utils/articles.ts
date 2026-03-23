@@ -18,6 +18,8 @@ export interface Article {
   heroImageAlt?: string;
   comingSoon: boolean;
   href: string;
+  series?: string;
+  seriesOrder?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Astro content collection entries have dynamic shape
@@ -36,6 +38,8 @@ function mapArticle(article: { id: string; data: any }): Article {
     heroImageAlt: article.data.heroImageAlt,
     comingSoon: article.data.comingSoon ?? false,
     href: `/articles/${article.id.replace('.json', '')}`,
+    series: article.data.series,
+    seriesOrder: article.data.seriesOrder,
   };
 }
 
@@ -81,7 +85,6 @@ export async function getArticlesForHomepage(): Promise<Article[]> {
   ]);
 
   const sorted = [...published].sort((a, b) => {
-    // Sort by sortOrder if available, then by date
     const orderA = published.indexOf(a);
     const orderB = published.indexOf(b);
     return orderA - orderB;
@@ -91,11 +94,56 @@ export async function getArticlesForHomepage(): Promise<Article[]> {
 }
 
 /**
- * Get related articles (excludes the current article, returns up to `limit`)
+ * Get related articles by category and tag overlap (excludes the current article)
  */
 export async function getRelatedArticles(currentSlug: string, limit = 3): Promise<Article[]> {
   const articles = await getArticles();
-  return articles.filter((a) => a.slug !== currentSlug).slice(0, limit);
+  const current = articles.find((a) => a.slug === currentSlug);
+  const others = articles.filter((a) => a.slug !== currentSlug);
+
+  if (!current) return others.slice(0, limit);
+
+  const scored = others.map((article) => {
+    let score = 0;
+    if (article.category === current.category) score += 10;
+    const sharedTags = article.tags.filter((t) => current.tags.includes(t));
+    score += sharedTags.length * 3;
+    return { article, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map((s) => s.article);
+}
+
+/**
+ * Get articles in a series, sorted by seriesOrder
+ */
+export async function getSeriesArticles(seriesName: string): Promise<Article[]> {
+  const articles = await getArticles();
+  return articles
+    .filter((a) => a.series === seriesName)
+    .sort((a, b) => (a.seriesOrder ?? 99) - (b.seriesOrder ?? 99));
+}
+
+/**
+ * Get all unique series with their articles
+ */
+export async function getAllSeries(): Promise<{ name: string; articles: Article[] }[]> {
+  const articles = await getArticles();
+  const seriesMap = new Map<string, Article[]>();
+
+  articles.forEach((article) => {
+    if (article.series) {
+      const existing = seriesMap.get(article.series) || [];
+      existing.push(article);
+      seriesMap.set(article.series, existing);
+    }
+  });
+
+  return Array.from(seriesMap.entries()).map(([name, arts]) => ({
+    name,
+    articles: arts.sort((a, b) => (a.seriesOrder ?? 99) - (b.seriesOrder ?? 99)),
+  }));
 }
 
 /**
@@ -132,7 +180,6 @@ export async function getCategories(): Promise<string[]> {
 
 /**
  * Category-based gradient palette for article cards.
- * Each category gets a rich, editorial gradient — no stock photos needed.
  */
 const categoryGradients: Record<string, { bg: string; pattern: string }> = {
   'Mental Health': {

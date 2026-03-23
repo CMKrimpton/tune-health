@@ -138,7 +138,7 @@ const gridArticles = articles.slice(3);
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="articlesGrid">
         {gridArticles.map((article, i) => (
-          <a href={article.href} class={`article-grid-card group reveal${i > 0 && i < 6 ? ` reveal-delay-${Math.min(i, 5)}` : ''} block`} data-category={article.category} data-title={article.title.toLowerCase()} data-tags={article.tags.join(' ').toLowerCase()}>
+          <a href={article.href} class={`article-grid-card group reveal${i > 0 && i < 6 ? ` reveal-delay-${Math.min(i, 5)}` : ''} block${i >= 12 ? ' hidden-paginated' : ''}`} data-category={article.category} data-title={article.title.toLowerCase()} data-tags={article.tags.join(' ').toLowerCase()}>
             <div class="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-all duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700 h-full flex flex-col">
               <div class="relative aspect-[16/10] overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
                 {article.heroImage && (
@@ -164,6 +164,17 @@ const gridArticles = articles.slice(3);
           </a>
         ))}
       </div>
+
+      {gridArticles.length > 12 && (
+        <div class="mt-10 text-center" id="showMoreWrapper">
+          <button class="btn-secondary magnetic inline-flex" id="showMoreBtn" type="button">
+            <span>Show More Articles</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M19 9l-7 7-7-7" stroke-width="2"/>
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   </section>
 
@@ -236,10 +247,49 @@ const gridArticles = articles.slice(3);
     const categoryChips = document.querySelectorAll('.category-chip[data-filter]');
     // Select ALL filterable cards (featured + grid)
     const allCards = document.querySelectorAll('[data-category][data-title]');
+
+    // Read ?topic= from URL and map to category
+    const params = new URLSearchParams(window.location.search);
+    const topicParam = params.get('topic');
     let activeCategory = 'all';
 
+    if (topicParam) {
+      // Map slug to display category (e.g., "mental-health" → "Mental Health")
+      const topicLower = topicParam.toLowerCase().replace(/-/g, ' ');
+      categoryChips.forEach(chip => {
+        const filterVal = (chip as HTMLElement).dataset.filter || '';
+        if (filterVal.toLowerCase() === topicLower) {
+          activeCategory = filterVal;
+          categoryChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+        }
+      });
+    }
+
+    // Show More pagination
+    const showMoreBtn = document.getElementById('showMoreBtn');
+    const showMoreWrapper = document.getElementById('showMoreWrapper');
+    let paginationExpanded = false;
+
+    function expandPagination() {
+      paginationExpanded = true;
+      document.querySelectorAll('.hidden-paginated').forEach(el => {
+        (el as HTMLElement).classList.remove('hidden-paginated');
+      });
+      if (showMoreWrapper) showMoreWrapper.style.display = 'none';
+    }
+
+    showMoreBtn?.addEventListener('click', expandPagination);
+
+    // When filtering/searching, reveal all paginated items
     function filterArticles() {
       const query = searchInput?.value.toLowerCase().trim() || '';
+
+      // If user is filtering, show all paginated items
+      if (!paginationExpanded && (query || activeCategory !== 'all')) {
+        expandPagination();
+      }
+
       let visibleCount = 0;
 
       allCards.forEach(card => {
@@ -280,6 +330,11 @@ const gridArticles = articles.slice(3);
         filterArticles();
       });
     });
+
+    // Apply initial filter (handles ?topic= param on page load)
+    if (activeCategory !== 'all') {
+      filterArticles();
+    }
   }
 
   initArticlesPage();
@@ -299,5 +354,9 @@ const gridArticles = articles.slice(3);
 
   .article-lead-card:hover {
     @apply shadow-2xl;
+  }
+
+  .hidden-paginated {
+    display: none !important;
   }
 </style>

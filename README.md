@@ -87,17 +87,21 @@ src/
 - **SideNav** - Magazine-style sidebar with Topics, Series, and Featured articles
 - **Command Palette (⌘K)** - Site-wide search for articles, sections, and pages
 - **Floating Table of Contents** - Scroll spy navigation for articles
+- **Breadcrumbs** - Category-linked breadcrumb trail on article pages
 - **View Transitions** - Smooth page-to-page animations
 
 ### Content
 - **46 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
+- **Series support** — multi-part article series with `series`/`seriesOrder` fields, prev/next navigation, and progress indicators
+- **Deep Dives page** dynamically renders published series (e.g., 6-part Thyroid Deep Dive) alongside coming-soon series
 - Content Collections with Zod schema validation
 - Type-safe article queries
 - Automatic reading time calculation
 - **All navigation is collection-driven** — new articles auto-appear everywhere
 - **Category-based gradient art system** — editorial card visuals generated from category palette
-- **Functional category filtering** on homepage and articles index
+- **Functional category filtering** on homepage and articles index (topic nav links wire to filter state)
 - **Article search** with real-time filtering on articles index
+- **Pagination** — articles index shows 12 initially with "Show More" button; auto-expands on search/filter
 
 ### Admin Publishing Portal (`/admin`)
 - Token-based authentication with logout (server-side only, no `PUBLIC_` prefix)
@@ -143,7 +147,10 @@ src/
 
 ### SEO & Accessibility
 - JSON-LD structured data (Article, Organization, BreadcrumbList)
+- **Per-article OG images** — uses `heroImage` from Supabase for social sharing
 - Open Graph / Twitter cards for social sharing
+- **RSS feed** at `/rss.xml` via `@astrojs/rss`
+- **Sitemap** via `@astrojs/sitemap`
 - Skip links for keyboard navigation
 - ARIA labels on interactive elements
 - Focus-visible states for keyboard users
@@ -151,6 +158,10 @@ src/
 - Semantic HTML structure
 
 ### Additional
+- **Social share buttons** (Twitter, LinkedIn, copy link) on every article
+- **Reading list** — localStorage bookmark system with toggle on articles
+- **About page** — mission statement, editorial standards, and brand tone
+- **Custom 404 page** with article recommendations
 - Newsletter subscription form
 - Article reading progress indicator
 - PWA-ready with manifest.json

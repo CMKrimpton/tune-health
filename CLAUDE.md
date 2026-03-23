@@ -30,8 +30,9 @@ npm run preview  # Preview production build
 - **Astro**: Static site generation with View Transitions and Content Collections
 - **React + cmdk**: Command palette (⌘K) for site-wide navigation
 - **React**: Admin publishing portal (ArticleEditor island)
-- **GSAP**: Hero entrance animation and counter number tweening only
 - **IntersectionObserver**: CSS-triggered reveal animations and scroll spy
+- **@astrojs/rss**: RSS feed generation
+- **@astrojs/sitemap**: Automatic sitemap generation
 - **Zod**: Schema validation for content collections
 - **mammoth**: DOCX file parsing in admin portal
 
@@ -40,7 +41,7 @@ npm run preview  # Preview production build
 src/
 ├── content/
 │   ├── config.ts             # Content collection schema (Zod)
-│   └── articles/             # Article metadata (JSON) - 39 published articles
+│   └── articles/             # Article metadata (JSON) - 46 published articles
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
@@ -57,11 +58,17 @@ src/
 │   ├── SEO.astro             # JSON-LD structured data
 │   ├── ArticleCTA.astro      # Category-contextual app CTA (article end)
 │   ├── AppPromo.astro        # Homepage alumi Health section (4-feature grid)
+│   ├── ShareButtons.astro    # Social share buttons (Twitter, LinkedIn, copy link)
+│   ├── SeriesNav.astro       # Series prev/next navigation with progress dots
+│   ├── BookmarkButton.astro  # localStorage reading list / bookmark toggle
 │   └── admin/
 │       └── ArticleEditor.tsx # Admin publishing portal React component
 ├── pages/
 │   ├── index.astro           # Homepage (collection-driven)
-│   ├── deep-dives.astro      # Deep dive series page
+│   ├── deep-dives.astro      # Deep dive series page (collection-driven)
+│   ├── about.astro           # About / mission / editorial standards
+│   ├── 404.astro             # Custom 404 page
+│   ├── rss.xml.ts            # RSS feed (via @astrojs/rss)
 │   ├── subscribe.astro       # Newsletter subscription page
 │   ├── admin/
 │   │   ├── login.astro       # Admin token login (SSR)
@@ -109,6 +116,8 @@ const articles = defineCollection({
     publishDate: z.string(),
     readTime: z.number(),
     tags: z.array(z.string()),
+    series: z.string().optional(),
+    seriesOrder: z.number().optional(),
     // ... more fields
   }),
 });
@@ -267,10 +276,24 @@ The magazine funnels readers to the **alumi Health** app (`https://tune-sigma.ve
 - Collapses to pill on mobile showing current section
 - Click to navigate to sections
 
+#### Series Navigation
+- Articles with `series` field get automatic prev/next navigation (`SeriesNav.astro`)
+- Progress dots showing position in series, "Part X of Y" counter
+- Deep Dives page (`/deep-dives`) dynamically renders published series from content collection
+
+#### Social Share & Bookmarks
+- `ShareButtons.astro`: Twitter, LinkedIn, copy link on every article
+- `BookmarkButton.astro`: localStorage-based reading list toggle
+
 #### SEO & Structured Data
 - JSON-LD schema generation (Article, WebSite, Organization, BreadcrumbList)
+- Per-article OG images from `heroImage` field (Supabase Storage)
 - Open Graph and Twitter Card meta tags
 - Canonical URLs
+- RSS feed at `/rss.xml` via `@astrojs/rss`
+- Sitemap via `@astrojs/sitemap`
+- Breadcrumbs on article pages (Home > Articles > Category)
+- Custom 404 page with article recommendations
 
 ### CSS/Tailwind Guidelines
 

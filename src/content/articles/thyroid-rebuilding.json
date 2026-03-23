@@ -31,5 +31,7 @@
     "microbiome intervention"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-rebuilding.png",
-  "heroImageAlt": "Editorial illustration for Rebuilding the Thyroid: Precision Medicine, AI, and the Gland of 2035"
+  "heroImageAlt": "Editorial illustration for Rebuilding the Thyroid: Precision Medicine, AI, and the Gland of 2035",
+  "series": "The Thyroid Deep Dive",
+  "seriesOrder": 6
 }

@@ -30,5 +30,7 @@
     "prenatal screening"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-fetal-blueprint.png",
-  "heroImageAlt": "Editorial illustration for The Fetal Blueprint: The Screening Failure That Is Costing Children Their Cognitive Futures"
+  "heroImageAlt": "Editorial illustration for The Fetal Blueprint: The Screening Failure That Is Costing Children Their Cognitive Futures",
+  "series": "The Thyroid Deep Dive",
+  "seriesOrder": 4
 }

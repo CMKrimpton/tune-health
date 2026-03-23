@@ -29,6 +29,9 @@ const articles = defineCollection({
     heroImageAlt: z.string().optional(),
     sortOrder: z.number().optional(),
     comingSoon: z.boolean().default(false),
+    // Series support
+    series: z.string().optional(),
+    seriesOrder: z.number().optional(),
   }),
 });
 

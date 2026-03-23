@@ -7,8 +7,12 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SEO from '../components/SEO.astro';
 import Newsletter from '../components/Newsletter.astro';
 import ArticleCTA from '../components/ArticleCTA.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import ShareButtons from '../components/ShareButtons.astro';
+import SeriesNav from '../components/SeriesNav.astro';
+import BookmarkButton from '../components/BookmarkButton.astro';
 import { fade, slide } from 'astro:transitions';
-import { getRelatedArticles, getArticleGradientStyle } from '../utils/articles';
+import { getRelatedArticles, getArticleGradientStyle, getArticles } from '../utils/articles';
 
 interface Props {
   title: string;
@@ -33,13 +37,19 @@ const {
 } = Astro.props;
 
 const relatedArticles = await getRelatedArticles(slug, 3);
+
+// Resolve per-article OG image from heroImage if no explicit ogImage
+const allArticles = await getArticles();
+const currentArticle = allArticles.find((a) => a.slug === slug);
+const resolvedOgImage = ogImage || currentArticle?.heroImage || '/assets/og-image.png';
+const articleSeries = currentArticle?.series;
 ---
 
 <BaseLayout
   title={`${title} | alumi news`}
   description={description}
   ogType="article"
-  ogImage={ogImage || '/assets/og-image.png'}
+  ogImage={resolvedOgImage}
 >
   <!-- Structured Data -->
   <SEO
@@ -63,6 +73,14 @@ const relatedArticles = await getRelatedArticles(slug, 3);
     transition:animate={fade({ duration: '0.3s' })}
   >
     <div class="container-editorial">
+      <Breadcrumbs
+        items={[
+          { label: 'Home', href: '/' },
+          { label: 'Articles', href: '/articles' },
+          { label: category, href: `/articles?topic=${category.toLowerCase().replace(/\s+/g, '-')}` },
+        ]}
+        class="mb-8 justify-center"
+      />
       <div class="article-header">
         <div class="flex items-center justify-center gap-2 mb-8">
           <span
@@ -129,6 +147,10 @@ const relatedArticles = await getRelatedArticles(slug, 3);
 
         <!-- Share & Tags -->
         <div class="mt-14 pt-8 border-t border-stone-200 dark:border-stone-800 reveal">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <ShareButtons title={title} url={`/articles/${slug}`} />
+            <BookmarkButton slug={slug} title={title} />
+          </div>
           <div class="flex flex-wrap gap-2">
             <slot name="tags" />
           </div>
@@ -148,6 +170,11 @@ const relatedArticles = await getRelatedArticles(slug, 3);
 
         <!-- App CTA — contextual per category -->
         <ArticleCTA category={category} slug={slug} />
+
+        <!-- Series Navigation (if article belongs to a series) -->
+        {articleSeries && (
+          <SeriesNav series={articleSeries} currentSlug={slug} />
+        )}
       </div>
     </div>
   </article>

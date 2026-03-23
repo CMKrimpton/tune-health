@@ -1,0 +1,276 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+import SideNav from '../components/SideNav.astro';
+---
+
+<BaseLayout
+  title="About | alumi news"
+  description="Independent health analysis for people who think for themselves."
+>
+  <Header slot="header" />
+
+  <!-- Hero Section -->
+  <section class="about-hero">
+    <div class="container-editorial">
+      <div class="max-w-3xl">
+        <span class="section-label">About Us</span>
+        <h1 class="font-serif text-display-2 font-semibold mt-2 mb-6">
+          Evidence.<br/>
+          <span class="italic font-normal text-primary-600">Wherever It Leads.</span>
+        </h1>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-xl">
+          Independent health analysis for people who think for themselves.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mission Section -->
+  <section class="py-16 md:py-24">
+    <div class="container-editorial">
+      <div class="max-w-2xl mx-auto">
+        <span class="section-label mb-8 block">Our Mission</span>
+        <div class="about-mission-text space-y-6">
+          <p class="font-body text-body-lg text-stone-700 dark:text-stone-300" style="line-height: 1.8;">
+            Health information is broken. Mainstream sources defer to authority and industry-funded research.
+            Alternative health cherry-picks studies and sells false hope. Both sides have conflicts of interest
+            they don't disclose.
+          </p>
+          <p class="font-serif text-heading-3 italic text-stone-800 dark:text-stone-200">
+            alumi news exists to cut through it all.
+          </p>
+          <p class="font-body text-body-lg text-stone-700 dark:text-stone-300" style="line-height: 1.8;">
+            We treat peer-reviewed journals and naturopathic claims with the same respect &mdash; and the same
+            skepticism. We'll tell you when a cheap generic outperforms an expensive supplement, and when a folk
+            remedy has more science behind it than a blockbuster medication. We follow evidence wherever it leads,
+            even when it's inconvenient.
+          </p>
+          <p class="font-serif text-xl italic text-primary-600 mt-8">
+            The only wealth that matters.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Three Stats -->
+  <section class="py-12 md:py-16 bg-stone-100 dark:bg-stone-900">
+    <div class="container-editorial">
+      <div class="about-stats">
+        <div class="about-stat-item">
+          <span class="about-stat-number">No</span>
+          <span class="about-stat-label">Sponsors</span>
+        </div>
+        <div class="about-stat-divider"></div>
+        <div class="about-stat-item">
+          <span class="about-stat-number">No</span>
+          <span class="about-stat-label">Sacred Cows</span>
+        </div>
+        <div class="about-stat-divider"></div>
+        <div class="about-stat-item">
+          <span class="about-stat-number">No</span>
+          <span class="about-stat-label">Bullshit</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Editorial Standards -->
+  <section class="py-16 md:py-24">
+    <div class="container-editorial">
+      <div class="max-w-2xl mx-auto">
+        <div class="flex items-center gap-6 mb-10">
+          <span class="section-label">Editorial Standards</span>
+          <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+        </div>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-10" style="line-height: 1.8;">
+          Every article we publish goes through a rigorous editorial process.
+          We hold ourselves to the same standard we demand from the sources we cover.
+        </p>
+        <div class="space-y-8">
+          <div class="about-standard-item">
+            <div class="about-standard-icon" aria-hidden="true">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-stone-900 dark:text-white mb-1">Every claim linked to source research</h3>
+              <p class="font-body text-body text-stone-600 dark:text-stone-400">
+                We don't ask you to trust us. We show you the studies, the sample sizes, the funding sources,
+                and let you evaluate the evidence yourself.
+              </p>
+            </div>
+          </div>
+          <div class="about-standard-item">
+            <div class="about-standard-icon" aria-hidden="true">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-stone-900 dark:text-white mb-1">Multiple perspectives considered</h3>
+              <p class="font-body text-body text-stone-600 dark:text-stone-400">
+                Health is rarely black and white. We present the strongest arguments from all sides
+                and tell you where the consensus sits &mdash; and where it's still contested.
+              </p>
+            </div>
+          </div>
+          <div class="about-standard-item">
+            <div class="about-standard-icon" aria-hidden="true">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-stone-900 dark:text-white mb-1">Same standard for all sources</h3>
+              <p class="font-body text-body text-stone-600 dark:text-stone-400">
+                Alternative and conventional medicine are held to the same evidentiary bar.
+                A Harvard meta-analysis gets the same scrutiny as a supplement company's claims.
+              </p>
+            </div>
+          </div>
+          <div class="about-standard-item">
+            <div class="about-standard-icon" aria-hidden="true">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-stone-900 dark:text-white mb-1">Regular updates when new evidence emerges</h3>
+              <p class="font-body text-body text-stone-600 dark:text-stone-400">
+                Science evolves. When new research changes the picture, we update our articles
+                and tell you what changed and why. We'd rather be right than consistent.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Approach -->
+  <section class="py-16 md:py-24 bg-stone-50 dark:bg-stone-900/50 border-y border-stone-200 dark:border-stone-800">
+    <div class="container-editorial">
+      <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-12">
+          <span class="section-label mb-4 block">Our Approach</span>
+          <h2 class="font-serif text-heading-1 font-semibold">How We Write</h2>
+        </div>
+        <div class="about-approach-grid">
+          <div class="about-approach-card">
+            <h3 class="about-approach-label">Voice</h3>
+            <p class="about-approach-value">Direct, confident, slightly irreverent</p>
+          </div>
+          <div class="about-approach-card">
+            <h3 class="about-approach-label">Stance</h3>
+            <p class="about-approach-value">Aggressively neutral &mdash; skeptical of all sources equally</p>
+          </div>
+          <div class="about-approach-card">
+            <h3 class="about-approach-label">Language</h3>
+            <p class="about-approach-value">Clear, accessible, avoids jargon</p>
+          </div>
+          <div class="about-approach-card">
+            <h3 class="about-approach-label">Personality</h3>
+            <p class="about-approach-value">Smart friend who reads the studies, not a lecturer</p>
+          </div>
+          <div class="about-approach-card lg:col-span-2">
+            <h3 class="about-approach-label">Differentiator</h3>
+            <p class="about-approach-value">Neither pro-establishment nor anti-establishment</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App Bridge -->
+  <section class="py-16 md:py-20">
+    <div class="container-editorial">
+      <div class="max-w-2xl mx-auto text-center">
+        <span class="section-label mb-4 block">Go Deeper</span>
+        <h2 class="font-serif text-heading-2 font-semibold mb-4">From Reading to Doing</h2>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8" style="line-height: 1.8;">
+          alumi news gives you the research. alumi Health lets you apply it &mdash;
+          upload labs, photograph meals, run personal experiments, and ask follow-up questions with AI.
+        </p>
+        <a
+          href="https://tune-sigma.vercel.app?utm_source=alumi-news&utm_medium=about-page"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn-secondary magnetic inline-flex"
+          aria-label="Try alumi Health free"
+        >
+          <span>Try alumi Health Free</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M7 17L17 7M17 7H7M17 7v10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+  <SideNav />
+</BaseLayout>
+
+<style>
+  .about-hero {
+    @apply pt-24 md:pt-28 pb-10 md:pb-14 bg-stone-50 dark:bg-stone-900/50;
+    @apply border-b border-stone-200 dark:border-stone-800;
+  }
+
+  /* Three Stats */
+  .about-stats {
+    @apply flex items-center justify-center gap-8 md:gap-16;
+  }
+
+  .about-stat-item {
+    @apply text-center;
+  }
+
+  .about-stat-number {
+    @apply block font-serif text-3xl md:text-4xl font-semibold text-stone-900 dark:text-white;
+  }
+
+  .about-stat-label {
+    @apply block text-sm md:text-base text-stone-500 dark:text-stone-400 mt-1;
+  }
+
+  .about-stat-divider {
+    @apply w-px h-12 bg-stone-300 dark:bg-stone-700;
+  }
+
+  /* Editorial Standards */
+  .about-standard-item {
+    @apply flex gap-4;
+  }
+
+  .about-standard-icon {
+    @apply flex-shrink-0 w-10 h-10 flex items-center justify-center;
+    @apply rounded-xl bg-primary-50 dark:bg-primary-500/10 text-primary-600;
+  }
+
+  /* Our Approach Cards */
+  .about-approach-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+  }
+
+  .about-approach-card {
+    @apply p-6 rounded-2xl;
+    @apply bg-white dark:bg-stone-800/50;
+    @apply border border-stone-200 dark:border-stone-700;
+  }
+
+  .about-approach-label {
+    @apply text-xs font-semibold uppercase tracking-wider text-primary-600 mb-2;
+  }
+
+  .about-approach-value {
+    @apply font-body text-body text-stone-700 dark:text-stone-300;
+  }
+</style>

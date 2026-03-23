@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.9.0] - 2026-03-22
+
+### Added
+- **RSS feed** (`/rss.xml`) — via `@astrojs/rss`, includes all published articles with tags as categories
+- **Sitemap** — `@astrojs/sitemap` integration generates `sitemap-index.xml` on build
+- **Custom 404 page** — branded error page with "Back to Home" and "Browse Articles" CTAs
+- **About page** (`/about`) — mission statement, editorial standards, brand tone cards, app CTA. Linked from Footer and SideNav
+- **Series infrastructure** — `series` and `seriesOrder` fields in content schema, `getSeriesArticles()` and `getAllSeries()` utility functions
+- **Series navigation component** (`SeriesNav.astro`) — progress dots, "Part X of Y" counter, prev/next links. Auto-renders on articles with a `series` field
+- **Social share buttons** (`ShareButtons.astro`) — Twitter, LinkedIn, copy link on every article page
+- **Breadcrumbs** on article pages — Home > Articles > Category with topic link wiring
+- **Bookmark / reading list** (`BookmarkButton.astro`) — localStorage-based save system on article pages
+- **Article pagination** — articles index shows 12 initially with "Show More" button; auto-expands when filtering or searching
+- **Per-article OG images** — `heroImage` from Supabase used as Open Graph image for social sharing
+
+### Fixed
+- **Canonical URL mismatch** — `siteUrl` corrected from `alumi-news.vercel.app` to `tune-health.vercel.app` in BaseLayout. All OG tags, canonical links, and Twitter cards now point to the correct domain
+- **Topic nav links were dead** — 16+ links from Header/SideNav/Footer to `/articles?topic=X` now work. Articles index reads `?topic=` URL param and auto-selects matching category chip
+- **Related articles were random** — `getRelatedArticles()` now scores by category match (+10) and shared tag overlap (+3 each) instead of returning first 3 articles
+- **Fake social proof removed** — subscribe page no longer claims fabricated subscriber counts, open rates, or quotes a fictional doctor. Replaced with honest article stats
+- **Homepage category filter inconsistency** — featured hero card now respects category filter (hidden when category doesn't match)
+- **Package version mismatch** — package.json synced from 5.5.0 to 5.8.0 (now 5.9.0)
+- **Newsletter form duplication** — homepage form now uses shared `data-newsletter-form` pattern; removed duplicate inline handler
+
+### Changed
+- **Deep Dives page rewrite** — now dynamically renders published series (Thyroid Deep Dive, 6 articles with cards) above coming-soon series, using `getAllSeries()` from content collection
+- **Thyroid articles** — all 6 articles tagged with `series: "The Thyroid Deep Dive"` and `seriesOrder: 1-6`
+- **Article header navigation** — article pages now show Home / Articles / Series links instead of just a back arrow
+- **Font loading optimized** — reduced from 22 font weights to 13 across 3 families (Playfair Display 8→5, Inter 5→4, Crimson Pro 7→3)
+- **Loader speed** — reduced forced delay from 1.6s to 0.6s
+- **Footer nav** — added About link to Explore section
+- **SideNav** — "Our Mission" link changed to About page link
+
+### Removed
+- **GSAP dependency** — unused (zero imports in src/), removed from package.json and astro.config.mjs
+
 ## [5.8.0] - 2026-03-23
 
 ### Added

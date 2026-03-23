@@ -95,7 +95,7 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
 
   <!-- Featured Article -->
   {heroArticle && (
-    <section class="py-14 md:py-20 bg-stone-50 dark:bg-stone-900/50" id="featured">
+    <section class="py-14 md:py-20 bg-stone-50 dark:bg-stone-900/50" id="featured" data-featured-section data-category={heroArticle.category}>
       <div class="container-editorial">
         <div class="flex items-center gap-6 mb-8">
           <span class="section-label">Featured Story</span>
@@ -378,7 +378,7 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
             No hype, no sales pitches — just the research that matters.
           </p>
 
-          <form class="mb-8" id="newsletterForm">
+          <form class="mb-8" data-newsletter-form>
             <div class="flex flex-col sm:flex-row gap-3 mb-4">
               <input type="email" required placeholder="you@example.com"
                      class="flex-1 px-5 py-3 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-base focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
@@ -509,6 +509,7 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
       // Category filtering
       const categoryChips = document.querySelectorAll('.category-chip');
       const articleCards = document.querySelectorAll('#articleGrid .article-card');
+      const featuredSection = document.querySelector('[data-featured-section]') as HTMLElement | null;
 
       categoryChips.forEach(chip => {
         chip.addEventListener('click', () => {
@@ -518,6 +519,17 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
 
           const category = (chip as HTMLElement).dataset.category;
 
+          // Filter featured section
+          if (featuredSection) {
+            const featuredCategory = featuredSection.dataset.category;
+            if (category === 'all' || featuredCategory === category) {
+              featuredSection.style.display = '';
+            } else {
+              featuredSection.style.display = 'none';
+            }
+          }
+
+          // Filter grid cards
           articleCards.forEach(card => {
             const cardEl = card as HTMLElement;
             const cardCategory = cardEl.dataset.category;
@@ -534,45 +546,37 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
         });
       });
 
-      // Newsletter form - only bind once
-      const newsletterForm = document.getElementById('newsletterForm');
-      if (newsletterForm && !newsletterForm.dataset.bound) {
-        newsletterForm.dataset.bound = 'true';
-        newsletterForm.addEventListener('submit', (e) => {
+      // Newsletter form handler (shared pattern)
+      document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
+        if ((form as HTMLElement).dataset.bound) return;
+        (form as HTMLElement).dataset.bound = 'true';
+        form.addEventListener('submit', (e) => {
           e.preventDefault();
-          const btn = newsletterForm.querySelector('button[type="submit"]') as HTMLButtonElement;
-          const input = newsletterForm.querySelector('input[type="email"]') as HTMLInputElement;
-          const originalText = btn.innerHTML;
-
-          btn.innerHTML = `<span>Subscribing...</span>`;
-          btn.disabled = true;
-          if (input) input.disabled = true;
-
-          setTimeout(() => {
-            btn.innerHTML = `
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M5 13l4 4L19 7" stroke-width="2"/>
-              </svg>
-              <span>Subscribed!</span>
-            `;
-
+          const input = form.querySelector('input[type="email"]') as HTMLInputElement;
+          const button = form.querySelector('button') as HTMLButtonElement;
+          if (input && button) {
+            const originalText = button.textContent;
+            button.textContent = 'Subscribing...';
+            button.disabled = true;
+            input.disabled = true;
             setTimeout(() => {
-              btn.innerHTML = originalText;
-              btn.disabled = false;
-              if (input) {
+              button.textContent = 'Subscribed!';
+              setTimeout(() => {
+                button.textContent = originalText;
+                button.disabled = false;
                 input.disabled = false;
                 input.value = '';
-              }
-            }, 3000);
-          }, 1200);
+              }, 3000);
+            }, 800);
+          }
         });
-      }
+      });
 
       // Handle initial load vs View Transition
       if (isInitialLoad && !isViewTransition) {
         // Initial page load - wait for loader
         if (loader && !loader.classList.contains('hidden')) {
-          setTimeout(hideLoader, 1600);
+          setTimeout(hideLoader, 600);
         } else {
           hideLoader();
         }

@@ -4,57 +4,46 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SideNav from '../components/SideNav.astro';
+import { getAllSeries, getArticleGradientStyle } from '../utils/articles';
 
-const series = [
+const publishedSeries = await getAllSeries();
+
+const comingSoonSeries = [
   {
-    number: 'I',
+    number: 'II',
     title: 'The Neuroscience of Habit Formation',
     description: 'A four-part exploration of how habits form, persist, and can be intentionally restructured. From the basal ganglia to practical behavioral strategies.',
     category: 'Neuroscience',
     parts: 4,
     totalTime: '45 min',
-    status: 'coming-soon',
     gradient: 'from-violet-600 to-purple-700',
   },
   {
-    number: 'II',
+    number: 'III',
     title: 'Understanding Your Microbiome',
     description: 'The gut-brain connection, microbial diversity, and practical steps for optimization. How trillions of microorganisms influence your health.',
     category: 'Nutrition',
     parts: 6,
     totalTime: '60 min',
-    status: 'coming-soon',
     gradient: 'from-emerald-500 to-teal-600',
   },
   {
-    number: 'III',
+    number: 'IV',
     title: "Precision Medicine: A Patient's Guide",
     description: 'How genetic testing, biomarkers, and personalized protocols are reshaping healthcare. Navigate the new frontier of individualized treatment.',
     category: 'Medicine',
     parts: 3,
     totalTime: '35 min',
-    status: 'coming-soon',
     gradient: 'from-cyan-500 to-blue-600',
   },
   {
-    number: 'IV',
+    number: 'V',
     title: 'Sleep Architecture Deep Dive',
     description: 'Understanding the stages of sleep, circadian biology, and evidence-based strategies for optimizing rest and recovery.',
     category: 'Sleep Science',
     parts: 5,
     totalTime: '50 min',
-    status: 'coming-soon',
     gradient: 'from-indigo-500 to-purple-600',
-  },
-  {
-    number: 'V',
-    title: 'The Science of Stress Resilience',
-    description: 'From cortisol to catecholamines, understanding the biology of stress and building lasting resilience through evidence-based practices.',
-    category: 'Mental Health',
-    parts: 4,
-    totalTime: '40 min',
-    status: 'coming-soon',
-    gradient: 'from-orange-500 to-amber-600',
   },
 ];
 ---
@@ -82,17 +71,67 @@ const series = [
     </div>
   </section>
 
-  <!-- Series List -->
-  <section class="py-16 md:py-24">
+  <!-- Published Series -->
+  {publishedSeries.length > 0 && (
+    <section class="py-16 md:py-24">
+      <div class="container-editorial">
+        <div class="flex items-center gap-6 mb-10">
+          <span class="section-label">Published Series</span>
+          <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
+          <span class="text-sm text-stone-400">{publishedSeries.length} series</span>
+        </div>
+
+        {publishedSeries.map((series) => (
+          <div class="mb-12 last:mb-0">
+            <div class="flex items-center gap-4 mb-6">
+              <span class="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 text-xs font-semibold uppercase tracking-widest rounded-full">
+                Series
+              </span>
+              <h2 class="font-serif text-heading-1 font-semibold">{series.name}</h2>
+              <span class="text-sm text-stone-400">{series.articles.length} parts</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {series.articles.map((article, i) => (
+                <a href={article.href} class={`group block reveal${i > 0 ? ` reveal-delay-${Math.min(i, 5)}` : ''}`}>
+                  <div class="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-all duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700 h-full flex flex-col">
+                    <div class="relative aspect-[16/10] overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+                      {article.heroImage && (
+                        <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
+                      )}
+                      <div class="absolute top-3 left-4 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-stone-900/70 text-white text-xs font-semibold rounded">Part {article.seriesOrder}</span>
+                      </div>
+                    </div>
+                    <div class="p-5 flex flex-col flex-1">
+                      <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+                        <span class="text-xs text-stone-400">{article.readTime} min</span>
+                      </div>
+                      <h3 class="font-serif text-lg font-semibold mb-2 group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">{article.title}</h3>
+                      <p class="font-body text-sm text-stone-500 dark:text-stone-400 line-clamp-2 flex-1">{article.description}</p>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Coming Soon Series -->
+  <section class="py-16 md:py-24 bg-stone-50 dark:bg-stone-900/30">
     <div class="container-editorial">
       <div class="flex items-center gap-6 mb-10">
-        <span class="section-label">All Series</span>
+        <span class="section-label">Coming Soon</span>
         <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700"></div>
-        <span class="text-sm text-stone-400">{series.length} series</span>
+        <span class="text-sm text-stone-400">{comingSoonSeries.length} series</span>
       </div>
 
       <div class="space-y-6">
-        {series.map((item, index) => (
+        {comingSoonSeries.map((item) => (
           <div class="deep-dive-feature-card group reveal opacity-75 cursor-default">
             <div class={`deep-dive-feature-image bg-gradient-to-br ${item.gradient}`}>
               <span class="deep-dive-feature-number">{item.number}</span>
@@ -164,7 +203,6 @@ const series = [
         <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-4">Be First to Read</h2>
         <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-8">
           Subscribe to get notified when new Deep Dives are published.
-          We'll send you the first part directly to your inbox.
         </p>
         <a href="/subscribe" class="btn-primary magnetic inline-flex">
           <span>Subscribe to Newsletter</span>

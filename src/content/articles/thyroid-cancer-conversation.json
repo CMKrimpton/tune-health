@@ -31,5 +31,7 @@
     "ATA guidelines"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-cancer-conversation.png",
-  "heroImageAlt": "Editorial illustration for The Cancer That Wasn't \u2014 and the One That Was"
+  "heroImageAlt": "Editorial illustration for The Cancer That Wasn't \u2014 and the One That Was",
+  "series": "The Thyroid Deep Dive",
+  "seriesOrder": 5
 }
