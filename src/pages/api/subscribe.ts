@@ -5,6 +5,13 @@ import type { APIRoute } from 'astro';
  * Stores emails in Supabase `newsletter_subscribers` table.
  * Falls back gracefully if Supabase is not configured.
  */
+export const GET: APIRoute = async () => {
+  return new Response(JSON.stringify({ error: 'Method not allowed. Use POST.' }), {
+    status: 405,
+    headers: { 'Content-Type': 'application/json', 'Allow': 'POST' },
+  });
+};
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
