@@ -188,18 +188,12 @@ async function safeStage(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error(`[${stageName}] Error for log ${logId}: ${msg}`);
-    // Record the error in the log so it doesn't stay stuck
-    const { data: logEntry } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
-    const research = (logEntry?.research_data || {}) as Record<string, unknown>;
-    // Find best checkpoint to resume from
-    let resumeStatus = "failed";
-    if (research._article) resumeStatus = "written";
-    else if (research._editorBrief) resumeStatus = "editor_approved";
-    else if (research.topic || research.keyFindings || research.candidates) resumeStatus = "research_done";
+    // Always fail hard. No auto-rollback — that causes infinite loops.
+    // Admin can retry manually via the Retry button.
     await db.from("daily_article_log").update({
-      status: resumeStatus === "failed" ? "failed" : resumeStatus,
-      error: resumeStatus === "failed" ? `${stageName}: ${msg}` : null,
-      ...(resumeStatus === "failed" ? { completed_at: new Date().toISOString() } : {}),
+      status: "failed",
+      error: `${stageName}: ${msg}`,
+      completed_at: new Date().toISOString(),
     }).eq("id", logId);
     return { ok: false, error: msg };
   }
@@ -630,17 +624,9 @@ const ARTICLE_WRITING_PROMPT = `You are a senior health journalist at alumi news
 - 8-12 specific evidence citations minimum.
 
 ## Output Format
-Return ONLY valid JSON:
-{
-  "html": "...",
-  "metadata": { ... },
-  "svg": "...",
-  "toc": [ ... ],
-  "readTime": number
-}
+Return ONLY the article body as raw HTML. NO JSON, NO metadata, NO SVG. Just the HTML sections.
 
-### html field
-Article body HTML using these patterns:
+Use these patterns:
 
 <section id="section-slug" class="reveal">
   <h2>Section Title</h2>
@@ -666,33 +652,8 @@ End with disclaimer:
   </p>
 </div>
 
-### metadata field
-{
-  "title": "Use the headline from the editorial brief",
-  "slug": "Use the slug from the editorial brief",
-  "description": "Use the description from the editorial brief",
-  "category": "From the brief",
-  "tags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"],
-  "gradient": { "from": "color-weight", "to": "color-weight" },
-  "featured": false,
-  "readTime": <number>,
-  "publishDate": "${todayISO()}",
-  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6"]
-}
-
-Gradient options: rose-600/red-700, violet-600/purple-700, emerald-500/teal-600, emerald-600/teal-700, amber-500/orange-600, sky-500/blue-600, indigo-500/purple-600, lime-500/green-600
-
-### svg field
-MINIMAL SVG only. Just a dark gradient rect 1200x600 with 2-3 simple shapes. Example: <rect width="1200" height="600" fill="url(#bg)"/><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><circle cx="600" cy="300" r="80" fill="#dc262620"/>. Keep under 500 characters.
-
-### toc field
-Array of { "id": "section-id", "title": "Display Title" }.
-
-### readTime field
-Estimated minutes (220 wpm, rounded up).
-
 ## Rules
-- NEVER fabricate study data, statistics, or author names. Use the research data provided — it has already been web-verified.
+- NEVER fabricate study data, statistics, or author names.
 - Follow the editorial brief's angle, opening direction, emphasis points, and closing direction.
 - Structure: hook → evidence → mechanism → implications → honest unknowns.`;
 
@@ -1018,31 +979,55 @@ ${((researchData.statistics as string[]) || []).join("\n")}
 
 Today's date: ${today}
 
-IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. The research data has been web-verified — write from it directly. Return ONLY valid JSON.`;
+Write the article. Return ONLY the article HTML — no JSON wrapper, no metadata, no SVG. Just the raw HTML sections starting with <section id="introduction">.`;
 
-  const articleRaw = await claude({
+  // Call 1: Write the article HTML only — fast, no JSON overhead
+  const articleHtml = await claude({
     system: ARTICLE_WRITING_PROMPT,
     user: articleUserPrompt,
     model,
-    maxTokens: 8192,
+    maxTokens: 6000,
     temperature: 0.4,
-    // No web search for writing — research already did that. Saves ~60s.
   });
 
-  const article = parseClaudeJSON(articleRaw) as {
-    html: string;
-    metadata: Record<string, unknown>;
-    svg: string;
-    toc: { id: string; title: string }[];
-    readTime: number;
+  // Build metadata from editor brief — no API call needed
+  const slug = (editorBrief?.slug as string) || "untitled";
+  const title = (editorBrief?.headline as string) || (researchData.headline_draft as string) || "Untitled";
+  const description = (editorBrief?.description as string) || "";
+  const category = (editorBrief?.categoryOverride as string) || (researchData.category as string) || "Clinical Evidence";
+  const tags = ((researchData.keyFindings as string[]) || []).slice(0, 5).map(f => f.split(" ").slice(0, 2).join(" "));
+  const wordCount = articleHtml.split(/\s+/).length;
+  const readTime = Math.max(5, Math.ceil(wordCount / 220));
+
+  // Extract TOC from HTML section headers
+  const tocMatches = [...articleHtml.matchAll(/<section id="([^"]+)"[\s\S]*?<h2>([^<]+)<\/h2>/g)];
+  const toc = tocMatches.map(m => ({ id: m[1], title: m[2] }));
+  // Always include introduction
+  if (!toc.find(t => t.id === "introduction")) {
+    toc.unshift({ id: "introduction", title: "Introduction" });
+  }
+
+  // Minimal SVG placeholder — illustration agent generates real image at publish
+  const svg = `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><rect width="1200" height="600" fill="url(#bg)"/><circle cx="600" cy="300" r="120" fill="#dc262610" stroke="#dc262630" stroke-width="1"/>`;
+
+  const article = {
+    html: articleHtml.trim(),
+    metadata: {
+      title,
+      slug,
+      description,
+      category,
+      tags,
+      gradient: { from: "rose-600", to: "red-700" },
+      featured: false,
+      readTime,
+      publishDate: today,
+      keywords: tags,
+    },
+    svg,
+    toc,
+    readTime,
   };
-
-  const slug = (editorBrief?.slug as string) || (article.metadata.slug as string);
-  const readTime = article.readTime || (article.metadata.readTime as number) || 12;
-
-  // Override metadata with editor's headline/description
-  if (editorBrief?.headline) article.metadata.title = editorBrief.headline as string;
-  if (editorBrief?.description) article.metadata.description = editorBrief.description as string;
   if (editorBrief?.slug) article.metadata.slug = editorBrief.slug as string;
   if (editorBrief?.categoryOverride) article.metadata.category = editorBrief.categoryOverride as string;
 
@@ -1418,8 +1403,9 @@ Deno.serve(async (req: Request) => {
       const { data: queue } = await db
         .from("topic_queue")
         .select("*")
-        .in("status", ["pending", "in_progress"])
-        .order("priority", { ascending: false })
+        .in("status", ["queued", "assigned", "in_progress"])
+        .order("expedite", { ascending: false })
+        .order("priority", { ascending: true })
         .order("created_at", { ascending: true });
 
       return json({ logs: data || [], articleCount, queue: queue || [] });
