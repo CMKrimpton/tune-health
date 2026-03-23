@@ -95,8 +95,8 @@ const avgCostPerArticle = published.length > 0 && totalCost > 0 ? (totalCost / p
     <!-- Stats Row -->
     <div class="admin-stats" style="grid-template-columns: repeat(4, 1fr)">
       <div class="admin-stat-card">
-        <span class="admin-stat-number">{articleCount}</span>
-        <span class="admin-stat-label">Total</span>
+        <span class="admin-stat-number">{articles.length}</span>
+        <span class="admin-stat-label">Total (DB)</span>
       </div>
       <div class="admin-stat-card">
         <span class="admin-stat-number">{published.length}</span>
@@ -122,7 +122,7 @@ const avgCostPerArticle = published.length > 0 && totalCost > 0 ? (totalCost / p
       </div>
       <div class="admin-stat-card">
         <span class="admin-stat-number" style={totalCost > 50 ? "color:#f87171" : totalCost > 20 ? "color:#f59e0b" : ""}>${totalCost > 0 ? totalCost.toFixed(2) : '—'}</span>
-        <span class="admin-stat-label">Total AI Spend</span>
+        <span class="admin-stat-label">Pipeline Spend</span>
       </div>
       <div class="admin-stat-card">
         <span class="admin-stat-number">${avgCostPerArticle}</span>
