@@ -1,0 +1,34 @@
+{
+  "title": "The Window Is Twelve Years Wide. After That, the Damage Is Done.",
+  "description": "A landmark 2026 study mapped PFAS exposure onto a precise developmental timeline — and found that children re-exposed between ages eight and twelve show measurably lower bone density, with effect sizes rivaling diet, exercise, and genetics. With 158 million Americans drinking PFAS-contaminated water, this is a population-scale skeletal health crisis that won't show up as fractures for another thirty years. The study has limits. The implications don't.",
+  "category": "Environmental Health",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "A March 2026",
+    "The bone density",
+    "Lead researcher Dr.",
+    "The PFAS–bone density",
+    "Exposures during later"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "A March 2026",
+    "The bone density",
+    "Lead researcher Dr.",
+    "The PFAS–bone density",
+    "Exposures during later"
+  ],
+  "sortOrder": 1774260808449,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pfas-forever-chemicals-adolescent-bone-density.png",
+  "heroImageAlt": "Editorial illustration for The Window Is Twelve Years Wide. After That, the Damage Is Done."
+}
