@@ -9,7 +9,7 @@
 /* Prevent white flash during View Transitions by keeping the background consistent */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.2s;
+  animation-duration: 0.25s;
   animation-timing-function: ease-out;
 }
 
@@ -91,7 +91,7 @@
     @apply inline-flex items-center justify-center gap-2;
     @apply px-5 py-2.5 rounded-full font-sans font-semibold text-sm;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
-    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.3s ease;
+    transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.375s ease;
   }
 
   .btn-primary {
@@ -349,7 +349,7 @@
   .reveal {
     opacity: 0;
     transform: translateY(2rem);
-    transition: opacity 400ms cubic-bezier(0.22, 1, 0.36, 1), transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 500ms cubic-bezier(0.22, 1, 0.36, 1), transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .reveal.active {
@@ -378,7 +378,7 @@
   .stagger-children > * {
     opacity: 0;
     transform: translateY(1rem);
-    transition: opacity 350ms cubic-bezier(0.22, 1, 0.36, 1), transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 440ms cubic-bezier(0.22, 1, 0.36, 1), transform 440ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   @media (pointer: coarse) {
@@ -502,7 +502,7 @@
 
 .loader-progress {
   @apply h-full bg-primary-600 rounded-full;
-  animation: loaderProgress 0.5s ease-in-out forwards;
+  animation: loaderProgress 0.625s ease-in-out forwards;
 }
 
 @keyframes loaderProgress {
@@ -518,7 +518,7 @@
   @apply fixed top-0 left-0 right-0 z-40;
   @apply bg-stone-50/95 dark:bg-stone-950/95 backdrop-blur-md;
   @apply border-b border-transparent;
-  transition: border-color 0.15s ease, transform 0.3s ease;
+  transition: border-color 0.2s ease, transform 0.375s ease;
 }
 
 .nav-header.scrolled {
@@ -606,8 +606,8 @@ body.menu-open {
 .hero-cta.active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Staggered delays for hero elements */
@@ -634,7 +634,7 @@ body.menu-open {
   @apply grid grid-cols-1 lg:grid-cols-2;
   @apply bg-white dark:bg-stone-900 rounded-2xl overflow-hidden;
   @apply shadow-editorial;
-  transition: box-shadow 0.4s ease, border-color 0.3s ease;
+  transition: box-shadow 0.5s ease, border-color 0.375s ease;
   @apply border border-stone-100 dark:border-stone-800;
 }
 
@@ -658,7 +658,7 @@ body.menu-open {
 .article-card {
   @apply relative bg-white dark:bg-stone-900;
   @apply rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800;
-  transition: box-shadow 0.4s ease, border-color 0.3s ease;
+  transition: box-shadow 0.5s ease, border-color 0.375s ease;
 }
 
 .article-card:hover {
@@ -860,7 +860,7 @@ body.menu-open {
   @apply flex items-center justify-center;
   @apply opacity-0 invisible translate-y-4;
   @apply shadow-lg backdrop-blur-sm;
-  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease, background-color 0.2s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease, background-color 0.25s ease;
 }
 
 .back-to-top.visible {
@@ -1337,7 +1337,7 @@ header a[href="/"]:hover .text-primary-600 {
   @apply bg-white/80 dark:bg-stone-900/90 backdrop-blur-xl;
   @apply border-r border-stone-200/50 dark:border-stone-700/50;
   @apply transform -translate-x-full;
-  @apply transition-transform duration-300 ease-out;
+  @apply transition-transform duration-500 ease-out;
   @apply pointer-events-auto;
   @apply shadow-2xl;
 }
@@ -1354,7 +1354,7 @@ header a[href="/"]:hover .text-primary-600 {
 .side-nav-logo {
   @apply font-serif text-2xl font-semibold mb-10;
   @apply opacity-0 transform -translate-x-4;
-  transition: opacity 0.25s ease-out 50ms, transform 0.25s ease-out 50ms;
+  transition: opacity 0.3s ease-out 60ms, transform 0.3s ease-out 60ms;
 }
 
 .side-nav.open .side-nav-logo {
@@ -1368,7 +1368,7 @@ header a[href="/"]:hover .text-primary-600 {
 
 .side-nav-scroll {
   @apply opacity-0 transform -translate-x-4;
-  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  transition: opacity 0.375s ease-out, transform 0.375s ease-out;
 }
 
 .side-nav.open .side-nav-scroll {
@@ -1393,7 +1393,7 @@ header a[href="/"]:hover .text-primary-600 {
   @apply hover:bg-stone-100 dark:hover:bg-stone-800;
   @apply hover:text-stone-900 dark:hover:text-white;
   @apply text-left;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .side-nav-link.active {

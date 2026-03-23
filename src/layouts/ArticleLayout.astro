@@ -12,7 +12,6 @@ import ShareButtons from '../components/ShareButtons.astro';
 import SeriesNav from '../components/SeriesNav.astro';
 import BookmarkButton from '../components/BookmarkButton.astro';
 import FloatingShareBar from '../components/FloatingShareBar.astro';
-import ArticleReactions from '../components/ArticleReactions.astro';
 import HighlightShare from '../components/HighlightShare.astro';
 import SideNav from '../components/SideNav.astro';
 import { fade, slide } from 'astro:transitions';
@@ -161,9 +160,6 @@ const articleSeries = currentArticle?.series;
             <slot name="tags" />
           </div>
         </div>
-
-        <!-- Article Reactions -->
-        <ArticleReactions slug={slug} />
 
         <!-- Author Card -->
         <div class="author-card mt-10 reveal">
