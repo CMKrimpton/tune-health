@@ -36,7 +36,7 @@ const {
   publishDate,
   ogImage,
   tags = [],
-  slug = Astro.url.pathname.split('/').pop() || 'article',
+  slug = Astro.url.pathname.replace(/\/$/, '').split('/').pop() || 'article',
 } = Astro.props;
 
 const relatedArticles = await getRelatedArticles(slug, 3);
