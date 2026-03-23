@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [8.1.0] - 2026-03-23
+
+### Fixed
+- **Featured rotation uses `updated_at`** — was using `published_at` (when article was published, not when it became featured), causing stale featured articles. Now tracks when the article was actually set as featured
+- **Standalone `rotate-featured` action** — works independently of pipeline, even when production crons are paused
+- **Independent `pg_cron` job** — `featured-rotation` fires every 6 hours, separate from article scout/produce crons
+- **Stronger duplicate detection** — `isDuplicate()` now includes candidate's category, keyFindings, and mechanism in fingerprint. Previously only compared topic + headline words, which missed same-subject-different-angle duplicates (e.g., two oral microbiome articles)
+- **Removed duplicate article** — archived `oral-microbiome-systemic-disease` (broad overview), kept `oral-microbiome-alzheimers-cardiovascular-systemic-disease` (specific angle, better headline)
+
 ## [8.0.0] - 2026-03-23
 
 ### Added — Pipeline Intelligence Overhaul

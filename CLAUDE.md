@@ -212,12 +212,12 @@ Picks the best topic from the queue, self-chains through 4 production stages:
 
 **Self-chaining**: each stage triggers the next via HTTP POST. Cron is just the initial trigger.
 **Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill via UI. Spending limit errors surface immediately with `SPENDING_LIMIT:` prefix.
-**Duplicate filter**: `isDuplicate()` — bidirectional 30% word overlap with stop-word filtering. Checks title + slug + keywords + tags + description against ALL articles + queue. Runs before editor sees candidates AND before queue inserts.
+**Duplicate filter**: `isDuplicate()` — bidirectional 30% word overlap with stop-word filtering. Candidate fingerprint includes topic + headline + category + keyFindings + mechanism. Existing fingerprint includes title + slug + keywords + tags + description. Checks against ALL articles + queue. Runs before editor sees candidates AND before queue inserts.
 **Category sanitization**: validates against whitelist of 9 categories.
 **Article ordering**: `sortOrder` field (epoch ms) ensures newest articles always appear first.
 **Cost tracking**: every API call (Claude, Grok, Gemini) logs input/output tokens and USD cost to `daily_article_log.cost_usd` + `token_usage` (jsonb breakdown). Dashboard shows per-article and total spend.
 
-- **Smart featured rotation**: twice daily (12h). Scores: editor quality (25%), recency (30%), independence score (15%), illustration (10%), read time (10%), category diversity (10%). Must have illustration and score >30 to qualify.
+- **Smart featured rotation**: every 6h via independent `pg_cron` job (`featured-rotation`). Uses `updated_at` to track when article became featured (not publish date). Scores: editor quality (25%), recency (30%), independence score (15%), illustration (10%), read time (10%), category diversity (10%). Must have illustration and score >30 to qualify. Standalone `rotate-featured` action works even when pipeline crons are paused.
 - **Quality control**: `editorial-qc` reviews full article collection holistically → identifies issues → auto-fixes via `articles-api`
 - **Illustration generation**: `generate-illustration` creates editorial art per article with house style prompt + category color palettes → stored in Supabase Storage
 - **All secrets** stored in Supabase secrets only — never in code
@@ -283,6 +283,7 @@ supabase functions deploy <function-name> --no-verify-jwt
 **Cron schedule** (via `pg_cron` + `pg_net`):
 - `article-scout`: every 15 min (`*/15 * * * *`) — discovers topics, fills queue (currently **paused** — API spending limit)
 - `article-produce`: every 3 min (`*/3 * * * *`) — picks from queue, self-chains through production (currently **paused** — API spending limit)
+- `featured-rotation`: every 6 hours (`0 */6 * * *`) — independent featured article rotation (runs even when production crons are paused)
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
 - View schedule: `SELECT * FROM cron.job;`
 - View run history: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`

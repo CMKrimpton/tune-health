@@ -131,10 +131,10 @@ Four AI companies, five models, two independent jobs:
   3. **Grok Independence Review** (Grok 3, xAI) — reviews FULL article. When `major_issues` flagged, Claude applies rewrite suggestions. PubMed citation verification runs in parallel
   4. **QC + Publish** (Grok 3 + OpenAI GPT Image) — different model family reviews Sonnet's work (prevents self-review blindness). Illustration generation parallelized with QC (saves 30-60s). Commit to GitHub
 - **Cost tracking**: every API call logs token usage + USD cost. Dashboard shows per-article cost and total spend
-- **Featured rotation**: twice daily (12h) with early-exit optimization. Quality-gated: must have illustration, score >30
+- **Featured rotation**: every 6h via independent `pg_cron` job (works when pipeline is paused). Uses `updated_at` for freshness. Quality-gated: must have illustration, score >30. Standalone `rotate-featured` action
 - **Topic queue**: vetted ideas always ready. Admin can add manually with priority/expedite. Hard dedup on inserts
 - **Error handling**: `safeStage()` fails hard (no rollback loops), 135s API timeouts, spending limit detection, category sanitization
-- **79 articles published**, diverse categories
+- **78 articles published**, diverse categories (1 duplicate archived)
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app
