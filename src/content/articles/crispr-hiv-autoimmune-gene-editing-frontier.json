@@ -1,5 +1,5 @@
 {
-  "title": "CRISPR Was Supposed to Cut HIV Out of the Human Genome. It Can't — Yet. But the Failure Is Teaching Us Something Stranger.",
+  "title": "CRISPR Failed to Cure HIV. What It Found Instead May Matter More.",
   "description": "The first CRISPR therapy ever tested against HIV in humans looked promising — until the virus came back in every patient who stopped antiretrovirals. But the same platform that stumbled on HIV is now producing early remissions in lupus and systemic sclerosis, for a counterintuitive reason: you don't need to permanently edit every cell. You just need to reset the immune system and get out. A rigorous look at what CRISPR can and cannot do, and why the autoimmune pivot may be the field's most important accidental discovery.",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-23",
@@ -18,8 +18,8 @@
     "CAR-T"
   ],
   "gradient": {
-    "to": "purple-700",
-    "from": "violet-600"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "CRISPR HIV cure",

@@ -17,8 +17,8 @@
     "Diabetes Prevention"
   ],
   "gradient": {
-    "to": "red-700",
-    "from": "rose-600"
+    "from": "emerald-600",
+    "to": "teal-700"
   },
   "keywords": [
     "prediabetes",

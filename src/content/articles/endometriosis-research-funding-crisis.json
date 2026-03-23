@@ -1,5 +1,5 @@
 {
-  "title": "190 Million Women Have a Disease Science Ignores",
+  "title": "190 Million Women Have Endometriosis. It Gets a Fifth of the Funding It Should.",
   "description": "Endometriosis affects 190 million women worldwide, yet receives less than a fifth of the research funding its disease burden justifies. New treatments and diagnostic tools are finally emerging.",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-20",
@@ -18,8 +18,8 @@
     "Healthcare Disparities"
   ],
   "gradient": {
-    "from": "rose-600",
-    "to": "red-700"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "endometriosis",

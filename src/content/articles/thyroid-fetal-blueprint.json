@@ -1,5 +1,5 @@
 {
-  "title": "The Fetal Blueprint: The Screening Failure That Is Costing Children Their Cognitive Futures",
+  "title": "For Half of Pregnancy, a Baby's Brain Runs on the Mother's Thyroid. We Don't Routinely Screen for It.",
   "description": "For the first half of pregnancy, a baby's brain develops entirely on the mother's thyroid. Iodine deficiency is resurging in wealthy nations, maternal hypothyroidism is linked to autism risk, and universal screening still isn't happening.",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-22",
@@ -18,8 +18,8 @@
     "Fetal Development"
   ],
   "gradient": {
-    "from": "rose-600",
-    "to": "red-700"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "thyroid pregnancy",

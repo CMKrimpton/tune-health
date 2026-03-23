@@ -18,8 +18,8 @@
     "Central Sensitization"
   ],
   "gradient": {
-    "to": "red-700",
-    "from": "rose-600"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "pancreatic pain",

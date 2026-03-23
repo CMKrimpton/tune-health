@@ -1,5 +1,5 @@
 {
-  "title": "A Backyard Soil Sample Just Rewrote the Antibiotic Playbook. Getting It to Patients Is Another Problem Entirely.",
+  "title": "A New Antibiotic Class Was Found in Backyard Soil. The Pipeline to Patients Barely Exists.",
   "description": "Scientists discovered lariocidin — a structurally knotted molecule from a Hamilton, Ontario backyard — that kills drug-resistant superbugs through a mechanism no antibiotic has ever used before. In mice infected with one of the WHO's most dangerous pathogens, it achieved 100% survival. The harder question is whether a broken pharmaceutical economy will let it save a single human life.",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-23",
@@ -18,8 +18,8 @@
     "Pharmaceutical Economics"
   ],
   "gradient": {
-    "to": "teal-700",
-    "from": "emerald-600"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "lariocidin",

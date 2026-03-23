@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [8.0.0] - 2026-03-23
+
+### Added — Pipeline Intelligence Overhaul
+- **10 tone presets** — straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated. All share the same core voice — subtle variation like the same journalist on different days. Editor picks per article.
+- **Anti-AI rules** baked into writer prompt — bans manufactured wonder, false intimacy, empty transitions, hedging stacks. Enforces dramatic sentence length variation.
+- **PubMed citation verification** — after write stage, verifies up to 5 cited studies against PubMed E-utilities API. Results stored in pipeline log. Non-blocking.
+- **Grok rewrite wiring** — when Grok independence review flags `major_issues`, Claude now applies the specific rewrite suggestions before QC. Independence review is no longer decorative.
+- **Hard category balance rule** — underserved categories (<5% of collection) get priority over overserved (>15%) unless quality score difference >3 points. Fixes 53% neuroscience/clinical skew.
+- **Deterministic category gradients** — each category maps to a fixed gradient (Neuroscience=violet, Mental Health=sky, Nutrition=emerald, etc.). No more AI choosing gradients. Fixes 29% rose-red visual monotony.
+- **Programmatic SVG generation** — minimal category-colored SVG generated in code, not by AI. Zero tokens wasted on unused hero SVGs.
+
+### Changed — Pipeline Improvements
+- **QC switched from Sonnet to Grok** — different model family reviewing Sonnet's work prevents same-model self-review blindness
+- **Full articles sent to Grok + QC** — removed `.slice(0, 4000)` and `.slice(0, 3000)` truncation. Both review stages now see the complete article including conclusions
+- **Illustration parallelized with QC** — fires illustration generation before QC call, awaits after. Saves 30-60s per article
+- **Featured rotation early exit** — checks if current featured is <12h old with one lightweight query before doing full scoring
+- **Scout payload optimized** — sends all article titles to Gemini (removed 30-article cap)
+- **process-article switched from Opus to Sonnet** — ~$0.68 savings per manual article
+- **refine-article metadata routing** — "change the headline" no longer sends full article HTML. Saves ~70% input tokens on metadata-only edits
+
+### Changed — Editorial Quality
+- **31 headlines rewritten** — reduced "Your Brain" pattern from 6→0, "Just [verb]" from 6→1, "Medicine/Science [ignores]" conspiracy framing eliminated, 8 headlines over 100 chars shortened
+- **67 article gradients updated** — all existing articles now use category-consistent gradients
+- **SVG removed from all AI prompts** — process-article, refine-article, and daily-article-agent writer prompt no longer request SVG generation
+- **Gradient removed from AI prompts** — writer no longer picks gradient colors (deterministic from category)
+- **Shorter paragraphs** enforced — "2-3 sentences ideal, 4 max" added to core editorial standards
+
 ## [7.0.0] - 2026-03-23
 
 ### Added — Cost Tracking

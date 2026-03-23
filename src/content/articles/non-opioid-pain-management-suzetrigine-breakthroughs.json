@@ -18,8 +18,8 @@
     "Drug Access"
   ],
   "gradient": {
-    "to": "purple-700",
-    "from": "violet-600"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "suzetrigine",

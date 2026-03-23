@@ -41,7 +41,7 @@ npm run preview  # Preview production build
 src/
 ├── content/
 │   ├── config.ts             # Content collection schema (Zod)
-│   └── articles/             # Article metadata (JSON) - 46 published articles
+│   └── articles/             # Article metadata (JSON) - 79 published articles
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
@@ -205,10 +205,10 @@ Two-model discovery: Gemini 2.5 Flash (Google Search) finds 10 topics across rec
 
 **Job 2 — Produce** (cron: `*/3 * * * *`, action: `produce`):
 Picks the best topic from the queue, self-chains through 4 production stages:
-  - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, assigns **article archetype** (deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), sets **voice modulation** (register, density, pacing), crafts creative brief. Can flag `replacesSlug` to replace an older article. Subject-appropriate tone matching (not everything is an exposé).
-  - **Write** (~90s, temp 0.5): Sonnet 4.6 follows archetype + voice modulation. Banned pattern list prevents AI-sounding uniformity. Variable word counts per archetype (1,200–2,400). Category sanitized against 9-value whitelist.
-  - **Grok Independence Review** (~30s): Grok 3 (xAI) checks for pharma framing, institutional deference, pulled punches. Provides rewrite suggestions.
-  - **QC + Publish** (~60s): Sonnet 4.6 polishes headline/description (actively rewrites "The [X]..." and "Nobody/Science [dramatic verb]" patterns). Defaults to publish, max 1 revision. OpenAI GPT Image generates illustration. Commits .astro + .json to GitHub. Featured rotation.
+  - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, assigns **article archetype** (deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), picks **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated), sets density + pacing. Hard category balance rule: underserved categories (<5%) get priority over overserved (>15%) unless score gap >3. Can flag `replacesSlug` to replace an older article.
+  - **Write** (~90s, temp 0.5): Sonnet 4.6 follows archetype + tone preset. Anti-AI rules enforced (no manufactured wonder, no false intimacy, no hedging stacks). Deterministic category gradients + programmatic SVG (no AI tokens wasted on visuals). Variable word counts per archetype (1,200–2,400). Category sanitized against 9-value whitelist.
+  - **Grok Independence Review** (~30s): Grok 3 (xAI) reviews FULL article for pharma framing, institutional deference, pulled punches. When verdict is `major_issues`, Claude applies Grok's rewrite suggestions before QC. PubMed citation verification runs in parallel (non-blocking, up to 5 studies verified).
+  - **QC + Publish** (~60s): Grok 3 (different model family — prevents same-model self-review) polishes headline/description. Illustration generation runs in parallel with QC (saves 30-60s). Defaults to publish, max 1 revision. OpenAI GPT Image generates illustration. Commits .astro + .json to GitHub. Featured rotation with early-exit optimization.
 
 **Self-chaining**: each stage triggers the next via HTTP POST. Cron is just the initial trigger.
 **Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill via UI. Spending limit errors surface immediately with `SPENDING_LIMIT:` prefix.
@@ -255,7 +255,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | Function | Purpose | Auth |
 |---|---|---|
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
-| `process-article` | Claude Opus article generation with editorial system prompt | None (rate-limited by Anthropic) |
+| `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |
 | `publish-article` | Commits .astro + .json to GitHub via REST API | ADMIN_TOKEN (Bearer) |
 | `delete-article` | Removes article files from GitHub | ADMIN_TOKEN (Bearer) |

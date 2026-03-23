@@ -1,5 +1,5 @@
 {
-  "title": "The Cancer That Wasn't \u2014 and the One That Was",
+  "title": "The Cancer That Wasn't — and the One That Was",
   "description": "Thyroid cancer incidence tripled in three decades, but most of the epidemic was an artifact of detection. The real story is a field reckoning with overdiagnosis at one end and a molecular revolution transforming treatment at the other.",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-22",
@@ -18,8 +18,8 @@
     "Surgery"
   ],
   "gradient": {
-    "from": "violet-600",
-    "to": "purple-700"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "thyroid cancer",
@@ -31,7 +31,7 @@
     "ATA guidelines"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-cancer-conversation.png",
-  "heroImageAlt": "Editorial illustration for The Cancer That Wasn't \u2014 and the One That Was",
+  "heroImageAlt": "Editorial illustration for The Cancer That Wasn't — and the One That Was",
   "series": "The Thyroid Deep Dive",
   "seriesOrder": 5
 }

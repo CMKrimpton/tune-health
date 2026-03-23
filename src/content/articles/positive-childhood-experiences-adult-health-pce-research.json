@@ -1,5 +1,5 @@
 {
-  "title": "The ACE Research Told Us What Breaks Children. A Quieter Body of Evidence Is Showing What Protects Them.",
+  "title": "ACE Research Mapped What Breaks Children. A 20,000-Person Study Mapped What Protects Them.",
   "description": "For 25 years, adverse childhood experience research has catalogued how early trauma destroys adult health. Now a landmark 2025 JAMA Network Open study of 20,916 adults — and a converging body of longitudinal evidence — shows that positive childhood experiences aren't merely the absence of harm. They are active biological shields, measurably reducing chronic disease, depression, and cellular aging. The science is compelling. The methodological caveats are real. Both deserve your full attention.",
   "category": "Mental Health",
   "publishDate": "2026-03-23",
@@ -18,8 +18,8 @@
     "Longitudinal Research"
   ],
   "gradient": {
-    "to": "purple-700",
-    "from": "violet-600"
+    "from": "sky-500",
+    "to": "blue-600"
   },
   "keywords": [
     "positive childhood experiences",

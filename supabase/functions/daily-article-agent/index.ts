@@ -56,6 +56,33 @@ const PRICING: Record<string, { input: number; output: number }> = {
   "gemini-2.5-flash":        { input: 0.15, output: 0.60 },
 };
 
+// ---------------------------------------------------------------------------
+// Deterministic category gradients + minimal SVG (no AI tokens wasted)
+// ---------------------------------------------------------------------------
+const CATEGORY_GRADIENTS: Record<string, { from: string; to: string; hex: string }> = {
+  "Neuroscience":          { from: "violet-600",  to: "purple-700",  hex: "#7c3aed" },
+  "Mental Health":         { from: "sky-500",     to: "blue-600",    hex: "#0ea5e9" },
+  "Longevity":             { from: "emerald-500", to: "teal-600",    hex: "#10b981" },
+  "Clinical Evidence":     { from: "amber-500",   to: "orange-600",  hex: "#f59e0b" },
+  "Environmental Health":  { from: "lime-500",    to: "green-600",   hex: "#84cc16" },
+  "Nutrition":             { from: "emerald-600", to: "teal-700",    hex: "#059669" },
+  "Fitness":               { from: "rose-600",    to: "red-700",     hex: "#e11d48" },
+  "Sleep Science":         { from: "indigo-500",  to: "purple-600",  hex: "#6366f1" },
+  "Pharmacology":          { from: "amber-500",   to: "orange-600",  hex: "#f59e0b" },
+};
+
+const VALID_CATEGORIES = ["Neuroscience", "Mental Health", "Longevity", "Clinical Evidence", "Environmental Health", "Nutrition", "Fitness", "Sleep Science", "Pharmacology"];
+
+function getCategoryGradient(category: string): { from: string; to: string } {
+  const g = CATEGORY_GRADIENTS[category];
+  return g ? { from: g.from, to: g.to } : { from: "rose-600", to: "red-700" };
+}
+
+function generateMinimalSvg(category: string): string {
+  const color = CATEGORY_GRADIENTS[category]?.hex || "#dc2626";
+  return `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><rect width="1200" height="600" fill="url(#bg)"/><circle cx="900" cy="200" r="120" fill="${color}15"/><circle cx="300" cy="400" r="80" fill="${color}10"/>`;
+}
+
 function calcCost(model: string, inputTokens: number, outputTokens: number): number {
   const p = PRICING[model] || PRICING["claude-sonnet-4-6"];
   return (inputTokens * p.input + outputTokens * p.output) / 1_000_000;
@@ -333,6 +360,46 @@ async function gemini(opts: { system: string; user: string; maxTokens?: number; 
 }
 
 // ---------------------------------------------------------------------------
+// PubMed citation verification — non-blocking, stores results in log
+// ---------------------------------------------------------------------------
+async function verifyPubMedCitations(
+  studies: Array<{ title?: string; journal?: string; year?: string }>,
+): Promise<{ verified: number; failed: number; total: number; details: Array<{ title: string; found: boolean }> }> {
+  if (!studies || studies.length === 0) return { verified: 0, failed: 0, total: 0, details: [] };
+
+  const toCheck = studies.slice(0, 5); // Limit to 5 to avoid rate limiting
+  const details: Array<{ title: string; found: boolean }> = [];
+  let verified = 0;
+
+  for (const study of toCheck) {
+    if (!study.title) continue;
+    try {
+      // Search PubMed E-utilities (free, no API key needed for moderate use)
+      const query = encodeURIComponent(study.title.slice(0, 200));
+      const res = await fetch(
+        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${query}&retmode=json&retmax=1`,
+        { signal: AbortSignal.timeout(5000) },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const count = parseInt(data?.esearchresult?.count || "0", 10);
+        const found = count > 0;
+        if (found) verified++;
+        details.push({ title: study.title, found });
+      } else {
+        details.push({ title: study.title, found: false });
+      }
+    } catch {
+      details.push({ title: study.title, found: false });
+    }
+    // Small delay to respect PubMed rate limits (3 req/s without API key)
+    await new Promise(r => setTimeout(r, 350));
+  }
+
+  return { verified, failed: details.filter(d => !d.found).length, total: details.length, details };
+}
+
+// ---------------------------------------------------------------------------
 // Self-chaining — fire-and-forget next stage invocation
 // ---------------------------------------------------------------------------
 function chainNextStage(logId: string) {
@@ -524,6 +591,21 @@ async function publishToGitHub(
 // Smart featured rotation
 // ---------------------------------------------------------------------------
 async function rotateFeatured(db: ReturnType<typeof supabase>): Promise<string | null> {
+  // Early exit: check if current featured is still fresh (< 12h old)
+  // Avoids the expensive full-collection scoring query on every publish
+  const { data: currentFeaturedCheck } = await db
+    .from("articles")
+    .select("published_at, publish_date")
+    .eq("featured", true)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (currentFeaturedCheck) {
+    const publishedAt = currentFeaturedCheck.published_at || currentFeaturedCheck.publish_date;
+    const age = Date.now() - new Date(publishedAt).getTime();
+    if (age < 12 * 60 * 60 * 1000) return null; // Still fresh, skip scoring
+  }
+
   const { data: articles } = await db
     .from("articles")
     .select("slug, title, category, publish_date, published_at, hero_image, read_time, featured, editor_score, independence_score")
@@ -723,7 +805,7 @@ Choose ONE. This is the most important editorial decision — it shapes the enti
 ## Voice Modulation
 Set these dials for each article:
 
-- **register**: "clinical" | "conversational" | "provocative" — How formal vs. casual the prose should feel.
+- **tonePreset**: Choose ONE from: "straight-science" | "smart-casual" | "dry-analytical" | "storyteller" | "debunker" | "wire-dispatch" | "pointed" | "measured-authority" | "curious" | "understated". This is the MOST IMPORTANT editorial decision after archetype. All presets share the same core voice — the difference is subtle, like the same journalist on different days. VARY across the collection. Match to the SUBJECT.
 - **density**: "data-heavy" | "narrative-driven" | "balanced" — Ratio of evidence citations to storytelling.
 - **pacing**: "slow-build" | "rapid-fire" | "crescendo" — Does the article build methodically, hit fast, or start quiet and escalate?
 
@@ -748,8 +830,8 @@ Return ONLY valid JSON:
   "archetype": "deep-investigation | the-explainer | provocation | case-study | profile | the-roundup | myth-autopsy",
   "wordCount": { "min": 1600, "max": 2000 },
   "brief": {
-    "tone": "Specific tone guidance for THIS piece — not generic. What makes this article's voice different from the last one?",
-    "register": "clinical | conversational | provocative",
+    "tonePreset": "straight-science | smart-casual | dry-analytical | storyteller | debunker | wire-dispatch | pointed | measured-authority | curious | understated — Same voice, different gear. Match to subject. Vary across collection.",
+    "tone": "Specific tone guidance for THIS piece beyond the preset — what makes this article's voice unique?",
     "density": "data-heavy | narrative-driven | balanced",
     "pacing": "slow-build | rapid-fire | crescendo",
     "openWith": "How to open — a SPECIFIC scene, stat, question, anecdote, or provocation. NOT 'here's what everyone thinks, but actually...' unless this is a myth-autopsy",
@@ -830,23 +912,47 @@ const ARTICLE_WRITING_PROMPT = `You are a senior health journalist at alumi news
 
 ## Core Editorial Standards (apply to ALL archetypes)
 - Evidence over allegiance. Aggressively neutral. Smart friend who reads the studies.
-- Direct, slightly irreverent, never condescending.
-- Oxford comma. US English. No emojis.
+- Direct, never condescending. Oxford comma. US English. No emojis.
 - Every claim must cite a specific study, statistic, or source. Include author names, journal names, sample sizes, effect sizes where possible.
 - Balanced perspective: treat mainstream medicine and alternative health with the same skepticism.
 - NEVER fabricate study data, statistics, or author names.
-- Writing style: 60% exceptional journalism, 20% Bill Maher, 15% Christopher Hitchens, 15% Sam Harris. This means: occasional dry wit, willingness to call bullshit directly, no hedging when the evidence is clear, and genuine intellectual pleasure in the subject matter.
-- Sentence rhythm matters. Vary length dramatically. A three-word sentence after a complex one hits differently. Use fragments. Let a paragraph breathe with a single image. Don't write in uniform 15-20 word sentences — that's the AI giveaway.
-- Write like a human with opinions and taste, not like a summarization engine. If something is absurd, say so. If a finding is genuinely exciting, let that come through. If a study is weak, don't dress it up with diplomatic language.
+- Sentence rhythm matters. Vary length. Short sentences after complex ones. Fragments OK. Don't write in uniform 15-20 word sentences — that's the AI giveaway.
 - No throat-clearing. Start paragraphs with the point, not with setup for the point.
+- Keep paragraphs SHORT. 2-3 sentences is ideal. 4 max. Dense paragraphs make readers skim. White space is your friend.
+
+## Tone Presets (CRITICAL — from the editorial brief)
+The brief specifies a tone preset. This prevents every article reading at the same intensity. ALL presets share the same DNA: evidence-first, direct, no throat-clearing, skeptical of all sources equally, never condescending. The difference between presets is SUBTLE — like the same journalist covering different beats on different days. Not different people. Same voice, different energy.
+
+CRITICAL ANTI-AI RULES (apply to ALL presets):
+- Never use manufactured wonder ("fascinatingly", "remarkably", "it turns out")
+- Never use false intimacy ("let's dive in", "buckle up", "here's the thing")
+- Never use empty transitions ("moreover", "furthermore", "additionally")
+- Never use hedging stacks ("it's possible that perhaps this might suggest")
+- Vary sentence length DRAMATICALLY within every preset. A 4-word sentence. Then a 30-word one that builds through a complex mechanism with multiple clauses before landing on the point. Then another short one. This is what makes prose feel human.
+- Every paragraph earns its place. If a paragraph just restates what the previous one said in different words, delete it.
+
+**"straight-science"** — The most restrained gear. Still has the alumi voice — still direct, still has opinions when the evidence warrants them — but the prose stays out of the way. Let the data and mechanisms carry the weight. Short paragraphs. Clear structure. The reader finishes feeling smarter without feeling worked over. The editorializing happens in WHAT you choose to emphasize, not in HOW you say it.
+
+**"smart-casual"** — The default gear. Engaged, occasionally wry. Uses contractions naturally. Will note when something is interesting or absurd, but doesn't belabor it. Comfortable using "you" when it fits. This is the voice of someone who finds the subject genuinely interesting and assumes the reader does too.
+
+**"dry-analytical"** — Same voice, cooler temperature. Lets the numbers do the talking. Humor comes through understatement, not commentary. A devastating finding gets stated plainly — the reader feels the impact without being told to feel it. Precise language. No adjective does more work than it should.
+
+**"storyteller"** — Same voice, but opens with a scene, a person, or a moment. Evidence woven into narrative rather than presented as a list. Slightly longer sentences. Patient with detail. The difference from other presets: structure is chronological or character-driven rather than thematic. Still cites everything. Still skeptical.
+
+**"debunker"** — Same voice, slightly more amused. Takes genuine intellectual pleasure in following bad logic to its conclusion. Not angry — confident. Presents the popular belief fairly before dismantling it with evidence. The wit is in the precision of the takedown, not in snark.
+
+**"wire-dispatch"** — Same voice, maximum economy. Lead with the finding. Fill context after. Short sentences dominate. No scene-setting, no metaphors, no warm-up. For topics where the news itself is the story and commentary would slow it down.
+
+**"pointed"** — The sharpest gear. This is where the editorial opinion is most visible. Takes a clear position backed by evidence. Will call out institutional failure, conflicts of interest, or willful ignorance directly. Not reckless — every pointed sentence is earned by the evidence preceding it. Use sparingly across the collection.
+
+**"measured-authority"** — Same voice with slightly more formal sentence construction. Third person feels natural here. The prose has weight without being heavy. Appropriate for subjects where the reader expects expertise: pharmacology, treatment mechanisms, clinical evidence. Not academic — still readable, still has personality — but the personality is quieter.
+
+**"curious"** — Same voice, slightly more openly interested. Asks genuine questions the research hasn't answered yet. Comfortable saying "we don't know yet" without it feeling like a cop-out. Good for frontier science where the fascination is in the gaps. The difference from smart-casual: more questions, more open threads, less resolution.
+
+**"understated"** — Same voice at its quietest. States facts. Lets them land. Doesn't tell the reader how to feel about a statistic — presents it cleanly and moves on. The editorial perspective shows in what you choose to include and how you sequence it, not in commentary. For subjects where the data is stark enough to speak for itself.
 
 ## Voice Modulation (from the editorial brief)
-The brief specifies register, density, and pacing. These are NOT decorative — they fundamentally change how you write.
-
-**Register:**
-- "clinical" → precise, measured, formal sentence structures. Third person. Academic rhythm. Think: NEJM editorial meets literary nonfiction.
-- "conversational" → second person OK, contractions, rhetorical questions, asides. Think: smart friend explaining over coffee.
-- "provocative" → first person plural OK, pointed observations, controlled anger where warranted. Think: Hitchens on a topic he cares about.
+The brief specifies a tone preset, density, and pacing. The tone preset is the primary control — follow it faithfully.
 
 **Density:**
 - "data-heavy" → lead with numbers, cite early and often. 10-15 citations. Tables of evidence OK. The data IS the story.
@@ -859,15 +965,15 @@ The brief specifies register, density, and pacing. These are NOT decorative — 
 - "crescendo" → starts quiet/observational, builds in intensity and stakes toward the end.
 
 ## Article Archetypes (from the editorial brief)
-The archetype determines your article's fundamental FORM. Respect it.
+The archetype determines your article's fundamental FORM. Each suggests tone presets — the editor picks the final one.
 
-**"deep-investigation"** — Multi-source, methodical. 5-7 sections. Multiple evidence threads that converge. Pull quotes and info cards work well here.
-**"the-explainer"** — Didactic but engaging. Use analogies and metaphors liberally. Step-by-step is OK. Can use numbered lists within sections. Fewer pull quotes (0-2), info cards useful.
-**"provocation"** — Short, sharp. 3-5 sections max. Take a clear position in the opening and defend it. No hedge. No "both sides" unless one side is wrong. Pull quotes optional (0-1). Skip info cards unless they serve the argument.
-**"case-study"** — Zoom in tight on one study/case, then pull out. Open with the specific (the patient, the lab, the moment). Keep the scope narrow. 4-5 sections. 1-2 pull quotes, 1 info card max.
-**"profile"** — Human angle first. Open with a scene involving the person/lab. Science through their lens. 4-6 sections. Pull quotes from the subject's own words.
-**"the-roundup"** — Multiple shorter sections (6-8), each covering a distinct angle or paper. Less narrative continuity needed. Can use subheadings within sections. Info cards useful for comparing across studies.
-**"myth-autopsy"** — State the myth plainly, then dismantle. Open with the myth as people actually believe it. Then the evidence. 4-6 sections. This is the ONLY archetype that should use the "here's what you thought... but actually" structure.
+**"deep-investigation"** (suggested presets: dry-analytical, storyteller, pointed) — Multi-source, methodical. 5-7 sections. Multiple evidence threads that converge. Pull quotes and info cards work well here. This earns its length.
+**"the-explainer"** (suggested presets: straight-science, smart-casual, curious) — The reader wants to understand a mechanism or process. Analogies and metaphors welcome. Step-by-step is OK. Question-based section headings work well ("How does X work?", "What puts you at risk?"). Short paragraphs. Fewer pull quotes (0-2), info cards useful.
+**"provocation"** (suggested presets: pointed, debunker) — Short, sharp. 3-5 sections max. Take a clear position in the opening and defend it. Pull quotes optional (0-1). Skip info cards unless they serve the argument.
+**"case-study"** (suggested presets: storyteller, understated, smart-casual) — Zoom in tight on one study/case, then pull out. Open with the specific (the patient, the lab, the moment). Keep the scope narrow. 4-5 sections. 1-2 pull quotes, 1 info card max.
+**"profile"** (suggested presets: storyteller, smart-casual) — Human angle first. Open with a scene involving the person/lab. Science through their lens. 4-6 sections. Pull quotes from the subject's own words.
+**"the-roundup"** (suggested presets: straight-science, wire-dispatch, dry-analytical) — Multiple shorter sections (6-8), each covering a distinct angle or paper. Each section should be self-contained and scannable. Info cards useful for comparing across studies.
+**"myth-autopsy"** (suggested presets: debunker, pointed) — State the myth plainly, then dismantle. Open with the myth as people actually believe it. Then the evidence. 4-6 sections. This is the ONLY archetype that should use the "here's what you thought... but actually" structure.
 
 ## BANNED PATTERNS — DO NOT USE
 These phrases and structures have been overused. Find different ways to express the same ideas.
@@ -901,7 +1007,6 @@ Return ONLY valid JSON:
 {
   "html": "...",
   "metadata": { ... },
-  "svg": "...",
   "toc": [ ... ],
   "readTime": number
 }
@@ -939,17 +1044,11 @@ End with disclaimer:
   "description": "Use the description from the editorial brief",
   "category": "One of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
   "tags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"],
-  "gradient": { "from": "color-weight", "to": "color-weight" },
   "featured": false,
   "readTime": <number>,
   "publishDate": "${todayISO()}",
   "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
 }
-
-Gradient options: rose-600/red-700, violet-600/purple-700, emerald-500/teal-600, emerald-600/teal-700, amber-500/orange-600, sky-500/blue-600, indigo-500/purple-600, lime-500/green-600
-
-### svg field
-Minimal dark background with 2-3 abstract shapes. Keep under 500 chars. Example: <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><rect width="1200" height="600" fill="url(#bg)"/><circle cx="600" cy="300" r="80" fill="#dc262620"/>
 
 ### toc field
 Array of { "id": "section-id", "title": "Display Title" }.
@@ -1055,9 +1154,8 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
 
 FOCUS on these underserved categories: ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 5).map(([cat, count]) => `${cat} (only ${count} articles)`).join(", ") || "Nutrition, Fitness, Sleep Science"}
 
-Every topic must be COMPLETELY DIFFERENT from these (we already covered them):
-${titles.slice(0, 30).map((t) => `- ${t}`).join("\n")}
-${titles.length > 30 ? `...and ${titles.length - 30} more (avoid ALL similar subjects)` : ""}
+Every topic must be COMPLETELY DIFFERENT from these subjects we already covered (${titles.length} articles):
+${titles.map((t) => `- ${t.split(" (")[0]}`).join("\n")}
 
 For each: headline, key finding, source, why it matters. Plain text, numbered 1-10.`,
       maxTokens: 4000,
@@ -1285,6 +1383,19 @@ ${Object.entries(categoryCounts).sort(([, a], [, b]) => (b as number) - (a as nu
 ${titles.slice(0, 30).map((t) => `- ${t}`).join("\n")}
 ${titles.length > 30 ? `... and ${titles.length - 30} more` : ""}
 
+## CATEGORY BALANCE RULE (HARD CONSTRAINT)
+${(() => {
+    const total = titles.length || 1;
+    const overserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / total > 0.15).map(([cat]) => cat);
+    const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / total < 0.05).map(([cat]) => cat);
+    const missing = VALID_CATEGORIES.filter(c => !categoryCounts[c]);
+    const all = [...underserved, ...missing];
+    if (all.length > 0) {
+      return `PRIORITY: These categories are severely underserved: ${all.join(", ")}. If ANY candidate is in one of these categories AND scores 5+, pick it OVER a higher-scoring candidate from an overserved category (${overserved.join(", ")}) — UNLESS the score difference is >3 points.`;
+    }
+    return "Categories are well-balanced. Pick purely on quality.";
+  })()}
+
 ${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
   const { text: editorRaw, usage: editorUsage } = await claude({
@@ -1408,8 +1519,8 @@ Category: ${editorBrief?.categoryOverride || researchData.category}
 
 ### Article Form
 Archetype: ${archetype}
+Tone preset: ${brief?.tonePreset || "smart-casual"} — Same voice, different gear. Follow this preset precisely — it controls how much editorial energy the prose carries.
 Word count target: ${wordMin}-${wordMax} words
-Register: ${brief?.register || "conversational"}
 Density: ${brief?.density || "balanced"}
 Pacing: ${brief?.pacing || "slow-build"}
 
@@ -1456,7 +1567,6 @@ IMPORTANT: Use the headline, slug, and description from the editorial brief exac
   const article = parseClaudeJSON(articleRaw) as {
     html: string;
     metadata: Record<string, unknown>;
-    svg: string;
     toc: { id: string; title: string }[];
     readTime: number;
   };
@@ -1470,27 +1580,32 @@ IMPORTANT: Use the headline, slug, and description from the editorial brief exac
   if (editorBrief?.slug) article.metadata.slug = editorBrief.slug as string;
 
   // Sanitize category to valid values only
-  const VALID_CATEGORIES = ["Neuroscience", "Mental Health", "Longevity", "Clinical Evidence", "Environmental Health", "Nutrition", "Fitness", "Sleep Science", "Pharmacology"];
   const rawCat = (editorBrief?.categoryOverride as string) || (article.metadata.category as string) || (researchData.category as string) || "";
   article.metadata.category = VALID_CATEGORIES.find(c => rawCat.toLowerCase().includes(c.toLowerCase())) || "Clinical Evidence";
+
+  // Deterministic gradient + minimal SVG (no AI tokens wasted)
+  const categoryStr = article.metadata.category as string;
+  const gradient = getCategoryGradient(categoryStr);
+  article.metadata.gradient = gradient;
+  const svg = generateMinimalSvg(categoryStr);
 
   // Save article to database as draft (editor QC hasn't happened yet)
   const dbArticle = {
     slug,
     title: article.metadata.title as string,
     description: article.metadata.description as string,
-    category: (article.metadata.category as string) || (researchData.category as string),
+    category: categoryStr || (researchData.category as string),
     tags: (article.metadata.tags as string[]) || [],
     keywords: (article.metadata.keywords as string[]) || [],
-    gradient_from: (article.metadata.gradient as Record<string, string>)?.from || "rose-600",
-    gradient_to: (article.metadata.gradient as Record<string, string>)?.to || "red-700",
+    gradient_from: gradient.from,
+    gradient_to: gradient.to,
     featured: false,
     draft: true, // Draft until editor QC approves
     coming_soon: false,
     read_time: readTime,
     publish_date: today,
     article_html: article.html,
-    article_svg: article.svg,
+    article_svg: svg,
     toc: article.toc,
     source_text: `[Article Agent — ${today}]\nTopic: ${researchData.topic}\nEditor: ${editorBrief?.headline || "No brief"}`,
     status: "draft" as const,
@@ -1514,7 +1629,7 @@ IMPORTANT: Use the headline, slug, and description from the editorial brief exac
         ...researchData,
         _article: {
           metadata: article.metadata,
-          svg: article.svg,
+          svg,
           html: article.html,
           toc: article.toc,
           readTime,
@@ -1540,10 +1655,19 @@ async function stageIndependenceReview(
     .eq("id", logId);
 
   const metadata = articleData.metadata as Record<string, unknown>;
-  const htmlSnippet = ((articleData.html as string) || "").slice(0, 4000);
+  const articleHtml = (articleData.html as string) || "";
 
   let reviewResult: Record<string, unknown> | null = null;
   let skipReason: string | null = null;
+
+  // Get research data for PubMed verification (runs in parallel with Grok)
+  const { data: logForStudies } = await db
+    .from("daily_article_log")
+    .select("research_data")
+    .eq("id", logId)
+    .maybeSingle();
+  const researchStudies = ((logForStudies?.research_data as Record<string, unknown>)?.studies as Array<{ title?: string; journal?: string; year?: string }>) || [];
+  const pubmedPromise = verifyPubMedCitations(researchStudies);
 
   try {
     const { text: reviewRaw, usage: grokUsage } = await grok({
@@ -1552,10 +1676,10 @@ async function stageIndependenceReview(
 Title: ${metadata.title}
 Category: ${metadata.category}
 
-## ARTICLE TEXT (first 4000 chars):
-${htmlSnippet}
+## FULL ARTICLE TEXT:
+${articleHtml}
 
-Review this article for pharma framing, institutional deference, pulled punches, and missing counter-narratives.`,
+Review this COMPLETE article for pharma framing, institutional deference, pulled punches, and missing counter-narratives. Pay special attention to conclusions — that's where soft language hides.`,
       maxTokens: 1500,
       temperature: 0.3,
     });
@@ -1565,6 +1689,48 @@ Review this article for pharma framing, institutional deference, pulled punches,
   } catch (err: unknown) {
     // Non-fatal — if Grok fails, we skip and continue
     skipReason = err instanceof Error ? err.message : "Grok unavailable";
+  }
+
+  // ── GROK REWRITE WIRING ──────────────────────────────────────────
+  // When Grok flags major_issues, apply rewrite suggestions via Claude
+  // before proceeding to QC. Makes independence review actually improve
+  // the article rather than just scoring it.
+  let revisedHtml = articleHtml;
+  let revisionApplied = false;
+
+  if (reviewResult?.verdict === "major_issues") {
+    const flags = (reviewResult.flags as Array<{ type: string; quote: string; rewrite: string; reason: string }>) || [];
+    if (flags.length > 0) {
+      try {
+        const rewritePrompt = flags
+          .map((f, i) => `${i + 1}. [${f.type}] Find: "${f.quote}" → Replace with: "${f.rewrite}" (Reason: ${f.reason})`)
+          .join("\n");
+
+        const { text: revisedRaw, usage: revisionUsage } = await claude({
+          system: `You are applying editorial corrections flagged by an independent reviewer. Apply each suggested rewrite where it genuinely improves the article's independence and honesty. Preserve the editorial voice and HTML structure. If a suggestion would weaken the article or is wrong, skip it. Return ONLY the corrected HTML — no JSON wrapper, no explanation.`,
+          user: `## CORRECTIONS TO APPLY\n${rewritePrompt}\n\n## CURRENT ARTICLE HTML\n${articleHtml}`,
+          model: "claude-sonnet-4-6",
+          maxTokens: 8192,
+          temperature: 0.2,
+        }, "independence-revision");
+        await addCostToLog(db, logId, revisionUsage);
+
+        // The response should be raw HTML
+        const cleaned = revisedRaw.replace(/^```html?\n?/, "").replace(/\n?```$/, "").trim();
+        if (cleaned.length > articleHtml.length * 0.5) {
+          revisedHtml = cleaned;
+          revisionApplied = true;
+
+          // Update article in database with revised HTML
+          const slug = (articleData.metadata as Record<string, unknown>)?.slug as string;
+          if (slug) {
+            await db.from("articles").update({ article_html: revisedHtml }).eq("slug", slug);
+          }
+        }
+      } catch {
+        // Non-fatal — if revision fails, proceed with original article
+      }
+    }
   }
 
   // Store review in research_data alongside existing data
@@ -1578,6 +1744,14 @@ Review this article for pharma framing, institutional deference, pulled punches,
 
   const grokScore = reviewResult ? ((reviewResult.score as number) || (reviewResult.independenceScore as number) || null) : null;
 
+  // Await PubMed verification (was running in parallel with Grok)
+  const pubmedResult = await pubmedPromise;
+
+  // Update article data with revised HTML if rewrites were applied
+  const updatedArticle = revisionApplied
+    ? { ...existingResearch._article as Record<string, unknown>, html: revisedHtml }
+    : existingResearch._article;
+
   await db
     .from("daily_article_log")
     .update({
@@ -1585,7 +1759,12 @@ Review this article for pharma framing, institutional deference, pulled punches,
       grok_score: grokScore,
       research_data: {
         ...existingResearch,
-        _independenceReview: reviewResult || { skipped: true, reason: skipReason },
+        _article: updatedArticle,
+        _independenceReview: {
+          ...(reviewResult || { skipped: true, reason: skipReason }),
+          _revisionApplied: revisionApplied,
+        },
+        _pubmedVerification: pubmedResult,
       },
     })
     .eq("id", logId);
@@ -1639,18 +1818,31 @@ Description: ${metadata.description}
 Category: ${metadata.category}
 Word count: ~${((articleData.html as string) || "").split(/\s+/).length}
 
-## FULL ARTICLE HTML (first 3000 chars for review):
-${((articleData.html as string) || "").slice(0, 3000)}
+## FULL ARTICLE HTML:
+${(articleData.html as string) || ""}
 
 ## TABLE OF CONTENTS
 ${((articleData.toc as Array<{ title: string }>) || []).map((t) => `- ${t.title}`).join("\n")}
 ${independenceSection}
 Make your final call. Publish, request revisions, or kill.`;
 
-  const { text: qcRaw, usage: qcUsage } = await claude({
-    system: SENIOR_EDITOR_QC_PROMPT,
+  // Fire illustration generation in parallel with QC (they're independent)
+  // This saves 30-60s per article vs sequential
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const illustrationPromise = (supabaseUrl && action !== "dry-run")
+    ? fetch(`${supabaseUrl}/functions/v1/generate-illustration`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generate", slug }),
+        signal: AbortSignal.timeout(60000),
+      }).catch(() => null)
+    : Promise.resolve(null);
+
+  // Use Grok for QC — different model family reviewing Sonnet's work
+  // prevents same-model self-review blindness
+  const { text: qcRaw, usage: qcUsage } = await grok({
+    system: SENIOR_EDITOR_QC_PROMPT + `\n\nCRITICAL: Return ONLY valid JSON. No markdown, no explanation — just the JSON object.`,
     user: qcPrompt,
-    model: "claude-sonnet-4-6",
     maxTokens: 1500,
     temperature: 0.3,
   }, "qc");
@@ -1736,32 +1928,21 @@ Make your final call. Publish, request revisions, or kill.`;
 
   const readTime = (articleData.readTime as number) || 12;
 
-  // Generate illustration
+  // Await illustration that was fired in parallel with QC
   let heroImage: string | undefined;
   let heroImageAlt: string | undefined;
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  if (supabaseUrl) {
-    try {
-      const illustrationRes = await fetch(
-        `${supabaseUrl}/functions/v1/generate-illustration`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "generate", slug }),
-          signal: AbortSignal.timeout(60000),
-        },
-      );
-      if (illustrationRes.ok) {
-        const illustrationData = await illustrationRes.json();
-        if (illustrationData.success && illustrationData.imageUrl) {
-          heroImage = illustrationData.imageUrl;
-          heroImageAlt = `Editorial illustration for ${finalTitle}`;
-        }
+  try {
+    const illustrationRes = await illustrationPromise;
+    if (illustrationRes && illustrationRes.ok) {
+      const illustrationData = await illustrationRes.json();
+      if (illustrationData.success && illustrationData.imageUrl) {
+        heroImage = illustrationData.imageUrl;
+        heroImageAlt = `Editorial illustration for ${finalTitle}`;
       }
-    } catch {
-      // Non-fatal
     }
+  } catch {
+    // Non-fatal
   }
 
   // Publish to GitHub

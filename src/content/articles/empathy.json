@@ -1,5 +1,5 @@
 {
-  "title": "Empathy Has a Problem Science Is Only Now Admitting",
+  "title": "Empathy Has a Dark Side. The Neuroscience Is Finally Honest About It.",
   "description": "Empathy is celebrated as an unambiguous virtue. The neuroscience says it's more complicated — and the complications have real consequences for mental health and relationships.",
   "category": "Neuroscience",
   "publishDate": "2026-03-22",
@@ -18,8 +18,8 @@
     "Mental Health"
   ],
   "gradient": {
-    "from": "amber-500",
-    "to": "orange-600"
+    "from": "violet-600",
+    "to": "purple-700"
   },
   "keywords": [
     "empathy",

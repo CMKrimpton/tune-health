@@ -1,5 +1,5 @@
 {
-  "title": "A Common Crop Pesticide More Than Doubles Parkinson's Risk. Scientists Just Found Out Exactly How It Destroys Your Brain.",
+  "title": "Chlorpyrifos Doubles Parkinson's Risk. A UCLA Study Mapped the Mechanism.",
   "description": "A landmark 2025 UCLA study — combining epidemiological data from 1,600 people with animal models — has pinpointed the precise cellular mechanism by which chlorpyrifos, still legally sprayed on American food crops, triggers Parkinson's disease: it disables the brain's protein disposal system, letting toxic debris accumulate until dopaminergic neurons die. With Parkinson's now the world's fastest-growing neurological disorder and chlorpyrifos registered in nearly 100 countries, the findings reframe a decades-long regulatory failure as an active public health emergency.",
   "category": "Environmental Health",
   "publishDate": "2026-03-23",
@@ -19,8 +19,8 @@
     "Neurotoxicity"
   ],
   "gradient": {
-    "to": "red-700",
-    "from": "rose-600"
+    "from": "lime-500",
+    "to": "green-600"
   },
   "keywords": [
     "chlorpyrifos Parkinson's",

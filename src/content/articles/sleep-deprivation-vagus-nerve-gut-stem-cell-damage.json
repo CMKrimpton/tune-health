@@ -1,5 +1,5 @@
 {
-  "title": "Your Brain Sends a Destruction Signal to Your Gut When You Don't Sleep",
+  "title": "Sleep Loss Triggers a Vagus Nerve Signal That Kills Gut Stem Cells",
   "description": "A 2026 Cell Stem Cell study traced a specific neural pathway — from the brain's sleep centers, down the vagus nerve, into the gut — that triggers a serotonin surge capable of killing intestinal stem cells. This isn't about your microbiome's circadian rhythm. It's about your brain actively dismantling your gut lining while you're awake when you shouldn't be. Here's what the mechanism means, and what it doesn't.",
   "category": "Sleep Science",
   "publishDate": "2026-03-23",
@@ -18,8 +18,8 @@
     "Gut Lining"
   ],
   "gradient": {
-    "to": "purple-700",
-    "from": "violet-600"
+    "from": "indigo-500",
+    "to": "purple-600"
   },
   "keywords": [
     "sleep deprivation gut damage",

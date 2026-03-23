@@ -1,5 +1,5 @@
 {
-  "title": "The Algorithm That Sees Cancer's Next Move: How MangroveGS Is Rewriting Metastasis Prediction",
+  "title": "An AI Model Predicts Cancer Metastasis Before It Happens. It's 80% Accurate.",
   "description": "A University of Geneva AI model called MangroveGS has achieved nearly 80% accuracy in predicting cancer metastasis before it happens — far outperforming existing tools. Published in Cell Reports on March 21, 2026, the study challenges the long-held assumption that cancer spread is random, suggesting it follows a structured biological program that can be decoded from gene expression signatures.",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-23",
@@ -18,8 +18,8 @@
     "Precision Medicine"
   ],
   "gradient": {
-    "to": "purple-700",
-    "from": "violet-600"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "MangroveGS",

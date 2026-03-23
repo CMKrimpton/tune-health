@@ -18,8 +18,8 @@
     "Clinical Evidence"
   ],
   "gradient": {
-    "from": "indigo-500",
-    "to": "purple-600"
+    "from": "emerald-500",
+    "to": "teal-600"
   },
   "keywords": [
     "senolytics",

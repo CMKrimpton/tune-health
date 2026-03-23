@@ -18,8 +18,8 @@
     "Clinical Evidence"
   ],
   "gradient": {
-    "from": "indigo-500",
-    "to": "purple-600"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "GLP-1",

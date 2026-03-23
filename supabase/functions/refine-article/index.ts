@@ -19,7 +19,6 @@ Return valid JSON:
 {
   "html": "complete updated article HTML",
   "metadata": { complete updated metadata object },
-  "svg": "updated SVG if changed, or the original",
   "toc": [updated TOC array],
   "readTime": updated reading time,
   "message": "Brief description of what you changed"
@@ -50,12 +49,38 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Detect metadata-only changes to save tokens
+    const metadataKeywords = ["title", "headline", "description", "tag", "category", "slug", "keyword", "featured"];
+    const lowerInstruction = (instruction as string).toLowerCase();
+    const isMetadataOnly = metadataKeywords.some(k => lowerInstruction.includes(k))
+      && !lowerInstruction.includes("rewrite") && !lowerInstruction.includes("section")
+      && !lowerInstruction.includes("paragraph") && !lowerInstruction.includes("content")
+      && !lowerInstruction.includes("add ") && !lowerInstruction.includes("remove ");
+
     // Build conversation history for context
     const conversationContext = (messages || [])
       .map((m: { role: string; content: string }) => `${m.role}: ${m.content}`)
       .join("\n");
 
-    const userPrompt = `Here is the current article state:
+    let userPrompt: string;
+    let maxTokens: number;
+
+    if (isMetadataOnly) {
+      // Metadata-only mode — skip sending full HTML (saves ~70% input tokens)
+      userPrompt = `The editor wants to change METADATA ONLY. Do not modify the article HTML or TOC.
+
+CURRENT METADATA:
+${JSON.stringify(currentMetadata, null, 2)}
+
+${conversationContext ? `CONVERSATION HISTORY:\n${conversationContext}\n` : ""}
+EDITOR'S INSTRUCTION:
+${instruction}
+
+Return JSON with: the ORIGINAL html field value set to "[unchanged]", updated metadata, original toc, original readTime, and a message describing what you changed.`;
+      maxTokens = 2000;
+    } else {
+      // Full refinement mode — send everything
+      userPrompt = `Here is the current article state:
 
 METADATA:
 ${JSON.stringify(currentMetadata, null, 2)}
@@ -68,6 +93,8 @@ EDITOR'S INSTRUCTION:
 ${instruction}
 
 Apply the requested changes and return the complete updated article as JSON.`;
+      maxTokens = 16000;
+    }
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -78,7 +105,7 @@ Apply the requested changes and return the complete updated article as JSON.`;
       },
       body: JSON.stringify({
         model: "claude-opus-4-20250514",
-        max_tokens: 16000,
+        max_tokens: maxTokens,
         temperature: 0.3,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userPrompt }],
@@ -112,6 +139,11 @@ Apply the requested changes and return the complete updated article as JSON.`;
         JSON.stringify({ error: "Failed to parse response" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // For metadata-only changes, restore original HTML
+    if (isMetadataOnly && parsed.html === "[unchanged]") {
+      parsed.html = currentHtml;
     }
 
     return new Response(

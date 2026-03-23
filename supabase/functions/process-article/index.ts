@@ -26,7 +26,6 @@ You MUST return valid JSON with this exact structure:
 {
   "html": "...",
   "metadata": { ... },
-  "svg": "...",
   "toc": [ ... ],
   "readTime": number
 }
@@ -71,17 +70,11 @@ Use standard HTML: <p>, <ul>, <li>, <strong>, <em>, <h2>, <h3>. All major sectio
   "description": "1-2 sentence description for SEO",
   "category": "One of: Mental Health, Neuroscience, Nutrition, Longevity, Fitness, Sleep Science, Clinical Evidence, Research Summary, Environmental Health, Pharmacology",
   "tags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"],
-  "gradient": { "from": "color-weight", "to": "color-weight" },
   "featured": false,
   "readTime": <number in minutes>,
   "publishDate": "<YYYY-MM-DD>",
   "keywords": ["keyword1", "keyword2", ...]
 }
-
-Gradient options: rose-600/red-700, violet-600/purple-700, emerald-500/teal-600, emerald-600/teal-700, amber-500/orange-600, sky-500/blue-600, indigo-500/purple-600, lime-500/green-600
-
-### svg field
-An SVG visualization for the article hero. Dark gradient background (#1a1a2e to #16213e), abstract scientific/molecular motif related to the article topic. Include glow filters. Use colors that match the gradient. Output the SVG inner content only (no outer <svg> tag).
 
 ### toc field
 Array of { "id": "section-id", "title": "Display Title" } for each h2 section.
@@ -144,7 +137,7 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 8192,
         temperature: 0.3,
         system: SYSTEM_PROMPT,

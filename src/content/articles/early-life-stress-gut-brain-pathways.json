@@ -1,5 +1,5 @@
 {
-  "title": "The Same Childhood Stress Gives One Person IBS and Another Chronic Constipation. New Research Finally Explains Why.",
+  "title": "Same Childhood Stress, Opposite Gut Disorders. A 2026 Study Explains the Fork.",
   "description": "For decades, stress-related gut disorders have been treated as a single problem with a single mechanism. A 2026 study combining mouse models and thousands of children just proved that wrong — and in doing so, exposed why most current treatments are missing the target. The gut doesn't just remember stress. It remembers it in multiple, distinct biological languages.",
   "category": "Mental Health",
   "publishDate": "2026-03-23",
@@ -19,8 +19,8 @@
     "Neurogastroenterology"
   ],
   "gradient": {
-    "to": "red-700",
-    "from": "rose-600"
+    "from": "sky-500",
+    "to": "blue-600"
   },
   "keywords": [
     "early life stress",

@@ -101,7 +101,7 @@ src/
 - **All navigation is collection-driven** — topics, series, and featured articles auto-populate from content collection
 
 ### Content
-- **Published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
+- **79 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, and Pharmacology
 - **Series support** — multi-part article series with `series`/`seriesOrder` fields, prev/next navigation, and progress indicators
 - **Deep Dives page** dynamically renders published series (e.g., 6-part Thyroid Deep Dive) alongside coming-soon series
 - Content Collections with Zod schema validation
@@ -124,17 +124,17 @@ src/
 ### Autonomous AI Newsroom
 Four AI companies, five models, two independent jobs:
 
-- **Scout** (cron: every 15 min): **Gemini 2.5 Flash** (Google Search) discovers 10 topics across recent + landmark timeframes. **Sonnet 4.6** structures best 5 into candidates with suggested archetype. Editor scores, picks winner. Unchosen auto-save to queue. Hard `isDuplicate()` filter (bidirectional 30% overlap + stop-word filtering). Full off-limits list (ALL articles + queue). Category balance prioritizes underserved areas
+- **Scout** (cron: every 15 min): **Gemini 2.5 Flash** (Google Search) discovers 10 topics across recent + landmark timeframes. **Sonnet 4.6** structures best 5 into candidates. Editor scores, picks winner. Unchosen auto-save to queue. Hard `isDuplicate()` filter (bidirectional 30% overlap + stop-word filtering). Hard category balance rule: underserved categories (<5%) get priority unless score gap >3
 - **Produce** (cron: every 3 min): editor picks best topic from queue → self-chains through:
-  1. **Editor Brief** (Sonnet 4.6) — assigns article archetype (7 types: deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), voice modulation (register, density, pacing), subject-appropriate tone. Overlap detection, can replace older articles
-  2. **Write** (Sonnet 4.6, temp 0.5) — follows archetype + voice modulation. Banned AI-pattern list enforced. Variable word counts per archetype. Category sanitized against whitelist
-  3. **Grok Independence Review** (Grok 3, xAI) — checks pharma framing, institutional deference, pulled punches. Suggests rewrites
-  4. **QC + Publish** (Sonnet 4.6 + OpenAI GPT Image) — rewrites overused headline patterns ("The [X]...", "Nobody/Science [dramatic verb]"), generate illustration, commit to GitHub
-- **Cost tracking**: every API call logs token usage + USD cost. Dashboard shows per-article cost and total spend. `backfill-costs` action estimates historical costs
-- **Featured rotation**: twice daily (12h). Quality-gated: must have illustration, score >30. Weighted by editor score, recency, independence score, category diversity
+  1. **Editor Brief** (Sonnet 4.6) — assigns archetype (7 types) + **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated) + density + pacing. Overlap detection, can replace older articles
+  2. **Write** (Sonnet 4.6, temp 0.5) — follows archetype + tone preset. Anti-AI rules enforced. Deterministic category gradients + programmatic SVG (no AI tokens on visuals). Variable word counts per archetype
+  3. **Grok Independence Review** (Grok 3, xAI) — reviews FULL article. When `major_issues` flagged, Claude applies rewrite suggestions. PubMed citation verification runs in parallel
+  4. **QC + Publish** (Grok 3 + OpenAI GPT Image) — different model family reviews Sonnet's work (prevents self-review blindness). Illustration generation parallelized with QC (saves 30-60s). Commit to GitHub
+- **Cost tracking**: every API call logs token usage + USD cost. Dashboard shows per-article cost and total spend
+- **Featured rotation**: twice daily (12h) with early-exit optimization. Quality-gated: must have illustration, score >30
 - **Topic queue**: vetted ideas always ready. Admin can add manually with priority/expedite. Hard dedup on inserts
 - **Error handling**: `safeStage()` fails hard (no rollback loops), 135s API timeouts, spending limit detection, category sanitization
-- **66 articles published**, diverse categories, ~$0.21 avg cost/article
+- **79 articles published**, diverse categories
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app
@@ -221,14 +221,14 @@ The site is deployed on Vercel with automatic deployments:
 - **Database**: PostgreSQL `articles` table for CMS editing
 - **Edge Functions** (TUNE project `mvkiornsximonxxitiwr`):
   - `articles-api` — CRUD for articles database
-  - `process-article` — Claude Opus article generation
+  - `process-article` — Claude Sonnet article generation
   - `refine-article` — Chat-based article refinement
   - `publish-article` — GitHub commit pipeline
   - `delete-article` — GitHub file deletion
   - `fetch-article` — GitHub file fetching
   - `generate-illustration` — AI illustration generation (OpenAI GPT Image 1.5) with batch support
   - `editorial-qc` — Autonomous editorial quality control (Claude audits full collection, auto-fixes headlines/descriptions/illustrations)
-  - `daily-article-agent` — 3-stage article pipeline (research → write → publish). Cron fires every 15 min, processes one stage per invocation. Smart featured rotation after each publish. Auto-stops at 100 articles.
+  - `daily-article-agent` — 4-stage article pipeline (research → write → independence review → QC+publish). 10 tone presets, PubMed verification, Grok rewrite wiring, parallel illustration. Smart featured rotation.
 - **Storage**: `article-illustrations` bucket for AI-generated editorial art
 - **Cron**: `pg_cron` + `pg_net` trigger article pipeline every 15 min (requires extensions enabled in Dashboard)
 

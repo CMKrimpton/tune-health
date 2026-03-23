@@ -1,5 +1,5 @@
 {
-  "title": "The Bacteria in Your Mouth Are Being Found in Alzheimer's Brains. Medicine Is Only Beginning to Reckon With What That Means.",
+  "title": "Gum Disease Bacteria Keep Showing Up in Alzheimer's Brains",
   "description": "Porphyromonas gingivalis — a common periodontal pathogen — has been detected in 96% of Alzheimer's brain samples examined, with its signature proteases correlating directly with tau pathology. The same bacteria turns up in atherosclerotic plaques and placental tissue. The mouth has never been more institutionally separate from the rest of medicine. The evidence has never been clearer that it shouldn't be.",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-23",
@@ -18,8 +18,8 @@
     "Neurodegeneration"
   ],
   "gradient": {
-    "to": "purple-700",
-    "from": "violet-600"
+    "from": "amber-500",
+    "to": "orange-600"
   },
   "keywords": [
     "Porphyromonas gingivalis",
