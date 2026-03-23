@@ -1,34 +1,32 @@
 {
-  "title": "PFAS Are Stealing Bone Density From Girls. The Window to Get It Back Closes at 20.",
-  "description": "New research across four cohorts finds that PFAS exposure during childhood measurably lowers bone density in adolescents — with girls hit hardest. Because humans reach peak bone mass by their early 20s and never recover lost ground, the deficit may be permanent. With 176 million Americans drinking PFAS-contaminated water and the EPA rolling back protections, the stakes are generational.",
-  "category": "Environmental Health",
+  "title": "The Chemicals in Your Daughter's Blood Are Building Her Bones Wrong",
+  "description": "A March 2026 study in the Journal of the Endocrine Society confirms what converging cohorts have been signaling for years: PFAS — detectable in 99% of Americans including newborns — measurably reduce bone mineral density during the single developmental window when that density is being permanently set. Girls are disproportionately affected, the mechanism is now understood at the molecular level, and the deficit may be irreversible. Here's what the evidence actually shows, and what it doesn't.",
+  "category": "Mental Health",
   "publishDate": "2026-03-23",
   "author": {
     "name": "alumi news Editorial",
     "role": "Medical Review Board"
   },
-  "readTime": 16,
+  "readTime": 10,
   "featured": false,
   "draft": false,
   "tags": [
-    "A March 2026",
-    "The BMD deficit",
-    "The association between",
-    "PFAS exposure from",
-    "PFAS have been"
+    "PFAS",
+    "Bone Density",
+    "Adolescent Health",
+    "Endocrine Disruption",
+    "Environmental Toxicology"
   ],
   "gradient": {
-    "to": "red-700",
-    "from": "rose-600"
+    "to": "teal-700",
+    "from": "emerald-600"
   },
   "keywords": [
-    "A March 2026",
-    "The BMD deficit",
-    "The association between",
-    "PFAS exposure from",
-    "PFAS have been"
+    "PFAS bone density",
+    "adolescent bone health",
+    "peak bone mass",
+    "endocrine disruptors",
+    "PFOA osteoblast"
   ],
-  "sortOrder": 1774263886018,
-  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pfas-adolescent-bone-density-girls.png",
-  "heroImageAlt": "Editorial illustration for PFAS Are Stealing Bone Density From Girls. The Window to Get It Back Closes at 20."
+  "sortOrder": 1774267679644
 }
