@@ -1,0 +1,32 @@
+{
+  "title": "ADHD May Not Be a Focus Problem. It May Be a Wakefulness Problem.",
+  "description": "A 2026 study found that ADHD brains produce measurable sleep-like neural oscillations during waking hours — a discovery that reframes one of the most diagnosed conditions in medicine. If attention deficit is really a disorder of consciousness-state regulation, it changes not just how we understand ADHD, but why stimulants work at all.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 13,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Researchers identified a",
+    "This 'sleep-like' intrusion",
+    "The finding suggests",
+    "Stimulant medications (amphetamines,"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "Researchers identified a",
+    "This 'sleep-like' intrusion",
+    "The finding suggests",
+    "Stimulant medications (amphetamines,"
+  ],
+  "sortOrder": 1774262053046,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/adhd-wakefulness-sleep-neural-activity.png",
+  "heroImageAlt": "Editorial illustration for ADHD May Not Be a Focus Problem. It May Be a Wakefulness Problem."
+}
