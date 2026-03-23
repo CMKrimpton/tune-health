@@ -32,7 +32,7 @@ function supabase() {
 // Pipeline constants
 // ---------------------------------------------------------------------------
 const MAX_CONCURRENT = 3;
-const STALE_MS = 8 * 60 * 1000;
+const STALE_MS = 5 * 60 * 1000;
 const ACTIVE = ["started","searching","writing","publishing","editor_reviewing","editor_qc","independence_review","researching","topic_selected"];
 const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","saved"];
 
@@ -92,6 +92,7 @@ async function claude(opts: ClaudeOptions): Promise<string> {
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(135_000), // 135s — Supabase Edge Functions timeout at ~150s
   });
 
   if (!res.ok) {
@@ -115,16 +116,87 @@ async function claude(opts: ClaudeOptions): Promise<string> {
 }
 
 function parseClaudeJSON(text: string): unknown {
+  // Step 1: Strip markdown code fences
   const cleaned = text
     .replace(/^[\s\S]*?```json?\n?/, "")
     .replace(/\n?```[\s\S]*$/, "")
     .trim();
+  try { return JSON.parse(cleaned); } catch { /* continue */ }
+
+  // Step 2: Find the first { and match its closing }
+  const start = text.indexOf("{");
+  if (start === -1) throw new Error("No JSON object found in response");
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let end = -1;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
+  }
+
+  if (end > start) {
+    try { return JSON.parse(text.slice(start, end + 1)); } catch { /* continue */ }
+  }
+
+  // Step 3: Try to repair truncated JSON (close open braces/brackets)
+  let candidate = text.slice(start);
+  // Count unclosed braces/brackets
+  let openBraces = 0, openBrackets = 0;
+  inString = false; escape = false;
+  for (const ch of candidate) {
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "{") openBraces++;
+    if (ch === "}") openBraces--;
+    if (ch === "[") openBrackets++;
+    if (ch === "]") openBrackets--;
+  }
+  // Close any trailing string, then close brackets/braces
+  if (inString) candidate += '"';
+  for (let i = 0; i < openBrackets; i++) candidate += "]";
+  for (let i = 0; i < openBraces; i++) candidate += "}";
+  try { return JSON.parse(candidate); } catch { /* continue */ }
+
+  throw new Error("Failed to parse response as JSON (tried 3 strategies)");
+}
+
+// ---------------------------------------------------------------------------
+// Safe stage wrapper — catches errors and records them in the log
+// ---------------------------------------------------------------------------
+async function safeStage(
+  db: ReturnType<typeof supabase>,
+  logId: string,
+  stageName: string,
+  fn: () => Promise<unknown>,
+): Promise<{ ok: boolean; result?: unknown; error?: string }> {
   try {
-    return JSON.parse(cleaned);
-  } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]);
-    throw new Error("Failed to parse Claude response as JSON");
+    const result = await fn();
+    return { ok: true, result };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[${stageName}] Error for log ${logId}: ${msg}`);
+    // Record the error in the log so it doesn't stay stuck
+    const { data: logEntry } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
+    const research = (logEntry?.research_data || {}) as Record<string, unknown>;
+    // Find best checkpoint to resume from
+    let resumeStatus = "failed";
+    if (research._article) resumeStatus = "written";
+    else if (research._editorBrief) resumeStatus = "editor_approved";
+    else if (research.topic || research.keyFindings || research.candidates) resumeStatus = "research_done";
+    await db.from("daily_article_log").update({
+      status: resumeStatus === "failed" ? "failed" : resumeStatus,
+      error: resumeStatus === "failed" ? `${stageName}: ${msg}` : null,
+      ...(resumeStatus === "failed" ? { completed_at: new Date().toISOString() } : {}),
+    }).eq("id", logId);
+    return { ok: false, error: msg };
   }
 }
 
@@ -684,7 +756,7 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
       model: "claude-sonnet-4-6",
       maxTokens: 4000,
       webSearch: true,
-      maxSearches: 10,
+      maxSearches: 5,
     });
 
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
@@ -705,7 +777,7 @@ Search broadly first (trending health news, viral health stories, health researc
       model: "claude-sonnet-4-6",
       maxTokens: 6000,
       webSearch: true,
-      maxSearches: 10,
+      maxSearches: 5,
     });
 
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
@@ -1503,23 +1575,19 @@ Deno.serve(async (req: Request) => {
         return json({ error: "Missing article data" }, 500);
       }
 
-      const result = await stageQCAndPublish(db, entry.id, entry.slug, articleData, action, independenceReview);
+      const { ok, result, error } = await safeStage(db, entry.id, "QC+Publish", () =>
+        stageQCAndPublish(db, entry.id, entry.slug, articleData, action, independenceReview));
+      if (!ok) return json({ error: "QC stage failed", detail: error }, 500);
 
-      // Update topic_queue if this came from queue
-      const queueFlag = (entry.research_data as Record<string, unknown>)?._fromQueue;
-      if (queueFlag && result.commitSha) {
-        await db.from("topic_queue").update({ status: "completed" }).eq("status", "in_progress");
-      }
-
+      const r = result as Record<string, unknown>;
       return json({
         success: true,
         stage: "editor_qc_publish",
         slug: entry.slug,
-        qcDecision: (result.qcResult as Record<string, unknown>)?.decision,
-        qcScore: (result.qcResult as Record<string, unknown>)?.qualityScore,
-        independenceVerdict: independenceReview?.verdict || "skipped",
-        commit: result.commitSha ? { sha: result.commitSha, url: result.commitUrl } : null,
-        newFeatured: result.newFeatured,
+        qcDecision: (r.qcResult as Record<string, unknown>)?.decision,
+        qcScore: (r.qcResult as Record<string, unknown>)?.qualityScore,
+        commit: r.commitSha ? { sha: r.commitSha, url: r.commitUrl } : null,
+        newFeatured: r.newFeatured,
         articleCount: (articleCount || 0) + 1,
       });
     }
@@ -1546,7 +1614,9 @@ Deno.serve(async (req: Request) => {
         return json({ error: "Missing article data" }, 500);
       }
 
-      await stageIndependenceReview(db, entry.id, articleData);
+      const { ok, error } = await safeStage(db, entry.id, "Independence Review", () =>
+        stageIndependenceReview(db, entry.id, articleData));
+      if (!ok) return json({ error: "Independence review failed", detail: error }, 500);
 
       return json({
         success: true,
@@ -1569,7 +1639,9 @@ Deno.serve(async (req: Request) => {
     if (approvedEntries && approvedEntries.length > 0) {
       const entry = approvedEntries[0] as { id: string; research_data: Record<string, unknown> };
 
-      await stageWrite(db, entry.id, entry.research_data, articleModel);
+      const { ok, error } = await safeStage(db, entry.id, "Write", () =>
+        stageWrite(db, entry.id, entry.research_data, articleModel));
+      if (!ok) return json({ error: "Write stage failed", detail: error }, 500);
 
       return json({
         success: true,
@@ -1592,7 +1664,9 @@ Deno.serve(async (req: Request) => {
     if (researchedEntries && researchedEntries.length > 0) {
       const entry = researchedEntries[0] as { id: string; research_data: Record<string, unknown> };
 
-      await stageEditorBrief(db, entry.id, entry.research_data);
+      const { ok, error } = await safeStage(db, entry.id, "Editor Brief", () =>
+        stageEditorBrief(db, entry.id, entry.research_data));
+      if (!ok) return json({ error: "Editor brief failed", detail: error }, 500);
 
       return json({
         success: true,
@@ -1645,7 +1719,9 @@ Deno.serve(async (req: Request) => {
 
     if (!logEntry) throw new Error("Failed to create log entry");
 
-    await stageResearch(db, logEntry.id, queuedTopic?.topic);
+    const { ok, error } = await safeStage(db, logEntry.id, "Research", () =>
+      stageResearch(db, logEntry.id, queuedTopic?.topic));
+    if (!ok) return json({ error: "Research failed", detail: error }, 500);
 
     return json({
       success: true,
