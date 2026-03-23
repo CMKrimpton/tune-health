@@ -89,6 +89,8 @@ interface StageConfig {
   key: PipelineStage;
   icon: string;
   label: string;
+  model: string;
+  modelColor: string;
   statuses: string[];
 }
 
@@ -104,11 +106,11 @@ const ARTICLE_GOAL = 100;
 const POLL_INTERVAL = 15_000;
 
 const STAGES: StageConfig[] = [
-  { key: 'research', icon: '🔍', label: 'Research', statuses: ['started', 'searching', 'research_done'] },
-  { key: 'editor_brief', icon: '📋', label: 'Editor', statuses: ['editor_reviewing', 'editor_approved'] },
-  { key: 'write', icon: '✍️', label: 'Write', statuses: ['writing', 'written'] },
-  { key: 'independence', icon: '⚖️', label: 'Grok Review', statuses: ['independence_review', 'independence_done'] },
-  { key: 'qc_publish', icon: '✅', label: 'QC + Publish', statuses: ['editor_qc', 'publishing', 'published'] },
+  { key: 'research', icon: '🔍', label: 'Research', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['started', 'searching', 'research_done'] },
+  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
+  { key: 'write', icon: '✍️', label: 'Write', model: 'Opus 4.6', modelColor: '#a855f7', statuses: ['writing', 'written'] },
+  { key: 'independence', icon: '⚖️', label: 'Independence', model: 'Grok 3', modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
+  { key: 'qc_publish', icon: '✅', label: 'QC + Publish', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['editor_qc', 'publishing', 'published'] },
 ];
 
 const STATUS_TEXT: Record<string, string> = {
@@ -370,7 +372,10 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             <div key={stage.key} className="pipeline-stage">
               <div className="pipeline-stage-header">
                 <span className="pipeline-stage-icon">{stage.icon}</span>
-                {stage.label}
+                <span>{stage.label}</span>
+                <span style={{ fontSize: '0.5625rem', color: stage.modelColor, fontWeight: 600, marginLeft: '0.25rem', opacity: 0.8 }}>
+                  {stage.model}
+                </span>
                 <span className={`pipeline-stage-count${items.length > 0 ? ' has-items' : ''}`}>
                   {items.length}
                 </span>

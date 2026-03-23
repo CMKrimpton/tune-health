@@ -669,7 +669,7 @@
 /* ─── Stage Columns ─── */
 
 .pipeline-container {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 0; margin: 1rem 0; position: relative;
 }
 
@@ -1041,7 +1041,7 @@
   .admin-col-date, .admin-col-time { display: none; }
   .admin-edit-row { grid-template-columns: 1fr; }
   .admin-article-title { white-space: normal; }
-  .pipeline-container { grid-template-columns: 1fr 1fr; }
+  .pipeline-container { grid-template-columns: repeat(3, 1fr); }
   .pipeline-status-bar { flex-direction: column; align-items: stretch; }
   .articles-toolbar { flex-direction: column; }
   .articles-search { min-width: 100%; }
