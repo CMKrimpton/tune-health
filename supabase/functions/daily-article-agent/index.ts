@@ -754,6 +754,14 @@ async function stageResearch(
     .map((l: { topic: string | null }) => l.topic)
     .filter((t): t is string => !!t);
 
+  // Get existing queue topics to avoid duplicates
+  const { data: queueItems } = await db
+    .from("topic_queue")
+    .select("topic")
+    .in("status", ["queued", "assigned", "in_progress"])
+    .limit(50);
+  const queueTopics = (queueItems || []).map((q: { topic: string }) => q.topic);
+
   await db
     .from("daily_article_log")
     .update({ status: "searching", stage_started_at: new Date().toISOString() })
@@ -795,8 +803,9 @@ SET B — 5 MOST SEARCHED from the last 10 days (what people are actively googli
 
 Each topic must be a DIFFERENT subject area. Label each set clearly.
 
-OFF-LIMITS (already covered):
+OFF-LIMITS (already covered, already queued, or recently tried — do NOT repeat these subject areas):
 ${titles.slice(0, 15).map((t) => `- ${t}`).join("\n")}
+${queueTopics.slice(0, 15).map((t) => `- QUEUED: ${t}`).join("\n")}
 ${recentTopics.slice(0, 8).map((t) => `- TRIED: ${t}`).join("\n")}
 
 For each topic: the headline, the key finding, the source/study, key statistics, and why it's compelling. Plain text, not JSON.`,
@@ -814,8 +823,9 @@ For each topic: the headline, the key finding, the source/study, key statistics,
 ## RAW FINDINGS:
 ${geminiFindings}
 
-## OFF-LIMITS:
-${titles.slice(0, 15).map((t) => `- ${t}`).join("\n")}`,
+## OFF-LIMITS (do not include topics in same subject area as these):
+${titles.slice(0, 15).map((t) => `- ${t}`).join("\n")}
+${queueTopics.slice(0, 15).map((t) => `- QUEUED: ${t}`).join("\n")}`,
       model: "claude-sonnet-4-6",
       maxTokens: 4000,
     });
@@ -976,7 +986,25 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
       });
 
     if (unchosenTopics.length > 0) {
-      await db.from("topic_queue").insert(unchosenTopics).select();
+      // Dedup: skip topics that are too similar to existing queue items or articles
+      const { data: existingQueue } = await db.from("topic_queue").select("topic").in("status", ["queued", "assigned", "in_progress"]);
+      const existingTopicWords = (existingQueue || []).map((q: { topic: string }) => q.topic.toLowerCase());
+      const articleTopicWords = titles.map(t => t.toLowerCase());
+      const allExisting = [...existingTopicWords, ...articleTopicWords];
+
+      const deduped = unchosenTopics.filter((t: Record<string, unknown>) => {
+        const topic = (t.topic as string).toLowerCase();
+        const topicWords = topic.split(/\s+/).filter(w => w.length > 4);
+        // Check if >50% of significant words overlap with any existing topic
+        return !allExisting.some(existing => {
+          const matchCount = topicWords.filter(w => existing.includes(w)).length;
+          return matchCount >= Math.ceil(topicWords.length * 0.5);
+        });
+      });
+
+      if (deduped.length > 0) {
+        await db.from("topic_queue").insert(deduped).select();
+      }
     }
   }
 
@@ -1490,6 +1518,25 @@ Deno.serve(async (req: Request) => {
 
     // ------ STATUS ------
     if (action === "status") {
+      // Housekeeping: clean up queue items whose topics have already been written
+      const { data: publishedSlugs } = await db.from("articles").select("title").eq("status", "published");
+      if (publishedSlugs && publishedSlugs.length > 0) {
+        const publishedTitles = publishedSlugs.map((a: { title: string }) => a.title.toLowerCase());
+        const { data: queuedItems } = await db.from("topic_queue").select("id, topic").eq("status", "queued");
+        if (queuedItems) {
+          for (const q of queuedItems as Array<{ id: string; topic: string }>) {
+            const topicWords = q.topic.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+            const isWritten = publishedTitles.some(title => {
+              const matchCount = topicWords.filter(w => title.includes(w)).length;
+              return matchCount >= Math.ceil(topicWords.length * 0.5);
+            });
+            if (isWritten) {
+              await db.from("topic_queue").update({ status: "completed" }).eq("id", q.id);
+            }
+          }
+        }
+      }
+
       const { data } = await db
         .from("daily_article_log")
         .select("*")
