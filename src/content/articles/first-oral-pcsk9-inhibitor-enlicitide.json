@@ -1,0 +1,34 @@
+{
+  "title": "The First Cholesterol Pill That Actually Works Like an Injection",
+  "description": "After decades of incremental improvements, enlicitide delivers the biggest cholesterol drop since statins—in pill form. But the real question isn't whether it works. It's whether lowering cholesterol this aggressively actually saves lives—and why we still don't know.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "PCSK9 Inhibitors",
+    "Cholesterol",
+    "Enlicitide",
+    "Cardiovascular Disease",
+    "Clinical Trials"
+  ],
+  "gradient": {
+    "to": "blue-600",
+    "from": "sky-500"
+  },
+  "keywords": [
+    "enlicitide",
+    "PCSK9 inhibitor",
+    "oral cholesterol drug",
+    "LDL cholesterol",
+    "CORALreef trial",
+    "cardiovascular outcomes"
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/first-oral-pcsk9-inhibitor-enlicitide.png",
+  "heroImageAlt": "Editorial illustration for The First Cholesterol Pill That Actually Works Like an Injection"
+}
