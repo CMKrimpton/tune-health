@@ -1,0 +1,34 @@
+{
+  "title": "Your Brain Runs a Memory Factory at Night. The Shift Schedule Is More Precise Than Anyone Knew.",
+  "description": "Sleep researchers have cracked the exact oscillatory choreography — a three-way handshake between slow waves, spindles, and hippocampal ripples — that determines whether a memory survives the night. NREM and REM sleep don't do the same job twice: they push memory representations in opposite directions, and disrupting either stage has consequences that compound across a lifetime. The intervention tools are real but early-stage. This is not a story about sleep hygiene. It's a story about what your brain is actually doing while you're unconscious.",
+  "category": "Sleep Science",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Memory Consolidation",
+    "Sleep Architecture",
+    "NREM Sleep",
+    "REM Sleep",
+    "Alzheimer's Disease"
+  ],
+  "gradient": {
+    "to": "purple-600",
+    "from": "indigo-500"
+  },
+  "keywords": [
+    "sleep memory consolidation",
+    "NREM REM sleep stages",
+    "sleep spindles slow oscillations",
+    "hippocampal sharp-wave ripples",
+    "Alzheimer's sleep architecture"
+  ],
+  "sortOrder": 1774275622287,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/sleep-stages-memory-consolidation-nrem-rem.png",
+  "heroImageAlt": "Editorial illustration for Your Brain Runs a Memory Factory at Night. The Shift Schedule Is More Precise Than Anyone Knew."
+}
