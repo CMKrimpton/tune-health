@@ -1,5 +1,6 @@
 ---
 import { ViewTransitions } from 'astro:transitions';
+import MobileNav from '../components/MobileNav.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -88,6 +89,9 @@ const canonicalUrl = canonical || Astro.url.pathname;
   </main>
 
   <slot name="footer" />
+
+  <!-- Mobile Bottom Navigation -->
+  <MobileNav />
 
   <!-- Back to Top -->
   <button class="back-to-top" id="backToTop" aria-label="Back to top">

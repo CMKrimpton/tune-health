@@ -59,9 +59,10 @@ src/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template
 ├── components/
-│   ├── Header.astro          # Navigation with glass dropdown menu
+│   ├── Header.astro          # Navigation with glass dropdown menu (both variants)
 │   ├── Footer.astro          # Site footer with social follow links
-│   ├── SideNav.astro         # Magazine-style sidebar (26+ links)
+│   ├── SideNav.astro         # Magazine-style sidebar (collection-driven)
+│   ├── MobileNav.astro       # Fixed bottom nav for touch devices
 │   ├── CommandPalette.tsx    # React command palette (⌘K)
 │   ├── FloatingTOC.astro     # Floating table of contents
 │   ├── FloatingShareBar.astro # Sticky vertical share sidebar (desktop)
@@ -89,12 +90,15 @@ src/
 ## Features
 
 ### Navigation
-- **Glass Dropdown Menu** - Premium header navigation with sections, topics, and featured articles
-- **SideNav** - Magazine-style sidebar with Topics, Series, and Featured articles
-- **Command Palette (⌘K)** - Site-wide search for articles, sections, and pages
-- **Floating Table of Contents** - Scroll spy navigation for articles
-- **Breadcrumbs** - Category-linked breadcrumb trail on article pages
-- **View Transitions** - Smooth page-to-page animations
+- **Glass Dropdown Menu** — Premium header navigation with sections, topics, and featured articles. Available on all pages (including article pages). Active state highlighting for current section
+- **SideNav** — Magazine-style sidebar with collection-driven Topics, Published Series, and Featured articles. Present on all pages including articles
+- **Mobile Bottom Nav** — Fixed 5-item bar (Home, Articles, Search, Saved, Series) for touch devices. Auto-hides on scroll down, safe-area-aware
+- **Command Palette (⌘K)** — Site-wide search for articles, sections, and pages
+- **Floating Table of Contents** — Scroll spy navigation for articles
+- **Breadcrumbs** — Category-linked breadcrumb trail on article pages
+- **"More in Category"** — Browse-category link after related articles on every article page
+- **View Transitions** — Smooth page-to-page animations
+- **All navigation is collection-driven** — topics, series, and featured articles auto-populate from content collection
 
 ### Content
 - **46 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science

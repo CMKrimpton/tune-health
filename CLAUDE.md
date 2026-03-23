@@ -46,9 +46,10 @@ src/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
 ├── components/
-│   ├── Header.astro          # Navigation with glass dropdown menu
+│   ├── Header.astro          # Navigation with glass dropdown menu (home + article variants, both with full menu)
 │   ├── Footer.astro          # Site footer
-│   ├── SideNav.astro         # Magazine-style sidebar (collection-driven)
+│   ├── SideNav.astro         # Magazine-style sidebar (collection-driven topics, series, featured)
+│   ├── MobileNav.astro       # Fixed bottom nav bar for touch devices (Home, Articles, Search, Saved, Series)
 │   ├── CommandPalette.tsx    # React command palette (dynamic via window injection)
 │   ├── CommandPaletteWrapper.astro  # Injects article data for React island
 │   ├── FloatingTOC.astro     # Floating table of contents with scroll spy
@@ -148,17 +149,26 @@ const articles = await getCollection('articles');
 
 #### Glass Dropdown Menu (Header)
 - Opens on hover (mouseenter), closes on mouse leave with 150ms delay
-- Click also works for mobile/touch devices
-- Contains: Sections (4 with icons), Topics (8 pills), Featured articles (2 with badges)
+- Click also works for mobile/touch devices. Outside-click closes menu
+- Contains: Sections (4 with icons + active state), Topics (dynamic from `getCategories()`), Latest articles (3 with badges)
+- Both `home` and `article` variants have full dropdown menu (article variant also shows Home/Articles breadcrumbs)
 - Glass morphism effect with `backdrop-blur-xl`
 - Animated hamburger-to-X icon
 
 #### SideNav (Magazine Sidebar)
-- Reveals on left edge hover
+- Reveals on left edge hover. Present on **all pages** including articles
 - Links organized by: Sections, Topics, Featured, Series, More
-- Featured section is **collection-driven** (auto-populates from latest articles)
+- **All sections are collection-driven**: Topics from `getCategories()`, Series from `getAllSeries()`, Featured from latest articles
 - Custom scrollbar, badges for "New" articles
 - Search and theme toggle buttons
+
+#### Mobile Bottom Navigation
+- Fixed 5-item bar: Home, Articles, Search, Saved (Reading List), Series (Deep Dives)
+- Only shows on touch devices (`@media (pointer: coarse)`) under 1024px
+- Active state highlighting for current page
+- Auto-hides on scroll down, reappears on scroll up
+- Safe-area-aware (`env(safe-area-inset-bottom)`)
+- Hidden in print stylesheet
 
 #### Command Palette (⌘K)
 - React component using `cmdk` library

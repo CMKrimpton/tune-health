@@ -82,7 +82,7 @@ const comingSoonSeries = [
         </div>
 
         {publishedSeries.map((series) => (
-          <div class="mb-12 last:mb-0">
+          <div class="mb-12 last:mb-0" id={series.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}>
             <div class="flex items-center gap-4 mb-6">
               <span class="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 text-xs font-semibold uppercase tracking-widest rounded-full">
                 Series

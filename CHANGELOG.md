@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.11.0] - 2026-03-22
+
+### Added
+- **Mobile bottom navigation bar** (`MobileNav.astro`) — fixed 5-item nav (Home, Articles, Search, Saved, Series) for touch devices under 1024px. Active state highlighting, auto-hides on scroll down, safe-area-aware, hidden in print
+- **"More in [Category]" link** on article pages — browse-category CTA below related articles for easy topic exploration
+- **Active state indicators** in Header menu — highlights current section (Home, Articles, Deep Dives, Subscribe)
+- **SideNav on article pages** — readers can now access sidebar navigation from any article (previously missing)
+- **SideNav on Reading List page** — was missing Footer, CommandPalette, and SideNav
+- **Deep Dives anchor IDs** — published series sections have slugified IDs for direct linking
+
+### Fixed
+- **3 dead topic links** — Header and SideNav hardcoded `?topic=sleep`, `?topic=hormones`, `?topic=supplements` which matched no real categories. All topic links now dynamically generated from `getCategories()` across Header, SideNav, and Footer
+- **2 missing categories** — Clinical Evidence (10 articles) and Environmental Health (4 articles) were absent from Header and SideNav topic lists. Now auto-populated
+- **Header article links could 404** — "Latest" section used raw `article.id` (with `.json` extension) instead of mapped `article.href`. Fixed to use `getArticles()` utility
+- **SideNav series links pointed to nonexistent anchors** — 5 hardcoded coming-soon series linked to `#habit-formation`, `#microbiome`, etc. which had no matching IDs on the Deep Dives page. Replaced with dynamic published series from `getAllSeries()`, linking to first article of each series
+- **Homepage category counter hardcoded "7"** — now uses dynamic `{categories.length}` (actual count: 9)
+- **Article pages were a navigation dead end** — article variant Header only showed Home/Articles/Series text links with no menu dropdown. Now includes full dropdown menu with sections + topics
+- **No outside-click close on Header menu** — touch devices got stuck with menu open. Added document click listener
+- **Reading List page used stripped Header variant** — changed to home variant with full menu access
+
+### Changed
+- **Header** — refactored from `getCollection('articles')` to `getArticles()` + `getCategories()` utilities for consistency. Article variant now has full dropdown menu matching home variant
+- **SideNav** — topics and series sections are now fully collection-driven (were hardcoded). Series links to first article with "All Deep Dives" link. Topics pulled from `getCategories()`
+- **BaseLayout** — imports and renders `MobileNav` component on all pages
+- **Back-to-top button** — repositioned above mobile nav on touch devices
+- **Footer padding** — adjusted on touch devices to not be hidden behind mobile nav
+
 ## [5.10.0] - 2026-03-22
 
 ### Added

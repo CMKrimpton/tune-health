@@ -3,10 +3,12 @@
  * SideNav - Glass sidebar that reveals on left edge hover
  * Premium editorial navigation experience
  */
-import { getArticles } from '../utils/articles';
+import { getArticles, getCategories, getAllSeries } from '../utils/articles';
 
 const articles = await getArticles();
 const featuredArticles = articles.slice(0, 5);
+const categories = await getCategories();
+const publishedSeries = await getAllSeries();
 ---
 
 <aside class="side-nav" id="sideNav">
@@ -49,46 +51,13 @@ const featuredArticles = articles.slice(0, 5);
         <div class="side-nav-section">
           <span class="side-nav-label">Topics</span>
           <ul class="side-nav-links">
-            <li>
-              <a href="/articles?topic=mental-health" class="side-nav-link">
-                <span class="side-nav-link-text">Mental Health</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles?topic=neuroscience" class="side-nav-link">
-                <span class="side-nav-link-text">Neuroscience</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles?topic=nutrition" class="side-nav-link">
-                <span class="side-nav-link-text">Nutrition</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles?topic=longevity" class="side-nav-link">
-                <span class="side-nav-link-text">Longevity</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles?topic=sleep" class="side-nav-link">
-                <span class="side-nav-link-text">Sleep Science</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles?topic=fitness" class="side-nav-link">
-                <span class="side-nav-link-text">Fitness</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles?topic=hormones" class="side-nav-link">
-                <span class="side-nav-link-text">Hormones</span>
-              </a>
-            </li>
-            <li>
-              <a href="/articles?topic=supplements" class="side-nav-link">
-                <span class="side-nav-link-text">Supplements</span>
-              </a>
-            </li>
+            {categories.map((cat) => (
+              <li>
+                <a href={`/articles?topic=${cat.toLowerCase().replace(/\s+/g, '-')}`} class="side-nav-link">
+                  <span class="side-nav-link-text">{cat}</span>
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
 
@@ -108,41 +77,26 @@ const featuredArticles = articles.slice(0, 5);
         </div>
 
         <!-- Series -->
-        <div class="side-nav-section">
-          <span class="side-nav-label">Series</span>
-          <ul class="side-nav-links">
-            <li>
-              <a href="/deep-dives#habit-formation" class="side-nav-link">
-                <span class="side-nav-link-text">Habit Formation</span>
-                <span class="side-nav-meta">4 parts</span>
-              </a>
-            </li>
-            <li>
-              <a href="/deep-dives#microbiome" class="side-nav-link">
-                <span class="side-nav-link-text">Microbiome</span>
-                <span class="side-nav-meta">6 parts</span>
-              </a>
-            </li>
-            <li>
-              <a href="/deep-dives#precision-medicine" class="side-nav-link">
-                <span class="side-nav-link-text">Precision Medicine</span>
-                <span class="side-nav-meta">3 parts</span>
-              </a>
-            </li>
-            <li>
-              <a href="/deep-dives#sleep-architecture" class="side-nav-link">
-                <span class="side-nav-link-text">Sleep Architecture</span>
-                <span class="side-nav-meta">5 parts</span>
-              </a>
-            </li>
-            <li>
-              <a href="/deep-dives#stress-resilience" class="side-nav-link">
-                <span class="side-nav-link-text">Stress Resilience</span>
-                <span class="side-nav-meta">4 parts</span>
-              </a>
-            </li>
-          </ul>
-        </div>
+        {publishedSeries.length > 0 && (
+          <div class="side-nav-section">
+            <span class="side-nav-label">Series</span>
+            <ul class="side-nav-links">
+              {publishedSeries.map((series) => (
+                <li>
+                  <a href={series.articles[0].href} class="side-nav-link">
+                    <span class="side-nav-link-text">{series.name.length > 28 ? series.name.slice(0, 28) + '...' : series.name}</span>
+                    <span class="side-nav-meta">{series.articles.length} parts</span>
+                  </a>
+                </li>
+              ))}
+              <li>
+                <a href="/deep-dives" class="side-nav-link">
+                  <span class="side-nav-link-text text-primary-600 dark:text-primary-400">All Deep Dives</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        )}
 
         <!-- More -->
         <div class="side-nav-section">

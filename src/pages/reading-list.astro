@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+import SideNav from '../components/SideNav.astro';
 import { getArticles, getArticleGradientStyle, formatPublishDateShort } from '../utils/articles';
 
 const allArticles = await getArticles();
@@ -28,7 +29,7 @@ const articleMap = Object.fromEntries(
   title="Reading List | alumi news"
   description="Your saved articles from alumi news. Pick up where you left off."
 >
-  <Header slot="header" variant="article" />
+  <Header slot="header" />
 
   <section class="py-14 md:py-20">
     <div class="container-editorial">
@@ -188,4 +189,8 @@ const articleMap = Object.fromEntries(
     }
     document.addEventListener('astro:after-swap', initReadingList);
   </script>
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+  <SideNav />
 </BaseLayout>

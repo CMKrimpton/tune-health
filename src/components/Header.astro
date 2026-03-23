@@ -1,5 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
+import { getArticles, getCategories } from '../utils/articles';
 
 interface Props {
   variant?: 'home' | 'article';
@@ -7,12 +7,12 @@ interface Props {
 
 const { variant = 'home' } = Astro.props;
 
-// Get the 3 most recent articles sorted by publish date
-const allArticles = await getCollection('articles');
-const latestArticles = allArticles
-  .filter(article => !article.data.draft)
-  .sort((a, b) => new Date(b.data.publishDate).getTime() - new Date(a.data.publishDate).getTime())
-  .slice(0, 3);
+const allArticles = await getArticles();
+const latestArticles = allArticles.slice(0, 3);
+const categories = await getCategories();
+
+// Current path for active state
+const currentPath = Astro.url.pathname;
 ---
 
 <header class="nav-header" id="header" transition:persist>
@@ -43,7 +43,7 @@ const latestArticles = allArticles
               <div class="menu-section">
                 <span class="menu-section-label">Sections</span>
                 <div class="menu-grid">
-                  <a href="/" class="menu-item">
+                  <a href="/" class:list={["menu-item", { active: currentPath === '/' }]}>
                     <span class="menu-item-icon">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-width="1.5"/>
@@ -51,7 +51,7 @@ const latestArticles = allArticles
                     </span>
                     <span class="menu-item-text">Home</span>
                   </a>
-                  <a href="/articles" class="menu-item">
+                  <a href="/articles" class:list={["menu-item", { active: currentPath.startsWith('/articles') }]}>
                     <span class="menu-item-icon">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" stroke-width="1.5"/>
@@ -59,7 +59,7 @@ const latestArticles = allArticles
                     </span>
                     <span class="menu-item-text">Articles</span>
                   </a>
-                  <a href="/deep-dives" class="menu-item">
+                  <a href="/deep-dives" class:list={["menu-item", { active: currentPath === '/deep-dives' }]}>
                     <span class="menu-item-icon">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="1.5"/>
@@ -67,7 +67,7 @@ const latestArticles = allArticles
                     </span>
                     <span class="menu-item-text">Deep Dives</span>
                   </a>
-                  <a href="/subscribe" class="menu-item">
+                  <a href="/subscribe" class:list={["menu-item", { active: currentPath === '/subscribe' }]}>
                     <span class="menu-item-icon">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="1.5"/>
@@ -82,14 +82,9 @@ const latestArticles = allArticles
               <div class="menu-section">
                 <span class="menu-section-label">Topics</span>
                 <div class="menu-topics">
-                  <a href="/articles?topic=mental-health" class="menu-topic">Mental Health</a>
-                  <a href="/articles?topic=neuroscience" class="menu-topic">Neuroscience</a>
-                  <a href="/articles?topic=nutrition" class="menu-topic">Nutrition</a>
-                  <a href="/articles?topic=longevity" class="menu-topic">Longevity</a>
-                  <a href="/articles?topic=sleep" class="menu-topic">Sleep</a>
-                  <a href="/articles?topic=fitness" class="menu-topic">Fitness</a>
-                  <a href="/articles?topic=hormones" class="menu-topic">Hormones</a>
-                  <a href="/articles?topic=supplements" class="menu-topic">Supplements</a>
+                  {categories.map((cat) => (
+                    <a href={`/articles?topic=${cat.toLowerCase().replace(/\s+/g, '-')}`} class="menu-topic">{cat}</a>
+                  ))}
                 </div>
               </div>
 
@@ -98,11 +93,11 @@ const latestArticles = allArticles
                 <span class="menu-section-label">Latest</span>
                 <div class="menu-featured">
                   {latestArticles.map((article) => (
-                    <a href={`/articles/${article.id}`} class="menu-featured-item">
+                    <a href={article.href} class="menu-featured-item">
                       <div class="menu-featured-badge">New</div>
                       <div>
-                        <span class="menu-featured-title">{article.data.title.length > 35 ? article.data.title.slice(0, 35) + '...' : article.data.title}</span>
-                        <span class="menu-featured-meta">{article.data.category} · {article.data.readTime} min</span>
+                        <span class="menu-featured-title">{article.title.length > 35 ? article.title.slice(0, 35) + '...' : article.title}</span>
+                        <span class="menu-featured-meta">{article.category} · {article.readTime} min</span>
                       </div>
                     </a>
                   ))}
@@ -117,17 +112,79 @@ const latestArticles = allArticles
           </div>
         </div>
       ) : (
-        <div class="flex items-center gap-2">
-          <a href="/" class="flex items-center gap-2 text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2"/>
-            </svg>
+        <div class="flex items-center gap-3">
+          <div class="relative" id="menuDropdownWrapper">
+            <button
+              class="menu-toggle-btn group"
+              id="menuToggleBtn"
+              aria-label="Open menu"
+              aria-expanded="false"
+            >
+              <div class="menu-icon">
+                <span class="menu-icon-line"></span>
+                <span class="menu-icon-line"></span>
+                <span class="menu-icon-line"></span>
+              </div>
+            </button>
+
+            <div class="menu-dropdown" id="menuDropdown">
+              <div class="menu-dropdown-inner">
+                <div class="menu-section">
+                  <span class="menu-section-label">Sections</span>
+                  <div class="menu-grid">
+                    <a href="/" class:list={["menu-item", { active: currentPath === '/' }]}>
+                      <span class="menu-item-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-width="1.5"/>
+                        </svg>
+                      </span>
+                      <span class="menu-item-text">Home</span>
+                    </a>
+                    <a href="/articles" class:list={["menu-item", { active: currentPath.startsWith('/articles') }]}>
+                      <span class="menu-item-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" stroke-width="1.5"/>
+                        </svg>
+                      </span>
+                      <span class="menu-item-text">Articles</span>
+                    </a>
+                    <a href="/deep-dives" class:list={["menu-item", { active: currentPath === '/deep-dives' }]}>
+                      <span class="menu-item-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="1.5"/>
+                        </svg>
+                      </span>
+                      <span class="menu-item-text">Deep Dives</span>
+                    </a>
+                    <a href="/subscribe" class:list={["menu-item", { active: currentPath === '/subscribe' }]}>
+                      <span class="menu-item-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="1.5"/>
+                        </svg>
+                      </span>
+                      <span class="menu-item-text">Subscribe</span>
+                    </a>
+                  </div>
+                </div>
+                <div class="menu-section">
+                  <span class="menu-section-label">Topics</span>
+                  <div class="menu-topics">
+                    {categories.map((cat) => (
+                      <a href={`/articles?topic=${cat.toLowerCase().replace(/\s+/g, '-')}`} class="menu-topic">{cat}</a>
+                    ))}
+                  </div>
+                </div>
+                <div class="menu-footer">
+                  <span class="text-xs text-stone-400">Press ⌘K to search</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <a href="/" class="flex items-center gap-1 text-sm font-medium text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors">
             <span class="hidden sm:inline">Home</span>
           </a>
-          <span class="hidden sm:inline text-stone-300 dark:text-stone-700">/</span>
-          <a href="/articles" class="hidden sm:inline text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors">Articles</a>
-          <span class="hidden sm:inline text-stone-300 dark:text-stone-700">/</span>
-          <a href="/deep-dives" class="hidden sm:inline text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors">Series</a>
+          <span class="text-stone-300 dark:text-stone-700">/</span>
+          <a href="/articles" class="text-sm font-medium text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors">Articles</a>
         </div>
       )}
     </div>
@@ -276,6 +333,19 @@ const latestArticles = allArticles
     @apply text-sm font-medium text-stone-700 dark:text-stone-200;
   }
 
+  .menu-item.active {
+    @apply bg-primary-50 dark:bg-primary-900/20;
+    @apply ring-1 ring-primary-200 dark:ring-primary-800/50;
+  }
+
+  .menu-item.active .menu-item-icon {
+    @apply bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400;
+  }
+
+  .menu-item.active .menu-item-text {
+    @apply text-primary-700 dark:text-primary-300;
+  }
+
   /* Topics */
   .menu-topics {
     @apply flex flex-wrap gap-2;
@@ -392,6 +462,13 @@ const latestArticles = allArticles
       link.addEventListener('click', () => {
         closeMenu();
       });
+    });
+
+    // Close when clicking outside (important for touch devices)
+    document.addEventListener('click', (e) => {
+      if (isOpen && !menuWrapper.contains(e.target as Node)) {
+        closeMenu();
+      }
     });
   }
 

@@ -84,7 +84,7 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
         <span class="text-overline text-stone-400">Published</span>
       </div>
       <div class="text-right">
-        <span class="block font-serif text-2xl font-semibold counter" data-count="7">0</span>
+        <span class="block font-serif text-2xl font-semibold counter" data-count={categories.length}>0</span>
         <span class="text-overline text-stone-400">Categories</span>
       </div>
       <div class="text-right">

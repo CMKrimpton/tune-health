@@ -1147,6 +1147,17 @@ header a[href="/"]:hover .text-primary-600 {
   }
 }
 
+/* Mobile bottom nav spacing — move back-to-top and footer above the bar */
+@media (pointer: coarse) and (max-width: 1023px) {
+  .back-to-top {
+    bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .footer {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Safe area insets for notched devices */
 @supports (padding: env(safe-area-inset-bottom)) {
   .footer {
@@ -1503,6 +1514,7 @@ header a[href="/"]:hover .text-primary-600 {
   .back-to-top,
   .quick-nav,
   .side-nav,
+  .mobile-nav,
   .scroll-progress,
   .noise-overlay,
   .newsletter-visual {

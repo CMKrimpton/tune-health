@@ -1,0 +1,181 @@
+---
+/**
+ * MobileNav - Fixed bottom navigation bar for touch devices
+ * Shows on mobile/tablet only (pointer: coarse)
+ * Provides persistent access to key sections from any page
+ */
+---
+
+<nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
+  <a href="/" class="mobile-nav-item" data-nav="home">
+    <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-width="1.5"/>
+    </svg>
+    <span class="mobile-nav-label">Home</span>
+  </a>
+  <a href="/articles" class="mobile-nav-item" data-nav="articles">
+    <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" stroke-width="1.5"/>
+    </svg>
+    <span class="mobile-nav-label">Articles</span>
+  </a>
+  <button class="mobile-nav-item" id="mobileSearchBtn" aria-label="Search articles">
+    <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="8" stroke-width="1.5"/>
+      <path d="m21 21-4.35-4.35" stroke-width="1.5"/>
+    </svg>
+    <span class="mobile-nav-label">Search</span>
+  </button>
+  <a href="/reading-list" class="mobile-nav-item" data-nav="reading-list">
+    <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="mobile-nav-label">Saved</span>
+  </a>
+  <a href="/deep-dives" class="mobile-nav-item" data-nav="deep-dives">
+    <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="1.5"/>
+    </svg>
+    <span class="mobile-nav-label">Series</span>
+  </a>
+</nav>
+
+<style>
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgb(255 255 255 / 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgb(231 229 228);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  :global(.dark) .mobile-nav {
+    background: rgb(28 25 23 / 0.95);
+    border-top-color: rgb(68 64 60);
+  }
+
+  /* Only show on touch devices */
+  @media (pointer: coarse) {
+    .mobile-nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+  }
+
+  /* Hide on large screens even with touch */
+  @media (min-width: 1024px) {
+    .mobile-nav {
+      display: none;
+    }
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 12px;
+    min-width: 56px;
+    min-height: 48px;
+    border-radius: 8px;
+    color: rgb(120 113 108);
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: inherit;
+  }
+
+  :global(.dark) .mobile-nav-item {
+    color: rgb(168 162 158);
+  }
+
+  .mobile-nav-item.active {
+    color: rgb(220 38 38);
+  }
+
+  :global(.dark) .mobile-nav-item.active {
+    color: rgb(248 113 113);
+  }
+
+  .mobile-nav-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-nav-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+</style>
+
+<script>
+  function initMobileNav() {
+    const nav = document.getElementById('mobileNav');
+    if (!nav) return;
+
+    // Highlight active item based on current path
+    const currentPath = window.location.pathname;
+    const items = nav.querySelectorAll('.mobile-nav-item[data-nav]');
+
+    items.forEach(item => {
+      item.classList.remove('active');
+      const navTarget = (item as HTMLElement).dataset.nav;
+      if (!navTarget) return;
+
+      if (navTarget === 'home' && currentPath === '/') {
+        item.classList.add('active');
+      } else if (navTarget === 'articles' && currentPath.startsWith('/articles')) {
+        item.classList.add('active');
+      } else if (navTarget === 'reading-list' && currentPath === '/reading-list') {
+        item.classList.add('active');
+      } else if (navTarget === 'deep-dives' && currentPath === '/deep-dives') {
+        item.classList.add('active');
+      }
+    });
+
+    // Search button triggers command palette
+    const searchBtn = document.getElementById('mobileSearchBtn');
+    searchBtn?.addEventListener('click', () => {
+      const cmdkTrigger = document.getElementById('cmdkTrigger') || document.getElementById('cmdkTriggerMobile');
+      cmdkTrigger?.click();
+    });
+
+    // Hide mobile nav when scrolling down, show when scrolling up
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          if (currentScrollY > lastScrollY && currentScrollY > 200) {
+            nav.style.transform = 'translateY(100%)';
+          } else {
+            nav.style.transform = 'translateY(0)';
+          }
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+
+    // Add transition for smooth hide/show
+    nav.style.transition = 'transform 0.25s ease';
+  }
+
+  initMobileNav();
+  document.addEventListener('astro:after-swap', initMobileNav);
+</script>
