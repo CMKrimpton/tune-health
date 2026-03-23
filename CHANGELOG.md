@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [8.6.0] - 2026-03-23
+
+### Added — Model Pen Names & Cron Activation
+- **Model bylines**: Max Quilici (Sonnet), Carl Lundin (Opus), Linda Carnes (Grok), Christine Wright (Gemini). Automatically set in article metadata based on which model wrote the article
+- **All crons activated**: scout-gemini (6am), scout-sonnet (2pm), scout-grok (10pm), article-produce (hourly), featured-rotation (6h)
+- **Multi-model scout migration applied** to Supabase
+
 ## [8.5.0] - 2026-03-23
 
 ### Added — Multi-Model Writer Rotation

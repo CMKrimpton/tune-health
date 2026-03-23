@@ -128,8 +128,8 @@ Four AI companies, five models, two independent jobs:
 - **Produce** (cron: hourly): editor picks best topic from queue → self-chains through:
   1. **Editor Brief** (Sonnet 4.6) — assigns archetype (7 types) + **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated) + density + pacing. Overlap detection, can replace older articles
   2. **Write** (Sonnet 4.6, temp 0.5) — follows archetype + tone preset. Anti-AI rules enforced. Deterministic category gradients + programmatic SVG (no AI tokens on visuals). Variable word counts per archetype
-  3. **Grok Independence Review** (Grok 3, xAI) — reviews FULL article. When `major_issues` flagged, Claude applies rewrite suggestions. PubMed citation verification runs in parallel
-  4. **QC + Publish** (Grok 3 + OpenAI GPT Image) — different model family reviews Sonnet's work (prevents self-review blindness). Illustration generation parallelized with QC (saves 30-60s). Commit to GitHub
+  3. **Grok Independence Review** (Grok 3, xAI) — reviews FULL article. When `major_issues` flagged, writer model applies rewrite suggestions. PubMed citation verification runs in parallel
+  4. **QC + Publish** (Grok 3 + OpenAI GPT Image) — different model family reviews writer's work. Illustration parallelized with QC. Commit to GitHub. Author byline set from writer model (Max Quilici / Linda Carnes / Christine Wright)
 - **Cost tracking**: every API call logs token usage + USD cost. Dashboard shows per-article cost and total spend
 - **Featured rotation**: every 6h via independent `pg_cron` job (works when pipeline is paused). Uses `updated_at` for freshness. Quality-gated: must have illustration, score >30. Standalone `rotate-featured` action
 - **Topic queue**: vetted ideas always ready. Admin can add manually with priority/expedite. Hard dedup on inserts
