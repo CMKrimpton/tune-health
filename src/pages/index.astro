@@ -511,28 +511,51 @@ const categories = [...new Set(allArticles.map(a => a.category))].sort();
         });
       });
 
-      // Newsletter form handler (shared pattern)
+      // Newsletter form handler (shared pattern — calls /api/subscribe)
       document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
         if ((form as HTMLElement).dataset.bound) return;
         (form as HTMLElement).dataset.bound = 'true';
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
           e.preventDefault();
           const input = form.querySelector('input[type="email"]') as HTMLInputElement;
           const button = form.querySelector('button') as HTMLButtonElement;
-          if (input && button) {
-            const originalText = button.textContent;
-            button.textContent = 'Subscribing...';
-            button.disabled = true;
-            input.disabled = true;
-            setTimeout(() => {
+          if (!input || !button) return;
+
+          const email = input.value.trim();
+          if (!email) return;
+
+          const originalText = button.textContent;
+          button.textContent = 'Subscribing...';
+          button.disabled = true;
+          input.disabled = true;
+
+          try {
+            const res = await fetch('/api/subscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, source: 'homepage' }),
+            });
+
+            if (res.ok) {
               button.textContent = 'Subscribed!';
+              input.value = '';
               setTimeout(() => {
                 button.textContent = originalText;
                 button.disabled = false;
                 input.disabled = false;
-                input.value = '';
               }, 3000);
-            }, 800);
+            } else {
+              button.textContent = 'Try again';
+              setTimeout(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+                input.disabled = false;
+              }, 3000);
+            }
+          } catch {
+            button.textContent = originalText;
+            button.disabled = false;
+            input.disabled = false;
           }
         });
       });

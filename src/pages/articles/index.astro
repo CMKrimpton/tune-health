@@ -320,7 +320,12 @@ const gridArticles = articles.slice(3);
       }
     }
 
-    searchInput?.addEventListener('input', filterArticles);
+    // Debounced search to avoid filtering on every keystroke
+    let searchTimer: ReturnType<typeof setTimeout>;
+    searchInput?.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(filterArticles, 150);
+    });
 
     categoryChips.forEach(chip => {
       chip.addEventListener('click', () => {

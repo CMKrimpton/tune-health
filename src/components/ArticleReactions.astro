@@ -13,6 +13,7 @@ const { slug } = Astro.props;
 
 <div class="article-reactions" data-reactions-slug={slug} aria-label="React to this article">
   <span class="reactions-label">Was this useful?</span>
+  <span class="reactions-note">Reactions are saved locally on this device</span>
 
   <div class="reactions-row">
     <button class="reaction-btn" data-reaction="insightful" aria-label="Mark as insightful">
@@ -48,7 +49,11 @@ const { slug } = Astro.props;
   }
 
   .reactions-label {
-    @apply block text-sm font-medium text-stone-500 dark:text-stone-400 mb-4;
+    @apply block text-sm font-medium text-stone-500 dark:text-stone-400 mb-1;
+  }
+
+  .reactions-note {
+    @apply block text-xs text-stone-400 dark:text-stone-600 mb-4;
   }
 
   .reactions-row {

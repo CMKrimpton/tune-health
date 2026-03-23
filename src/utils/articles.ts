@@ -83,13 +83,7 @@ export async function getArticlesForHomepage(): Promise<Article[]> {
     getComingSoonArticles(),
   ]);
 
-  const sorted = [...published].sort((a, b) => {
-    const orderA = published.indexOf(a);
-    const orderB = published.indexOf(b);
-    return orderA - orderB;
-  });
-
-  return [...sorted, ...comingSoon];
+  return [...published, ...comingSoon];
 }
 
 /**

@@ -47,6 +47,7 @@ src/
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
 ├── components/
 │   ├── Header.astro          # Navigation with glass dropdown menu (home + article variants, both with full menu)
+│   ├── MenuDropdownContent.astro  # Shared dropdown content (extracted from Header to DRY both variants)
 │   ├── Footer.astro          # Site footer
 │   ├── SideNav.astro         # Magazine-style sidebar (collection-driven topics, series, featured)
 │   ├── MobileNav.astro       # Fixed bottom nav bar for touch devices (Home, Articles, Search, Saved, Series)
@@ -75,6 +76,8 @@ src/
 │   ├── rss.xml.ts            # RSS feed (via @astrojs/rss)
 │   ├── reading-list.astro    # Bookmarked articles page (reads localStorage)
 │   ├── subscribe.astro       # Newsletter subscription page
+│   ├── api/
+│   │   └── subscribe.ts      # Newsletter subscription API (POST, Supabase upsert)
 │   ├── admin/
 │   │   ├── login.astro       # Admin token login (SSR)
 │   │   ├── index.astro       # Admin dashboard (SSR)
@@ -255,6 +258,7 @@ supabase functions deploy <function-name> --no-verify-jwt
 **Database tables:**
 - `articles` — main content table (see schema above)
 - `daily_article_log` — tracks daily article agent runs (run_date, topic, slug, title, status, error, search_queries, research_snippets)
+- `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source). Upsert via `/api/subscribe` endpoint
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
 - `daily-article-agent`: runs at 6 AM UTC daily, invokes the Edge Function via HTTP POST

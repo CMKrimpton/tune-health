@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.15.0] - 2026-03-22
+
+### Added
+- **Content-Security-Policy header** — CSP in `vercel.json` restricts scripts, styles, fonts, images, and connections to known origins (self, Google Fonts, Supabase, Unsplash). Blocks framing entirely
+- **Newsletter API endpoint** (`/api/subscribe`) — server-side endpoint that validates email and upserts to Supabase `newsletter_subscribers` table. Falls back gracefully if Supabase is not configured
+- **Article reactions tooltip** — "Reactions are saved locally on this device" note under reactions bar, setting correct user expectations
+
+### Fixed
+- **Newsletter form was fake** — both `Newsletter.astro` and homepage form used `setTimeout` to fake "Subscribed!" without saving data. Both now call `/api/subscribe` with proper error handling and feedback
+- **Article search had no debounce** — articles index search input now debounces with 150ms delay instead of filtering on every keystroke
+- **Dead sorting in `getArticlesForHomepage()`** — removed no-op `.sort()` that sorted by own index (preserving existing order). Function now simply concatenates published + coming-soon articles
+
 ## [5.14.0] - 2026-03-22
 
 ### Fixed

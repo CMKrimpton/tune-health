@@ -79,29 +79,59 @@ const isCompact = variant === 'compact';
       if ((form as HTMLElement).dataset.bound) return;
       (form as HTMLElement).dataset.bound = 'true';
 
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const input = form.querySelector('input[type="email"]') as HTMLInputElement;
         const button = form.querySelector('button') as HTMLButtonElement;
 
-        if (input && button) {
-          const originalText = button.textContent;
-          button.textContent = 'Subscribing...';
-          button.disabled = true;
-          input.disabled = true;
+        if (!input || !button) return;
 
-          setTimeout(() => {
+        const email = input.value.trim();
+        if (!email) return;
+
+        const originalText = button.textContent;
+        button.textContent = 'Subscribing...';
+        button.disabled = true;
+        input.disabled = true;
+
+        try {
+          const res = await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, source: 'newsletter' }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
             button.textContent = 'Subscribed!';
             button.classList.add('bg-primary-500', 'text-white');
+            input.value = '';
 
             setTimeout(() => {
               button.textContent = originalText;
               button.disabled = false;
               input.disabled = false;
-              input.value = '';
               button.classList.remove('bg-primary-500', 'text-white');
             }, 3000);
-          }, 800);
+          } else {
+            button.textContent = data.error || 'Try again';
+            button.classList.add('bg-red-500', 'text-white');
+
+            setTimeout(() => {
+              button.textContent = originalText;
+              button.disabled = false;
+              input.disabled = false;
+              button.classList.remove('bg-red-500', 'text-white');
+            }, 3000);
+          }
+        } catch {
+          button.textContent = 'Error — try again';
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.disabled = false;
+            input.disabled = false;
+          }, 3000);
         }
       });
     });
