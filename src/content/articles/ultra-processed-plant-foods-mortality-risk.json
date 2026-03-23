@@ -1,0 +1,34 @@
+{
+  "title": "The Plant-Based Food Industry Has a Dirty Secret. A 30-Year Study Just Exposed It.",
+  "description": "A landmark 30-year BMJ cohort study reveals that ultra-processed plant-based foods increase cardiovascular and all-cause mortality risk — erasing the health benefits of plant eating entirely. The processing method matters as much as the ingredient. Here's what the $8 billion plant-based food industry doesn't want you to read.",
+  "category": "Nutrition",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Ultra-Processed Foods",
+    "Plant-Based Diet",
+    "Cardiovascular Health",
+    "Food Industry",
+    "Mortality Research"
+  ],
+  "gradient": {
+    "to": "teal-600",
+    "from": "emerald-500"
+  },
+  "keywords": [
+    "ultra-processed plant foods",
+    "plant-based mortality risk",
+    "BMJ cohort study",
+    "cardiovascular disease diet",
+    "NOVA food classification"
+  ],
+  "sortOrder": 1774271098990,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/ultra-processed-plant-foods-mortality-risk.png",
+  "heroImageAlt": "Editorial illustration for The Plant-Based Food Industry Has a Dirty Secret. A 30-Year Study Just Exposed It."
+}
