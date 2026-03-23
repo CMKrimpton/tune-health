@@ -2,6 +2,12 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import { type ArticleRecord, getAdminToken } from './types';
 
+// Extended article with scores (returned by DB but not in base type)
+interface ArticleWithScores extends ArticleRecord {
+  independence_score?: number | null;
+  editor_score?: number | null;
+}
+
 // ─── Props ──────────────────────────────────────────────────────────
 
 interface Props {
@@ -11,7 +17,7 @@ interface Props {
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-type SortMode = 'newest' | 'oldest' | 'az' | 'readtime';
+type SortMode = 'newest' | 'oldest' | 'az' | 'readtime' | 'score';
 type StatusFilter = 'all' | 'published' | 'draft' | 'coming_soon';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -53,7 +59,8 @@ function formatDate(d: string): string {
 // ─── Component ──────────────────────────────────────────────────────
 
 export default function ArticlesManager({ initialArticles, apiBase }: Props) {
-  const [articles, setArticles] = useState<ArticleRecord[]>(initialArticles);
+  const [articles, setArticles] = useState<ArticleWithScores[]>(initialArticles as ArticleWithScores[]);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -103,10 +110,27 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
       case 'oldest': list.sort((a, b) => new Date(a.publish_date || a.created_at).getTime() - new Date(b.publish_date || b.created_at).getTime()); break;
       case 'az': list.sort((a, b) => a.title.localeCompare(b.title)); break;
       case 'readtime': list.sort((a, b) => (b.read_time || 0) - (a.read_time || 0)); break;
+      case 'score': list.sort((a, b) => ((b as ArticleWithScores).independence_score || 0) - ((a as ArticleWithScores).independence_score || 0)); break;
     }
 
     return list;
   }, [articles, statusFilter, categoryFilter, debouncedSearch, sort]);
+
+  const refreshArticles = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const res = await fetch(`${apiBase}/articles-api`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setArticles(data as ArticleWithScores[]);
+      }
+    } catch { /* silent */ }
+    finally { setRefreshing(false); }
+  }, [apiBase]);
 
   // ─── Search debounce ──────────────────────────────────────────────
 
@@ -300,7 +324,16 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
           <option value="oldest">Oldest first</option>
           <option value="az">A-Z</option>
           <option value="readtime">Read time</option>
+          <option value="score">Independence score</option>
         </select>
+        <button
+          onClick={refreshArticles}
+          disabled={refreshing}
+          className="admin-action-btn"
+          style={{ color: '#a8a29e', borderColor: '#44403c', padding: '0.5rem 0.75rem', whiteSpace: 'nowrap' }}
+        >
+          {refreshing ? 'Refreshing\u2026' : 'Refresh'}
+        </button>
       </div>
 
       {/* ── Count ── */}
@@ -426,6 +459,17 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                     {article.tags && article.tags.length > 0 && (
                       <span style={{ fontSize: '0.6875rem', color: '#78716c' }} title={article.tags.join(', ')}>
                         {article.tags.length} tag{article.tags.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {/* Scores */}
+                    {(article as ArticleWithScores).independence_score != null && (
+                      <span style={{ fontSize: '0.6875rem', color: ((article as ArticleWithScores).independence_score || 0) >= 7 ? '#4ade80' : ((article as ArticleWithScores).independence_score || 0) >= 4 ? '#fbbf24' : '#f87171', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        Ind: {(article as ArticleWithScores).independence_score}/10
+                      </span>
+                    )}
+                    {(article as ArticleWithScores).editor_score != null && (
+                      <span style={{ fontSize: '0.6875rem', color: '#a8a29e', fontVariantNumeric: 'tabular-nums' }}>
+                        Ed: {(article as ArticleWithScores).editor_score}/10
                       </span>
                     )}
                     {/* Hero image indicator */}

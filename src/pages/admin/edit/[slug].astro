@@ -22,6 +22,8 @@ if (!article || article.error) {
 }
 
 const liveUrl = `/articles/${slug}`;
+const independenceScore = article.independence_score ?? null;
+const editorScore = article.editor_score ?? null;
 ---
 
 <html lang="en">
@@ -32,6 +34,54 @@ const liveUrl = `/articles/${slug}`;
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    .autosave-indicator {
+      display: inline-flex; align-items: center; gap: 0.375rem;
+      font-size: 0.6875rem; color: #78716c; font-family: 'Inter', sans-serif;
+      transition: opacity 0.3s;
+    }
+    .autosave-indicator.saving { color: #facc15; }
+    .autosave-indicator.saved { color: #86efac; }
+    .autosave-indicator.error { color: #fecaca; }
+    .score-badges {
+      display: flex; gap: 0.5rem; margin-top: 0.5rem;
+    }
+    .score-badge {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      padding: 0.25rem 0.625rem; border-radius: 1rem;
+      font-size: 0.6875rem; font-family: 'Inter', sans-serif; font-weight: 600;
+      background: #292524; border: 1px solid #44403c; color: #a8a29e;
+    }
+    .score-badge-value { color: #e7e6e3; font-variant-numeric: tabular-nums; }
+    .score-badge-high .score-badge-value { color: #86efac; }
+    .score-badge-mid .score-badge-value { color: #facc15; }
+    .score-badge-low .score-badge-value { color: #fecaca; }
+    .admin-danger-btn {
+      display: inline-flex; align-items: center; gap: 0.375rem;
+      padding: 0.625rem 1.25rem; background: transparent; border: 1px solid #991b1b;
+      border-radius: 0.375rem; color: #fca5a5; font-size: 0.8125rem;
+      font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.15s;
+      font-weight: 500;
+    }
+    .admin-danger-btn:hover { background: #7f1d1d; border-color: #dc2626; color: #fecaca; }
+    .admin-danger-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .admin-back-link {
+      display: inline-flex; align-items: center; gap: 0.375rem;
+      padding: 0.625rem 1.25rem; background: transparent; border: 1px solid #44403c;
+      border-radius: 0.375rem; color: #a8a29e; font-size: 0.8125rem;
+      font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.15s;
+      text-decoration: none; font-weight: 500;
+    }
+    .admin-back-link:hover { border-color: #78716c; color: #e7e6e3; }
+    .deploy-actions {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;
+    }
+    .deploy-actions .admin-publish-btn { flex: 1; min-width: 0; }
+    .kbd-hint {
+      font-size: 0.625rem; color: #57534e; font-family: 'JetBrains Mono', monospace;
+      margin-left: 0.375rem;
+    }
+  </style>
 </head>
 <body class="admin-body">
   <header class="admin-header">
@@ -56,6 +106,7 @@ const liveUrl = `/articles/${slug}`;
         <button class="admin-tab active" data-tab="metadata">Metadata</button>
         <button class="admin-tab" data-tab="content">Content</button>
         <button class="admin-tab" data-tab="refine">AI Refine</button>
+        <span id="autosaveIndicator" class="autosave-indicator" style="margin-left:auto"></span>
       </div>
 
       <div class="admin-edit-scroll">
@@ -64,6 +115,20 @@ const liveUrl = `/articles/${slug}`;
           <div class="admin-edit-header">
             <span class="admin-edit-label">Editing</span>
             <h1 class="admin-edit-title">{article.title}</h1>
+            {(independenceScore !== null || editorScore !== null) && (
+              <div class="score-badges">
+                {independenceScore !== null && (
+                  <span class={`score-badge ${independenceScore >= 7 ? 'score-badge-high' : independenceScore >= 4 ? 'score-badge-mid' : 'score-badge-low'}`}>
+                    Independence <span class="score-badge-value">{independenceScore}/10</span>
+                  </span>
+                )}
+                {editorScore !== null && (
+                  <span class={`score-badge ${editorScore >= 7 ? 'score-badge-high' : editorScore >= 4 ? 'score-badge-mid' : 'score-badge-low'}`}>
+                    Editor <span class="score-badge-value">{editorScore}/10</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <form id="editForm" class="admin-edit-form">
             <div class="admin-edit-field">
@@ -123,22 +188,40 @@ const liveUrl = `/articles/${slug}`;
             <div id="metaStatus" style="display:none" class="admin-edit-status"></div>
             <div id="metaError" style="display:none" class="admin-error"></div>
             <div class="admin-edit-actions">
-              <button type="submit" class="admin-publish-btn" id="saveMetaBtn">Save Metadata</button>
+              <button type="submit" class="admin-publish-btn" id="saveMetaBtn">Save Metadata <span class="kbd-hint">{'\u2318'}S</span></button>
             </div>
           </form>
 
-          <!-- Publish to GitHub -->
+          <!-- Deploy / Delete / Dashboard -->
           <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #292524">
             <div style="font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.05em;color:#78716c;font-weight:600;margin-bottom:0.75rem">Deploy to Live Site</div>
             <p style="font-size:0.8125rem;color:#a8a29e;margin-bottom:1rem;line-height:1.5">Push the current database version to GitHub, triggering a Vercel rebuild. Only do this when you're ready to go live.</p>
             <div id="publishStatus" style="display:none" class="admin-edit-status"></div>
             <div id="publishError" style="display:none" class="admin-error"></div>
-            <button id="publishGitHubBtn" class="admin-publish-btn" style="background:#dc2626;width:100%;justify-content:center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 19V5M5 12l7-7 7 7"/>
-              </svg>
-              Publish to GitHub
-            </button>
+            <div class="deploy-actions">
+              <button id="publishGitHubBtn" class="admin-publish-btn" style="background:#dc2626;justify-content:center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+                Publish to GitHub
+              </button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.75rem">
+              <button id="deleteGitHubBtn" class="admin-danger-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+                Delete from GitHub
+              </button>
+              <a href="/admin" class="admin-back-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Dashboard
+              </a>
+            </div>
+            <div id="deleteStatus" style="display:none;margin-top:0.75rem" class="admin-edit-status"></div>
+            <div id="deleteError" style="display:none;margin-top:0.75rem" class="admin-error"></div>
           </div>
         </div>
 
@@ -153,7 +236,7 @@ const liveUrl = `/articles/${slug}`;
           <div id="contentError" style="display:none" class="admin-error"></div>
           <div class="admin-edit-actions" style="gap:0.5rem">
             <button id="previewContentBtn" class="admin-cancel-btn" style="padding:0.625rem 1.25rem" type="button">Preview</button>
-            <button id="saveContentBtn" class="admin-publish-btn">Save Content</button>
+            <button id="saveContentBtn" class="admin-publish-btn">Save Content <span class="kbd-hint">{'\u2318'}S</span></button>
           </div>
         </div>
 
@@ -213,6 +296,106 @@ const liveUrl = `/articles/${slug}`;
   <script define:vars={{ slug, apiBase, articleData: article }}>
     const getToken = () => (document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/)?.[1] || '');
     let currentHtml = articleData.article_html || '';
+
+    // ─── Helper: create a chat message DOM element safely (no innerHTML XSS) ───
+    function createChatMsg(text, role) {
+      const div = document.createElement('div');
+      div.className = 'admin-chat-msg admin-chat-msg-' + role;
+      div.textContent = text;
+      return div;
+    }
+
+    function createSpinnerMsg(id) {
+      const div = document.createElement('div');
+      div.className = 'admin-chat-msg admin-chat-msg-assistant';
+      div.id = id;
+      const spinner = document.createElement('div');
+      spinner.className = 'admin-spinner';
+      div.appendChild(spinner);
+      return div;
+    }
+
+    // ─── Autosave indicator ───
+    const autosaveEl = document.getElementById('autosaveIndicator');
+    function showAutosave(state, msg) {
+      if (!autosaveEl) return;
+      autosaveEl.className = 'autosave-indicator ' + state;
+      autosaveEl.textContent = msg;
+      if (state === 'saved') {
+        setTimeout(() => { autosaveEl.textContent = ''; autosaveEl.className = 'autosave-indicator'; }, 3000);
+      }
+    }
+
+    // ─── Autosave debounce logic ───
+    let autosaveTimer = null;
+    function scheduleAutosave(saveFn) {
+      if (autosaveTimer) clearTimeout(autosaveTimer);
+      showAutosave('saving', 'Unsaved changes...');
+      autosaveTimer = setTimeout(async () => {
+        showAutosave('saving', 'Autosaving...');
+        try {
+          await saveFn();
+          showAutosave('saved', 'Saved');
+        } catch (err) {
+          showAutosave('error', 'Autosave failed');
+        }
+      }, 2000);
+    }
+
+    // ─── Autosave: save metadata fields to DB ───
+    async function doSaveMetadata() {
+      const f = document.getElementById('editForm');
+      if (!f) return;
+      const res = await fetch(`${apiBase}/articles-api`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save',
+          article: {
+            slug,
+            title: f.title.value.trim(),
+            description: f.description.value.trim(),
+            category: f.category.value,
+            read_time: parseInt(f.readTime.value) || articleData.read_time,
+            publish_date: f.publishDate.value || articleData.publish_date,
+            sort_order: f.sortOrder.value ? parseInt(f.sortOrder.value) : null,
+            tags: f.tags.value.split(',').map(t => t.trim()).filter(Boolean),
+            keywords: f.keywords.value.split(',').map(t => t.trim()).filter(Boolean),
+            hero_image: f.heroImage.value.trim() || null,
+            featured: f.featured.checked,
+            draft: f.draft.checked,
+          }
+        }),
+      });
+      if (!res.ok) throw new Error('Autosave failed');
+    }
+
+    // ─── Autosave: save content to DB ───
+    async function doSaveContent() {
+      const html = document.getElementById('contentHtml')?.value;
+      if (html == null) return;
+      const res = await fetch(`${apiBase}/articles-api`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save',
+          article: { slug, article_html: html }
+        }),
+      });
+      if (!res.ok) throw new Error('Autosave failed');
+      currentHtml = html;
+    }
+
+    // ─── Attach autosave listeners to metadata form fields ───
+    document.querySelectorAll('#editForm input, #editForm textarea, #editForm select').forEach(el => {
+      el.addEventListener('input', () => scheduleAutosave(doSaveMetadata));
+      el.addEventListener('change', () => scheduleAutosave(doSaveMetadata));
+    });
+
+    // ─── Attach autosave listener to content textarea ───
+    document.getElementById('contentHtml')?.addEventListener('input', () => {
+      scheduleAutosave(doSaveContent);
+    });
 
     // Logout
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
@@ -309,6 +492,36 @@ const liveUrl = `/articles/${slug}`;
       }
     });
 
+    // ─── Delete from GitHub ───
+    document.getElementById('deleteGitHubBtn')?.addEventListener('click', async () => {
+      if (!confirm('Delete this article from GitHub? This will remove it from the live site after the next Vercel rebuild.')) return;
+      const btn = document.getElementById('deleteGitHubBtn');
+      const status = document.getElementById('deleteStatus');
+      const error = document.getElementById('deleteError');
+      btn.textContent = 'Deleting...'; btn.disabled = true;
+      error.style.display = 'none'; status.style.display = 'none';
+
+      try {
+        const res = await fetch(`${apiBase}/delete-article`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({ slug }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Delete failed');
+        }
+        status.textContent = 'Deleted from GitHub. Vercel will rebuild shortly.';
+        status.style.display = 'block';
+        btn.textContent = 'Deleted';
+      } catch (err) {
+        error.textContent = 'Delete failed: ' + err.message;
+        error.style.display = 'block';
+        btn.textContent = 'Delete from GitHub';
+        btn.disabled = false;
+      }
+    });
+
     // ─── Tab switching ───
     document.querySelectorAll('.admin-tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -317,6 +530,31 @@ const liveUrl = `/articles/${slug}`;
         tab.classList.add('active');
         document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
       });
+    });
+
+    // ─── Get active tab ───
+    function getActiveTab() {
+      const active = document.querySelector('.admin-tab.active');
+      return active ? active.dataset.tab : 'metadata';
+    }
+
+    // ─── Keyboard shortcut: Cmd+S / Ctrl+S ───
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        // Cancel any pending autosave
+        if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+
+        const tab = getActiveTab();
+        if (tab === 'metadata') {
+          document.getElementById('saveMetaBtn')?.click();
+        } else if (tab === 'content') {
+          document.getElementById('saveContentBtn')?.click();
+        } else if (tab === 'refine') {
+          const saveRefine = document.getElementById('saveRefineBtn');
+          if (saveRefine && !saveRefine.disabled) saveRefine.click();
+        }
+      }
     });
 
     // Word count
@@ -343,6 +581,9 @@ const liveUrl = `/articles/${slug}`;
     // ─── Save metadata ───
     document.getElementById('editForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      // Cancel any pending autosave
+      if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+
       const btn = document.getElementById('saveMetaBtn');
       const status = document.getElementById('metaStatus');
       const error = document.getElementById('metaError');
@@ -350,38 +591,21 @@ const liveUrl = `/articles/${slug}`;
       error.style.display = 'none'; status.style.display = 'none';
 
       try {
-        const f = e.target;
-        const res = await fetch(`${apiBase}/articles-api`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'save',
-            article: {
-              slug,
-              title: f.title.value.trim(),
-              description: f.description.value.trim(),
-              category: f.category.value,
-              read_time: parseInt(f.readTime.value) || articleData.read_time,
-              publish_date: f.publishDate.value || articleData.publish_date,
-              sort_order: f.sortOrder.value ? parseInt(f.sortOrder.value) : null,
-              tags: f.tags.value.split(',').map(t => t.trim()).filter(Boolean),
-              keywords: f.keywords.value.split(',').map(t => t.trim()).filter(Boolean),
-              hero_image: f.heroImage.value.trim() || null,
-              featured: f.featured.checked,
-              draft: f.draft.checked,
-            }
-          }),
-        });
-        if (!res.ok) throw new Error('Save failed');
+        await doSaveMetadata();
         status.textContent = 'Metadata saved to database.'; status.style.display = 'block';
+        showAutosave('saved', 'Saved');
         btn.textContent = 'Saved'; setTimeout(() => { btn.textContent = 'Save Metadata'; }, 3000);
       } catch (err) {
         error.textContent = err.message; error.style.display = 'block';
+        showAutosave('error', 'Save failed');
       } finally { btn.disabled = false; }
     });
 
     // ─── Save content ───
     document.getElementById('saveContentBtn')?.addEventListener('click', async () => {
+      // Cancel any pending autosave
+      if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+
       const btn = document.getElementById('saveContentBtn');
       const status = document.getElementById('contentStatus');
       const error = document.getElementById('contentError');
@@ -389,21 +613,15 @@ const liveUrl = `/articles/${slug}`;
       error.style.display = 'none'; status.style.display = 'none';
 
       try {
-        const html = document.getElementById('contentHtml').value;
-        const res = await fetch(`${apiBase}/articles-api`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'save',
-            article: { slug, article_html: html }
-          }),
-        });
-        if (!res.ok) throw new Error('Save failed');
-        currentHtml = html;
+        await doSaveContent();
         status.textContent = 'Content saved to database.'; status.style.display = 'block';
+        showAutosave('saved', 'Saved');
         btn.textContent = 'Saved'; setTimeout(() => { btn.textContent = 'Save Content'; }, 3000);
+        // Auto-refresh preview after saving content
+        updatePreview(currentHtml);
       } catch (err) {
         error.textContent = err.message; error.style.display = 'block';
+        showAutosave('error', 'Save failed');
       } finally { btn.disabled = false; }
     });
 
@@ -417,8 +635,9 @@ const liveUrl = `/articles/${slug}`;
       const saveBtn = document.getElementById('saveRefineBtn');
       const input = document.getElementById('refineInput');
 
-      messagesEl.innerHTML += '<div class="admin-chat-msg admin-chat-msg-user">' + instruction + '</div>';
-      messagesEl.innerHTML += '<div class="admin-chat-msg admin-chat-msg-assistant" id="refineSpinner"><div class="admin-spinner"></div></div>';
+      // Add user message safely via DOM
+      messagesEl.appendChild(createChatMsg(instruction, 'user'));
+      messagesEl.appendChild(createSpinnerMsg('refineSpinner'));
       messagesEl.scrollTop = messagesEl.scrollHeight;
       refineMessages.push({ role: 'user', content: instruction });
       if (input) input.value = '';
@@ -449,12 +668,12 @@ const liveUrl = `/articles/${slug}`;
         }
 
         const msg = data.message || 'Article updated. Click "Save Refined Article" to keep changes.';
-        messagesEl.innerHTML += '<div class="admin-chat-msg admin-chat-msg-assistant">' + msg + '</div>';
+        messagesEl.appendChild(createChatMsg(msg, 'assistant'));
         refineMessages.push({ role: 'assistant', content: msg });
         messagesEl.scrollTop = messagesEl.scrollHeight;
       } catch (err) {
         document.getElementById('refineSpinner')?.remove();
-        messagesEl.innerHTML += '<div class="admin-chat-msg admin-chat-msg-system">Error: ' + err.message + '</div>';
+        messagesEl.appendChild(createChatMsg('Error: ' + err.message, 'system'));
       } finally {
         sendBtn.disabled = false;
       }
@@ -487,7 +706,10 @@ const liveUrl = `/articles/${slug}`;
         });
         if (!res.ok) throw new Error('Save failed');
         status.textContent = 'Refined article saved to database.'; status.style.display = 'block';
+        showAutosave('saved', 'Saved');
         btn.textContent = 'Saved'; setTimeout(() => { btn.textContent = 'Save Refined Article'; btn.disabled = true; }, 3000);
+        // Auto-refresh preview after saving refined content
+        updatePreview(currentHtml);
       } catch (err) {
         alert('Save failed: ' + err.message);
         btn.disabled = false;

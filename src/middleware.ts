@@ -8,8 +8,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const cookie = context.cookies.get('admin_token');
     const adminToken = (process.env.ADMIN_TOKEN || import.meta.env.ADMIN_TOKEN || process.env.PUBLIC_ADMIN_TOKEN || import.meta.env.PUBLIC_ADMIN_TOKEN || '').trim();
 
-    if (!cookie || cookie.value !== adminToken) {
+    if (!cookie) {
       return context.redirect('/admin/login');
+    }
+    if (cookie.value !== adminToken) {
+      // They tried a token and it was wrong — redirect with error flag
+      return context.redirect('/admin/login?error=1');
     }
   }
 

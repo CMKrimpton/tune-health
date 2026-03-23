@@ -7,6 +7,14 @@ const adminToken = (process.env.ADMIN_TOKEN || import.meta.env.ADMIN_TOKEN || pr
 if (cookie && cookie.value === adminToken) {
   return Astro.redirect('/admin');
 }
+
+// Check if redirected here after a failed auth attempt
+const hasError = Astro.url.searchParams.get('error') === '1';
+
+// If they arrived with an error, clear the bad cookie so they can try again
+if (hasError && cookie) {
+  Astro.cookies.delete('admin_token', { path: '/' });
+}
 ---
 
 <html lang="en">
@@ -75,19 +83,51 @@ if (cookie && cookie.value === adminToken) {
       <input type="password" id="token" name="token" placeholder="Enter your admin token" required autofocus />
       <button type="submit">Sign In</button>
     </form>
-    <div id="error" class="error"></div>
+    <div id="error" class="error" style={hasError ? 'display: block' : 'display: none'}>
+      {hasError ? 'Invalid admin token. Please try again.' : ''}
+    </div>
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    // Clear error param from URL without reload (so refresh doesn't re-show error)
+    if (window.location.search.includes('error=1')) {
+      history.replaceState(null, '', '/admin/login');
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const token = document.getElementById('token').value.trim();
       if (!token) return;
 
-      // Set cookie client-side, then navigate to /admin
-      // Middleware will verify the cookie value server-side
+      const errorEl = document.getElementById('error');
+      const btn = e.target.querySelector('button');
+      errorEl.style.display = 'none';
+      btn.textContent = 'Verifying...';
+      btn.disabled = true;
+
+      // Set cookie client-side, then verify against /admin
       document.cookie = `admin_token=${encodeURIComponent(token)}; path=/; max-age=${60*60*24*7}; samesite=lax${location.protocol === 'https:' ? '; secure' : ''}`;
-      window.location.href = '/admin';
+
+      try {
+        const res = await fetch('/admin', { redirect: 'manual' });
+        // If middleware rejects: opaque redirect (type 'opaqueredirect') or non-200
+        if (res.type === 'opaqueredirect' || res.status === 302 || res.status === 301) {
+          // Token was wrong — clear the bad cookie
+          document.cookie = 'admin_token=; path=/; max-age=0';
+          errorEl.textContent = 'Invalid admin token. Please try again.';
+          errorEl.style.display = 'block';
+          btn.textContent = 'Sign In';
+          btn.disabled = false;
+          document.getElementById('token').value = '';
+          document.getElementById('token').focus();
+          return;
+        }
+        // Success — navigate
+        window.location.href = '/admin';
+      } catch {
+        // Network error or other failure — just navigate and let server handle it
+        window.location.href = '/admin';
+      }
     });
   </script>
 </body>

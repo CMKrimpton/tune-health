@@ -31,6 +31,9 @@ export interface ArticleRecord {
   toc: TocEntry[];
   source_text: string | null;
   status: ArticleStatus;
+  independence_score: number | null;
+  editor_score: number | null;
+  pipeline_log_id: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;
@@ -99,6 +102,14 @@ export interface PipelineLog {
   search_queries: unknown[];
   research_snippets: unknown[];
   research_data: PipelineResearchData | null;
+  cost_usd: number | string | null;
+  model_used: string | null;
+  editor_score: number | null;
+  grok_score: number | null;
+  revision_count: number | null;
+  source: string | null;
+  stage_started_at: string | null;
+  token_usage: unknown[] | null;
   created_at: string;
   completed_at: string | null;
 }
@@ -277,4 +288,28 @@ export function isActiveStatus(status: string): boolean {
  */
 export function isProcessingStatus(status: string): boolean {
   return ACTIVE_PROCESSING_STATUSES.has(status as PipelineStatus);
+}
+
+// ─── Valid Categories ────────────────────────────────────────────────────────
+// Whitelist of allowed article categories matching the database constraint.
+
+export const VALID_CATEGORIES = [
+  'Neuroscience', 'Mental Health', 'Longevity', 'Clinical Evidence',
+  'Environmental Health', 'Nutrition', 'Fitness', 'Sleep Science', 'Pharmacology',
+] as const;
+
+// ─── Model Pen Names ─────────────────────────────────────────────────────────
+// Human bylines for each AI model, used in article attribution and admin UI.
+
+export const MODEL_PEN_NAMES: Record<string, { name: string; role: string }> = {
+  "claude-sonnet-4-6":        { name: "Max Quilici",      role: "Senior Health Correspondent" },
+  "claude-sonnet-4-20250514": { name: "Max Quilici",      role: "Senior Health Correspondent" },
+  "claude-opus-4-20250514":   { name: "Carl Lundin",      role: "Editor-at-Large" },
+  "grok-3":                   { name: "Linda Carnes",     role: "Investigative Health Reporter" },
+  "gemini-2.5-flash":         { name: "Christine Wright",  role: "Science & Evidence Desk" },
+};
+
+export function getPenName(model: string | null | undefined): string {
+  if (!model) return "alumi Editorial";
+  return MODEL_PEN_NAMES[model]?.name || "alumi Editorial";
 }

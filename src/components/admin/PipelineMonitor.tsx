@@ -71,7 +71,19 @@ interface PipelineLog {
   created_at: string;
   completed_at: string | null;
   cost_usd: number | string | null;
+  model_used: string | null;
+  editor_score: number | null;
+  grok_score: number | null;
+  source: string | null;
 }
+
+const PEN_NAMES: Record<string, string> = {
+  "claude-sonnet-4-6": "Max Quilici",
+  "claude-sonnet-4-20250514": "Max Quilici",
+  "claude-opus-4-20250514": "Carl Lundin",
+  "grok-3": "Linda Carnes",
+  "gemini-2.5-flash": "Christine Wright",
+};
 
 interface QueueItem {
   id: string;
@@ -100,6 +112,7 @@ interface Props {
   initialLogs: PipelineLog[];
   initialArticleCount: number;
   apiBase: string;
+  initialTotalCost?: number;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────
@@ -201,7 +214,7 @@ function formatCost(value: number | string | null | undefined): string {
 
 // ─── Component ──────────────────────────────────────────────────────
 
-export default function PipelineMonitor({ initialLogs, initialArticleCount, apiBase }: Props) {
+export default function PipelineMonitor({ initialLogs, initialArticleCount, apiBase, initialTotalCost }: Props) {
   const [logs, setLogs] = useState<PipelineLog[]>(initialLogs);
   const [articleCount, setArticleCount] = useState(initialArticleCount);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -214,7 +227,9 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [newExpedite, setNewExpedite] = useState(false);
   const [queueing, setQueueing] = useState(false);
   const [killingId, setKillingId] = useState<string | null>(null);
-  const [totalCost, setTotalCost] = useState<number>(0);
+  const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
+  const [scouting, setScouting] = useState<string | null>(null);
+  const [scoutResult, setScoutResult] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchStatus = useCallback(async () => {
@@ -257,6 +272,35 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       setTimeout(fetchStatus, 2000);
     } catch { /* next poll */ }
     finally { setTriggering(false); }
+  };
+
+  const triggerScout = async () => {
+    const models = ['gemini', 'sonnet', 'grok'];
+    for (const model of models) {
+      setScouting(model);
+      try {
+        const res = await fetch(`${apiBase}/daily-article-agent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+          body: JSON.stringify({ action: 'scout', scoutModel: model }),
+        });
+        const data = await res.json();
+        setScoutResult(prev => (prev ? prev + '\n' : '') + `${model}: ${data.message || data.error || 'done'}`);
+      } catch { /* continue to next */ }
+    }
+    setScouting(null);
+    setTimeout(fetchStatus, 2000);
+  };
+
+  const requeueFromFailed = async (logId: string, topic: string) => {
+    try {
+      await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ action: 'queue-topic', topic, priority: 1, expedite: true }),
+      });
+      setTimeout(fetchStatus, 1000);
+    } catch { /* ignore */ }
   };
 
   const retryArticle = async (logId: string) => {
@@ -389,16 +433,31 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         )}
 
         <div className="pipeline-quick-actions">
-          <span className="pipeline-auto-label">Self-chaining + 5m cron</span>
+          <span className="pipeline-auto-label">Hourly produce + 3 daily scouts</span>
+          <button
+            className="pipeline-trigger-btn"
+            onClick={triggerScout}
+            disabled={scouting !== null}
+          >
+            {scouting ? `Scouting (${scouting})\u2026` : 'Scout Now'}
+          </button>
           <button
             className="pipeline-trigger-btn primary"
             onClick={triggerRun}
             disabled={triggering || overallStatus === 'running'}
           >
-            {triggering ? 'Triggering\u2026' : 'Trigger Run'}
+            {triggering ? 'Producing\u2026' : 'Produce Now'}
           </button>
         </div>
       </div>
+
+      {/* ── Scout Result ── */}
+      {scoutResult && (
+        <div style={{ padding: '0.5rem 0.75rem', background: '#052e16', border: '1px solid #166534', borderRadius: '0.5rem', marginBottom: '0.75rem', fontSize: '0.75rem', color: '#86efac', whiteSpace: 'pre-line' }}>
+          {scoutResult}
+          <button onClick={() => setScoutResult(null)} style={{ marginLeft: '0.75rem', background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontSize: '0.75rem' }}>{'\u00d7 dismiss'}</button>
+        </div>
+      )}
 
       {/* ── 5-Stage Pipeline ── */}
       <div className="pipeline-container">
@@ -485,27 +544,34 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           </button>
         </div>
 
-        {queue.filter(q => q.status === 'queued').length > 0 && (
+        {queue.length > 0 && (
           <div className="pipeline-completed-list">
-            {queue.filter(q => q.status === 'queued').map(item => (
-              <div key={item.id} className="pipeline-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeftColor: item.expedite ? '#dc2626' : '#44403c', borderLeftWidth: '3px' }}>
-                <div style={{ flex: 1 }}>
-                  <div className="pipeline-card-title" style={{ fontSize: '0.8125rem' }}>{item.topic}</div>
-                  <div style={{ fontSize: '0.6875rem', color: '#78716c', display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
-                    {item.category && <span>{item.category}</span>}
-                    {item.expedite && <span style={{ color: '#dc2626', fontWeight: 600 }}>EXPEDITE</span>}
-                    <span>Priority: {item.priority}</span>
+            {queue.map(item => {
+              const isActive = item.status === 'in_progress' || item.status === 'assigned';
+              return (
+                <div key={item.id} className="pipeline-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeftColor: item.expedite ? '#dc2626' : isActive ? '#16a34a' : '#44403c', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85 }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="pipeline-card-title" style={{ fontSize: '0.8125rem' }}>{item.topic}</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#78716c', display: 'flex', gap: '0.5rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                      {item.category && <span>{item.category}</span>}
+                      {item.expedite && <span style={{ color: '#dc2626', fontWeight: 600 }}>EXPEDITE</span>}
+                      {isActive && <span style={{ color: '#16a34a', fontWeight: 600 }}>{item.status.toUpperCase()}</span>}
+                      <span style={{ color: '#57534e' }}>P{item.priority}</span>
+                      <span style={{ color: '#57534e' }}>{item.source}</span>
+                    </div>
                   </div>
+                  {item.status === 'queued' && (
+                    <button
+                      onClick={() => deleteQueueItem(item.id)}
+                      style={{ background: 'none', border: 'none', color: '#78716c', cursor: 'pointer', fontSize: '1rem', padding: '0.25rem' }}
+                      aria-label="Remove from queue"
+                    >
+                      {'\u00d7'}
+                    </button>
+                  )}
                 </div>
-                <button
-                  onClick={() => deleteQueueItem(item.id)}
-                  style={{ background: 'none', border: 'none', color: '#78716c', cursor: 'pointer', fontSize: '1rem', padding: '0.25rem' }}
-                  aria-label="Remove from queue"
-                >
-                  {'\u00d7'}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -517,16 +583,19 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             Recently Published {'\u2014'} {completedLogs.length}
           </h3>
           <div className="pipeline-completed-list">
-            {completedLogs.slice(0, 5).map(log => {
+            {completedLogs.slice(0, 10).map(log => {
               const indScore = getIndependenceScore(log);
+              const penName = log.model_used ? PEN_NAMES[log.model_used] : null;
               return (
                 <div key={log.id} className="pipeline-card completed" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="pipeline-card-title" style={{ marginBottom: '0.25rem' }}>
                       {log.title || log.topic || 'Untitled'}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6875rem', color: '#78716c' }}>
-                      {log.slug && <code style={{ color: '#57534e' }}>/{log.slug}</code>}
+                    <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6875rem', color: '#78716c', flexWrap: 'wrap' }}>
+                      {penName && (
+                        <span style={{ color: '#a78bfa', fontWeight: 500 }}>{penName}</span>
+                      )}
                       {indScore !== null && (
                         <span style={{ color: indScore >= 7 ? '#16a34a' : indScore >= 4 ? '#f59e0b' : '#dc2626' }}>
                           Independence: {indScore}/10
@@ -540,17 +609,14 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       <span>{timeAgo(log.completed_at || log.created_at)}</span>
                     </div>
                   </div>
-                  {log.slug && (
-                    <a
-                      href={`/articles/${log.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="pipeline-retry-btn"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      {'\u2192'} View
-                    </a>
-                  )}
+                  <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }}>
+                    {log.slug && (
+                      <a href={`/admin/edit/${log.slug}`} className="pipeline-retry-btn" style={{ textDecoration: 'none' }}>Edit</a>
+                    )}
+                    {log.slug && (
+                      <a href={`/articles/${log.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn" style={{ textDecoration: 'none' }}>{'\u2192'} View</a>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -600,17 +666,28 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                 <div className="pipeline-card-error">
                   {log.error || 'Unknown error'}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', gap: '0.5rem' }}>
                   <span className="pipeline-card-time">
                     {timeAgo(log.completed_at || log.created_at)}
                   </span>
-                  <button
-                    className="pipeline-retry-btn"
-                    onClick={() => retryArticle(log.id)}
-                    disabled={retryingId === log.id}
-                  >
-                    {retryingId === log.id ? 'Retrying\u2026' : 'Retry'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.375rem' }}>
+                    {log.topic && (
+                      <button
+                        className="pipeline-retry-btn"
+                        onClick={() => requeueFromFailed(log.id, log.topic!)}
+                        style={{ color: '#fbbf24', borderColor: '#92400e' }}
+                      >
+                        Re-queue
+                      </button>
+                    )}
+                    <button
+                      className="pipeline-retry-btn"
+                      onClick={() => retryArticle(log.id)}
+                      disabled={retryingId === log.id}
+                    >
+                      {retryingId === log.id ? 'Retrying\u2026' : 'Retry'}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

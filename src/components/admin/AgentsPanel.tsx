@@ -143,11 +143,50 @@ function Section({ title, icon, defaultOpen = false, badge, children }: {
 export default function AgentsPanel({ apiBase, initialArticleCount }: Props) {
   return (
     <div className="agents-panel">
+      <CronSchedule />
       <DecisionLog apiBase={apiBase} />
       <EditorialQC apiBase={apiBase} articleCount={initialArticleCount} />
       <IllustrationAgent apiBase={apiBase} />
       <DatabaseSync apiBase={apiBase} initialCount={initialArticleCount} />
     </div>
+  );
+}
+
+// ─── 0. Cron Schedule Display ───────────────────────────────────────
+
+function CronSchedule() {
+  const cronJobs = [
+    { name: 'Scout (Gemini)', schedule: 'Daily 6:00 AM UTC', model: 'gemini-2.5-flash', color: '#fbbf24' },
+    { name: 'Scout (Sonnet)', schedule: 'Daily 2:00 PM UTC', model: 'claude-sonnet-4-6', color: '#f97316' },
+    { name: 'Scout (Grok)', schedule: 'Daily 10:00 PM UTC', model: 'grok-3', color: '#3b82f6' },
+    { name: 'Article Produce', schedule: 'Every hour (0 * * * *)', model: 'Multi-model', color: '#16a34a' },
+    { name: 'Featured Rotation', schedule: 'Every 6 hours (0 */6 * * *)', model: 'DB-only', color: '#a78bfa' },
+  ];
+
+  return (
+    <Section
+      title="Cron Schedule"
+      defaultOpen={false}
+      icon={
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #1e1b4b, #4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+      }
+      badge={<span style={{ fontSize: '0.6875rem', color: '#4ade80', fontWeight: 500 }}>5 active</span>}
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+        {cronJobs.map(job => (
+          <div key={job.name} style={{ padding: '0.5rem 0.75rem', background: '#1c1917', borderRadius: '0.375rem', borderLeft: `3px solid ${job.color}` }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#e7e6e3', marginBottom: '0.125rem' }}>{job.name}</div>
+            <div style={{ fontSize: '0.6875rem', color: '#78716c' }}>{job.schedule}</div>
+            <div style={{ fontSize: '0.625rem', color: job.color, marginTop: '0.125rem' }}>{job.model}</div>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: '0.6875rem', color: '#57534e', marginTop: '0.75rem' }}>
+        Managed via pg_cron in Supabase. Use Scout Now / Produce Now in Pipeline tab for manual triggers.
+      </p>
+    </Section>
   );
 }
 
