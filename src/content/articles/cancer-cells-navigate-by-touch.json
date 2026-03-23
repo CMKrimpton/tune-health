@@ -1,0 +1,36 @@
+{
+  "title": "Cancer Cells Navigate by Touch. Block That, Stop the Spread.",
+  "description": "New research reveals cancer cells probe their environment like blind fingers feeling 10x farther than expected. This mechanical 'GPS system' guides metastasis—and may be cancer's most exploitable weakness yet.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 14,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Cancer",
+    "Metastasis",
+    "Mechanobiology",
+    "Cell Biology",
+    "Oncology"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "cancer metastasis",
+    "depth mechanosensing",
+    "collagen ECM",
+    "cancer navigation",
+    "myosin II",
+    "mechanobiology",
+    "tumor invasion",
+    "collective cell migration"
+  ],
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/cancer-cells-navigate-by-touch.png",
+  "heroImageAlt": "Editorial illustration for Cancer Cells Navigate by Touch. Block That, Stop the Spread."
+}
