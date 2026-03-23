@@ -912,6 +912,29 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
     chosenResearch = { ...researchData, ...chosen, _allCandidates: candidates };
   }
 
+  // Save unchosen candidates to topic queue for future articles
+  if (candidates && candidates.length > 1 && editorBrief.chosenCandidate != null) {
+    const chosenIdx = (editorBrief.chosenCandidate as number) - 1;
+    const candidateScores = (editorBrief.candidateScores as Array<{ rank: number; score: number; verdict: string }>) || [];
+    const unchosenTopics = candidates
+      .filter((_: unknown, i: number) => i !== chosenIdx)
+      .filter((c: Record<string, unknown>) => {
+        const cs = candidateScores.find(s => s.rank === c.rank);
+        return !cs || cs.score >= 5; // Only save decent candidates (score 5+)
+      })
+      .map((c: Record<string, unknown>) => ({
+        topic: c.topic as string,
+        category: (c.category as string) || null,
+        notes: `Auto-saved from research cycle. Editor scored: ${candidateScores.find(s => s.rank === c.rank)?.score || "?"}/10. ${candidateScores.find(s => s.rank === c.rank)?.verdict || ""}`,
+        priority: 50,
+        source: "trending",
+      }));
+
+    if (unchosenTopics.length > 0) {
+      await db.from("topic_queue").insert(unchosenTopics).select();
+    }
+  }
+
   // Editor approved — store the brief alongside research data
   await db
     .from("daily_article_log")
@@ -1207,19 +1230,30 @@ Make your final call. Publish, request revisions, or kill.`;
     return { qcResult };
   }
 
-  // If editor requests revisions, send back to write stage
+  // If editor requests revisions, send back to write stage (max 1 revision to avoid loops)
   if (qcResult.decision === "revise") {
-    await db
-      .from("daily_article_log")
-      .update({
-        status: "editor_approved", // Back to write queue (next invocation will re-write)
-        research_data: {
-          ...((await db.from("daily_article_log").select("research_data").eq("id", logId).single()).data?.research_data || {}),
-          _reviseInstructions: qcResult.reviseInstructions,
-        },
-      })
-      .eq("id", logId);
-    return { qcResult };
+    const currentData = (await db.from("daily_article_log").select("research_data").eq("id", logId).single()).data?.research_data as Record<string, unknown> || {};
+    const revisionCount = ((currentData._revisionCount as number) || 0) + 1;
+
+    if (revisionCount > 1) {
+      // Max revisions reached — force publish with editor's improvements applied
+      console.log(`[QC] Max revisions (${revisionCount}) reached for ${slug} — force publishing`);
+      // Fall through to the publish logic below
+    } else {
+      await db
+        .from("daily_article_log")
+        .update({
+          status: "editor_approved", // Back to write queue
+          research_data: {
+            ...currentData,
+            _reviseInstructions: qcResult.reviseInstructions,
+            _revisionCount: revisionCount,
+          },
+        })
+        .eq("id", logId);
+      chainNextStage(logId);
+      return { qcResult };
+    }
   }
 
   // Editor approved — apply any headline/description improvements
@@ -1422,6 +1456,23 @@ Deno.serve(async (req: Request) => {
       if (!queueId) return json({ error: "queueId is required" }, 400);
       await db.from("topic_queue").delete().eq("id", queueId);
       return json({ success: true, queueId });
+    }
+
+    // ------ KILL — admin force-kills a pipeline entry ------
+    if (action === "kill-article") {
+      const { logId } = body;
+      if (!logId) return json({ error: "logId is required" }, 400);
+      await db.from("daily_article_log").update({
+        status: "failed",
+        error: "Admin killed: " + (body.reason || "Manually stopped by admin"),
+        completed_at: new Date().toISOString(),
+      }).eq("id", logId);
+      // Also archive the article if it exists
+      const { data: logEntry } = await db.from("daily_article_log").select("slug").eq("id", logId).maybeSingle();
+      if (logEntry?.slug) {
+        await db.from("articles").update({ status: "archived", draft: true }).eq("slug", logEntry.slug);
+      }
+      return json({ success: true, message: "Article killed" });
     }
 
     // ------ CHAIN — self-invocation to process next stage immediately ------
