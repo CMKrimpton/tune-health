@@ -203,6 +203,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [newCategory, setNewCategory] = useState('');
   const [newExpedite, setNewExpedite] = useState(false);
   const [queueing, setQueueing] = useState(false);
+  const [killingId, setKillingId] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchStatus = useCallback(async () => {
@@ -290,6 +291,20 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       });
       setTimeout(fetchStatus, 500);
     } catch { /* ignore */ }
+  };
+
+  const killArticle = async (logId: string) => {
+    if (!confirm('Kill this article? It will be marked as failed and removed from the pipeline.')) return;
+    setKillingId(logId);
+    try {
+      await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ action: 'kill-article', logId, reason: 'Killed by admin from Mission Control' }),
+      });
+      setTimeout(fetchStatus, 1000);
+    } catch { /* ignore */ }
+    finally { setKillingId(null); }
   };
 
   // ─── Derived ────────────────────────────────────────────────────
@@ -390,6 +405,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       log={log}
                       expanded={expandedId === log.id}
                       onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)}
+                      onKill={() => killArticle(log.id)}
+                      killing={killingId === log.id}
                     />
                   ))
                 )}
@@ -580,7 +597,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
 // ─── Pipeline Card ──────────────────────────────────────────────────
 
-function PipelineCard({ log, expanded, onToggle }: { log: PipelineLog; expanded: boolean; onToggle: () => void }) {
+function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: PipelineLog; expanded: boolean; onToggle: () => void; onKill: () => void; killing: boolean }) {
   const isActive = ACTIVE_STATUSES.has(log.status);
   const displayTitle = log.title || log.topic || 'Pending topic\u2026';
   const statusText = STATUS_TEXT[log.status] || log.status;
@@ -698,6 +715,20 @@ function PipelineCard({ log, expanded, onToggle }: { log: PipelineLog; expanded:
               <span style={{ color: '#f59e0b', fontSize: '0.6875rem' }}>From topic queue</span>
             </div>
           )}
+
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid #3a3633' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); onKill(); }}
+              disabled={killing}
+              style={{
+                fontSize: '0.6875rem', padding: '0.25rem 0.625rem',
+                background: 'transparent', color: '#f87171', border: '1px solid #7f1d1d',
+                borderRadius: '0.25rem', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}
+            >
+              {killing ? 'Killing\u2026' : 'Kill Article'}
+            </button>
+          </div>
         </div>
       )}
     </div>
