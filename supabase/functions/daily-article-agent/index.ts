@@ -828,28 +828,24 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
 
     // Step 1: Gemini searches the web for trending health topics
     const geminiFindings = await gemini({
-      system: "You are a world-class health science researcher. Your job is to build a comprehensive editorial calendar. Search broadly and deeply. Every topic must be backed by real studies, real data. No celebrity health, no supplement hype, no clickbait. Focus on findings that challenge conventional wisdom, reveal hidden mechanisms, or have major public health implications.",
-      user: `Build a list of the 100 most important health stories a premium editorial publication should cover. Search the web thoroughly.
+      system: "You are a health science researcher. Find the most compelling, evidence-based health stories. Every topic must be backed by real studies. No celebrity health, no supplement hype.",
+      user: `Find 10 compelling health stories we should cover. Mix of recent (last 30 days) and landmark (last 5 years).
 
-SECTION A — 50 most important, discussed, and searched health news from the last 30 DAYS
-SECTION B — 50 most important landmark discoveries and paradigm shifts from the last 5 YEARS
+FOCUS on these underserved categories: ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 5).map(([cat, count]) => `${cat} (only ${count} articles)`).join(", ") || "Nutrition, Fitness, Sleep Science"}
 
-Requirements:
-- Every topic must be a COMPLETELY DIFFERENT subject (different drug, different condition, different mechanism)
-- Cover ALL of these categories: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology
-- Prioritize categories we have FEWER articles in: ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 5).map(([cat, count]) => `${cat} (only ${count})`).join(", ") || "all balanced"}
-- DO NOT include anything related to these subjects — we already covered them:
-${titles.map((t) => `  - ${t}`).join("\n")}
+Every topic must be COMPLETELY DIFFERENT from these (we already covered them):
+${titles.slice(0, 30).map((t) => `- ${t}`).join("\n")}
+${titles.length > 30 ? `...and ${titles.length - 30} more (avoid ALL similar subjects)` : ""}
 
-For each topic give: a one-line headline, the key finding, the source, and a one-sentence "why it matters." Plain text, numbered list.`,
-      maxTokens: 8000,
+For each: headline, key finding, source, why it matters. Plain text, numbered 1-10.`,
+      maxTokens: 4000,
       temperature: 0.4,
     });
 
     // Step 2: Sonnet structures Gemini's raw findings into candidate JSON
     const researchRaw = await claude({
       system: `You structure raw research findings into JSON. Return ONLY valid JSON, no explanation.`,
-      user: `Pick the 10 best topics from these 100 research findings. Prioritize: diversity across categories, scientific substance, counter-narrative potential. Drop any that overlap with OFF-LIMITS. Return ONLY this JSON:
+      user: `From these research findings, pick the 5 BEST topics that are NOT in the off-limits list. Prioritize: diversity across categories, scientific substance, counter-narrative potential. Return ONLY this JSON (5 candidates max):
 
 {"candidates":[{"rank":1,"topic":"...","headline_draft":"...","why":"...","category":"Neuroscience|Mental Health|Longevity|Clinical Evidence|Environmental Health|Nutrition|Fitness|Sleep Science|Pharmacology","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."]}]}
 
