@@ -121,11 +121,11 @@ const ARTICLE_GOAL = 100;
 const POLL_INTERVAL = 15_000;
 
 const STAGES: StageConfig[] = [
-  { key: 'research', icon: '🔍', label: 'Research', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['started', 'searching', 'research_done'] },
-  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
-  { key: 'write', icon: '✍️', label: 'Write', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['writing', 'written'] },
+  { key: 'research', icon: '🔍', label: 'Research', model: 'Gemini + Sonnet', modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
+  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Sonnet → Grok → Gemini', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
+  { key: 'write', icon: '✍️', label: 'Write', model: 'Rotates hourly', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
   { key: 'independence', icon: '⚖️', label: 'Independence', model: 'Grok 3', modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
-  { key: 'qc_publish', icon: '✅', label: 'QC + Publish', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['editor_qc', 'publishing', 'published'] },
+  { key: 'qc_publish', icon: '✅', label: 'QC + Publish', model: 'Sonnet + GPT Image', modelColor: '#f97316', statuses: ['editor_qc', 'publishing', 'published'] },
 ];
 
 const STATUS_TEXT: Record<string, string> = {
