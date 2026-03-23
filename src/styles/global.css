@@ -817,7 +817,7 @@ body.menu-open {
    ========================================= */
 .back-to-top {
   @apply fixed bottom-8 right-6 z-40;
-  @apply w-10 h-10 rounded-full;
+  @apply w-12 h-12 rounded-full;
   @apply bg-stone-900/90 dark:bg-white/90 text-white dark:text-stone-900;
   @apply flex items-center justify-center;
   @apply opacity-0 invisible translate-y-4;

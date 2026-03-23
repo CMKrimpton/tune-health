@@ -1,17 +1,11 @@
 ---
-import { getArticles, getCategories } from '../utils/articles';
+import MenuDropdownContent from './MenuDropdownContent.astro';
 
 interface Props {
   variant?: 'home' | 'article';
 }
 
 const { variant = 'home' } = Astro.props;
-
-const allArticles = await getArticles();
-const latestArticles = allArticles.slice(0, 3);
-const categories = await getCategories();
-
-// Current path for active state
 const currentPath = Astro.url.pathname;
 ---
 
@@ -21,7 +15,6 @@ const currentPath = Astro.url.pathname;
     <div class="flex-1 flex items-center gap-6">
       {variant === 'home' ? (
         <div class="relative" id="menuDropdownWrapper">
-          <!-- Menu Button -->
           <button
             class="menu-toggle-btn group"
             id="menuToggleBtn"
@@ -36,79 +29,8 @@ const currentPath = Astro.url.pathname;
             <span class="hidden lg:inline text-sm font-medium text-stone-600 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">Menu</span>
           </button>
 
-          <!-- Glass Dropdown Menu -->
           <div class="menu-dropdown" id="menuDropdown">
-            <div class="menu-dropdown-inner">
-              <!-- Sections -->
-              <div class="menu-section">
-                <span class="menu-section-label">Sections</span>
-                <div class="menu-grid">
-                  <a href="/" class:list={["menu-item", { active: currentPath === '/' }]}>
-                    <span class="menu-item-icon">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-width="1.5"/>
-                      </svg>
-                    </span>
-                    <span class="menu-item-text">Home</span>
-                  </a>
-                  <a href="/articles" class:list={["menu-item", { active: currentPath.startsWith('/articles') }]}>
-                    <span class="menu-item-icon">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" stroke-width="1.5"/>
-                      </svg>
-                    </span>
-                    <span class="menu-item-text">Articles</span>
-                  </a>
-                  <a href="/deep-dives" class:list={["menu-item", { active: currentPath === '/deep-dives' }]}>
-                    <span class="menu-item-icon">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="1.5"/>
-                      </svg>
-                    </span>
-                    <span class="menu-item-text">Deep Dives</span>
-                  </a>
-                  <a href="/subscribe" class:list={["menu-item", { active: currentPath === '/subscribe' }]}>
-                    <span class="menu-item-icon">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="1.5"/>
-                      </svg>
-                    </span>
-                    <span class="menu-item-text">Subscribe</span>
-                  </a>
-                </div>
-              </div>
-
-              <!-- Topics -->
-              <div class="menu-section">
-                <span class="menu-section-label">Topics</span>
-                <div class="menu-topics">
-                  {categories.map((cat) => (
-                    <a href={`/articles?topic=${cat.toLowerCase().replace(/\s+/g, '-')}`} class="menu-topic">{cat}</a>
-                  ))}
-                </div>
-              </div>
-
-              <!-- Latest Articles -->
-              <div class="menu-section">
-                <span class="menu-section-label">Latest</span>
-                <div class="menu-featured">
-                  {latestArticles.map((article) => (
-                    <a href={article.href} class="menu-featured-item">
-                      <div class="menu-featured-badge">New</div>
-                      <div>
-                        <span class="menu-featured-title">{article.title.length > 35 ? article.title.slice(0, 35) + '...' : article.title}</span>
-                        <span class="menu-featured-meta">{article.category} · {article.readTime} min</span>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <!-- Footer -->
-              <div class="menu-footer">
-                <span class="text-xs text-stone-400">Press ⌘K to search</span>
-              </div>
-            </div>
+            <MenuDropdownContent currentPath={currentPath} showLatest={true} />
           </div>
         </div>
       ) : (
@@ -128,56 +50,7 @@ const currentPath = Astro.url.pathname;
             </button>
 
             <div class="menu-dropdown" id="menuDropdown">
-              <div class="menu-dropdown-inner">
-                <div class="menu-section">
-                  <span class="menu-section-label">Sections</span>
-                  <div class="menu-grid">
-                    <a href="/" class:list={["menu-item", { active: currentPath === '/' }]}>
-                      <span class="menu-item-icon">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-width="1.5"/>
-                        </svg>
-                      </span>
-                      <span class="menu-item-text">Home</span>
-                    </a>
-                    <a href="/articles" class:list={["menu-item", { active: currentPath.startsWith('/articles') }]}>
-                      <span class="menu-item-icon">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" stroke-width="1.5"/>
-                        </svg>
-                      </span>
-                      <span class="menu-item-text">Articles</span>
-                    </a>
-                    <a href="/deep-dives" class:list={["menu-item", { active: currentPath === '/deep-dives' }]}>
-                      <span class="menu-item-icon">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="1.5"/>
-                        </svg>
-                      </span>
-                      <span class="menu-item-text">Deep Dives</span>
-                    </a>
-                    <a href="/subscribe" class:list={["menu-item", { active: currentPath === '/subscribe' }]}>
-                      <span class="menu-item-icon">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="1.5"/>
-                        </svg>
-                      </span>
-                      <span class="menu-item-text">Subscribe</span>
-                    </a>
-                  </div>
-                </div>
-                <div class="menu-section">
-                  <span class="menu-section-label">Topics</span>
-                  <div class="menu-topics">
-                    {categories.map((cat) => (
-                      <a href={`/articles?topic=${cat.toLowerCase().replace(/\s+/g, '-')}`} class="menu-topic">{cat}</a>
-                    ))}
-                  </div>
-                </div>
-                <div class="menu-footer">
-                  <span class="text-xs text-stone-400">Press ⌘K to search</span>
-                </div>
-              </div>
+              <MenuDropdownContent currentPath={currentPath} />
             </div>
           </div>
           <a href="/" class="flex items-center gap-1 text-sm font-medium text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors">
@@ -290,110 +163,6 @@ const currentPath = Astro.url.pathname;
   .menu-dropdown.open {
     @apply opacity-100 visible translate-y-0;
   }
-
-  .menu-dropdown-inner {
-    @apply bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl;
-    @apply border border-stone-200/50 dark:border-stone-700/50;
-    @apply rounded-2xl shadow-2xl;
-    @apply p-8;
-  }
-
-  /* Menu Sections */
-  .menu-section {
-    @apply mb-8 last:mb-0;
-  }
-
-  .menu-section-label {
-    @apply block text-[10px] font-semibold uppercase tracking-widest;
-    @apply text-stone-400 dark:text-stone-500 mb-3;
-  }
-
-  /* Menu Grid */
-  .menu-grid {
-    @apply grid grid-cols-2 lg:grid-cols-4 gap-2;
-  }
-
-  .menu-item {
-    @apply flex items-center gap-3;
-    @apply px-4 py-4 rounded-xl;
-    @apply bg-stone-50 dark:bg-stone-800/50;
-    @apply hover:bg-stone-100 dark:hover:bg-stone-800;
-    @apply transition-colors;
-  }
-
-  .menu-item-icon {
-    @apply w-10 h-10 rounded-lg;
-    @apply bg-white dark:bg-stone-700;
-    @apply flex items-center justify-center;
-    @apply text-stone-500 dark:text-stone-400;
-    @apply shadow-sm;
-  }
-
-  .menu-item-text {
-    @apply text-sm font-medium text-stone-700 dark:text-stone-200;
-  }
-
-  .menu-item.active {
-    @apply bg-primary-50 dark:bg-primary-900/20;
-    @apply ring-1 ring-primary-200 dark:ring-primary-800/50;
-  }
-
-  .menu-item.active .menu-item-icon {
-    @apply bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400;
-  }
-
-  .menu-item.active .menu-item-text {
-    @apply text-primary-700 dark:text-primary-300;
-  }
-
-  /* Topics */
-  .menu-topics {
-    @apply flex flex-wrap gap-2;
-  }
-
-  .menu-topic {
-    @apply px-3 py-1.5 rounded-full;
-    @apply text-xs font-medium;
-    @apply bg-stone-100 dark:bg-stone-800;
-    @apply text-stone-600 dark:text-stone-400;
-    @apply hover:bg-primary-100 hover:text-primary-700;
-    @apply dark:hover:bg-primary-900/30 dark:hover:text-primary-400;
-    @apply transition-colors;
-  }
-
-  /* Featured */
-  .menu-featured {
-    @apply space-y-2;
-  }
-
-  .menu-featured-item {
-    @apply flex items-center gap-4;
-    @apply p-4 rounded-xl;
-    @apply bg-gradient-to-r from-stone-50 to-transparent;
-    @apply dark:from-stone-800/50 dark:to-transparent;
-    @apply hover:from-primary-50 dark:hover:from-primary-900/20;
-    @apply transition-colors;
-  }
-
-  .menu-featured-badge {
-    @apply px-2 py-0.5 rounded text-[10px] font-semibold uppercase;
-    @apply bg-primary-100 text-primary-700;
-    @apply dark:bg-primary-900/30 dark:text-primary-400;
-  }
-
-  .menu-featured-title {
-    @apply block text-sm font-medium text-stone-700 dark:text-stone-200;
-  }
-
-  .menu-featured-meta {
-    @apply block text-xs text-stone-400;
-  }
-
-  /* Footer */
-  .menu-footer {
-    @apply pt-6 mt-6 border-t border-stone-200 dark:border-stone-700;
-    @apply text-center;
-  }
 </style>
 
 <script>
@@ -424,7 +193,6 @@ const currentPath = Astro.url.pathname;
     }
 
     function scheduleClose() {
-      // Small delay before closing to allow moving to dropdown
       closeTimeout = setTimeout(() => {
         closeMenu();
       }, 150);

@@ -1,5 +1,5 @@
 ---
-import { getArticles, getCategories } from '../utils/articles';
+import { getArticles, getCategories, truncate } from '../utils/articles';
 
 const articles = await getArticles();
 const categories = await getCategories();
@@ -29,7 +29,7 @@ const latestArticles = articles.slice(0, 4);
           {latestArticles.map((article) => (
             <li>
               <a href={article.href} class="text-sm text-stone-400 hover:text-white transition-colors duration-200 leading-snug block">
-                {article.title.length > 45 ? article.title.slice(0, 45) + '...' : article.title}
+                {truncate(article.title, 45)}
               </a>
             </li>
           ))}

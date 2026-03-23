@@ -178,6 +178,14 @@ export async function getCategories(): Promise<string[]> {
 }
 
 /**
+ * Truncate a string to a max length with ellipsis
+ */
+export function truncate(str: string, maxLength: number): string {
+  if (str.length <= maxLength) return str;
+  return str.slice(0, maxLength) + '...';
+}
+
+/**
  * Category-based gradient palette for article cards.
  */
 const categoryGradients: Record<string, { bg: string; pattern: string }> = {

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.13.0] - 2026-03-22
+
+### Added
+- **`truncate()` utility** in `articles.ts` — replaces 7+ copy-pasted `.slice(0, N) + '...'` patterns across Header, Footer, SideNav
+- **`MenuDropdownContent.astro`** — shared dropdown menu content extracted from Header, eliminating ~100 lines of duplicated markup between home and article variants
+- **`twitter:site` meta tag** — `@aluminews` handle added to Twitter Card meta for proper attribution on social shares
+
+### Fixed
+- **Homepage Deep Dives were hardcoded** — 3 static "Coming Soon" cards with Unsplash images replaced with collection-driven published series from `getAllSeries()`. Published Thyroid Deep Dive now actually appears on homepage
+- **Back-to-top button touch target** — increased from 40px (`w-10`) to 48px (`w-12`) for WCAG-compliant touch target
+- **Duplicate `id="newsletter"` on homepage** — Newsletter component and homepage section both used same ID. Renamed homepage wrapper to `newsletter-section`
+- **Mobile nav scroll jank** — added `will-change: transform` to `.mobile-nav` for GPU-accelerated scroll hide/show
+
+### Changed
+- **Header refactored** — dropdown menu markup extracted to `MenuDropdownContent.astro`, eliminating full duplication between home and article variants. Both variants now share identical menu content
+
 ## [5.12.0] - 2026-03-22
 
 ### Fixed
