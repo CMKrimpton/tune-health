@@ -221,6 +221,41 @@ async function grok(opts: { system: string; user: string; maxTokens?: number; te
 }
 
 // ---------------------------------------------------------------------------
+// Gemini API (Google) — topic discovery & web search
+// ---------------------------------------------------------------------------
+async function gemini(opts: { system: string; user: string; maxTokens?: number; temperature?: number }): Promise<string> {
+  const key = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
+  if (!key) throw new Error("GOOGLE_API_KEY not set");
+  const model = "gemini-2.5-flash";
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: opts.system }] },
+        contents: [{ role: "user", parts: [{ text: opts.user }] }],
+        generationConfig: {
+          maxOutputTokens: opts.maxTokens || 4000,
+          temperature: opts.temperature || 0.4,
+        },
+        tools: [{ google_search: {} }],
+      }),
+      signal: AbortSignal.timeout(120_000),
+    },
+  );
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini ${res.status}: ${errText.slice(0, 500)}`);
+  }
+  const data = await res.json();
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  const text = parts.map((p: { text?: string }) => p.text || "").join("");
+  if (!text.trim()) throw new Error("Empty Gemini response");
+  return text;
+}
+
+// ---------------------------------------------------------------------------
 // Self-chaining — fire-and-forget next stage invocation
 // ---------------------------------------------------------------------------
 function chainNextStage(logId: string) {
@@ -748,23 +783,41 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
     research._fromQueue = true;
   } else {
-    // Multi-candidate trending research
+    // TWO-MODEL SCOUT: Gemini discovers via Google Search, Sonnet structures into candidates
+
+    // Step 1: Gemini searches the web for trending health topics
+    const geminiFindings = await gemini({
+      system: "You are a health news researcher. Search the web for the most trending, discussed, and scientifically significant health stories from the last 3 days. For each topic, include: the specific study or finding, the journal or source, key statistics, and why it matters. Focus on substance, not celebrity gossip.",
+      user: `Find TWO sets of health topics:
+
+SET A — 5 MOST TRENDING from the last 5 days (breaking news, viral studies, hot debate topics)
+SET B — 5 MOST SEARCHED from the last 10 days (what people are actively googling about health)
+
+Each topic must be a DIFFERENT subject area. Label each set clearly.
+
+OFF-LIMITS (already covered):
+${titles.slice(0, 15).map((t) => `- ${t}`).join("\n")}
+${recentTopics.slice(0, 8).map((t) => `- TRIED: ${t}`).join("\n")}
+
+For each topic: the headline, the key finding, the source/study, key statistics, and why it's compelling. Plain text, not JSON.`,
+      maxTokens: 3000,
+      temperature: 0.4,
+    });
+
+    // Step 2: Sonnet structures Gemini's raw findings into candidate JSON
     const researchRaw = await claude({
-      system: RESEARCH_PROMPT,
-      user: `Today's date: ${today}
+      system: `You structure raw research findings into JSON. Return ONLY valid JSON, no explanation.`,
+      user: `Pick the best 3-5 topics from these research findings. Drop any that overlap with OFF-LIMITS articles. Return ONLY this JSON:
 
-## Your Task
-Find 3 trending health topics from the last 3 days. Each must be a DIFFERENT subject area.
+{"candidates":[{"rank":1,"topic":"...","headline_draft":"...","why":"...","category":"Neuroscience|Mental Health|Longevity|Clinical Evidence|Environmental Health|Nutrition|Fitness|Sleep Science|Pharmacology","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."]}]}
 
-## OFF-LIMITS (already covered or recently tried):
-${titles.slice(0, 20).map((t) => `- ${t}`).join("\n")}
-${recentTopics.slice(0, 10).map((t) => `- TRIED: ${t}`).join("\n")}
+## RAW FINDINGS:
+${geminiFindings}
 
-Return 3 candidates across different categories. Keep research brief — editor picks, then we deep-dive.`,
+## OFF-LIMITS:
+${titles.slice(0, 15).map((t) => `- ${t}`).join("\n")}`,
       model: "claude-sonnet-4-6",
       maxTokens: 4000,
-      webSearch: true,
-      maxSearches: 3,
     });
 
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
