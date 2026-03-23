@@ -108,7 +108,7 @@ const POLL_INTERVAL = 15_000;
 const STAGES: StageConfig[] = [
   { key: 'research', icon: '🔍', label: 'Research', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['started', 'searching', 'research_done'] },
   { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
-  { key: 'write', icon: '✍️', label: 'Write', model: 'Opus 4.6', modelColor: '#a855f7', statuses: ['writing', 'written'] },
+  { key: 'write', icon: '✍️', label: 'Write', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['writing', 'written'] },
   { key: 'independence', icon: '⚖️', label: 'Independence', model: 'Grok 3', modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
   { key: 'qc_publish', icon: '✅', label: 'QC + Publish', model: 'Sonnet 4.6', modelColor: '#f97316', statuses: ['editor_qc', 'publishing', 'published'] },
 ];
@@ -118,8 +118,8 @@ const STATUS_TEXT: Record<string, string> = {
   searching: 'Finding 3-5 trending topics...',
   research_done: 'Research complete — awaiting editor pick',
   editor_reviewing: 'Senior Editor picking best topic...',
-  editor_approved: 'Editor approved — queued for Opus',
-  writing: 'Opus writing article...',
+  editor_approved: 'Editor approved — queued for writing',
+  writing: 'Sonnet 4.6 writing article...',
   written: 'Written — awaiting independence review',
   independence_review: 'Grok checking editorial independence...',
   independence_done: 'Independence reviewed — awaiting QC',
@@ -481,7 +481,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                   style={{ background: 'none', border: 'none', color: '#78716c', cursor: 'pointer', fontSize: '1rem', padding: '0.25rem' }}
                   aria-label="Remove from queue"
                 >
-                  \u00d7
+                  {'\u00d7'}
                 </button>
               </div>
             ))}
@@ -493,7 +493,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       {completedLogs.length > 0 && (
         <section>
           <h3 className="pipeline-section-title">
-            Recently Published \u2014 {completedLogs.length}
+            Recently Published {'\u2014'} {completedLogs.length}
           </h3>
           <div className="pipeline-completed-list">
             {completedLogs.slice(0, 5).map(log => {
@@ -522,7 +522,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       className="pipeline-retry-btn"
                       style={{ textDecoration: 'none' }}
                     >
-                      View \u2192
+                      {'\u2192'} View
                     </a>
                   )}
                 </div>
@@ -536,7 +536,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       {editorKills.length > 0 && (
         <section>
           <h3 className="pipeline-section-title">
-            Editor Decisions \u2014 {editorKills.length} killed
+            Editor Decisions {'\u2014'} {editorKills.length} killed
           </h3>
           <div className="pipeline-completed-list">
             {editorKills.map(log => {
@@ -563,7 +563,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       {failedLogs.length > 0 && (
         <section>
           <h3 className="pipeline-section-title" style={{ color: '#dc2626' }}>
-            Errors \u2014 {failedLogs.length}
+            Errors {'\u2014'} {failedLogs.length}
           </h3>
           <div className="pipeline-failed-list">
             {failedLogs.map(log => (

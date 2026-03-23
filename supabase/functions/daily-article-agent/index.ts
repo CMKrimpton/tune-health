@@ -1604,7 +1604,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const articleModel =
-      model === "sonnet" ? "claude-sonnet-4-6" : "claude-opus-4-6";
+      "claude-sonnet-4-6"; // Sonnet 4.6 — Opus times out on Edge Functions (~150s limit). Upgrade when longer timeout available.
 
     // ================================================================
     // PRIORITY 1: Finish — QC + publish any "independence_done" entries
