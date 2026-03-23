@@ -1,0 +1,37 @@
+{
+  "title": "The Bacteria in Your Mouth Are Being Found in Alzheimer's Brains. Medicine Is Only Beginning to Reckon With What That Means.",
+  "description": "Porphyromonas gingivalis — a common periodontal pathogen — has been detected in 96% of Alzheimer's brain samples examined, with its signature proteases correlating directly with tau pathology. The same bacteria turns up in atherosclerotic plaques and placental tissue. The mouth has never been more institutionally separate from the rest of medicine. The evidence has never been clearer that it shouldn't be.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Oral Microbiome",
+    "Alzheimer's Disease",
+    "Cardiovascular Disease",
+    "Periodontal Disease",
+    "Neurodegeneration"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "Porphyromonas gingivalis",
+    "oral microbiome",
+    "Alzheimer's disease",
+    "periodontal disease",
+    "cardiovascular risk",
+    "gingipains",
+    "systemic inflammation",
+    "oral-systemic connection"
+  ],
+  "sortOrder": 1774282867116,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/oral-microbiome-alzheimers-cardiovascular-systemic-disease.png",
+  "heroImageAlt": "Editorial illustration for The Bacteria in Your Mouth Are Being Found in Alzheimer's Brains. Medicine Is Only Beginning to Reckon With What That Means."
+}
