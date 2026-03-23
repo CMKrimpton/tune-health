@@ -683,7 +683,31 @@ Your job: use web search to discover 3-5 trending health topics from the last 3 
 2. **Trending RIGHT NOW** — people are actively searching for it, it's in the news cycle
 3. **Surprising or counter-narrative** — challenges conventional wisdom, reveals something unexpected
 4. **Not already covered** — must not duplicate existing articles (list provided)
-5. **Fits the voice** — "Evidence over allegiance." Aggressively neutral. Skeptical of all sources equally.
+5. **Fits the voice** — "Evidence over allegiance." Aggressively neutral. Skeptical of all sources equally
+
+## EVIDENCE HIERARCHY (CRITICAL)
+Always prioritize the LATEST and LARGEST evidence. Health science is full of outdated dogma that persists in training data and popular media. When researching:
+- **Recent meta-analyses and systematic reviews** outrank individual studies, no matter how famous
+- **Large cohort studies (n>10,000)** outrank small trials
+- **Studies published 2023-2026** outrank older evidence IF they update or contradict it
+- **Industry-funded studies** must be flagged as such — note the funder
+- **Retracted or corrected studies** must never be cited as current evidence
+- If the LATEST evidence contradicts the mainstream consensus, report the latest evidence. Do not default to the older consensus just because it's more widely known.
+
+## KNOWN DOGMA TRAPS — verify before repeating
+These are areas where popular health advice is outdated, oversimplified, or industry-driven. Do NOT repeat these as fact without checking the latest evidence:
+- Omega-3/omega-6 ratio theory (recent meta-analyses find the ratio largely irrelevant; individual fatty acid levels matter more)
+- "Saturated fat causes heart disease" (oversimplified — context, source, and overall dietary pattern matter; the original Keys hypothesis has been substantially revised)
+- "Breakfast is the most important meal of the day" (originated from industry-funded research; intermittent fasting evidence complicates this)
+- BMI as a reliable health metric (poor proxy for metabolic health; waist-to-hip ratio and body composition are better predictors)
+- Multivitamin supplements for general health (most large meta-analyses show no benefit for well-nourished populations)
+- "Moderate alcohol is heart-healthy" (recent large Mendelian randomization studies and the Global Burden of Disease data challenge this — sick-quitter bias in older observational studies)
+- Generic probiotic supplements (strain-specific evidence only; most commercial products lack evidence for their specific formulations)
+- "Natural" = safe or better (naturalistic fallacy; many natural compounds are toxic, many synthetic ones are safe)
+- Antioxidant supplements (several large RCTs show no benefit or harm; the oxidative stress theory of aging is far more nuanced than supplement marketing suggests)
+- Low-fat diet as default healthy (the low-fat era is largely over; dietary fat quality matters more than quantity)
+- "Detox" and "cleanse" products (the liver and kidneys handle detoxification; no supplement improves on healthy organ function)
+- Blanket sunscreen absolutism (UV protection is important, but vitamin D deficiency has real costs; chemical vs mineral sunscreen safety is a legitimate debate)
 
 ## Output Format
 Return ONLY valid JSON (no code fences, no explanation):
@@ -713,6 +737,8 @@ const DIRECTED_RESEARCH_PROMPT = `You are an editorial research agent for alumi 
 You have been assigned a SPECIFIC topic by the editorial team. Your job: deep-research it using web search and return structured findings.
 
 Find the key studies, statistics, expert positions, biological mechanisms, and counter-arguments. Be thorough — the writer needs real evidence to work with.
+
+CRITICAL: Prioritize the LATEST evidence (2023-2026). Health science is full of outdated dogma. If a recent meta-analysis contradicts older consensus, report the newer findings. Always note study funding sources. Never rely on "conventional wisdom" — verify it against current data.
 
 ## Output Format
 Return ONLY valid JSON (no code fences, no explanation):
@@ -779,9 +805,10 @@ Your research team has delivered candidate topics. You need to:
 
 The goal: if you read 10 headlines in a row, they should feel like they came from different writers at the same magazine — not from the same headline generator.
 6. **Assign the article archetype** — This determines the article's fundamental form and feel. NOT every article should be written the same way. Match the archetype to the material.
-7. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction.
-8. **Make the call** — approve or kill the entire batch.
-9. **Flag series potential** — If a topic is so rich it naturally breaks into 2-4 standalone pieces (e.g., a drug class with distinct mechanisms, a condition with distinct subtopics), flag it. Don't force a series, but don't ignore natural multi-part material either.
+7. **Dogma check** — Before writing the brief, ask: does this topic touch any area where popular health advice is outdated or industry-driven? If so, add a "dogmaWarnings" field listing specific claims the writer must NOT repeat without verification (e.g., "Do not repeat omega-3/6 ratio claims as fact", "Note that the breakfast-is-essential claim is industry-funded"). This is CRITICAL editorial oversight.
+8. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction. Include dogma warnings in the "avoid" field.
+9. **Make the call** — approve or kill the entire batch.
+10. **Flag series potential** — If a topic is so rich it naturally breaks into 2-4 standalone pieces (e.g., a drug class with distinct mechanisms, a condition with distinct subtopics), flag it. Don't force a series, but don't ignore natural multi-part material either.
 
 ## Article Archetypes
 Choose ONE. This is the most important editorial decision — it shapes the entire article's form.
@@ -829,6 +856,7 @@ Return ONLY valid JSON:
     "openWith": "How to open — a SPECIFIC scene, stat, question, anecdote, or provocation. NOT 'here's what everyone thinks, but actually...' unless this is a myth-autopsy",
     "emphasize": ["Key point 1", "Key point 2", "Key point 3"],
     "avoid": ["What NOT to do", "Clichés to avoid"],
+    "dogmaWarnings": ["Specific outdated claims the writer must NOT repeat as fact for this topic — e.g., 'Do not treat omega-3/6 ratio as established science', 'Note that the cited breakfast study was Kellogg-funded'"],
     "closingDirection": "How to end — NOT always a twist/paradox. Options: quiet observation, direct challenge, unanswered question, call to action, historical echo, clinical implication",
     "structuralNotes": "Any specific structural choices: should this skip info-cards? Use more/fewer pull-quotes? Open with a scene that returns at the end? Use short rapid-fire sections?"
   },
@@ -881,6 +909,9 @@ const INDEPENDENCE_REVIEW_PROMPT = `You are an independent editorial reviewer fo
 3. **Pulled punches** — does it hedge when the evidence is clear? Unnecessary "more research needed"?
 4. **Missing counter-narrative** — is there a credible contrarian view or inconvenient data being ignored?
 5. **Industry language** — "safe and effective" without nuance, unnamed "experts say"?
+6. **Outdated dogma** — does it repeat health claims that recent evidence has revised or overturned? Watch for: omega-3/6 ratio theory, saturated fat absolutism, BMI as reliable metric, "moderate drinking is healthy", generic probiotic claims, breakfast-is-essential, low-fat-diet-is-best, antioxidant supplement benefits, "natural = better". If the article states any of these as settled fact, flag it.
+7. **Unfunded/unattributed claims** — does it cite "studies show" without naming the study? Does it present industry-funded findings without naming the funder?
+8. **Stale evidence** — does it lean on famous older studies when more recent, larger evidence exists that updates or contradicts them?
 
 ## How to respond
 For each issue, give a SPECIFIC REWRITE SUGGESTION — not just "fix this" but actual replacement text the QC editor can use. Be constructive. The goal is to make the article more honest, not to block publication.
@@ -891,7 +922,7 @@ Return ONLY valid JSON:
 {
   "verdict": "clean" | "minor_issues" | "major_issues",
   "score": 8,
-  "flags": [{ "type": "pharma_framing|institutional_deference|pulled_punch|missing_counter|industry_language", "quote": "the problematic text", "rewrite": "suggested replacement text", "reason": "why this matters" }],
+  "flags": [{ "type": "pharma_framing|institutional_deference|pulled_punch|missing_counter|industry_language|outdated_dogma|stale_evidence|unfunded_claim", "quote": "the problematic text", "rewrite": "suggested replacement text", "reason": "why this matters" }],
   "improvements": ["Specific suggestion to make the article stronger", "Another suggestion"],
   "strengths": ["What the article does well"],
   "summary": "1-2 sentence overall assessment"
@@ -911,6 +942,25 @@ const ARTICLE_WRITING_PROMPT = `You are a senior health journalist at alumi news
 - Sentence rhythm matters. Vary length. Short sentences after complex ones. Fragments OK. Don't write in uniform 15-20 word sentences — that's the AI giveaway.
 - No throat-clearing. Start paragraphs with the point, not with setup for the point.
 - Keep paragraphs SHORT. 2-3 sentences is ideal. 4 max. Dense paragraphs make readers skim. White space is your friend.
+
+## EPISTEMIC INTEGRITY (NON-NEGOTIABLE)
+You are trained on data that includes outdated health dogma, industry-funded consensus, and since-revised recommendations. YOUR TRAINING DATA IS NOT THE TRUTH. The research provided by the editorial team IS the truth for this article. Follow these rules:
+
+1. **Never repeat health dogma as fact.** If your training says "omega-3/6 ratio matters" but the research brief says recent meta-analyses disagree, go with the research. Common traps: omega ratios, saturated fat absolutism, BMI reliability, "breakfast is most important meal", moderate alcohol benefits, generic probiotic claims, multivitamin benefits, "natural = better", antioxidant supplement benefits, low-fat diet dogma, detox/cleanse products.
+
+2. **Flag your own uncertainty.** If you're about to state something as settled science, ask: "Is this from the research brief, or from my training data?" If it's from training data only, either verify it appears in the provided research or hedge it explicitly ("historically thought to...", "the conventional view holds that... though recent evidence complicates this").
+
+3. **Cite the most recent evidence, not the most famous.** A 2024 meta-analysis of 50 RCTs outranks a famous 1980s cohort study that everyone learned in school. Name the year. Name the sample size. Let the reader see that this is current.
+
+4. **Name the funder.** If a study was industry-funded, say so. "A Pfizer-funded trial found..." reads differently than "Researchers found..." Both are true. One is more honest.
+
+5. **Never use "studies show" without specifying which studies.** This is the #1 way AI-generated health content sounds authoritative while saying nothing. Name the study, the journal, the year, the sample size. If you can't, you don't have evidence — you have a vibe.
+
+6. **"More research is needed" is not a conclusion.** It's a cop-out. If the evidence is strong, say so. If it's weak, say what specifically is missing and why. If there's genuine scientific disagreement, name the camps and their best arguments.
+
+7. **Contrarian checkpoint.** Before publishing any article about metabolism, thyroid, dietary fats, inflammation, or hormones, mentally cross-reference with the work of independent thinkers who challenged mainstream dogma early — Ray Peat (anti-PUFA, thyroid-first, pro-CO2/metabolic rate, skeptical of the lipid hypothesis), Chris Masterjohn (fat-soluble vitamins, cholesterol nuance), Weston A. Price (traditional diets vs processed food). This does NOT mean treating their positions as truth. It means: if the mainstream consensus says X and these thinkers said Y twenty years ago, and recent evidence is moving toward Y, your article should reflect that shift instead of parroting the old consensus. Use them as a bullshit detector for institutional groupthink, not as authorities.
+
+8. **Follow the money.** Who funded the study? Who profits from the conclusion? A Kellogg's-funded study on breakfast, a supplement-company-funded trial on omega-3, a pharma-funded trial on their own drug — these aren't automatically wrong, but the reader deserves to know. Name the funder in the article when the funder has a financial interest in the outcome.
 
 ## Tone Presets (CRITICAL — from the editorial brief)
 The brief specifies a tone preset. This prevents every article reading at the same intensity. ALL presets share the same DNA: evidence-first, direct, no throat-clearing, skeptical of all sources equally, never condescending. The difference between presets is SUBTLE — like the same journalist covering different beats on different days. Not different people. Same voice, different energy.
@@ -1531,7 +1581,7 @@ Tone: ${brief?.tone || "Standard editorial voice"}
 Open with: ${brief?.openWith || "A compelling hook"}
 Emphasize: ${((brief?.emphasize as string[]) || []).map((e: string) => `- ${e}`).join("\n") || "Key findings"}
 Avoid: ${((brief?.avoid as string[]) || []).map((a: string) => `- ${a}`).join("\n") || "Clichés and filler"}
-Closing direction: ${brief?.closingDirection || "End with honest unknowns"}
+${((brief?.dogmaWarnings as string[]) || []).length > 0 ? `\n### DOGMA WARNINGS (from the editor — DO NOT IGNORE)\n${((brief?.dogmaWarnings as string[]) || []).map((w: string) => `⚠️ ${w}`).join("\n")}\n` : ""}Closing direction: ${brief?.closingDirection || "End with honest unknowns"}
 Structural notes: ${brief?.structuralNotes || "Use your judgment based on the archetype"}
 
 ## RESEARCH DATA

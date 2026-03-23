@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [8.2.0] - 2026-03-23
+
+### Added — Epistemic Integrity Framework
+- **Evidence hierarchy** in research prompt — recent meta-analyses > individual studies, large cohorts > small trials, 2023-2026 > older, industry-funded must be flagged
+- **Known dogma traps list** — omega-3/6 ratio, saturated fat absolutism, BMI reliability, breakfast industry claims, moderate alcohol, generic probiotics, multivitamins, "natural = better", antioxidant supplements, low-fat dogma, detox products, blanket sunscreen absolutism
+- **Writer epistemic integrity rules** — "your training data is not the truth", flag own uncertainty, cite most recent evidence, name the funder, never use "studies show" without specifics, "more research needed" is not a conclusion
+- **Contrarian checkpoint** — cross-reference metabolism/thyroid/fat/inflammation articles against independent thinkers (Ray Peat, Chris Masterjohn, Weston Price) as a bullshit detector for institutional groupthink — not as authorities, but as early signal
+- **Follow the money** — name the funder when they have financial interest in the outcome
+- **Editor dogma warnings** — `dogmaWarnings` field in editor brief flags specific claims the writer must verify before repeating. Wired into writer prompt
+- **Grok independence review expanded** — 3 new flag types: `outdated_dogma`, `stale_evidence`, `unfunded_claim`
+- **Directed research prompt updated** — prioritize 2023-2026 evidence, note funding sources
+
 ## [8.1.0] - 2026-03-23
 
 ### Fixed
