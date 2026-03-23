@@ -90,7 +90,7 @@ src/
 - **View Transitions** - Smooth page-to-page animations
 
 ### Content
-- **39 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
+- **40 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, and Sleep Science
 - Content Collections with Zod schema validation
 - Type-safe article queries
 - Automatic reading time calculation
@@ -113,6 +113,12 @@ src/
   - **Editorial QC Agent**: "Audit Only", "Dry Run (Preview Fixes)", "Audit & Auto-Fix" — Claude reviews all headlines/descriptions holistically with severity selector, pattern warnings, copy report, per-issue fix status
   - **Illustration Agent**: single-article generator, "Generate Missing", "Regenerate All" with cost confirmation
   - **Database Sync**: refresh DB from content
+- **Daily Article Agent** (`daily-article-agent`): fully autonomous daily editorial pipeline
+  - Runs daily at 6 AM UTC via `pg_cron`
+  - Claude with native `web_search` tool discovers trending health topics from the last 3 days
+  - Picks the most compelling topic, deep-researches it, writes a 2,500-3,000+ word investigative article
+  - Saves to DB, publishes to GitHub (triggers Vercel deploy), generates editorial illustration
+  - Rate-limited to one successful publish per day; logs to `daily_article_log` table
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app
@@ -188,7 +194,9 @@ The site is deployed on Vercel with automatic deployments:
   - `fetch-article` — GitHub file fetching
   - `generate-illustration` — AI illustration generation (OpenAI GPT Image 1.5) with batch support
   - `editorial-qc` — Autonomous editorial quality control (Claude audits full collection, auto-fixes headlines/descriptions/illustrations)
+  - `daily-article-agent` — Autonomous daily article pipeline: Claude with native `web_search` discovers trending topics → writes article → publishes. Scheduled via `pg_cron` at 6 AM UTC.
 - **Storage**: `article-illustrations` bucket for AI-generated editorial art
+- **Cron**: `pg_cron` + `pg_net` schedule daily article generation (requires extensions enabled in Dashboard)
 
 ## Documentation
 

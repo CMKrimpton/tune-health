@@ -648,17 +648,49 @@ body.menu-open {
   @apply p-5 md:p-6;
 }
 
-/* Large Card Variant */
+/* Large Card Variant — on desktop: image fills card, content overlays at bottom */
 .article-card-large {
-  @apply lg:col-span-2 lg:row-span-2;
-}
-
-.article-card-large .article-card-image {
-  @apply lg:aspect-auto lg:h-full lg:min-h-[350px];
+  @apply lg:col-span-2 lg:row-span-2 relative;
 }
 
 .article-card-large .article-card-number {
   @apply text-8xl lg:text-9xl;
+}
+
+/* Desktop (lg+): magazine-style overlay layout */
+@media (min-width: 1024px) {
+  .article-card-large .article-card-image {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+  }
+
+  .article-card-large .article-card-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 100%;
+    padding-top: 12rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 45%, transparent 100%);
+  }
+
+  .article-card-large .article-card-content h3 {
+    color: var(--color-white, #e7e6e3);
+  }
+
+  .article-card-large .article-card-content p {
+    color: rgba(231, 230, 227, 0.7);
+  }
+
+  .article-card-large .article-card-content .border-t {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .article-card-large .article-card-content span.text-stone-400 {
+    color: rgba(231, 230, 227, 0.5);
+  }
 }
 
 /* =========================================

@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.7.0] - 2026-03-22
+
+### Added
+- **Daily Article Agent** (`daily-article-agent` Edge Function) — fully autonomous daily editorial pipeline
+  - **Phase 1: Research** — Claude with native `web_search_20250305` tool autonomously discovers trending health topics from the last 3 days (up to 10 web searches), cross-referenced against existing article catalog to avoid duplicates. No third-party search API needed.
+  - **Phase 2: Article Writing** — Claude with web search (up to 5 fact-checking searches) writes a 2,500-3,000+ word investigative article with full editorial formatting (sections, pull quotes, info cards, SVG hero, TOC, disclaimer)
+  - **Phase 3: Publish** — saves to Supabase DB, commits .astro + .json to GitHub (triggers Vercel deploy), fires illustration generation
+  - Actions: `run` (full pipeline), `dry-run` (everything except GitHub publish), `status` (recent log entries)
+  - Rate-limited: one successful run per calendar day
+  - Supports `model` parameter: defaults to Claude Sonnet 4.6 for speed, accepts `"opus"` for Claude Opus 4.6 quality
+- **`daily_article_log` table** — tracks each agent run: topic, slug, title, status, error, search queries, research snippets, timestamps
+- **`pg_cron` schedule** — daily at 6 AM UTC via `pg_net` HTTP POST to Edge Function
+- **New article: "The Shingles Shot That Quietly Became a Heart Drug"** — investigative article on the ACC.26 study showing 46% MACE reduction from shingles vaccination, Korean cohort (1.27M participants), ESC meta-analysis, VZV vascular damage mechanisms, dementia protection evidence, and skeptics' assessment. 13-minute read, Clinical Evidence category.
+### Architecture
+- Daily article agent pipeline: Claude with native `web_search` tool → autonomous topic discovery & research → article writing with fact-checking → DB save → GitHub publish → illustration generation. No third-party search API — uses Anthropic's built-in server-side web search.
+- `pg_cron` + `pg_net` extensions for scheduled execution (must be enabled in Supabase Dashboard)
+- Migration: `supabase/migrations/20260322_daily_article_agent.sql`
+
 ## [5.6.1] - 2026-03-22
 
 ### Added

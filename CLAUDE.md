@@ -79,15 +79,19 @@ src/
     ├── global.css            # Tailwind directives + custom styles
     └── admin.css             # Admin portal styles
 supabase/
+├── migrations/
+│   ├── 20260315_create_articles.sql    # Articles table schema
+│   └── 20260322_daily_article_agent.sql # Log table + pg_cron schedule
 └── functions/
-    ├── articles-api/         # CRUD for articles database (auth on writes)
-    ├── process-article/      # Claude Opus article generation
-    ├── refine-article/       # Chat-based article refinement
-    ├── publish-article/      # GitHub commit pipeline (auth required)
-    ├── delete-article/       # GitHub file deletion (auth required)
-    ├── fetch-article/        # GitHub file fetching
+    ├── articles-api/          # CRUD for articles database (auth on writes)
+    ├── process-article/       # Claude Opus article generation
+    ├── refine-article/        # Chat-based article refinement
+    ├── publish-article/       # GitHub commit pipeline (auth required)
+    ├── delete-article/        # GitHub file deletion (auth required)
+    ├── fetch-article/         # GitHub file fetching
     ├── generate-illustration/ # OpenAI GPT Image editorial art
-    └── editorial-qc/         # Autonomous QC agent (Claude audits collection)
+    ├── editorial-qc/          # Autonomous QC agent (Claude audits collection)
+    └── daily-article-agent/   # Autonomous daily article pipeline (pg_cron)
 ```
 
 ### Content Collections
@@ -169,6 +173,7 @@ const articles = await getCollection('articles');
 
 #### Autonomous AI Pipeline
 - **Article creation**: source doc → Claude writes article → OpenAI generates illustration → both saved to DB → publish commits to GitHub → Vercel deploys
+- **Daily article agent**: `daily-article-agent` runs via `pg_cron` at 6 AM UTC daily → Claude with native `web_search` tool autonomously discovers trending health topics → picks the best one → deep research with web search fact-checking → writes full article → saves to DB → publishes to GitHub → triggers illustration generation. Logs to `daily_article_log` table. One run per day (rate-limited).
 - **Quality control**: `editorial-qc` reviews full article collection holistically → identifies headline repetition, weak descriptions → auto-fixes via `articles-api`
 - **Illustration generation**: `generate-illustration` creates editorial art per article with house style prompt + category color palettes → stored in Supabase Storage
 - **All secrets** (ANTHROPIC_API_KEY, OPENAI_API_KEY, GITHUB_TOKEN, ADMIN_TOKEN) stored in Supabase secrets only — never in code
@@ -212,6 +217,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `fetch-article` | Fetches .astro file content from GitHub | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
+| `daily-article-agent` | Autonomous daily article pipeline: Claude with native `web_search` tool discovers trending health topics → picks best one → deep research with fact-checking → writes full article → saves to DB → publishes to GitHub. Runs daily via `pg_cron` at 6 AM UTC. Actions: `run`, `dry-run`, `status`. Rate-limited to one successful run per day. Uses Claude Sonnet 4.6 by default, Opus 4.6 with `model: "opus"`. | None (rate-limited internally) |
 
 **Deploy commands:**
 ```bash
@@ -221,6 +227,17 @@ supabase functions deploy <function-name> --no-verify-jwt
 **Required secrets** (set via `supabase secrets set`):
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
+- Note: `daily-article-agent` uses Claude's native `web_search` tool — no additional search API key required
+
+**Database tables:**
+- `articles` — main content table (see schema above)
+- `daily_article_log` — tracks daily article agent runs (run_date, topic, slug, title, status, error, search_queries, research_snippets)
+
+**Cron schedule** (via `pg_cron` + `pg_net`):
+- `daily-article-agent`: runs at 6 AM UTC daily, invokes the Edge Function via HTTP POST
+- Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
+- View schedule: `SELECT * FROM cron.job WHERE jobname = 'daily-article-agent';`
+- View run history: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`
 
 #### User Funnel (alumi Health)
 

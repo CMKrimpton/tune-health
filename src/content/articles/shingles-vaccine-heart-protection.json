@@ -1,0 +1,33 @@
+{
+  "title": "The Shingles Shot That Quietly Became a Heart Drug",
+  "description": "A vaccine designed to prevent a painful rash just posted a 46% reduction in major cardiac events — rivaling the benefits of quitting smoking. The evidence is piling up from three continents, and cardiologists are paying attention.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-22",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 13,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Cardiovascular Health",
+    "Vaccines",
+    "Clinical Trials",
+    "Inflammation",
+    "Preventive Medicine"
+  ],
+  "gradient": {
+    "from": "rose-600",
+    "to": "red-800"
+  },
+  "keywords": [
+    "shingles vaccine",
+    "cardiovascular protection",
+    "Shingrix",
+    "herpes zoster",
+    "heart disease prevention",
+    "varicella zoster virus",
+    "MACE reduction"
+  ]
+}
