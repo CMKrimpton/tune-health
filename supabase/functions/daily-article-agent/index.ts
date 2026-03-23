@@ -721,7 +721,7 @@ async function stageResearch(
 
   await db
     .from("daily_article_log")
-    .update({ status: "searching", created_at: new Date().toISOString() })
+    .update({ status: "searching", stage_started_at: new Date().toISOString() })
     .eq("id", logId);
 
   let research: Record<string, unknown>;
@@ -804,7 +804,7 @@ async function stageEditorBrief(
 ): Promise<void> {
   await db
     .from("daily_article_log")
-    .update({ status: "editor_reviewing", created_at: new Date().toISOString() })
+    .update({ status: "editor_reviewing", stage_started_at: new Date().toISOString() })
     .eq("id", logId);
 
   const { titles, categoryCounts } = await getExistingArticles(db);
@@ -909,13 +909,18 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
         const cs = candidateScores.find(s => s.rank === c.rank);
         return !cs || cs.score >= 5; // Only save decent candidates (score 5+)
       })
-      .map((c: Record<string, unknown>) => ({
-        topic: c.topic as string,
-        category: (c.category as string) || null,
-        notes: `Auto-saved from research cycle. Editor scored: ${candidateScores.find(s => s.rank === c.rank)?.score || "?"}/10. ${candidateScores.find(s => s.rank === c.rank)?.verdict || ""}`,
-        priority: 50,
-        source: "trending",
-      }));
+      .map((c: Record<string, unknown>) => {
+        const cs = candidateScores.find(s => s.rank === c.rank);
+        return {
+          topic: c.topic as string,
+          category: (c.category as string) || null,
+          notes: `Auto-saved from research cycle. Editor scored: ${cs?.score || "?"}/10. ${cs?.verdict || ""}`,
+          priority: 50,
+          source: "trending",
+          editor_score: cs?.score || null,
+          research_summary: (c.why as string) || ((c.keyFindings as string[]) || []).slice(0, 2).join("; ") || null,
+        };
+      });
 
     if (unchosenTopics.length > 0) {
       await db.from("topic_queue").insert(unchosenTopics).select();
@@ -930,6 +935,8 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
       title: editorBrief.headline as string,
       slug: editorBrief.slug as string,
       status: "editor_approved",
+      editor_score: (editorBrief.topicScore as number) || null,
+      source: researchData._queueId || researchData._fromQueue ? "queue" : "trending",
       research_data: {
         ...chosenResearch,
         _editorBrief: editorBrief,
@@ -955,7 +962,7 @@ async function stageWrite(
 
   await db
     .from("daily_article_log")
-    .update({ status: "writing", created_at: new Date().toISOString() })
+    .update({ status: "writing", stage_started_at: new Date().toISOString(), model_used: model })
     .eq("id", logId);
 
   const articleUserPrompt = `Write a comprehensive, investigative article following this editorial brief from the Senior Editor.
@@ -1111,7 +1118,7 @@ async function stageIndependenceReview(
 ): Promise<void> {
   await db
     .from("daily_article_log")
-    .update({ status: "independence_review", created_at: new Date().toISOString() })
+    .update({ status: "independence_review", stage_started_at: new Date().toISOString() })
     .eq("id", logId);
 
   const metadata = articleData.metadata as Record<string, unknown>;
@@ -1150,10 +1157,13 @@ Review this article for pharma framing, institutional deference, pulled punches,
 
   const existingResearch = (logEntry?.research_data as Record<string, unknown>) || {};
 
+  const grokScore = reviewResult ? ((reviewResult.score as number) || (reviewResult.independenceScore as number) || null) : null;
+
   await db
     .from("daily_article_log")
     .update({
       status: "independence_done",
+      grok_score: grokScore,
       research_data: {
         ...existingResearch,
         _independenceReview: reviewResult || { skipped: true, reason: skipReason },
@@ -1179,7 +1189,7 @@ async function stageQCAndPublish(
 
   await db
     .from("daily_article_log")
-    .update({ status: "editor_qc", created_at: new Date().toISOString() })
+    .update({ status: "editor_qc", stage_started_at: new Date().toISOString() })
     .eq("id", logId);
 
   const metadata = articleData.metadata as Record<string, unknown>;
@@ -1244,8 +1254,9 @@ Make your final call. Publish, request revisions, or kill.`;
 
   // If editor requests revisions, send back to write stage (max 1 revision to avoid loops)
   if (qcResult.decision === "revise") {
-    const currentData = (await db.from("daily_article_log").select("research_data").eq("id", logId).single()).data?.research_data as Record<string, unknown> || {};
-    const revisionCount = ((currentData._revisionCount as number) || 0) + 1;
+    const currentLog = (await db.from("daily_article_log").select("research_data, revision_count").eq("id", logId).single()).data as { research_data: Record<string, unknown>; revision_count: number | null } | null;
+    const currentData = (currentLog?.research_data as Record<string, unknown>) || {};
+    const revisionCount = ((currentLog?.revision_count as number) || 0) + 1;
 
     if (revisionCount > 1) {
       // Max revisions reached — force publish with editor's improvements applied
@@ -1256,10 +1267,10 @@ Make your final call. Publish, request revisions, or kill.`;
         .from("daily_article_log")
         .update({
           status: "editor_approved", // Back to write queue
+          revision_count: revisionCount,
           research_data: {
             ...currentData,
             _reviseInstructions: qcResult.reviseInstructions,
-            _revisionCount: revisionCount,
           },
         })
         .eq("id", logId);
@@ -1272,6 +1283,13 @@ Make your final call. Publish, request revisions, or kill.`;
   const finalTitle = (qcResult.headline as string) || (metadata.title as string);
   const finalDescription = (qcResult.description as string) || (metadata.description as string);
 
+  // Fetch log entry scores for the articles table
+  const { data: logScores } = await db
+    .from("daily_article_log")
+    .select("editor_score, grok_score")
+    .eq("id", logId)
+    .single();
+
   // Update article to published status with editor's final touches
   await db
     .from("articles")
@@ -1281,6 +1299,9 @@ Make your final call. Publish, request revisions, or kill.`;
       draft: false,
       status: "published",
       published_at: new Date().toISOString(),
+      independence_score: logScores?.grok_score || null,
+      editor_score: logScores?.editor_score || null,
+      pipeline_log_id: logId,
     })
     .eq("slug", slug);
 
@@ -1290,7 +1311,7 @@ Make your final call. Publish, request revisions, or kill.`;
 
   await db
     .from("daily_article_log")
-    .update({ title: finalTitle, status: "publishing", created_at: new Date().toISOString() })
+    .update({ title: finalTitle, status: "publishing", stage_started_at: new Date().toISOString() })
     .eq("id", logId);
 
   const readTime = (articleData.readTime as number) || 12;
@@ -1541,7 +1562,7 @@ Deno.serve(async (req: Request) => {
         .update({
           status: resumeStatus,
           error: null,
-          created_at: new Date().toISOString(),
+          stage_started_at: new Date().toISOString(),
         })
         .eq("id", logId);
 
@@ -1560,7 +1581,7 @@ Deno.serve(async (req: Request) => {
       .from("daily_article_log")
       .select("id, research_data")
       .in("status", ACTIVE)
-      .lt("created_at", staleThreshold);
+      .lt("stage_started_at", staleThreshold);
 
     if (staleRuns && staleRuns.length > 0) {
       for (const stale of staleRuns) {
@@ -1586,7 +1607,7 @@ Deno.serve(async (req: Request) => {
             .update({
               status: resumeStatus,
               error: null,
-              created_at: new Date().toISOString(),
+              stage_started_at: new Date().toISOString(),
             })
             .eq("id", staleId);
         } else {
@@ -1610,7 +1631,7 @@ Deno.serve(async (req: Request) => {
       .from("daily_article_log")
       .select("id, status")
       .in("status", ACTIVE)
-      .gte("created_at", twoMinutesAgo);
+      .gte("stage_started_at", twoMinutesAgo);
 
     if (activeRuns && activeRuns.length >= MAX_CONCURRENT) {
       return json({
@@ -1632,7 +1653,7 @@ Deno.serve(async (req: Request) => {
         .from("daily_article_log")
         .select("id")
         .in("status", ["started", "searching"])
-        .gte("created_at", new Date(Date.now() - 2 * 60 * 1000).toISOString());
+        .gte("stage_started_at", new Date(Date.now() - 2 * 60 * 1000).toISOString());
 
       if (activePipeline && activePipeline.length > 0) {
         return json({ skipped: true, message: "Scout already running." });
@@ -1641,7 +1662,7 @@ Deno.serve(async (req: Request) => {
       const today = todayISO();
       const { data: logEntry } = await db
         .from("daily_article_log")
-        .insert({ run_date: today, status: "started" })
+        .insert({ run_date: today, status: "started", source: "trending", stage_started_at: new Date().toISOString() })
         .select("id")
         .single();
 
@@ -1738,7 +1759,7 @@ Deno.serve(async (req: Request) => {
       const today = todayISO();
       const { data: logEntry } = await db
         .from("daily_article_log")
-        .insert({ run_date: today, status: "started", topic: topic.topic })
+        .insert({ run_date: today, status: "started", topic: topic.topic, source: "queue", stage_started_at: new Date().toISOString() })
         .select("id")
         .single();
 
