@@ -1110,7 +1110,12 @@ Write the article. Return ONLY the article HTML — no JSON wrapper, no metadata
   const VALID_CATEGORIES = ["Neuroscience", "Mental Health", "Longevity", "Clinical Evidence", "Environmental Health", "Nutrition", "Fitness", "Sleep Science", "Pharmacology"];
   const rawCategory = (editorBrief?.categoryOverride as string) || (researchData.category as string) || "";
   const category = VALID_CATEGORIES.find(c => rawCategory.toLowerCase().includes(c.toLowerCase())) || "Clinical Evidence";
-  const tags = ((researchData.tags as string[]) || (researchData.keyFindings as string[]) || []).slice(0, 5).map(t => typeof t === "string" && t.length < 30 ? t : t.split(" ").slice(0, 3).join(" "));
+  // Build tags from category + topic keywords (NOT from keyFindings — those are sentences)
+  const tagSource = [
+    category,
+    ...(title.split(/[\s:—–\-,]+/).filter(w => w.length > 3 && w[0] === w[0].toUpperCase())),
+  ];
+  const tags = [...new Set(tagSource)].slice(0, 5);
   const wordCount = articleHtml.split(/\s+/).length;
   const readTime = Math.max(5, Math.ceil(wordCount / 220));
 
