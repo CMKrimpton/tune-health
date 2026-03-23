@@ -1142,18 +1142,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ------ Auto-stop at 100 articles ------
+    // ------ Article count (for status reporting) ------
     const { count: articleCount } = await db
       .from("articles")
       .select("*", { count: "exact", head: true });
-
-    if (articleCount && articleCount >= 100) {
-      return json({
-        skipped: true,
-        message: `Target reached: ${articleCount} articles published. Ramp down the schedule.`,
-        articleCount,
-      });
-    }
 
     // ------ Guard: block if a stage is already in progress ------
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
