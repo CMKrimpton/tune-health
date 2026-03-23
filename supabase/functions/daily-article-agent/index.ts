@@ -795,28 +795,37 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
 
     // Step 1: Gemini searches the web for trending health topics
     const geminiFindings = await gemini({
-      system: "You are a health news researcher. Search the web for the most trending, discussed, and scientifically significant health stories from the last 3 days. For each topic, include: the specific study or finding, the journal or source, key statistics, and why it matters. Focus on substance, not celebrity gossip.",
-      user: `Find TWO sets of health topics:
+      system: "You are a health news researcher with access to Google Search. Find the most significant, trending, and searched health stories across multiple time horizons. For each topic: the specific study or finding, the journal or source, key statistics, and why it matters. Substance only — no celebrity gossip, no supplement hype.",
+      user: `Search the web and find health topics across 8 categories. Every topic must be a DIFFERENT subject area — no two about the same drug, condition, or study.
 
-SET A — 5 MOST TRENDING from the last 5 days (breaking news, viral studies, hot debate topics)
-SET B — 5 MOST SEARCHED from the last 10 days (what people are actively googling about health)
+BEST/TRENDING (most significant, discussed, or viral):
+A1 — 3 best from last 3 days (breaking news, just-published studies)
+A2 — 3 best from last 30 days (recent but may have been missed)
+A3 — 3 best from last 365 days (important stories that deserve deeper coverage)
+A4 — 3 best from last 1000 days (landmark studies, paradigm shifts still underreported)
 
-Each topic must be a DIFFERENT subject area. Label each set clearly.
+MOST SEARCHED (what people are actively searching for):
+B1 — 3 most searched from last 3 days
+B2 — 3 most searched from last 30 days
+B3 — 3 most searched from last 365 days
+B4 — 3 most searched from last 1000 days
+
+That's 24 topics total. Label each set clearly (A1, A2, etc).
 
 OFF-LIMITS (already covered, already queued, or recently tried — do NOT repeat these subject areas):
-${titles.slice(0, 15).map((t) => `- ${t}`).join("\n")}
+${titles.slice(0, 20).map((t) => `- ${t}`).join("\n")}
 ${queueTopics.slice(0, 15).map((t) => `- QUEUED: ${t}`).join("\n")}
 ${recentTopics.slice(0, 8).map((t) => `- TRIED: ${t}`).join("\n")}
 
 For each topic: the headline, the key finding, the source/study, key statistics, and why it's compelling. Plain text, not JSON.`,
-      maxTokens: 3000,
+      maxTokens: 6000,
       temperature: 0.4,
     });
 
     // Step 2: Sonnet structures Gemini's raw findings into candidate JSON
     const researchRaw = await claude({
       system: `You structure raw research findings into JSON. Return ONLY valid JSON, no explanation.`,
-      user: `Pick the best 3-5 topics from these research findings. Drop any that overlap with OFF-LIMITS articles. Return ONLY this JSON:
+      user: `Pick the best 5 topics from these 24 research findings (covering 3-day to 1000-day time horizons). Prioritize diversity — pick from different time horizons and categories. Drop any that overlap with OFF-LIMITS. Return ONLY this JSON:
 
 {"candidates":[{"rank":1,"topic":"...","headline_draft":"...","why":"...","category":"Neuroscience|Mental Health|Longevity|Clinical Evidence|Environmental Health|Nutrition|Fitness|Sleep Science|Pharmacology","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."]}]}
 
@@ -1726,27 +1735,12 @@ Deno.serve(async (req: Request) => {
       .from("articles")
       .select("*", { count: "exact", head: true });
 
-    // ------ Guard: block if MAX_CONCURRENT active stages running ------
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-    const { data: activeRuns } = await db
-      .from("daily_article_log")
-      .select("id, status")
-      .in("status", ACTIVE)
-      .gte("stage_started_at", twoMinutesAgo);
-
-    if (activeRuns && activeRuns.length >= MAX_CONCURRENT) {
-      return json({
-        skipped: true,
-        message: `${activeRuns.length} stages currently running (max ${MAX_CONCURRENT}). Skipping.`,
-        active: activeRuns.map((r: Record<string, unknown>) => r.status),
-      });
-    }
-
     const articleModel =
       "claude-sonnet-4-6"; // Sonnet 4.6 — Opus times out on Edge Functions (~150s limit). Upgrade when longer timeout available.
 
     // ==============================================================
     // JOB 1: SCOUT — discover topics and fill the queue
+    // Independent of production — has its own guard
     // Triggered by: cron (every 15 min) or action="scout"
     // ==============================================================
     if (action === "scout") {
@@ -1806,6 +1800,21 @@ Deno.serve(async (req: Request) => {
     // Triggered by: cron (every 5 min), action="produce", or action="run"
     // ==============================================================
     if (action === "run" || action === "produce") {
+      // Guard: block if another production stage is actively running
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data: activeRuns } = await db
+        .from("daily_article_log")
+        .select("id, status")
+        .in("status", ACTIVE)
+        .gte("stage_started_at", twoMinutesAgo);
+
+      if (activeRuns && activeRuns.length >= MAX_CONCURRENT) {
+        return json({
+          skipped: true,
+          message: `${activeRuns.length} stages currently running (max ${MAX_CONCURRENT}). Skipping.`,
+          active: activeRuns.map((r: Record<string, unknown>) => r.status),
+        });
+      }
       // First: advance any article already in the production pipeline
       // Priority: finish existing before starting new
       for (const [status, stageName, handler] of [
