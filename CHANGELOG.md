@@ -6,43 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-03-23
+
+### Fixed (critical — post-6.0 stabilization)
+- **Massive duplicate cleanup** — deleted 14 duplicate articles across fusobacterium (4), GLP-1/Ozempic (3), PFAS (3), chlorpyrifos (2), Y-chromosome (1), cholesterol (1). Archived matching DB records
+- **Hard programmatic duplicate filter** — `isDuplicate()` checks >40% word overlap with ALL existing articles + queue before ANY candidate reaches the editor. Not AI judgment — code
+- **Writer restored to JSON output** — the raw HTML experiment broke tags, categories, and metadata. Reverted to original JSON format (html + metadata + svg + toc). Sonnet 4.6 handles it within timeout
+- **Tags were sentence fragments** — "A national Swedish", "Semaglutide was associated" — now proper tags from Sonnet's JSON
+- **`researchData is not defined`** — blocked ALL publishes. The `replacesSlug` feature referenced a variable that didn't exist in `stageQCAndPublish`
+- **`safeStage` rollback loops** — failed writes rolled back to `editor_approved`, causing infinite write→timeout→rollback→write. Now fails hard, no rollback
+- **Category leaked editor reasoning** — editor's rationale stored as category string. Now sanitized against 9-value whitelist
+- **Scout and produce blocking each other** — global active guard blocked scout when produce was running. Now independent
+- **Gemini findings not parseable** — Gemini returns grounded text, not JSON. Two-model scout: Gemini discovers, Sonnet structures
+
+### Added
+- **Two-model scout** — Gemini 2.5 Flash (Google Search) discovers 10 topics across recent + landmark timeframes. Sonnet 4.6 structures the best 5 into candidates
+- **Full off-limits list** — Gemini now sees ALL article titles + queue topics (was truncated to 20, missing 49 articles)
+- **Category balance in scout** — underserved categories (Nutrition, Fitness, Sleep Science) explicitly prioritized, oversaturated categories flagged
+- **Featured rotation upgrade** — twice daily (12h), quality-gated (must have illustration, score >30), weighted by editor score (25%), recency (30%), independence score (15%), category diversity (10%)
+- **Admin kill button** + `kill-article` edge function action
+- **Hard duplicate filter** on queue inserts — same `isDuplicate()` check
+
+### Changed
+- **Scout frequency** — designed to run less often with bigger sweeps (10 topics per run vs 3)
+- **Produce cron** — every 3 min (was 5)
+- **QC defaults to publish** — only revises for serious factual errors, max 1 revision
+- **Models**: Sonnet 4.6 (research/editor/write/QC), Gemini 2.5 Flash (scout discovery), Grok 3 (independence review)
+
 ## [6.0.0] - 2026-03-23
 
 ### Architecture — Two-Job AI Newsroom
-- **Scout job** (cron: `*/15 * * * *`) — discovers 3 trending topics via web search, editor scores them, unchosen candidates auto-save to topic queue. Decoupled from article production
-- **Produce job** (cron: `*/3 * * * *`) — editor picks best topic from queue, self-chains through 4 production stages: Editor Brief → Write → Grok Independence Review → QC + Publish
-- **Self-chaining** — each stage triggers the next via HTTP POST. Cron is just the trigger. Articles complete in ~4 min instead of ~25 min
-- **Topic queue** — new `topic_queue` table. Admin can add topics manually with priority/expedite. Scout auto-fills with unchosen candidates. Editor always has options
-
-### Added
-- **Grok Independence Reviewer** (Stage 4) — xAI Grok 3 checks every article for pharma framing, institutional deference, pulled punches, missing counter-narratives, causation errors, funding bias. Provides specific rewrite suggestions. Non-fatal — skips gracefully on failure
-- **Multi-candidate research** — research agent pitches 3 topics per scout cycle. Editor scores all, picks best. Unchosen candidates (score 5+) auto-save to queue with editor scores
-- **Topic overlap detection** — editor checks each candidate against existing articles. Can flag `replacesSlug` to replace an older article with a better new one
-- **Admin kill button** — kill any article from Pipeline Monitor UI. `kill-article` action in edge function
-- **`safeStage()` wrapper** — catches all stage errors, records them in the log, fails hard (no rollback loops)
-- **Robust JSON parser** — proper brace-matching instead of greedy regex. Attempts to repair truncated JSON
-- **API timeouts** — 135s AbortSignal on all Claude API calls (Edge Functions timeout at ~150s)
-- **Article sort ordering** — `sortOrder` field (epoch ms) in content JSON. Newest articles always first, even same-day publishes
-- **Schema columns** — `stage_started_at`, `model_used`, `grok_score`, `editor_score`, `revision_count`, `source` on daily_article_log. `independence_score`, `editor_score`, `pipeline_log_id` on articles. `editor_score`, `research_summary` on topic_queue
-- **Category sanitization** — validates against whitelist of 9 categories. Prevents editor reasoning from leaking into metadata
-- **Pipeline Monitor UI** — 5-stage visualization with model badges (Sonnet/Grok color-coded), topic queue management, independence scores, kill buttons, "in flight" counter
-
-### Changed
-- **Writer outputs raw HTML** — no JSON/SVG/metadata wrapper. Metadata built from editor brief. SVG removed from writer entirely (illustration agent handles images). Eliminated the primary cause of write timeouts
-- **QC defaults to publish** — only "revise" for serious factual errors. Max 1 revision cycle. Prevents infinite QC loops
-- **Research includes off-limits list** — recent topics + existing articles prevent duplicate topic areas
-- **Models**: Sonnet 4.6 for all stages (Opus times out on Edge Functions). Grok 3 for independence review
-- **Stale timeout**: 5 min (down from 8 min)
-- **Max concurrent**: 1 (serial mode for stability)
-
-### Fixed
-- **Infinite revision loops** — `safeStage` used to roll back failed writes to `editor_approved`, causing write→timeout→rollback→write loops. Now fails hard
-- **Category field leaked editor reasoning** — editor's internal scoring rationale ("Nutrition — deliberately chosen to address...") was stored as the category string
-- **Topic queue not displaying** — status filter used `"pending"` instead of `"queued"`
-- **Grok score showing "/10"** — field name mismatch between prompt (`score`) and UI (`independenceScore`)
-- **Unicode escapes rendering literally** — `\u2014` etc. in JSX text content
-- **`parseClaudeJSON` greedy regex** — could match wrong JSON bounds. Now uses proper brace-matching
-- **`created_at` overwritten each stage** — lost original creation time. Now uses `stage_started_at`
+- **Scout job** (cron: `*/15`) — Gemini discovers topics via Google Search, Sonnet structures and scores, editor picks winner, unchosen auto-save to queue
+- **Produce job** (cron: `*/3`) — editor picks from queue, self-chains: Editor Brief → Write (JSON) → Grok Independence Review → QC + Publish
+- **Self-chaining** — each production stage triggers the next via HTTP POST. Cron is just the initial trigger
+- **Topic queue** — `topic_queue` table. Admin can add manually. Scout auto-fills. Hard dedup prevents duplicates
+- **`safeStage()` wrapper** — catches all errors, fails hard, records in log
+- **Robust JSON parser** — proper brace-matching, truncated JSON repair
+- **135s API timeout** — prevents Edge Function silent kills
+- **`sortOrder`** (epoch ms) — newest articles always first
+- **Schema columns** — `stage_started_at`, `model_used`, `grok_score`, `editor_score`, `revision_count`, `source`, `independence_score`, `pipeline_log_id`
+- **Category sanitization** — whitelist of 9 valid categories
+- **Pipeline Monitor** — 5-stage visualization, model badges, topic queue, kill buttons, independence scores
 
 ## [5.19.0] - 2026-03-23
 

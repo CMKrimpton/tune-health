@@ -201,22 +201,22 @@ const articles = await getCollection('articles');
 Two independent cron jobs power the newsroom:
 
 **Job 1 — Scout** (cron: `*/15 * * * *`, action: `scout`):
-Discovers 3 trending health topics via web search, editor scores them, unchosen candidates auto-save to the topic queue. Keeps the queue stocked with vetted article ideas.
+Two-model discovery: Gemini 2.5 Flash (Google Search) finds 10 topics across recent + landmark timeframes, Sonnet 4.6 structures the best 5 into candidates. Editor scores them, unchosen auto-save to topic queue. Sees ALL article titles + queue in off-limits list. Category balance prioritizes underserved areas. Hard `isDuplicate()` filter blocks any candidate that overlaps >40% with existing articles.
 
 **Job 2 — Produce** (cron: `*/3 * * * *`, action: `produce`):
 Picks the best topic from the queue, self-chains through 4 production stages:
-  - **Editor Brief** (~30s): Sonnet 4.6 picks topic from queue, checks for overlap with existing articles, crafts creative brief. Can flag `replacesSlug` to replace an older article.
-  - **Write** (~90s): Sonnet 4.6 writes raw HTML article (no JSON/SVG overhead). Metadata built from editor brief.
+  - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, crafts creative brief. Can flag `replacesSlug` to replace an older article.
+  - **Write** (~90s): Sonnet 4.6 returns full JSON (html + metadata + svg + toc + readTime). Category sanitized against 9-value whitelist.
   - **Grok Independence Review** (~30s): Grok 3 (xAI) checks for pharma framing, institutional deference, pulled punches. Provides rewrite suggestions.
-  - **QC + Publish** (~60s): Sonnet 4.6 polishes headline/description, OpenAI GPT Image generates illustration, commits .astro + .json to GitHub. Smart featured rotation.
+  - **QC + Publish** (~60s): Sonnet 4.6 polishes headline/description (defaults to publish, max 1 revision). OpenAI GPT Image generates illustration. Commits .astro + .json to GitHub. Featured rotation.
 
 **Self-chaining**: each stage triggers the next via HTTP POST. Cron is just the initial trigger.
-**Error handling**: `safeStage()` wrapper catches all errors, marks as failed (no rollback loops). Admin can retry via UI.
-**Topic overlap detection**: editor checks each candidate against existing articles, can replace outdated coverage.
-**Category sanitization**: validates against whitelist of 9 categories (prevents editor reasoning leaking into metadata).
+**Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill via UI.
+**Duplicate filter**: `isDuplicate()` — programmatic >40% word overlap check against ALL articles + queue. Runs before editor sees candidates AND before queue inserts.
+**Category sanitization**: validates against whitelist of 9 categories.
 **Article ordering**: `sortOrder` field (epoch ms) ensures newest articles always appear first.
 
-- **Smart featured rotation**: scores articles on recency (40%), category diversity (20%), illustration quality (20%), read time (10%), engagement proxy (10%). Auto-rotates every 24h
+- **Smart featured rotation**: twice daily (12h). Scores: editor quality (25%), recency (30%), independence score (15%), illustration (10%), read time (10%), category diversity (10%). Must have illustration and score >30 to qualify.
 - **Quality control**: `editorial-qc` reviews full article collection holistically → identifies issues → auto-fixes via `articles-api`
 - **Illustration generation**: `generate-illustration` creates editorial art per article with house style prompt + category color palettes → stored in Supabase Storage
 - **All secrets** stored in Supabase secrets only — never in code

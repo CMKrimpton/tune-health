@@ -122,17 +122,18 @@ src/
 - **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish
 
 ### Autonomous AI Newsroom
-Two-job architecture powered by `daily-article-agent` Edge Function:
+Four AI companies, five models, two independent jobs:
 
-- **Scout** (cron: every 15 min): discovers 3 trending topics via Sonnet 4.6 + web search. Editor scores candidates, unchosen topics auto-save to queue
+- **Scout** (cron: every 15 min): **Gemini 2.5 Flash** (Google Search) discovers 10 topics across recent + landmark timeframes. **Sonnet 4.6** structures best 5 into candidates. Editor scores, picks winner. Unchosen auto-save to queue. Hard `isDuplicate()` filter blocks overlapping subjects. Full off-limits list (ALL articles + queue). Category balance prioritizes underserved areas
 - **Produce** (cron: every 3 min): editor picks best topic from queue → self-chains through:
   1. **Editor Brief** (Sonnet 4.6) — creative direction, overlap detection, can replace older articles
-  2. **Write** (Sonnet 4.6) — raw HTML output, metadata from editor brief
-  3. **Grok Independence Review** (Grok 3) — checks pharma framing, institutional deference, pulled punches
-  4. **QC + Publish** (Sonnet 4.6) — polish headline/description, generate illustration (OpenAI GPT Image), commit to GitHub
-- **Smart featured rotation**: auto-rotates based on recency, diversity, illustration quality
-- **Topic queue**: 30+ vetted article ideas always ready. Admin can add manually with priority/expedite
-- **Error handling**: `safeStage()` wrapper, 135s API timeouts, category sanitization, no rollback loops
+  2. **Write** (Sonnet 4.6) — full JSON response (html + metadata + tags + svg + toc). Category sanitized against whitelist
+  3. **Grok Independence Review** (Grok 3, xAI) — checks pharma framing, institutional deference, pulled punches. Suggests rewrites
+  4. **QC + Publish** (Sonnet 4.6 + OpenAI GPT Image) — polish headline, generate illustration, commit to GitHub
+- **Featured rotation**: twice daily (12h). Quality-gated: must have illustration, score >30. Weighted by editor score, recency, independence score, category diversity
+- **Topic queue**: vetted ideas always ready. Admin can add manually with priority/expedite. Hard dedup on inserts
+- **Error handling**: `safeStage()` fails hard (no rollback loops), 135s API timeouts, category sanitization
+- **65+ articles published**, 0 duplicates, diverse categories
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app
