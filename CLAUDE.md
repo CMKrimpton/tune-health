@@ -181,35 +181,45 @@ const articles = await getCollection('articles');
 - Recently used items tracking
 - Keyboard navigation (↑↓ Enter Esc)
 
-#### Admin Publishing Portal (/admin)
+#### Admin Mission Control (/admin)
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix)
-- **Dashboard**: 6 stat cards (total, published, drafts, featured, illustrated, avg read time), category breakdown pills, recently updated row, article search
-- **New Article Editor**: two-column layout (upload/chat + live preview)
-  - Drag-and-drop file upload (.md, .docx, .txt)
-  - Claude Opus generates article in exact editorial format (via Supabase Edge Function)
-  - **Auto-generates editorial illustration** via OpenAI GPT Image 1.5 after article creation
-  - Chat refinement interface for iterating on the article
-  - Metadata editor (title, slug, category, tags, gradient, featured)
-  - One-click publish to GitHub (commits .astro + .json with heroImage, triggers Vercel rebuild)
-- **AI Agents panel** on dashboard:
-  - **Editorial QC Agent**: "Audit Only", "Dry Run (Preview Fixes)", "Audit & Auto-Fix" with severity selector (High/Medium+/All), pattern warnings, copy report, per-issue fix status
-  - **Illustration Agent**: single-article selector, "Generate Missing", "Regenerate All" with cost confirmation
-  - **Database Sync**: refresh DB from content
-- Edge Functions: `process-article`, `refine-article`, `publish-article`, `generate-illustration`, `editorial-qc`
+- **Dashboard**: 6 stat cards, 3 tab panels (Pipeline, Articles, AI Agents)
+- **Pipeline tab** (React island: `PipelineMonitor`):
+  - 5-stage visual pipeline: Research → Editor → Write → Grok Review → QC+Publish
+  - Model badges per stage (Sonnet 4.6, Grok 3) with color coding
+  - Real-time polling (15s), "in flight" counter, progress bar to 100 articles
+  - Topic Queue: add topics manually, set category/priority/expedite, delete
+  - Published articles with independence scores, editor decisions with kill reasons
+  - Kill button on every pipeline card, retry on failed articles
+  - Trigger Run / Scout buttons for manual control
+- **Articles tab** (React island: `ArticlesManager`): search, filter, sort, inline editing, bulk actions, featured toggle
+- **AI Agents tab** (React island: `AgentsPanel`): editorial QC, illustration agent, DB sync, editor decision log
+- **New Article Editor** (`/admin/new`): drag-and-drop upload, AI generation, chat refinement, live preview, one-click publish
 
-#### Autonomous AI Pipeline (Staged)
-- **Article creation**: source doc → Claude writes article → OpenAI generates illustration → both saved to DB → publish commits to GitHub → Vercel deploys
-- **Staged article agent**: `daily-article-agent` operates as a **3-stage pipeline**, each stage triggered by a 15-minute cron:
-  - **Stage 1 — Research** (~60s): Claude Sonnet with native `web_search` (10 searches max) discovers trending health topics, picks best one, deep-researches it. Saves research JSON to `daily_article_log.research_data`.
-  - **Stage 2 — Write** (~120s): Reads research data, Claude Sonnet/Opus writes full 2,500-3,000+ word article with web search fact-checking. Saves to `articles` table.
-  - **Stage 3 — Publish** (~60s): Generates editorial illustration (OpenAI GPT Image), commits .astro + .json to GitHub, triggers Vercel deploy. Runs **smart featured rotation** after publish.
-  - **Priority order**: finish existing articles before starting new ones (publish > write > research)
-  - **Rate limit**: one new article per hour. **Auto-stop at 100 articles**.
-  - **Stale cleanup**: marks timed-out runs as failed. **Concurrent guard**: prevents overlapping stages.
-- **Smart featured rotation**: after each publish, scores all articles on recency (40%), category diversity (20%), illustration quality (20%), read time (10%), and engagement proxy (10%). Auto-rotates featured article every 24h
-- **Quality control**: `editorial-qc` reviews full article collection holistically → identifies headline repetition, weak descriptions → auto-fixes via `articles-api`
+#### Autonomous AI Newsroom (Two-Job Architecture)
+
+Two independent cron jobs power the newsroom:
+
+**Job 1 — Scout** (cron: `*/15 * * * *`, action: `scout`):
+Discovers 3 trending health topics via web search, editor scores them, unchosen candidates auto-save to the topic queue. Keeps the queue stocked with vetted article ideas.
+
+**Job 2 — Produce** (cron: `*/3 * * * *`, action: `produce`):
+Picks the best topic from the queue, self-chains through 4 production stages:
+  - **Editor Brief** (~30s): Sonnet 4.6 picks topic from queue, checks for overlap with existing articles, crafts creative brief. Can flag `replacesSlug` to replace an older article.
+  - **Write** (~90s): Sonnet 4.6 writes raw HTML article (no JSON/SVG overhead). Metadata built from editor brief.
+  - **Grok Independence Review** (~30s): Grok 3 (xAI) checks for pharma framing, institutional deference, pulled punches. Provides rewrite suggestions.
+  - **QC + Publish** (~60s): Sonnet 4.6 polishes headline/description, OpenAI GPT Image generates illustration, commits .astro + .json to GitHub. Smart featured rotation.
+
+**Self-chaining**: each stage triggers the next via HTTP POST. Cron is just the initial trigger.
+**Error handling**: `safeStage()` wrapper catches all errors, marks as failed (no rollback loops). Admin can retry via UI.
+**Topic overlap detection**: editor checks each candidate against existing articles, can replace outdated coverage.
+**Category sanitization**: validates against whitelist of 9 categories (prevents editor reasoning leaking into metadata).
+**Article ordering**: `sortOrder` field (epoch ms) ensures newest articles always appear first.
+
+- **Smart featured rotation**: scores articles on recency (40%), category diversity (20%), illustration quality (20%), read time (10%), engagement proxy (10%). Auto-rotates every 24h
+- **Quality control**: `editorial-qc` reviews full article collection holistically → identifies issues → auto-fixes via `articles-api`
 - **Illustration generation**: `generate-illustration` creates editorial art per article with house style prompt + category color palettes → stored in Supabase Storage
-- **All secrets** (ANTHROPIC_API_KEY, OPENAI_API_KEY, GITHUB_TOKEN, ADMIN_TOKEN) stored in Supabase secrets only — never in code
+- **All secrets** stored in Supabase secrets only — never in code
 
 #### Collection-Driven Navigation
 - All navigation components pull from `getCollection('articles')` — no hardcoded article references
@@ -229,6 +239,7 @@ The admin CMS uses a Supabase PostgreSQL database as the source of truth for edi
 - `read_time`, `publish_date`, `sort_order`, `hero_image`, `hero_image_alt`
 - `article_html` (full article body), `article_svg` (hero SVG), `toc` (jsonb)
 - `source_text` (original source document), `status` (draft/published/archived)
+- `independence_score` (Grok), `editor_score`, `pipeline_log_id` (FK to daily_article_log)
 - `created_at`, `updated_at`, `published_at`
 
 **Data flow:**
@@ -250,7 +261,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `fetch-article` | Fetches .astro file content from GitHub | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
-| `daily-article-agent` | 3-stage article pipeline: research → write → illustrate+publish. Each cron invocation processes ONE stage (~60-120s). Cron fires every 15 min. Finishes existing articles before starting new ones. Auto-stops at 100 articles. Smart featured rotation after each publish. Actions: `run`, `dry-run`, `status`. Uses Claude Sonnet 4.6 by default, Opus 4.6 with `model: "opus"`. | None (rate-limited internally) |
+| `daily-article-agent` | Two-job newsroom: `scout` (discovers topics, fills queue) + `produce` (editor picks, self-chains through write → Grok review → QC → publish). Also: `status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`. Models: Sonnet 4.6 (research/editor/write/QC), Grok 3 (independence review). | None (rate-limited internally) |
 
 **Deploy commands:**
 ```bash
@@ -259,19 +270,20 @@ supabase functions deploy <function-name> --no-verify-jwt
 
 **Required secrets** (set via `supabase secrets set`):
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
+- `XAI_API_KEY` (Grok 3 for independence review), `GOOGLE_API_KEY` (future use)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
-- Note: `daily-article-agent` uses Claude's native `web_search` tool — no additional search API key required
 
 **Database tables:**
-- `articles` — main content table (see schema above)
-- `daily_article_log` — tracks article agent pipeline stages (run_date, topic, slug, title, status, error, search_queries, research_snippets, research_data)
-- `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source). Upsert via `/api/subscribe` endpoint
+- `articles` — main content table. Key columns: `slug`, `title`, `description`, `category`, `tags[]`, `keywords[]`, `article_html`, `hero_image`, `status`, `independence_score`, `editor_score`, `pipeline_log_id` (FK to daily_article_log)
+- `daily_article_log` — tracks pipeline stages. Key columns: `topic`, `slug`, `title`, `status`, `error`, `research_data` (jsonb), `editor_score`, `grok_score`, `model_used`, `revision_count`, `source` (trending/queue), `stage_started_at`
+- `topic_queue` — editorial topic backlog. Key columns: `topic`, `notes`, `category`, `priority`, `expedite`, `source` (manual/trending), `status` (queued/assigned/in_progress/completed/skipped), `editor_score`, `research_summary`
+- `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source)
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
-- `daily-article-agent`: runs every 15 minutes (`*/15 * * * *`), processes one pipeline stage per invocation
-- Temporary ramp-up until 100 articles reached, then ramp back to daily
+- `article-scout`: every 15 min (`*/15 * * * *`) — discovers topics, fills queue
+- `article-produce`: every 3 min (`*/3 * * * *`) — picks from queue, self-chains through production
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
-- View schedule: `SELECT * FROM cron.job WHERE jobname = 'daily-article-agent';`
+- View schedule: `SELECT * FROM cron.job;`
 - View run history: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`
 
 #### User Funnel (alumi Health)

@@ -113,27 +113,26 @@ src/
 - **Article search** with real-time filtering on articles index
 - **Pagination** — articles index shows 12 initially with "Show More" button; auto-expands on search/filter
 
-### Admin Publishing Portal (`/admin`)
+### Admin Mission Control (`/admin`)
 - Token-based authentication with logout (server-side only, no `PUBLIC_` prefix)
-- **Dashboard**: 6 stat cards (total, published, drafts, featured, illustrated, avg read time), category breakdown pills, recently updated row, article search/filter
-- **New Article**: upload source docs or paste text → Claude Opus generates full article → OpenAI auto-generates illustration
-- **Edit Articles**: three-tab editor (Metadata, Content HTML, AI Refine) with live preview
-- Chat refinement with quick-action templates
-- Version history with restore
-- localStorage auto-save
-- One-click publish to GitHub (triggers Vercel rebuild)
-- Database-backed (Supabase PostgreSQL) for instant editing
-- **AI Agents panel**:
-  - **Editorial QC Agent**: "Audit Only", "Dry Run (Preview Fixes)", "Audit & Auto-Fix" — Claude reviews all headlines/descriptions holistically with severity selector, pattern warnings, copy report, per-issue fix status
-  - **Illustration Agent**: single-article generator, "Generate Missing", "Regenerate All" with cost confirmation
-  - **Database Sync**: refresh DB from content
-- **Article Pipeline Agent** (`daily-article-agent`): autonomous 3-stage editorial pipeline
-  - **Stage 1 — Research** (~60s): Claude Sonnet with native `web_search` discovers trending health topics
-  - **Stage 2 — Write** (~120s): Claude writes 2,500-3,000+ word investigative article with fact-checking
-  - **Stage 3 — Publish** (~60s): OpenAI generates illustration, commits to GitHub, triggers Vercel deploy
-  - Cron fires every 15 min, processes ONE stage per invocation (prevents timeout). Capacity: ~32 articles/day
-  - **Smart featured rotation**: auto-rotates featured article based on recency, category diversity, and illustration quality
-  - Auto-stops at 100 articles; rate-limited to one new article per hour; logs to `daily_article_log` table
+- **Dashboard**: 6 stat cards, 3 tab panels (Pipeline, Articles, AI Agents)
+- **Pipeline Monitor**: 5-stage visual pipeline (Research → Editor → Write → Grok Review → QC+Publish) with model badges, topic queue management, kill buttons, independence scores
+- **Articles Manager**: search, filter, sort, inline editing, bulk actions, featured toggle
+- **AI Agents**: editorial QC, illustration agent, DB sync, editor decision log
+- **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish
+
+### Autonomous AI Newsroom
+Two-job architecture powered by `daily-article-agent` Edge Function:
+
+- **Scout** (cron: every 15 min): discovers 3 trending topics via Sonnet 4.6 + web search. Editor scores candidates, unchosen topics auto-save to queue
+- **Produce** (cron: every 3 min): editor picks best topic from queue → self-chains through:
+  1. **Editor Brief** (Sonnet 4.6) — creative direction, overlap detection, can replace older articles
+  2. **Write** (Sonnet 4.6) — raw HTML output, metadata from editor brief
+  3. **Grok Independence Review** (Grok 3) — checks pharma framing, institutional deference, pulled punches
+  4. **QC + Publish** (Sonnet 4.6) — polish headline/description, generate illustration (OpenAI GPT Image), commit to GitHub
+- **Smart featured rotation**: auto-rotates based on recency, diversity, illustration quality
+- **Topic queue**: 30+ vetted article ideas always ready. Admin can add manually with priority/expedite
+- **Error handling**: `safeStage()` wrapper, 135s API timeouts, category sanitization, no rollback loops
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app

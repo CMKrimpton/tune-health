@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [6.0.0] - 2026-03-23
+
+### Architecture — Two-Job AI Newsroom
+- **Scout job** (cron: `*/15 * * * *`) — discovers 3 trending topics via web search, editor scores them, unchosen candidates auto-save to topic queue. Decoupled from article production
+- **Produce job** (cron: `*/3 * * * *`) — editor picks best topic from queue, self-chains through 4 production stages: Editor Brief → Write → Grok Independence Review → QC + Publish
+- **Self-chaining** — each stage triggers the next via HTTP POST. Cron is just the trigger. Articles complete in ~4 min instead of ~25 min
+- **Topic queue** — new `topic_queue` table. Admin can add topics manually with priority/expedite. Scout auto-fills with unchosen candidates. Editor always has options
+
+### Added
+- **Grok Independence Reviewer** (Stage 4) — xAI Grok 3 checks every article for pharma framing, institutional deference, pulled punches, missing counter-narratives, causation errors, funding bias. Provides specific rewrite suggestions. Non-fatal — skips gracefully on failure
+- **Multi-candidate research** — research agent pitches 3 topics per scout cycle. Editor scores all, picks best. Unchosen candidates (score 5+) auto-save to queue with editor scores
+- **Topic overlap detection** — editor checks each candidate against existing articles. Can flag `replacesSlug` to replace an older article with a better new one
+- **Admin kill button** — kill any article from Pipeline Monitor UI. `kill-article` action in edge function
+- **`safeStage()` wrapper** — catches all stage errors, records them in the log, fails hard (no rollback loops)
+- **Robust JSON parser** — proper brace-matching instead of greedy regex. Attempts to repair truncated JSON
+- **API timeouts** — 135s AbortSignal on all Claude API calls (Edge Functions timeout at ~150s)
+- **Article sort ordering** — `sortOrder` field (epoch ms) in content JSON. Newest articles always first, even same-day publishes
+- **Schema columns** — `stage_started_at`, `model_used`, `grok_score`, `editor_score`, `revision_count`, `source` on daily_article_log. `independence_score`, `editor_score`, `pipeline_log_id` on articles. `editor_score`, `research_summary` on topic_queue
+- **Category sanitization** — validates against whitelist of 9 categories. Prevents editor reasoning from leaking into metadata
+- **Pipeline Monitor UI** — 5-stage visualization with model badges (Sonnet/Grok color-coded), topic queue management, independence scores, kill buttons, "in flight" counter
+
+### Changed
+- **Writer outputs raw HTML** — no JSON/SVG/metadata wrapper. Metadata built from editor brief. SVG removed from writer entirely (illustration agent handles images). Eliminated the primary cause of write timeouts
+- **QC defaults to publish** — only "revise" for serious factual errors. Max 1 revision cycle. Prevents infinite QC loops
+- **Research includes off-limits list** — recent topics + existing articles prevent duplicate topic areas
+- **Models**: Sonnet 4.6 for all stages (Opus times out on Edge Functions). Grok 3 for independence review
+- **Stale timeout**: 5 min (down from 8 min)
+- **Max concurrent**: 1 (serial mode for stability)
+
+### Fixed
+- **Infinite revision loops** — `safeStage` used to roll back failed writes to `editor_approved`, causing write→timeout→rollback→write loops. Now fails hard
+- **Category field leaked editor reasoning** — editor's internal scoring rationale ("Nutrition — deliberately chosen to address...") was stored as the category string
+- **Topic queue not displaying** — status filter used `"pending"` instead of `"queued"`
+- **Grok score showing "/10"** — field name mismatch between prompt (`score`) and UI (`independenceScore`)
+- **Unicode escapes rendering literally** — `\u2014` etc. in JSX text content
+- **`parseClaudeJSON` greedy regex** — could match wrong JSON bounds. Now uses proper brace-matching
+- **`created_at` overwritten each stage** — lost original creation time. Now uses `stage_started_at`
+
 ## [5.19.0] - 2026-03-23
 
 ### Changed
