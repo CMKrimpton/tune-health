@@ -1,0 +1,34 @@
+{
+  "title": "Your Brain Starts Rewiring for Memory Twenty Minutes Into a Bike Ride. Scientists Just Watched It Happen.",
+  "description": "For the first time, scientists used implanted electrodes in living humans to watch a single bout of exercise change the brain in real time. Twenty minutes of light cycling was enough to increase hippocampal sharp wave-ripples — the brain's internal memory replay mechanism — and strengthen connectivity across memory networks. The catch: the subjects had epilepsy, and the implications for healthy brains remain genuinely open. Here's what the data actually shows.",
+  "category": "Fitness",
+  "publishDate": "2026-03-23",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Neuroscience",
+    "Memory",
+    "Exercise",
+    "Hippocampus",
+    "Brain Health"
+  ],
+  "gradient": {
+    "to": "teal-600",
+    "from": "emerald-500"
+  },
+  "keywords": [
+    "hippocampal sharp wave-ripples",
+    "exercise and memory",
+    "acute exercise brain effects",
+    "memory consolidation",
+    "intracranial electrodes"
+  ],
+  "sortOrder": 1774280112683,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/exercise-hippocampus-sharp-wave-ripples-memory.png",
+  "heroImageAlt": "Editorial illustration for Your Brain Starts Rewiring for Memory Twenty Minutes Into a Bike Ride. Scientists Just Watched It Happen."
+}
