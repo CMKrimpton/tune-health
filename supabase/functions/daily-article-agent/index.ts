@@ -223,9 +223,14 @@ async function grok(opts: { system: string; user: string; maxTokens?: number; te
 // ---------------------------------------------------------------------------
 // Self-chaining — fire-and-forget next stage invocation
 // ---------------------------------------------------------------------------
-function chainNextStage(_logId: string) {
-  // Disabled — cron-only mode for stability. Cron runs every 5 min.
-  return;
+function chainNextStage(logId: string) {
+  const u = Deno.env.get("SUPABASE_URL"), k = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!u || !k) return;
+  fetch(u + "/functions/v1/daily-article-agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + k },
+    body: JSON.stringify({ action: "produce", logId }),
+  }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
@@ -1618,187 +1623,158 @@ Deno.serve(async (req: Request) => {
     const articleModel =
       "claude-sonnet-4-6"; // Sonnet 4.6 — Opus times out on Edge Functions (~150s limit). Upgrade when longer timeout available.
 
-    // ================================================================
-    // PRIORITY 1: Finish — QC + publish any "independence_done" entries
-    // ================================================================
-    const { data: independenceDoneEntries } = await db
-      .from("daily_article_log")
-      .select("id, slug, research_data")
-      .eq("status", "independence_done")
-      .order("created_at", { ascending: true })
-      .limit(1);
+    // ==============================================================
+    // JOB 1: SCOUT — discover topics and fill the queue
+    // Triggered by: cron (every 15 min) or action="scout"
+    // ==============================================================
+    if (action === "scout") {
+      const { data: activePipeline } = await db
+        .from("daily_article_log")
+        .select("id")
+        .in("status", ["started", "searching"])
+        .gte("created_at", new Date(Date.now() - 2 * 60 * 1000).toISOString());
 
-    if (independenceDoneEntries && independenceDoneEntries.length > 0) {
-      const entry = independenceDoneEntries[0] as { id: string; slug: string; research_data: Record<string, unknown> };
-      const articleData = (entry.research_data as Record<string, unknown>)?._article as Record<string, unknown>;
-      const independenceReview = (entry.research_data as Record<string, unknown>)?._independenceReview as Record<string, unknown> | null;
-
-      if (!articleData) {
-        await db
-          .from("daily_article_log")
-          .update({ status: "failed", error: "Missing article data for QC stage" })
-          .eq("id", entry.id);
-        return json({ error: "Missing article data" }, 500);
+      if (activePipeline && activePipeline.length > 0) {
+        return json({ skipped: true, message: "Scout already running." });
       }
 
-      const { ok, result, error } = await safeStage(db, entry.id, "QC+Publish", () =>
-        stageQCAndPublish(db, entry.id, entry.slug, articleData, action, independenceReview));
-      if (!ok) return json({ error: "QC stage failed", detail: error }, 500);
+      const today = todayISO();
+      const { data: logEntry } = await db
+        .from("daily_article_log")
+        .insert({ run_date: today, status: "started" })
+        .select("id")
+        .single();
 
-      const r = result as Record<string, unknown>;
-      return json({
-        success: true,
-        stage: "editor_qc_publish",
-        slug: entry.slug,
-        qcDecision: (r.qcResult as Record<string, unknown>)?.decision,
-        qcScore: (r.qcResult as Record<string, unknown>)?.qualityScore,
-        commit: r.commitSha ? { sha: r.commitSha, url: r.commitUrl } : null,
-        newFeatured: r.newFeatured,
-        articleCount: (articleCount || 0) + 1,
-      });
-    }
+      if (!logEntry) throw new Error("Failed to create log entry");
 
-    // ================================================================
-    // PRIORITY 2: Independence review for "written" entries
-    // ================================================================
-    const { data: writtenEntries } = await db
-      .from("daily_article_log")
-      .select("id, slug, research_data")
-      .eq("status", "written")
-      .order("created_at", { ascending: true })
-      .limit(1);
+      const { ok, error } = await safeStage(db, logEntry.id, "Scout", () =>
+        stageResearch(db, logEntry.id));
+      if (!ok) return json({ error: "Scout failed", detail: error }, 500);
 
-    if (writtenEntries && writtenEntries.length > 0) {
-      const entry = writtenEntries[0] as { id: string; slug: string; research_data: Record<string, unknown> };
-      const articleData = (entry.research_data as Record<string, unknown>)?._article as Record<string, unknown>;
+      // Research found candidates — editor picks best, rest go to queue.
+      // Run editor brief immediately to sort candidates into queue.
+      const { data: entry } = await db
+        .from("daily_article_log")
+        .select("id, research_data")
+        .eq("id", logEntry.id)
+        .single();
 
-      if (!articleData) {
-        await db
-          .from("daily_article_log")
-          .update({ status: "failed", error: "Missing article data for independence review" })
-          .eq("id", entry.id);
-        return json({ error: "Missing article data" }, 500);
+      if (entry?.research_data) {
+        const { ok: ok2, error: err2 } = await safeStage(db, entry.id, "Scout Editor", () =>
+          stageEditorBrief(db, entry.id, entry.research_data as Record<string, unknown>));
+        if (!ok2) return json({ error: "Scout editor failed", detail: err2 }, 500);
       }
 
-      const { ok, error } = await safeStage(db, entry.id, "Independence Review", () =>
-        stageIndependenceReview(db, entry.id, articleData));
-      if (!ok) return json({ error: "Independence review failed", detail: error }, 500);
+      const { count: queueCount } = await db
+        .from("topic_queue")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "queued");
 
       return json({
         success: true,
-        stage: "independence_review",
-        logId: entry.id,
-        message: "Independence review complete. Next: Senior Editor QC + publish.",
+        stage: "scout",
+        logId: logEntry.id,
+        queueSize: queueCount || 0,
+        message: `Scout complete. ${queueCount || 0} topics now in queue.`,
       });
     }
 
-    // ================================================================
-    // PRIORITY 3: Advance — write any "editor_approved" entries
-    // ================================================================
-    const { data: approvedEntries } = await db
-      .from("daily_article_log")
-      .select("id, research_data")
-      .eq("status", "editor_approved")
-      .order("created_at", { ascending: true })
-      .limit(1);
+    // ==============================================================
+    // JOB 2: PRODUCE — editor picks from queue, self-chains to publish
+    // Triggered by: cron (every 5 min), action="produce", or action="run"
+    // ==============================================================
+    if (action === "run" || action === "produce") {
+      // First: advance any article already in the production pipeline
+      // Priority: finish existing before starting new
+      for (const [status, stageName, handler] of [
+        ["independence_done", "QC+Publish", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
+          const artData = e.research_data?._article as Record<string, unknown>;
+          const indReview = e.research_data?._independenceReview as Record<string, unknown> | null;
+          if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+          return safeStage(db, e.id, "QC+Publish", () => stageQCAndPublish(db, e.id, e.slug, artData, action, indReview));
+        }],
+        ["written", "Independence", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
+          const artData = e.research_data?._article as Record<string, unknown>;
+          if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+          return safeStage(db, e.id, "Independence Review", () => stageIndependenceReview(db, e.id, artData));
+        }],
+        ["editor_approved", "Write", async (e: { id: string; research_data: Record<string, unknown> }) => {
+          return safeStage(db, e.id, "Write", () => stageWrite(db, e.id, e.research_data, articleModel));
+        }],
+      ] as const) {
+        const { data: entries } = await db
+          .from("daily_article_log")
+          .select("id, slug, research_data")
+          .eq("status", status)
+          .order("created_at", { ascending: true })
+          .limit(1);
 
-    if (approvedEntries && approvedEntries.length > 0) {
-      const entry = approvedEntries[0] as { id: string; research_data: Record<string, unknown> };
+        if (entries && entries.length > 0) {
+          const entry = entries[0] as { id: string; slug: string; research_data: Record<string, unknown> };
+          const result = await (handler as (e: typeof entry) => Promise<{ ok: boolean; result?: unknown; error?: string } | null>)(entry);
+          if (result && !result.ok) return json({ error: `${stageName} failed`, detail: result.error }, 500);
+          return json({ success: true, stage: stageName, logId: entry.id });
+        }
+      }
 
-      const { ok, error } = await safeStage(db, entry.id, "Write", () =>
-        stageWrite(db, entry.id, entry.research_data, articleModel));
-      if (!ok) return json({ error: "Write stage failed", detail: error }, 500);
+      // No articles in production — start a new one from the queue
+      const { data: topTopic } = await db
+        .from("topic_queue")
+        .select("id, topic, notes, category")
+        .eq("status", "queued")
+        .order("expedite", { ascending: false })
+        .order("priority", { ascending: true })
+        .order("created_at", { ascending: true })
+        .limit(1);
+
+      if (!topTopic || topTopic.length === 0) {
+        return json({ skipped: true, message: "Queue empty. Run 'scout' to discover topics." });
+      }
+
+      const topic = topTopic[0] as { id: string; topic: string; notes: string | null; category: string | null };
+      await db.from("topic_queue").update({ status: "in_progress" }).eq("id", topic.id);
+
+      // Create log, do directed research on the queued topic
+      const today = todayISO();
+      const { data: logEntry } = await db
+        .from("daily_article_log")
+        .insert({ run_date: today, status: "started", topic: topic.topic })
+        .select("id")
+        .single();
+
+      if (!logEntry) throw new Error("Failed to create log entry");
+
+      const { ok: resOk, error: resErr } = await safeStage(db, logEntry.id, "Research", () =>
+        stageResearch(db, logEntry.id, topic.topic));
+      if (!resOk) return json({ error: "Research failed", detail: resErr }, 500);
+
+      // Immediately chain to editor brief
+      const { data: resEntry } = await db
+        .from("daily_article_log")
+        .select("id, research_data")
+        .eq("id", logEntry.id)
+        .single();
+
+      if (resEntry?.research_data) {
+        const { ok: edOk, error: edErr } = await safeStage(db, resEntry.id, "Editor Brief", () =>
+          stageEditorBrief(db, resEntry.id, resEntry.research_data as Record<string, unknown>));
+        if (!edOk) return json({ error: "Editor brief failed", detail: edErr }, 500);
+      }
+
+      // Mark queue topic complete
+      await db.from("topic_queue").update({ status: "completed" }).eq("id", topic.id);
+
+      // Self-chain to continue production (write stage next)
+      chainNextStage(logEntry.id);
 
       return json({
         success: true,
-        stage: "write",
-        logId: entry.id,
-        message: "Article written. Next: independence review, then Senior Editor QC + publish.",
+        stage: "produce_started",
+        logId: logEntry.id,
+        topic: topic.topic,
+        message: `Started producing: "${topic.topic}". Self-chaining through write → Grok → publish.`,
       });
     }
-
-    // ================================================================
-    // PRIORITY 4: Review — editorial brief for any "research_done" entries
-    // ================================================================
-    const { data: researchedEntries } = await db
-      .from("daily_article_log")
-      .select("id, research_data")
-      .eq("status", "research_done")
-      .order("created_at", { ascending: true })
-      .limit(1);
-
-    if (researchedEntries && researchedEntries.length > 0) {
-      const entry = researchedEntries[0] as { id: string; research_data: Record<string, unknown> };
-
-      const { ok, error } = await safeStage(db, entry.id, "Editor Brief", () =>
-        stageEditorBrief(db, entry.id, entry.research_data));
-      if (!ok) return json({ error: "Editor brief failed", detail: error }, 500);
-
-      return json({
-        success: true,
-        stage: "editor_brief",
-        logId: entry.id,
-        message: "Senior Editor reviewed research. Next: write the article.",
-      });
-    }
-
-    // ================================================================
-    // PRIORITY 5: Start — check topic queue, then trending research
-    // ================================================================
-    // Allow parallel: only block if we'd exceed MAX_CONCURRENT total pipeline items
-    const { data: activePipeline } = await db
-      .from("daily_article_log")
-      .select("id, status")
-      .in("status", IN_PIPELINE);
-
-    if (activePipeline && activePipeline.length >= MAX_CONCURRENT) {
-      return json({
-        skipped: true,
-        message: `${activePipeline.length} articles in pipeline (max ${MAX_CONCURRENT}). Will start new research once one completes.`,
-        pipeline: activePipeline.map((r: Record<string, unknown>) => r.status),
-      });
-    }
-
-    // Check topic queue first
-    const { data: queuedTopics } = await db
-      .from("topic_queue")
-      .select("id, topic, category")
-      .eq("status", "pending")
-      .order("priority", { ascending: false })
-      .order("created_at", { ascending: true })
-      .limit(1);
-
-    const queuedTopic = queuedTopics?.[0] as { id: string; topic: string; category: string } | undefined;
-
-    // Mark queue item as in progress
-    if (queuedTopic) {
-      await db.from("topic_queue").update({ status: "in_progress" }).eq("id", queuedTopic.id);
-    }
-
-    // Create log entry and start research
-    const today = todayISO();
-    const { data: logEntry } = await db
-      .from("daily_article_log")
-      .insert({ run_date: today, status: "started" })
-      .select("id")
-      .single();
-
-    if (!logEntry) throw new Error("Failed to create log entry");
-
-    const { ok, error } = await safeStage(db, logEntry.id, "Research", () =>
-      stageResearch(db, logEntry.id, queuedTopic?.topic));
-    if (!ok) return json({ error: "Research failed", detail: error }, 500);
-
-    return json({
-      success: true,
-      stage: "research",
-      logId: logEntry.id,
-      fromQueue: !!queuedTopic,
-      queuedTopic: queuedTopic?.topic || null,
-      message: queuedTopic
-        ? `Directed research complete for queued topic: "${queuedTopic.topic}". Next: Senior Editor brief.`
-        : "Multi-candidate research complete. Next: Senior Editor will pick the best topic and create brief.",
-    });
   } catch (err: unknown) {
     return json({
       error: "An internal error occurred",

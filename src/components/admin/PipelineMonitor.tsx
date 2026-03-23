@@ -43,6 +43,7 @@ interface ResearchData {
   _independenceReview?: {
     overallAssessment: string;
     independenceScore: number | null;
+    score: number | null;
     annotations: Array<{
       type: string;
       severity: string;
@@ -181,7 +182,8 @@ function getEditorAngle(log: PipelineLog): string | null {
 }
 
 function getIndependenceScore(log: PipelineLog): number | null {
-  return log.research_data?._independenceReview?.independenceScore ?? null;
+  const r = log.research_data?._independenceReview;
+  return r?.independenceScore ?? r?.score ?? null;
 }
 
 function getAdminToken(): string {
@@ -671,7 +673,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
                   : indReview.overallAssessment === 'minor_concerns' ? '#f59e0b'
                   : '#dc2626'
               }}>
-                {indReview.overallAssessment} ({indReview.independenceScore}/10)
+                {indReview.overallAssessment} {(indReview.independenceScore || indReview.score) ? `(${indReview.independenceScore || indReview.score}/10)` : ''}
               </span>
               {indReview.annotations && indReview.annotations.length > 0 && (
                 <div style={{ marginTop: '0.375rem' }}>
