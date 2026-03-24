@@ -1,6 +1,6 @@
 {
   "title": "Neuroscience vs. Free Will: Are We Just Along for the Ride?",
-  "description": "Neuroscience suggests our decisions may start in the brain before we’re even aware of them, challenging the notion of free will. This piece dives into the evidence, from readiness potentials to unconscious processing, and questions whether the debate itself—spanning philosophy and science—is missing a deeper point. Explore what this means for morality, law, and your sense of agency.",
+  "description": "Neuroscience suggests our decisions may start in the brain before",
   "category": "Neuroscience",
   "publishDate": "2026-03-24",
   "author": {
@@ -15,7 +15,7 @@
     "neuroscience",
     "readiness potential",
     "philosophy",
-    "moral responsibility"
+    "decision-making"
   ],
   "gradient": {
     "to": "purple-700",
@@ -25,10 +25,10 @@
     "free will debate",
     "neuroscience evidence",
     "readiness potential",
-    "philosophical determinism",
+    "philosophical implications",
     "societal impact"
   ],
-  "sortOrder": 1774326564107,
+  "sortOrder": 1774326623397,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/neuroscience-free-will-debate.png",
   "heroImageAlt": "Editorial illustration for Neuroscience vs. Free Will: Are We Just Along for the Ride?"
 }
