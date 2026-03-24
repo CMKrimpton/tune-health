@@ -1933,8 +1933,13 @@ Read the ENTIRE article above. Then:
   let revisedHtml = articleHtml;
   let revisionApplied = false;
 
-  if (reviewResult?.verdict === "major_issues") {
-    const flags = (reviewResult.flags as Array<{ type: string; quote: string; rewrite: string; reason: string }>) || [];
+  // Apply Grok's rewrite suggestions for both major AND minor issues.
+  // Previously only major_issues triggered rewrites — which meant Grok's
+  // feedback was stored but never acted on (and the old prompt always said "minor").
+  const grokVerdict = reviewResult?.verdict as string;
+  const grokScore = (reviewResult?.score as number) ?? 10;
+  if (grokVerdict === "major_issues" || (grokVerdict === "minor_issues" && grokScore < 7)) {
+    const flags = (reviewResult!.flags as Array<{ type: string; quote: string; rewrite: string; reason: string }>) || [];
     if (flags.length > 0) {
       try {
         const rewritePrompt = flags
