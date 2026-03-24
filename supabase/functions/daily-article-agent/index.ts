@@ -945,9 +945,9 @@ Set these dials for each article:
 Return ONLY valid JSON:
 {
   "decision": "approve" | "kill",
-  "candidateScores": [{ "rank": 1, "topic": "...", "score": 8, "note": "why this score", "overlapsExisting": "slug-of-overlapping-article or null" }],
+  "candidateScores": [{ "rank": 1, "topic": "...", "score": "(1-10, be honest — 7+ only for genuinely strong topics)", "note": "why this score", "overlapsExisting": "slug-of-overlapping-article or null" }],
   "chosenCandidate": 1,
-  "topicScore": 8,
+  "topicScore": "(1-10, your honest assessment of the chosen topic)",
   "headline": "The final headline — DO NOT start with 'The' by default. Match the tone to the subject: understated for nuanced science, direct for clear findings, pointed for institutional failures. See HEADLINE RULES above.",
   "slug": "url-friendly-slug",
   "description": "2-3 sentence description. Specific about what the reader will learn. Match the subject's weight — don't hype a quiet study, don't underplay a major finding.",
@@ -999,7 +999,7 @@ Score honestly. Don't default to 7.
 Return ONLY valid JSON:
 {
   "decision": "publish" | "revise" | "kill",
-  "qualityScore": 7,
+  "qualityScore": "(integer 1-10, see scoring guide above)",
   "headline": "Final headline (keep original if good enough)",
   "description": "Final description (keep original if good enough)",
   "edits": {
@@ -1044,7 +1044,7 @@ For EVERY flag, include the EXACT quote from the article and a SPECIFIC rewrite.
 Return ONLY valid JSON:
 {
   "verdict": "clean" | "minor_issues" | "major_issues",
-  "score": 6,
+  "score": "(integer 1-10, see scoring rules above — be honest)",
   "flags": [{ "type": "pharma_framing|institutional_deference|pulled_punch|missing_counter|industry_language|outdated_dogma|stale_evidence|unfunded_claim|ai_voice", "quote": "exact text from article", "rewrite": "your suggested replacement", "reason": "why this matters editorially" }],
   "improvements": ["Specific actionable suggestion"],
   "strengths": ["What genuinely works — be honest, not flattering"],

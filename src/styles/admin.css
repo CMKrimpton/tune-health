@@ -943,10 +943,12 @@
 }
 
 .agents-decision-card {
-  padding: 0.625rem 0.75rem; background: #1c1917;
-  border-radius: 0.375rem; margin-bottom: 0.5rem;
-  border-left: 3px solid #44403c;
+  padding: 0.75rem; background: #1c1917;
+  border: 1px solid #3f3f46; border-left: 3px solid #44403c;
+  border-radius: 0.5rem; margin-bottom: 0.5rem;
+  transition: border-color 0.15s;
 }
+.agents-decision-card:hover { border-color: #57534e; }
 
 .agents-decision-card.approved { border-left-color: #16a34a; }
 .agents-decision-card.killed { border-left-color: #dc2626; }
@@ -1106,11 +1108,7 @@
 .agents-decision-log::-webkit-scrollbar { width: 4px; }
 .agents-decision-log::-webkit-scrollbar-thumb { background: rgba(168,162,158,0.2); border-radius: 2px; }
 
-.agents-decision-card {
-  padding: 0.75rem; background: #1c1917; border: 1px solid #3f3f46;
-  border-radius: 0.5rem; transition: border-color 0.15s;
-}
-.agents-decision-card:hover { border-color: #57534e; }
+/* .agents-decision-card defined at line ~945 with border-left states — removed duplicate */
 
 /* ─── QC Results ─── */
 
@@ -1119,34 +1117,7 @@
   padding: 1rem;
 }
 
-.agents-grade {
-  font-family: 'Playfair Display', serif; font-size: 2rem;
-  font-weight: 700; line-height: 1;
-}
+/* .agents-grade defined at line ~993 — removed duplicate */
+/* .agents-issue defined at line ~1015 — removed duplicate */
 
-.agents-issue {
-  padding: 0.5rem 0; border-bottom: 1px solid #292524;
-}
-.agents-issue:last-child { border-bottom: none; }
-
-/* ─── Buttons ─── */
-
-.agents-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
-  flex: 1; padding: 0.5rem 0.75rem; border-radius: 0.25rem;
-  font-size: 0.6875rem; font-family: 'Inter', sans-serif; font-weight: 500;
-  cursor: pointer; transition: all 0.15s;
-  border: 1px solid #44403c; background: transparent; color: #a8a29e;
-}
-.agents-btn:hover { color: #e7e6e3; border-color: #78716c; }
-.agents-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.agents-btn-primary {
-  color: #6ee7b7; border-color: #059669;
-}
-.agents-btn-primary:hover { color: #a7f3d0; border-color: #34d399; }
-
-.agents-btn-danger {
-  color: #fbbf24; border-color: #b45309;
-}
-.agents-btn-danger:hover { color: #fde68a; border-color: #d97706; }
+/* ─── Buttons (use classes from line ~974, removed duplicate) ─── */
