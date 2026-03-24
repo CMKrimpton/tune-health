@@ -1110,6 +1110,14 @@ BANNED PATTERNS:
 
 If the research data is thin, WRITE A SHORTER ARTICLE WITH FEWER CLAIMS rather than padding with invented citations. A 1,200-word article with 5 verified claims is infinitely better than a 2,400-word article with 15 unverifiable ones.
 
+YOUR SOURCES ARE LISTED BELOW IN "RESEARCH DATA." Use ONLY those studies, statistics, and findings. You may explain and contextualize them, but do NOT add studies, statistics, or expert quotes that aren't in the research data. If you need to reference general medical knowledge (e.g., "the pancreas produces insulin"), that's fine — but specific claims about study results, percentages, survival rates, and trial outcomes MUST come from the research data or not appear at all.
+
+MANDATORY: Every article MUST end with a "Sources" section listing every study cited in the article. Format:
+<section><h2>Sources</h2><ul>
+<li>Author/Organization. "Study Title." <em>Journal Name</em>, Year. [Key finding used in article]</li>
+</ul></section>
+Only list studies that are ACTUALLY CITED in the article text. This section is non-negotiable — it lets readers verify every claim.
+
 CRITICAL ANTI-AI RULES (apply to ALL presets):
 - Never use manufactured wonder ("fascinatingly", "remarkably", "it turns out")
 - Never use false intimacy ("let's dive in", "buckle up", "here's the thing")
@@ -2048,6 +2056,43 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
 
   // Await PubMed verification (was running in parallel with Grok)
   const pubmedResult = await pubmedPromise;
+
+  // ── FACT-CHECK: If PubMed can't verify studies, revise the article to flag them ──
+  const unverifiedStudies = (pubmedResult.details || []).filter(d => !d.found);
+  if (unverifiedStudies.length > 0 && pubmedResult.total > 0) {
+    const failRate = unverifiedStudies.length / pubmedResult.total;
+    console.log(`[Fact-check] ${unverifiedStudies.length}/${pubmedResult.total} studies unverified on PubMed (${Math.round(failRate * 100)}%)`);
+
+    // If more than half of cited studies can't be found, revise the article
+    if (unverifiedStudies.length >= 2 || failRate > 0.5) {
+      try {
+        const unverifiedList = unverifiedStudies.map(s => `- "${s.title}"`).join("\n");
+        const { text: factCheckedRaw, usage: factCheckUsage } = await generateWithFallback({
+          system: `You are a fact-checker. The following studies cited in an article could NOT be verified on PubMed. For each unverified study: if the article makes a specific claim citing this study, either (a) remove the specific citation and reword the claim as a general observation with "evidence suggests" hedging, or (b) add "(citation unverified)" after the claim. Do NOT remove the underlying point if it's supported by other evidence in the article — just fix the attribution. Preserve all HTML structure. Return ONLY the corrected HTML.`,
+          user: `## UNVERIFIED STUDIES (not found on PubMed)\n${unverifiedList}\n\n## ARTICLE HTML\n${revisedHtml}`,
+          models: ["gemini-2.5-flash", "claude-sonnet-4-6"],
+          maxTokens: 8192,
+          temperature: 0.15,
+          stage: "fact-check",
+        });
+        await addCostToLog(db, logId, factCheckUsage);
+
+        const fcCleaned = factCheckedRaw.replace(/^```html?\n?/, "").replace(/\n?```$/, "").trim();
+        if (fcCleaned.length > revisedHtml.length * 0.5) {
+          revisedHtml = fcCleaned;
+          revisionApplied = true;
+          console.log(`[Fact-check] Applied corrections for ${unverifiedStudies.length} unverified citations`);
+
+          const slug = (articleData.metadata as Record<string, unknown>)?.slug as string;
+          if (slug) {
+            await db.from("articles").update({ article_html: revisedHtml }).eq("slug", slug);
+          }
+        }
+      } catch (fcErr) {
+        console.log(`[Fact-check] Non-fatal error: ${fcErr instanceof Error ? fcErr.message : "unknown"}`);
+      }
+    }
+  }
 
   // Update article data with revised HTML if rewrites were applied
   const updatedArticle = revisionApplied
