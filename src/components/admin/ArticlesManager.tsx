@@ -72,6 +72,8 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<ArticleRecord | null>(null);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [improvingSlug, setImprovingSlug] = useState<string | null>(null);
+  const [improveResult, setImproveResult] = useState<{ slug: string; message: string; ok: boolean } | null>(null);
   const editRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -131,6 +133,44 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
     } catch { /* silent */ }
     finally { setRefreshing(false); }
   }, [apiBase]);
+
+  // ─── Improve article (Grok review + auto-fix) ───────────────────
+
+  const improveArticle = useCallback(async (slug: string) => {
+    setImprovingSlug(slug);
+    setImproveResult(null);
+    try {
+      // 1. Get article content
+      const getRes = await apiCall('articles-api', { action: 'get', slug });
+      if (!getRes.article_html) throw new Error('No article content');
+
+      // 2. Send through refine-article with improvement instruction
+      const refineRes = await fetch(`${apiBase}/refine-article`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({
+          currentHtml: getRes.article_html,
+          currentMetadata: { title: getRes.title, category: getRes.category, slug },
+          instruction: 'Review this article for editorial quality. Fix any: pulled punches, institutional deference, missing study funders, vague "studies show" claims, weak conclusions, AI-sounding prose (uniform sentence length, "it\'s important to note"). Make the ending stronger if it feels abrupt. Preserve the editorial voice and angle. Return improved HTML.',
+          messages: [],
+        }),
+      });
+      if (!refineRes.ok) throw new Error(`Refine failed: ${refineRes.status}`);
+      const data = await refineRes.json();
+
+      if (data.html) {
+        // 3. Save improved content back to DB
+        await apiCall('articles-api', { action: 'save', article: { slug, article_html: data.html } });
+        setImproveResult({ slug, message: data.message || 'Article improved and saved', ok: true });
+      } else {
+        setImproveResult({ slug, message: data.message || 'No changes needed', ok: true });
+      }
+    } catch (err) {
+      setImproveResult({ slug, message: `Failed: ${(err as Error).message}`, ok: false });
+    } finally {
+      setImprovingSlug(null);
+    }
+  }, [apiBase, apiCall]);
 
   // ─── Search debounce ──────────────────────────────────────────────
 
@@ -494,6 +534,20 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
 
                 {/* Actions */}
                 <div className="articles-actions">
+                  <button
+                    className="admin-action-btn"
+                    onClick={() => improveArticle(article.slug)}
+                    disabled={improvingSlug === article.slug}
+                    aria-label={`Improve ${article.title}`}
+                    title="AI review + auto-fix"
+                    style={{ color: '#a78bfa', borderColor: '#6d28d9' }}
+                  >
+                    {improvingSlug === article.slug ? (
+                      <span style={{ fontSize: '0.625rem' }}>Improving\u2026</span>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    )}
+                  </button>
                   <a
                     href={`/articles/${article.slug}`}
                     target="_blank"
@@ -518,6 +572,12 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 </div>
+                {improveResult?.slug === article.slug && (
+                  <div style={{ gridColumn: '1 / -1', padding: '0.375rem 0.75rem', marginTop: '0.25rem', borderRadius: '0.25rem', fontSize: '0.6875rem', background: improveResult.ok ? '#052e16' : '#450a0a', color: improveResult.ok ? '#86efac' : '#fca5a5', border: `1px solid ${improveResult.ok ? '#166534' : '#991b1b'}` }}>
+                    {improveResult.message}
+                    <button onClick={() => setImproveResult(null)} style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '0.6875rem' }}>{'\u00d7'}</button>
+                  </div>
+                )}
               </div>
             );
           })}
