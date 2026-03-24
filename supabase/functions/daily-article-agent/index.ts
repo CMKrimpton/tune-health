@@ -2326,11 +2326,30 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const { data } = await db
+      // Fetch recent activity (all statuses) + ensure published articles aren't lost
+      const { data: recentLogs } = await db
         .from("daily_article_log")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(30);
+
+      // Also fetch recent published articles separately (may be outside the 30 window)
+      const { data: publishedLogs } = await db
+        .from("daily_article_log")
+        .select("*")
+        .eq("status", "published")
+        .order("completed_at", { ascending: false })
+        .limit(15);
+
+      // Merge: recent activity + published (deduplicated by id)
+      const seenIds = new Set<string>();
+      const data: typeof recentLogs = [];
+      for (const log of [...(recentLogs || []), ...(publishedLogs || [])]) {
+        if (!seenIds.has(log.id)) {
+          seenIds.add(log.id);
+          data.push(log);
+        }
+      }
 
       const { count: articleCount } = await db
         .from("articles")
