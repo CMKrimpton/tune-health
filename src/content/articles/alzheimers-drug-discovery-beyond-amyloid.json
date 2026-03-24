@@ -1,0 +1,34 @@
+{
+  "title": "Alzheimer's Research Shifts Focus to Non-Amyloid Targets",
+  "description": "Alzheimer's drug discovery is moving beyond amyloid plaques to explore diverse mechanisms like epigenetics, DNA repair, and tau pathology. This article examines the most promising new candidates and the challenges of tackling a multifactorial disease.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-24",
+  "author": {
+    "name": "Linda Carnes",
+    "role": "Investigative Health Reporter"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Alzheimer's",
+    "Drug Discovery",
+    "Amyloid",
+    "Tau Pathology",
+    "Epigenetics"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "Alzheimer's drugs",
+    "non-amyloid targets",
+    "epigenetics Alzheimer's",
+    "tau therapy",
+    "combination therapy"
+  ],
+  "sortOrder": 1774316586860,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/alzheimers-drug-discovery-beyond-amyloid.png",
+  "heroImageAlt": "Editorial illustration for Alzheimer's Research Shifts Focus to Non-Amyloid Targets"
+}

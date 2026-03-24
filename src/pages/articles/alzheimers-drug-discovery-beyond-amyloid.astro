@@ -1,0 +1,121 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="Alzheimer's Research Shifts Focus to Non-Amyloid Targets"
+  description="Alzheimer's drug discovery is moving beyond amyloid plaques to explore diverse mechanisms like epigenetics, DNA repair, and tau pathology. This article examines the most promising new candidates and the challenges of tackling a multifactorial disease."
+  category="Neuroscience"
+  readTime="10 min read"
+  publishDate="March 2026"
+>
+  <!-- Feature Image -->
+  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
+    <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><rect width="1200" height="600" fill="url(#bg)"/><circle cx="900" cy="200" r="120" fill="#7c3aed15"/><circle cx="300" cy="400" r="80" fill="#7c3aed10"/>
+  </svg>
+
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#introduction" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Introduction</a>
+      <a href="#amyloid-failure" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Amyloid Dead End</a>
+      <a href="#epigenetics-targets" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Epigenetics: Rewriting the Brain’s Code</a>
+      <a href="#dna-repair" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">DNA Repair: Fixing the Foundation</a>
+      <a href="#gaba-receptors" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">GABA Receptors: Tuning Neural Signals</a>
+      <a href="#tau-pathology" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Tau: Silencing the Tangles</a>
+      <a href="#lipid-metabolism" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Lipid Metabolism: A Hidden Lever</a>
+      <a href="#combination-therapy" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Combination Therapy: The Only Way Forward?</a>
+      <a href="#unanswered-questions" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What’s Next?</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="introduction" class="reveal">
+  <p>Over 90% of Alzheimer’s drugs targeting amyloid plaques have failed in clinical trials over the past two decades, a staggering statistic that underscores a brutal truth: the field’s long-standing obsession with one pathological hallmark has yielded little for patients. With 7.2 million Americans over 65 living with Alzheimer’s dementia in 2025—a number projected to nearly double by 2060—researchers are finally pivoting to a broader battlefield. This piece explores the diverse, non-amyloid targets now gaining traction, from epigenetics to DNA repair, and asks whether this shift signals desperation, hope, or both.</p>
+</section>
+
+<section id="amyloid-failure" class="reveal">
+  <h2>The Amyloid Dead End</h2>
+  <p>The amyloid hypothesis, which posits that beta-amyloid plaques drive Alzheimer’s neurodegeneration, has dominated drug discovery for decades. Yet, despite billions invested, the results are grim—most candidates targeting amyloid clearance or production have flopped, often showing no meaningful cognitive benefit in humans.</p>
+  <p>A 2025 report from the Alzheimer’s Drug Discovery Foundation (ADDF) notes that while amyloid remains relevant in some pipelines, the field is diversifying rapidly. “Research is revealing even more complexities around how Alzheimer’s starts and progresses, and this goes beyond amyloid,” says Emma Scales of ADDF.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>“All the evidence indicates that there are many different pathways involved in Alzheimer’s progression. It is multifactorial, and that may be why it’s been so hard to develop effective drugs.” — Ernest Fraenkel, MIT</p></aside>
+
+<section id="epigenetics-targets" class="reveal">
+  <h2>Epigenetics: Rewriting the Brain’s Code</h2>
+  <p>Epigenetic dysregulation—alterations in how genes are turned on or off without changing DNA itself—is emerging as a key player in late-onset Alzheimer’s. Histone modifications and RNA methylation disrupt protective pathways, impairing synaptic plasticity and memory consolidation.</p>
+  <p>A promising candidate here is FLAV-27, developed by the University of Barcelona. In animal models, this drug targets the G9a enzyme, reducing both beta-amyloid and phosphorylated tau while restoring cognitive function and synaptic structure, per a 2026 study in Molecular Therapy. But preclinical success is no guarantee—historically, such results often falter in human trials.</p>
+  <p>“FLAV-27 represents an innovative approach, acting directly on underlying molecular mechanisms,” notes researcher Aina Bellver from UB Institute of Neurosciences. Still, the gap between mice and humans looms large.</p>
+</section>
+
+<section id="dna-repair" class="reveal">
+  <h2>DNA Repair: Fixing the Foundation</h2>
+  <p>Unrepaired DNA damage in neurons can accelerate neurodegeneration, a pathway only recently linked to Alzheimer’s. A 2025 study in Nature Communications from MIT identified genes like MEPCE and HNRNPA2B1, involved in DNA repair and RNA modification, as potential targets.</p>
+  <p>Knocking down these genes in fruit flies and human neurons increased DNA damage and vulnerability to tau tangles, suggesting a novel angle for intervention. But no drugs targeting this pathway are yet in clinical trials, and translating these findings into therapies remains a distant prospect.</p>
+  <p>What’s intriguing is how this connects to broader cellular stress responses. Could bolstering DNA repair slow the cascade of Alzheimer’s pathology? We don’t know yet.</p>
+</section>
+
+<div class="info-card my-12 reveal">
+  <h4 class="font-serif text-lg font-semibold mb-3 text-primary-700 dark:text-primary-400">Emerging Alzheimer’s Drug Targets</h4>
+  <ul class="space-y-2 text-sm">
+    <li><strong>FLAV-27 (Epigenetics):</strong> Targets G9a enzyme; reduced amyloid and tau in animal models (Molecular Therapy, 2026).</li>
+    <li><strong>GL-II-73 (GABA Receptors):</strong> Restores memory in mice by targeting hippocampal GABA receptors (Neurobiology of Aging, 2025).</li>
+    <li><strong>BIIB080 (Tau):</strong> Reduces soluble and aggregated tau in Phase Ib; Phase II results pending 2026 (BioSpace, 2026).</li>
+  </ul>
+</div>
+
+<section id="gaba-receptors" class="reveal">
+  <h2>GABA Receptors: Tuning Neural Signals</h2>
+  <p>Synaptic dysfunction, particularly in neurotransmitter systems like GABA, contributes to memory deficits in Alzheimer’s. An experimental drug, GL-II-73, developed by the Centre for Addiction and Mental Health, targets GABA receptors in the hippocampus.</p>
+  <p>In a 2025 study published in Neurobiology of Aging, GL-II-73 reversed memory loss and brain cell damage in mice, especially when given early. The catch? Timing matters immensely, and human trials are still nascent.</p>
+  <p>Could tweaking neural signaling offer a way to preserve cognition before irreversible damage sets in? That’s the hope, though the road to clinical proof is long.</p>
+</section>
+
+<section id="tau-pathology" class="reveal">
+  <h2>Tau: Silencing the Tangles</h2>
+  <p>Tau protein, when hyperphosphorylated, forms neurofibrillary tangles that correlate more closely with cognitive decline than amyloid plaques. Biogen’s BIIB080, a tau-targeting antisense oligonucleotide, is one of the most advanced non-amyloid candidates.</p>
+  <p>In Phase Ib trials, BIIB080 reduced soluble tau in cerebrospinal fluid and aggregated tau pathology in the brain, according to a 2026 BioSpace report. Phase II results from the CELIA trial, expected in 2026, will be a critical test—but past failures in tau therapies temper optimism.</p>
+  <p>Other approaches, like gene silencing, are also in early stages. The diversity of tau-focused strategies is encouraging, yet the graveyard of failed Alzheimer’s drugs looms as a reminder of reality.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>“The portfolio of drugs in development has changed dramatically from even 5 years ago.” — Howard Fillit, MD, Alzheimer’s Drug Discovery Foundation</p></aside>
+
+<section id="lipid-metabolism" class="reveal">
+  <h2>Lipid Metabolism: A Hidden Lever</h2>
+  <p>Genetic studies increasingly point to lipid metabolism as a factor in Alzheimer’s progression. Researchers at Indiana University School of Medicine found that removing the IDOL enzyme from neurons reduced amyloid plaques and improved neuronal communication, per a 2026 news release.</p>
+  <p>This pathway, tied to lipid processing, might offer resilience against disease progression. But like many novel targets, it’s far from clinical application, and the mechanisms remain poorly understood in humans.</p>
+  <p>What’s striking is how such seemingly unrelated systems—lipid handling, DNA repair—keep surfacing in Alzheimer’s research. It’s a sign of how little we still grasp.</p>
+</section>
+
+<section id="combination-therapy" class="reveal">
+  <h2>Combination Therapy: The Only Way Forward?</h2>
+  <p>The growing consensus is that Alzheimer’s multifactorial nature—spanning tau, inflammation, epigenetics, and more—demands a multi-pronged attack. “We will need some kind of combination of treatments that hit different parts of this disease,” says Ernest Fraenkel of MIT’s Department of Biological Engineering.</p>
+  <p>Analysts like Patrick Trucchio of H.C. Wainwright echo this, predicting that effective regimens might combine anti-amyloid, anti-tau, and anti-inflammatory drugs. Yet, developing and testing such cocktails poses immense challenges—think drug interactions, trial design, and cost.</p>
+  <p>Even if individual targets like FLAV-27 or BIIB080 show promise, their impact may be limited without partners. And with care costs for dementia projected to hit $1 trillion by 2050, the clock is ticking louder than ever.</p>
+</section>
+
+<section id="unanswered-questions" class="reveal">
+  <h2>What’s Next?</h2>
+  <p>After decades of tunnel vision on amyloid, the Alzheimer’s field is finally embracing complexity with a range of targets that would have seemed unthinkable ten years ago. There’s cautious excitement in these preclinical and early-stage efforts—FLAV-27’s epigenetic tweaks, GL-II-73’s synaptic tuning, BIIB080’s tau reduction—but the shadow of past failures hangs heavy.</p>
+  <p>If Alzheimer’s is as multifactorial as the evidence suggests, will we ever find a single drug—or even a combination—that can halt it in time for most patients? That question, more than any lab result, defines the road ahead.</p>
+</section>
+
+<div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal">
+  <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+    <strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.
+  </p>
+</div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Alzheimer's</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Drug Discovery</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Amyloid</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Tau Pathology</span>
+    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">Epigenetics</span>
+  </Fragment>
+</ArticleLayout>
