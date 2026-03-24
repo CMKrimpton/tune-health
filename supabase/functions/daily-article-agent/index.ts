@@ -1282,8 +1282,8 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
       if (errMsg.includes("SPENDING_LIMIT") || errMsg.includes("usage limits") || errMsg.includes("rate_limit")) {
         console.log("[Research fallback] Claude spending limit hit, falling back to Gemini...");
         const gemResult = await gemini({
-          system: DIRECTED_RESEARCH_PROMPT,
-          user: researchPrompt,
+          system: DIRECTED_RESEARCH_PROMPT + `\n\nCRITICAL: You MUST return ONLY a valid JSON object. No markdown, no explanation, no preamble. Just the JSON object starting with { and ending with }.`,
+          user: researchPrompt + `\n\nReturn ONLY valid JSON with this structure: {"topic":"...","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."]}`,
           maxTokens: 4000,
           temperature: 0.35,
         }, "research-fallback-gemini");
@@ -1294,7 +1294,22 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
       }
     }
 
-    research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
+    // Parse research JSON — with fallback to plain text extraction if Gemini didn't return valid JSON
+    try {
+      research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
+    } catch {
+      console.log("[Research] JSON parse failed, extracting from plain text...");
+      // Extract what we can from plain text response
+      const lines = researchRaw.split("\n").filter((l: string) => l.trim().length > 10);
+      research = {
+        topic: queuedTopic,
+        keyFindings: lines.slice(0, 8).map((l: string) => l.replace(/^[\d\.\-\*]+\s*/, "").trim()),
+        studies: [],
+        counterArguments: [],
+        mechanism: lines.find((l: string) => l.toLowerCase().includes("mechanism")) || "",
+        statistics: lines.filter((l: string) => /\d+%|\d+\s*(million|billion|thousand)/.test(l)).slice(0, 5),
+      };
+    }
     research._fromQueue = true;
     await addCostToLog(db, logId, researchUsage);
   } else {
@@ -2641,12 +2656,17 @@ For each topic return: a one-line topic description, suggested category, and why
         const numbered = line.match(/^\d+[\.\)]\s*(.+)/);
         if (numbered) {
           if (current) topics.push(current);
-          const text = numbered[1].trim();
+          // Strip Grok markdown formatting: **bold**, *italic*, "Topic Description:" prefix
+          const text = numbered[1].trim()
+            .replace(/\*\*/g, "")
+            .replace(/^\s*Topic\s*Description\s*:?\s*/i, "")
+            .replace(/^\s*[-–—]\s*/, "")
+            .trim();
           // Try to extract category from the line
           const catMatch = VALID_CATEGORIES.find(c => text.toLowerCase().includes(c.toLowerCase()));
           current = { topic: text, category: catMatch || "", why: "" };
         } else if (current && !current.why && line.trim().length > 20) {
-          current.why = line.trim().slice(0, 200);
+          current.why = line.trim().replace(/\*\*/g, "").slice(0, 200);
         }
       }
       if (current) topics.push(current);
