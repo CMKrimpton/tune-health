@@ -1989,7 +1989,7 @@ Read the ENTIRE article above. Then:
 
   const existingResearch = (logEntry?.research_data as Record<string, unknown>) || {};
 
-  const grokScore = reviewResult ? ((reviewResult.score as number) || (reviewResult.independenceScore as number) || null) : null;
+  const grokScoreFinal = reviewResult ? ((reviewResult.score as number) || (reviewResult.independenceScore as number) || null) : null;
 
   // Await PubMed verification (was running in parallel with Grok)
   const pubmedResult = await pubmedPromise;
@@ -2003,7 +2003,7 @@ Read the ENTIRE article above. Then:
     .from("daily_article_log")
     .update({
       status: "independence_done",
-      grok_score: grokScore,
+      grok_score: grokScoreFinal,
       research_data: {
         ...existingResearch,
         _article: updatedArticle,
