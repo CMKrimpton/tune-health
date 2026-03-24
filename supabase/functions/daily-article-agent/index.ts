@@ -1115,7 +1115,7 @@ If the research data is thin, WRITE A SHORTER ARTICLE WITH FEWER CLAIMS rather t
 YOUR SOURCES ARE LISTED BELOW IN "RESEARCH DATA." Use ONLY those studies, statistics, and findings. You may explain and contextualize them, but do NOT add studies, statistics, or expert quotes that aren't in the research data. If you need to reference general medical knowledge (e.g., "the pancreas produces insulin"), that's fine — but specific claims about study results, percentages, survival rates, and trial outcomes MUST come from the research data or not appear at all.
 
 MANDATORY: Every article MUST end with a "Sources" section listing every study cited in the article. Format:
-<section><h2>Sources</h2><ul>
+<section id="sources"><h2>Sources</h2><ul>
 <li>Author/Organization. "Study Title." <em>Journal Name</em>, Year. [Key finding used in article]</li>
 </ul></section>
 Only list studies that are ACTUALLY CITED in the article text. This section is non-negotiable — it lets readers verify every claim.
