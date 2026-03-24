@@ -96,36 +96,67 @@ Apply the requested changes and return the complete updated article as JSON.`;
       maxTokens = 16000;
     }
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-opus-4-20250514",
-        max_tokens: maxTokens,
-        temperature: 0.3,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userPrompt }],
-      }),
-    });
+    // Try Claude first, fall back to Grok, then Gemini
+    let content: string | null = null;
+    let lastError = "";
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return new Response(
-        JSON.stringify({ error: `Anthropic API error: ${response.status}`, detail: errText }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Attempt 1: Claude Sonnet (fast, good at editing)
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": anthropicKey!, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: maxTokens, temperature: 0.3, system: SYSTEM_PROMPT, messages: [{ role: "user", content: userPrompt }] }),
+        signal: AbortSignal.timeout(135_000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        content = data.content?.[0]?.text || null;
+      } else {
+        lastError = `Claude ${res.status}: ${(await res.text()).slice(0, 200)}`;
+      }
+    } catch (e: unknown) { lastError = e instanceof Error ? e.message : "Claude failed"; }
+
+    // Attempt 2: Grok
+    if (!content) {
+      const xaiKey = (Deno.env.get("XAI_API_KEY") || "").trim();
+      if (xaiKey) {
+        try {
+          const res = await fetch("https://api.x.ai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + xaiKey },
+            body: JSON.stringify({ model: "grok-3", messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: userPrompt }], max_tokens: maxTokens, temperature: 0.3 }),
+            signal: AbortSignal.timeout(135_000),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            content = data.choices?.[0]?.message?.content || null;
+          } else { lastError = `Grok ${res.status}`; }
+        } catch (e: unknown) { lastError = e instanceof Error ? e.message : "Grok failed"; }
+      }
     }
 
-    const data = await response.json();
-    const content = data.content?.[0]?.text;
+    // Attempt 3: Gemini
+    if (!content) {
+      const googleKey = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
+      if (googleKey) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents: [{ role: "user", parts: [{ text: userPrompt }] }], generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 } }),
+            signal: AbortSignal.timeout(120_000),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            content = (data.candidates?.[0]?.content?.parts || []).map((p: { text?: string }) => p.text || "").join("");
+          } else { lastError = `Gemini ${res.status}`; }
+        } catch (e: unknown) { lastError = e instanceof Error ? e.message : "Gemini failed"; }
+      }
+    }
 
     if (!content) {
       return new Response(
-        JSON.stringify({ error: "No content returned from Claude" }),
+        JSON.stringify({ error: `All models failed. Last: ${lastError}` }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
