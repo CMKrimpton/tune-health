@@ -960,7 +960,7 @@ Return ONLY valid JSON:
     "tone": "Specific tone guidance for THIS piece beyond the preset — what makes this article's voice unique?",
     "density": "data-heavy | narrative-driven | balanced",
     "pacing": "slow-build | rapid-fire | crescendo",
-    "openWith": "How to open — a SPECIFIC scene, stat, question, anecdote, or provocation. NOT 'here's what everyone thinks, but actually...' unless this is a myth-autopsy",
+    "openWith": "How to open — VARY THIS. 34% of our articles open with narrative vignettes ('Picture someone...', 'In 2019, a 45-year-old...'). Only use narrative openings for storyteller preset. Otherwise choose: a striking statistic, a direct provocative claim, a mechanism description, a historical fact, a contradiction, or the single most important finding. Be SPECIFIC about what the writer should open with.",
     "emphasize": ["Key point 1", "Key point 2", "Key point 3"],
     "avoid": ["What NOT to do", "Clichés to avoid"],
     "dogmaWarnings": ["Specific outdated claims the writer must NOT repeat as fact for this topic — e.g., 'Do not treat omega-3/6 ratio as established science', 'Note that the cited breakfast study was Kellogg-funded'"],
@@ -1102,6 +1102,7 @@ CRITICAL ANTI-AI RULES (apply to ALL presets):
 - Never use false intimacy ("let's dive in", "buckle up", "here's the thing")
 - Never use empty transitions ("moreover", "furthermore", "additionally")
 - Never use hedging stacks ("it's possible that perhaps this might suggest")
+- **OPENING VARIETY IS MANDATORY.** Do NOT default to scene-setting vignettes ("Picture someone...", "Imagine a patient...", "In 2019, a 45-year-old..."). 34% of our articles already open this way — it's our worst pattern. Only use a narrative opening when the tone preset is "storyteller." Otherwise, open with: a striking statistic, a direct claim, a provocative question, a mechanism description, a historical fact, a contradiction, or the single most important finding. The opening should match the tone preset, not default to narrative.
 - Vary sentence length DRAMATICALLY within every preset. A 4-word sentence. Then a 30-word one that builds through a complex mechanism with multiple clauses before landing on the point. Then another short one. This is what makes prose feel human.
 - Every paragraph earns its place. If a paragraph just restates what the previous one said in different words, delete it.
 
