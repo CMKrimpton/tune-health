@@ -1,0 +1,46 @@
+{
+  "title": "The Free Will Debate Is Ridiculous. Here's Why. (Extended)",
+  "description": "Somewhere right now, a philosopher is arguing that you didn't choose to read this sentence. He has tenure. He has published. And he has spent a meaningful portion of his finite life defending a position he cannot live by for thirty consecutive minutes.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-24",
+  "author": {
+    "name": "Carl Lundin",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 16,
+  "featured": true,
+  "draft": false,
+  "tags": [
+    "free will",
+    "neuroscience",
+    "philosophy",
+    "determinism",
+    "Daniel Dennett",
+    "Sam Harris",
+    "Libet experiment",
+    "mental health",
+    "addiction",
+    "depression"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "free will",
+    "determinism",
+    "neuroscience",
+    "Libet experiment",
+    "compatibilism",
+    "Daniel Dennett",
+    "Sam Harris",
+    "philosophy of mind",
+    "mental health",
+    "addiction treatment",
+    "behavioral activation"
+  ],
+  "sortOrder": 1774325100000,
+  "comingSoon": false,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/free-will-debate-opus.png",
+  "heroImageAlt": "Editorial illustration for The Free Will Debate Is Ridiculous"
+}
