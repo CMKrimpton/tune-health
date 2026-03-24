@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.1.0] - 2026-03-24
+
+### Added — Reader Questions, Fact-Check Pipeline, Creation History
+- **Reader Questions**: new section in AI Agents tab mines alumi Health AI assistant chat data. Finds health questions asked by 2+ different users, shows with popularity count and "+ Queue" button. Source: `reader_request`, priority P5
+- **Fact-check pipeline step**: PubMed verification results (previously stored but ignored) now trigger article revision when 2+ studies or >50% of citations fail verification. Unverified citations get "(citation unverified)" tags
+- **Mandatory Sources section**: every article must end with a Sources list citing author, journal, year, and key finding used
+- **Full creation history**: click any published article to see complete pipeline reasoning — research findings, editor brief (score/archetype/angle/tone/dogma warnings), writer model + pen name, Grok independence review (verdict/score/flags/rewrites), PubMed verification (verified vs NOT FOUND), QC decision, cost breakdown per stage
+- **Sources section styling**: footnote-sized text (0.8125rem) with top border separator, not body text size
+
+### Changed — Editorial Quality (continued)
+- **Zero fabrication rule**: writer prompt restricted to research data only — "use ONLY studies from RESEARCH DATA below." Banned patterns: "studies show" without naming, precise stats without source, unnamed trials
+- **Independence review overhauled**: HTML stripped before sending to Grok (was parsing raw tags), category-specific review focus (Pharmacology: "who funded trials?", Nutrition: "food industry influence?"), anti-template instruction ("do NOT write 'consider adding a section'"), temperature raised 0.4→0.6, tokens 2500→3000
+- **QC uses Gemini not Grok**: different model from independence reviewer prevents rubber-stamping. Prompt rewritten for headline/description polish only
+- **All score examples removed**: every JSON template uses text instructions instead of numbers. Models were copying hardcoded examples verbatim
+- **Opening variety enforced**: "34% of articles open with narrative vignettes — ONLY for storyteller preset." Writer must vary: statistic, claim, question, mechanism, contradiction
+- **Status API expanded**: returns 30 recent + 15 published logs (deduplicated). Published articles no longer lost when failures flood the window
+
+### Fixed
+- React.Fragment crash (missing import in PipelineMonitor cost breakdown grid)
+- Sources section rendering at body text size instead of footnote size
+
 ## [9.0.0] - 2026-03-24
 
 ### Added — Admin Dashboard Overhaul & Pipeline Hardening

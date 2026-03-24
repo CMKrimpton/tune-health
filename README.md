@@ -118,7 +118,7 @@ src/
 - **Dashboard**: 8 compact stat cards, 3 tab panels (Pipeline, Articles, AI Agents)
 - **Pipeline Monitor**: 5-stage visual pipeline with live model labels (Research: Gemini + Sonnet, Write: rotates hourly, etc.). Manual triggers: individual scout buttons (Gemini/Sonnet/Grok/All 3) + Produce Now with API response feedback. Topic queue with full controls per item (Produce, Expedite, Priority ↑↓, Delete, Reset stuck items). Published articles show model pen names + independence scores. Failed articles have Re-queue + Retry buttons.
 - **Articles Manager**: search, filter, sort (including by independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh from DB
-- **AI Agents**: Cron Schedule (5 active jobs), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
+- **AI Agents**: Reader Questions (mines alumi Health chat data for popular user questions), Cron Schedule (5 active jobs), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
 - **Edit page**: metadata/content/AI refine tabs, 2s autosave + Cmd+S, score badges, live preview auto-refresh, Publish + Delete from GitHub, XSS-safe chat
 - **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish
 
@@ -130,8 +130,10 @@ Four AI companies, five models, two independent jobs, full fallback on every sta
   1. **Research** — Claude with web search, falls back to Gemini (Google Search). Directed research for queue topics, two-model discovery for scouts
   2. **Editor Brief** (Sonnet → Grok → Gemini fallback) — assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION" preserving the admin's intended angle. Smart duplicate detection: AI editor judges overlap, not word counting
   3. **Write** (multi-model rotation by hour + fallback) — follows archetype + tone. Anti-AI rules enforced. Editorial independence directive: "you are a journalist, not a PR department." Must include proper conclusion. `model_used` tracked
-  4. **Grok Independence Review** (Grok 3) — adversarial review, scores use text instructions (no hardcoded numbers). Must quote exact article text. Rewrites trigger for `major_issues` OR `minor_issues with score < 7`. PubMed verification in parallel
-  5. **QC + Publish** (Gemini → Sonnet fallback + OpenAI GPT Image) — different model from independence reviewer (not Grok). Headline/description polish only. Illustration parallelized, commit to GitHub. Author byline from writer model pen name
+  4. **Grok Independence Review** (Grok 3) — adversarial review on plain text (HTML stripped), category-specific focus, scores use text instructions. Rewrites trigger for `major_issues` OR `minor_issues with score < 7`. PubMed verification in parallel
+  5. **PubMed Fact-Check** — if 2+ studies or >50% fail PubMed verification, article revised with "(citation unverified)" tags
+  6. **QC + Publish** (Gemini → Sonnet fallback + OpenAI GPT Image) — different model from independence reviewer (not Grok). Headline/description polish only. Illustration parallelized, commit to GitHub. Author byline from writer model pen name
+- **Reader Questions**: mines alumi Health AI assistant chat data (same Supabase project) for questions asked by 2+ different users → adds to topic queue as `source: reader_request`
 - **Fallback chain**: every stage has provider fallback — pipeline survives any single provider outage or spending limit
 - **Cost tracking**: every API call logs token usage + USD cost. Backfill Costs button for pre-tracking articles
 - **Featured rotation**: every 6h via independent `pg_cron` job. Manual trigger available in admin
