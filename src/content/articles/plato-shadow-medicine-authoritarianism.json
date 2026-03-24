@@ -1,34 +1,42 @@
 {
-  "title": "Plato’s Shadow: How Ancient Abstractions Built Medicine’s Authoritarian Core",
-  "description": "Western medicine’s obsession with unchanging abstractions",
+  "title": "The Platonic Problem",
+  "description": "If you wanted to design a philosophical framework that keeps a small class of people in charge of everyone else's reality, you'd have a hard time beating what Plato came up with 2,400 years ago. And we're still running his operating system.",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-24",
   "author": {
-    "name": "Linda Carnes",
-    "role": "Investigative Health Reporter"
+    "name": "Carl Lundin",
+    "role": "Editor-at-Large"
   },
-  "readTime": 11,
-  "featured": false,
+  "readTime": 14,
+  "featured": true,
   "draft": false,
   "tags": [
     "Plato",
-    "medicine",
-    "authoritarianism",
-    "systems biology",
-    "patient agency"
+    "Heraclitus",
+    "Aristotle",
+    "genetic determinism",
+    "patient agency",
+    "philosophy of medicine",
+    "Ray Peat",
+    "systems biology"
   ],
   "gradient": {
-    "to": "orange-600",
-    "from": "amber-500"
+    "to": "purple-700",
+    "from": "violet-600"
   },
   "keywords": [
     "Platonic idealism",
-    "reductionist medicine",
+    "Heraclitus",
+    "Aristotle",
     "genetic determinism",
+    "reductionist medicine",
     "systems biology",
-    "patient empowerment"
+    "credentialism",
+    "self-organizing systems",
+    "Ray Peat",
+    "body as machine"
   ],
   "sortOrder": 1774324628540,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/plato-shadow-medicine-authoritarianism.png",
-  "heroImageAlt": "Editorial illustration for Plato’s Shadow: How Ancient Abstractions Built Medicine’s Authoritarian Core"
+  "heroImageAlt": "Editorial illustration for The Platonic Problem"
 }
