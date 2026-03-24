@@ -1910,25 +1910,60 @@ async function stageIndependenceReview(
   const researchStudies = ((logForStudies?.research_data as Record<string, unknown>)?.studies as Array<{ title?: string; journal?: string; year?: string }>) || [];
   const pubmedPromise = verifyPubMedCitations(researchStudies);
 
+  // Strip HTML tags for cleaner review — Grok shouldn't parse through <div> and <section> noise
+  const plainText = articleHtml
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+  const wordCount = plainText.split(/\s+/).length;
+
+  // Category-specific review focus
+  const categoryFocus: Record<string, string> = {
+    "Pharmacology": "Pay extra attention to drug company framing, side effect burial, and cost omissions. Who funded the trials?",
+    "Clinical Evidence": "Check if the article treats study results as definitive when they're preliminary. Does it name sample sizes, effect sizes, and confidence intervals?",
+    "Nutrition": "Watch for food industry influence. Are supplement claims backed by independent research or industry-funded studies?",
+    "Mental Health": "Check for pharma framing of medication as first-line treatment. Are therapy, lifestyle, and social determinants given equal weight?",
+    "Longevity": "Watch for anti-aging hype. Are animal study results presented as applicable to humans without caveat?",
+    "Neuroscience": "Check for oversimplification of brain mechanisms. Does it treat correlation as causation?",
+    "Environmental Health": "Watch for chemical industry framing. Are 'safe levels' presented without noting who set them and who funded the research?",
+    "Fitness": "Check for supplement industry influence and overstated exercise claims.",
+    "Sleep Science": "Watch for sleep product marketing disguised as science.",
+  };
+  const focus = categoryFocus[metadata.category as string] || "Apply standard independence checks.";
+
   try {
     const { text: reviewRaw, usage: grokUsage } = await grok({
       system: INDEPENDENCE_REVIEW_PROMPT,
       user: `## ARTICLE FOR REVIEW
 Title: ${metadata.title}
 Category: ${metadata.category}
-Word count: ~${Math.round(articleHtml.replace(/<[^>]*>/g, '').split(/\s+/).length)}
+Word count: ~${wordCount}
 
-## FULL ARTICLE TEXT (read every word):
-${articleHtml}
+## CATEGORY-SPECIFIC FOCUS
+${focus}
 
-Read the ENTIRE article above. Then:
-1. Score it honestly (most AI articles score 5-7, not 8+)
-2. Quote SPECIFIC sentences that show bias, deference, or pulled punches
-3. For each quote, write a concrete replacement sentence
-4. Check: does it name study funders? Does it treat regulators as trustworthy without evidence? Does it hedge clear findings?
-5. Would you publish this in a magazine you respected?`,
-      maxTokens: 2500,
-      temperature: 0.4,
+## FULL ARTICLE TEXT:
+${plainText}
+
+INSTRUCTIONS — do NOT give a generic review. This article is about "${metadata.title}" in the ${metadata.category} category. Your review must be SPECIFIC to this article's claims, sources, and framing.
+
+For each flag:
+- Quote the EXACT sentence from the article (not a paraphrase)
+- Explain what's wrong with THAT specific sentence
+- Write a replacement sentence that fixes THAT specific problem
+
+Do NOT write generic suggestions like "consider adding a section on..." — that's not a review, that's a template. Point to SPECIFIC text that needs to change.
+
+Score this article honestly. A 7 means "publishable but has real problems." An 8 means "genuinely strong independent journalism." A 5 means "reads like it was written to please the industry it covers."`,
+      maxTokens: 3000,
+      temperature: 0.6,
     });
     await addCostToLog(db, logId, grokUsage);
 
