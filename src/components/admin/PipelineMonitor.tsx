@@ -786,37 +786,149 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             {completedLogs.slice(0, 10).map(log => {
               const indScore = getIndependenceScore(log);
               const penName = log.model_used ? PEN_NAMES[log.model_used] : null;
+              const isExpanded = expandedId === log.id;
+              const rd = log.research_data || {};
+              const brief = rd._editorBrief as Record<string, unknown> | undefined;
+              const indReview = rd._independenceReview as Record<string, unknown> | undefined;
+              const pubmed = rd._pubmedVerification as { verified?: number; failed?: number; total?: number; details?: Array<{ title: string; found: boolean }> } | undefined;
+              const qcResult = rd._qcResult as Record<string, unknown> | undefined;
+              const briefDetails = brief?.brief as Record<string, unknown> | undefined;
+              const tokenUsage = log.token_usage as Array<{ model: string; stage: string; inputTokens: number; outputTokens: number; costUsd: number }> | null;
+
               return (
-                <div key={log.id} className="pipeline-card completed" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="pipeline-card-title" style={{ marginBottom: '0.25rem' }}>
-                      {log.title || log.topic || 'Untitled'}
+                <div key={log.id} className="pipeline-card completed" style={{ cursor: 'pointer' }} onClick={() => setExpandedId(isExpanded ? null : log.id)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="pipeline-card-title" style={{ marginBottom: '0.25rem' }}>
+                        {log.title || log.topic || 'Untitled'}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6875rem', color: '#78716c', flexWrap: 'wrap' }}>
+                        {penName && <span style={{ color: '#a78bfa', fontWeight: 500 }}>{penName}</span>}
+                        {indScore !== null && (
+                          <span style={{ color: indScore >= 7 ? '#16a34a' : indScore >= 4 ? '#f59e0b' : '#dc2626' }}>
+                            Independence: {indScore}/10
+                          </span>
+                        )}
+                        {log.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
+                          <span style={{ color: '#a8a29e', fontVariantNumeric: 'tabular-nums' }}>{formatCost(log.cost_usd)}</span>
+                        )}
+                        <span>{timeAgo(log.completed_at || log.created_at)}</span>
+                        <span style={{ color: '#57534e' }}>{isExpanded ? '\u25B2 collapse' : '\u25BC history'}</span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6875rem', color: '#78716c', flexWrap: 'wrap' }}>
-                      {penName && (
-                        <span style={{ color: '#a78bfa', fontWeight: 500 }}>{penName}</span>
-                      )}
-                      {indScore !== null && (
-                        <span style={{ color: indScore >= 7 ? '#16a34a' : indScore >= 4 ? '#f59e0b' : '#dc2626' }}>
-                          Independence: {indScore}/10
-                        </span>
-                      )}
-                      {log.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
-                        <span style={{ color: '#a8a29e', fontVariantNumeric: 'tabular-nums' }}>
-                          {formatCost(log.cost_usd)}
-                        </span>
-                      )}
-                      <span>{timeAgo(log.completed_at || log.created_at)}</span>
+                    <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                      {log.slug && <a href={`/admin/edit/${log.slug}`} className="pipeline-retry-btn" style={{ textDecoration: 'none' }}>Edit</a>}
+                      {log.slug && <a href={`/articles/${log.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn" style={{ textDecoration: 'none' }}>{'\u2192'} View</a>}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }}>
-                    {log.slug && (
-                      <a href={`/admin/edit/${log.slug}`} className="pipeline-retry-btn" style={{ textDecoration: 'none' }}>Edit</a>
-                    )}
-                    {log.slug && (
-                      <a href={`/articles/${log.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn" style={{ textDecoration: 'none' }}>{'\u2192'} View</a>
-                    )}
-                  </div>
+
+                  {isExpanded && (
+                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #44403c', fontSize: '0.75rem' }}>
+                      {/* ── Research ── */}
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>1. Research</div>
+                        {rd.topic && <div style={{ color: '#a8a29e' }}>Topic: {rd.topic as string}</div>}
+                        {(rd.keyFindings as string[] | undefined)?.slice(0, 3).map((f: string, i: number) => (
+                          <div key={i} style={{ color: '#78716c', paddingLeft: '0.5rem', borderLeft: '2px solid #44403c', marginTop: '0.25rem' }}>{f}</div>
+                        ))}
+                      </div>
+
+                      {/* ── Editor Brief ── */}
+                      {brief && (
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>2. Editor Brief</div>
+                          <div style={{ color: '#a8a29e' }}>Score: <span style={{ color: '#e7e6e3', fontWeight: 600 }}>{brief.topicScore as number}/10</span> | Archetype: {brief.archetype as string || '?'}</div>
+                          {brief.angle && <div style={{ color: '#a8a29e', fontStyle: 'italic', marginTop: '0.25rem' }}>Angle: {(brief.angle as string).slice(0, 150)}</div>}
+                          {briefDetails?.tonePreset && <div style={{ color: '#78716c' }}>Tone: {briefDetails.tonePreset as string} | Density: {briefDetails.density as string || '?'} | Pacing: {briefDetails.pacing as string || '?'}</div>}
+                          {(briefDetails?.dogmaWarnings as string[] | undefined)?.length ? (
+                            <div style={{ color: '#f59e0b', marginTop: '0.25rem' }}>Dogma warnings: {(briefDetails!.dogmaWarnings as string[]).join('; ')}</div>
+                          ) : null}
+                        </div>
+                      )}
+
+                      {/* ── Writer ── */}
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>3. Writer</div>
+                        <div style={{ color: '#a8a29e' }}>Model: <span style={{ color: '#a78bfa', fontWeight: 500 }}>{log.model_used || '?'}</span>{penName ? ` (${penName})` : ''} | Revision: {log.revision_count || 0}</div>
+                      </div>
+
+                      {/* ── Independence Review ── */}
+                      {indReview && (
+                        <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: '#1c1917', borderRadius: '0.375rem' }}>
+                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>4. Grok Independence Review</div>
+                          <div style={{ color: '#a8a29e' }}>
+                            Verdict: <span style={{ color: (indReview.verdict as string) === 'clean' ? '#4ade80' : (indReview.verdict as string) === 'minor_issues' ? '#fbbf24' : '#f87171', fontWeight: 600 }}>{indReview.verdict as string}</span>
+                            {' | '}Score: {(indReview.score as number) || '?'}/10
+                            {indReview._revisionApplied && <span style={{ color: '#a78bfa', marginLeft: '0.5rem' }}>Revisions applied</span>}
+                          </div>
+                          {(indReview.flags as Array<{ type: string; quote: string; rewrite: string }> | undefined)?.map((f, i) => (
+                            <div key={i} style={{ marginTop: '0.375rem', paddingLeft: '0.5rem', borderLeft: `2px solid ${f.type === 'fabrication' ? '#f87171' : '#f59e0b'}` }}>
+                              <span style={{ color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.5625rem' }}>[{f.type}]</span>
+                              <div style={{ color: '#78716c', fontSize: '0.6875rem' }}>{(f.quote || '').slice(0, 100)}</div>
+                              {f.rewrite && <div style={{ color: '#e7e6e3', fontSize: '0.6875rem' }}>{'\u2192'} {(f.rewrite || '').slice(0, 100)}</div>}
+                            </div>
+                          ))}
+                          {(indReview.summary as string) && <div style={{ color: '#78716c', fontStyle: 'italic', marginTop: '0.375rem' }}>{(indReview.summary as string).slice(0, 200)}</div>}
+                        </div>
+                      )}
+
+                      {/* ── PubMed Verification ── */}
+                      {pubmed && pubmed.total && pubmed.total > 0 && (
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>5. PubMed Verification</div>
+                          <div style={{ color: '#a8a29e' }}>
+                            <span style={{ color: '#4ade80' }}>{pubmed.verified} verified</span>
+                            {pubmed.failed ? <span style={{ color: '#f87171', marginLeft: '0.5rem' }}>{pubmed.failed} NOT FOUND</span> : null}
+                            {' / '}{pubmed.total} checked
+                          </div>
+                          {pubmed.details?.filter(d => !d.found).map((d, i) => (
+                            <div key={i} style={{ color: '#f87171', fontSize: '0.6875rem', paddingLeft: '0.5rem', borderLeft: '2px solid #7f1d1d', marginTop: '0.25rem' }}>
+                              {'\u2717'} {d.title.slice(0, 80)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* ── QC Result ── */}
+                      {qcResult && (
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>6. QC + Publish</div>
+                          <div style={{ color: '#a8a29e' }}>
+                            Decision: <span style={{ color: '#4ade80', fontWeight: 600 }}>{qcResult.decision as string}</span>
+                            {' | '}Score: {qcResult.qualityScore as number || '?'}/10
+                            {(qcResult.edits as Record<string, unknown>)?.headlineChanged && <span style={{ marginLeft: '0.5rem', color: '#fbbf24' }}>Headline revised</span>}
+                            {(qcResult.edits as Record<string, unknown>)?.descriptionChanged && <span style={{ marginLeft: '0.5rem', color: '#fbbf24' }}>Description revised</span>}
+                          </div>
+                          {(qcResult.edits as Record<string, unknown>)?.notes && (
+                            <div style={{ color: '#78716c', fontStyle: 'italic', marginTop: '0.25rem' }}>{((qcResult.edits as Record<string, unknown>).notes as string).slice(0, 150)}</div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Cost Breakdown ── */}
+                      {tokenUsage && tokenUsage.length > 0 && (
+                        <div>
+                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>Cost Breakdown</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '0.125rem 0.75rem', fontSize: '0.625rem', color: '#78716c' }}>
+                            <span style={{ fontWeight: 600 }}>Stage</span><span style={{ fontWeight: 600 }}>Model</span><span style={{ fontWeight: 600 }}>Tokens</span><span style={{ fontWeight: 600 }}>Cost</span>
+                            {tokenUsage.map((t, i) => (
+                              <React.Fragment key={i}>
+                                <span style={{ color: '#a8a29e' }}>{t.stage}</span>
+                                <span>{t.model?.split('-').slice(0, 2).join('-') || '?'}</span>
+                                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{(t.inputTokens + t.outputTokens).toLocaleString()}</span>
+                                <span style={{ fontVariantNumeric: 'tabular-nums', color: '#a8a29e' }}>${t.costUsd?.toFixed(4) || '?'}</span>
+                              </React.Fragment>
+                            ))}
+                          </div>
+                          <div style={{ marginTop: '0.25rem', color: '#a8a29e', fontWeight: 600, fontSize: '0.625rem' }}>Total: {formatCost(log.cost_usd)}</div>
+                        </div>
+                      )}
+
+                      <div style={{ marginTop: '0.5rem', color: '#57534e', fontSize: '0.625rem' }}>
+                        Source: {log.source || '?'} | Started: {log.created_at ? new Date(log.created_at).toLocaleString() : '?'} | Completed: {log.completed_at ? new Date(log.completed_at).toLocaleString() : '?'}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
