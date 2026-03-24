@@ -2467,6 +2467,108 @@ Deno.serve(async (req: Request) => {
       return json({ logs: data || [], articleCount, queue: queue || [], totalCost: Math.round(totalCost * 100) / 100 });
     }
 
+    // ------ READER QUESTIONS — mine user chat data for article ideas ------
+    if (action === "reader-questions") {
+      // Query user questions from alumi Health AI assistant (same Supabase project)
+      // Find questions asked by 2+ different users
+      const { data: userQuestions } = await db
+        .from("chat_messages")
+        .select("content, session_id, created_at")
+        .eq("role", "user")
+        .gte("created_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()) // last 90 days
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (!userQuestions || userQuestions.length === 0) {
+        return json({ questions: [], message: "No user questions found in the last 90 days." });
+      }
+
+      // Get session → user mapping to count unique users
+      const sessionIds = [...new Set(userQuestions.map((q: { session_id: string }) => q.session_id))];
+      const { data: sessions } = await db
+        .from("chat_sessions")
+        .select("id, user_id")
+        .in("id", sessionIds.slice(0, 200));
+
+      const sessionToUser: Record<string, string> = {};
+      for (const s of (sessions || []) as Array<{ id: string; user_id: string }>) {
+        sessionToUser[s.id] = s.user_id;
+      }
+
+      // Group similar questions by keyword extraction
+      const STOP = new Set(["what", "how", "does", "can", "the", "is", "are", "do", "my", "i", "me", "a", "an", "it", "this", "that", "have", "has", "was", "were", "will", "would", "could", "should", "about", "with", "from", "for", "and", "or", "but", "not", "any", "your", "you", "why", "when", "which", "there", "been", "just", "more", "some", "than", "also", "very", "much", "into", "each", "other"]);
+
+      function extractKeywords(text: string): string[] {
+        return text.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/)
+          .filter(w => w.length > 3 && !STOP.has(w));
+      }
+
+      // Build question clusters
+      interface QuestionCluster {
+        representative: string;
+        keywords: Set<string>;
+        userIds: Set<string>;
+        count: number;
+        examples: string[];
+      }
+
+      const clusters: QuestionCluster[] = [];
+
+      for (const q of userQuestions as Array<{ content: string; session_id: string }>) {
+        const text = q.content.trim();
+        if (text.length < 15 || text.length > 500) continue; // skip too short/long
+        const kw = extractKeywords(text);
+        if (kw.length < 2) continue;
+        const userId = sessionToUser[q.session_id] || q.session_id;
+
+        // Find matching cluster (40%+ keyword overlap)
+        let matched = false;
+        for (const cluster of clusters) {
+          const overlap = kw.filter(w => cluster.keywords.has(w)).length;
+          const pct = overlap / Math.min(kw.length, cluster.keywords.size);
+          if (pct >= 0.4 && overlap >= 2) {
+            cluster.userIds.add(userId);
+            cluster.count++;
+            if (cluster.examples.length < 3) cluster.examples.push(text.slice(0, 150));
+            for (const w of kw) cluster.keywords.add(w);
+            matched = true;
+            break;
+          }
+        }
+
+        if (!matched) {
+          clusters.push({
+            representative: text.slice(0, 200),
+            keywords: new Set(kw),
+            userIds: new Set([userId]),
+            count: 1,
+            examples: [text.slice(0, 150)],
+          });
+        }
+      }
+
+      // Filter: 2+ unique users asked similar questions
+      const popular = clusters
+        .filter(c => c.userIds.size >= 2)
+        .sort((a, b) => b.userIds.size - a.userIds.size)
+        .slice(0, 20)
+        .map(c => ({
+          topic: c.representative,
+          uniqueUsers: c.userIds.size,
+          totalAsks: c.count,
+          examples: c.examples,
+          keywords: [...c.keywords].slice(0, 10),
+        }));
+
+      return json({
+        questions: popular,
+        totalAnalyzed: userQuestions.length,
+        clustersFound: clusters.length,
+        popularCount: popular.length,
+        message: `Found ${popular.length} questions asked by 2+ users (from ${userQuestions.length} messages, ${clusters.length} unique topics).`,
+      });
+    }
+
     // ------ TOPIC QUEUE ACTIONS ------
     if (action === "queue-topic") {
       const { topic, category, priority } = body;

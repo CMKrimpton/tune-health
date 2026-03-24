@@ -143,12 +143,113 @@ function Section({ title, icon, defaultOpen = false, badge, children }: {
 export default function AgentsPanel({ apiBase, initialArticleCount }: Props) {
   return (
     <div className="agents-panel">
+      <ReaderQuestions apiBase={apiBase} />
       <CronSchedule />
       <DecisionLog apiBase={apiBase} />
       <EditorialQC apiBase={apiBase} articleCount={initialArticleCount} />
       <IllustrationAgent apiBase={apiBase} />
       <DatabaseSync apiBase={apiBase} initialCount={initialArticleCount} />
     </div>
+  );
+}
+
+// ─── 0. Reader Questions (from alumi Health app) ─────────────────
+
+function ReaderQuestions({ apiBase }: { apiBase: string }) {
+  const [loading, setLoading] = useState(false);
+  const [questions, setQuestions] = useState<Array<{ topic: string; uniqueUsers: number; totalAsks: number; examples: string[]; keywords: string[] }>>([]);
+  const [message, setMessage] = useState<string | null>(null);
+  const [queueingIdx, setQueueingIdx] = useState<number | null>(null);
+  const [queued, setQueued] = useState<Set<number>>(new Set());
+
+  const fetchQuestions = useCallback(async () => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getAdminToken() },
+        body: JSON.stringify({ action: 'reader-questions' }),
+      });
+      const data = await res.json();
+      setQuestions(data.questions || []);
+      setMessage(data.message || `Found ${(data.questions || []).length} questions`);
+      setQueued(new Set());
+    } catch (err) {
+      setMessage(`Error: ${(err as Error).message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [apiBase]);
+
+  const addToQueue = useCallback(async (idx: number, topic: string) => {
+    setQueueingIdx(idx);
+    try {
+      await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getAdminToken() },
+        body: JSON.stringify({ action: 'queue-topic', topic, source: 'reader_request', priority: 5, notes: `Asked by multiple users in alumi Health AI assistant` }),
+      });
+      setQueued(prev => new Set(prev).add(idx));
+    } catch { /* silent */ }
+    finally { setQueueingIdx(null); }
+  }, [apiBase]);
+
+  return (
+    <Section
+      title="Reader Questions"
+      defaultOpen={true}
+      icon={
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #7f1d1d, #dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+      }
+      badge={questions.length > 0 ? <span style={{ fontSize: '0.6875rem', color: '#4ade80', fontWeight: 500 }}>{questions.length} found</span> : undefined}
+    >
+      <p style={{ fontSize: '0.6875rem', color: '#78716c', marginBottom: '0.75rem' }}>
+        Finds health questions asked by 2+ different users in the alumi Health AI assistant. Real reader interest = real article ideas.
+      </p>
+      <button className="agents-btn agents-btn-primary" disabled={loading} onClick={fetchQuestions}>
+        {loading ? 'Scanning conversations...' : 'Find Popular Questions'}
+      </button>
+
+      {message && (
+        <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: message.startsWith('Error') ? '#f87171' : '#a8a29e' }}>{message}</p>
+      )}
+
+      {questions.length > 0 && (
+        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.375rem', maxHeight: 400, overflowY: 'auto' }}>
+          {questions.map((q, i) => (
+            <div key={i} style={{ padding: '0.5rem 0.75rem', background: '#1c1917', borderRadius: '0.375rem', borderLeft: `3px solid ${q.uniqueUsers >= 5 ? '#dc2626' : q.uniqueUsers >= 3 ? '#f59e0b' : '#44403c'}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#e7e6e3', marginBottom: '0.25rem' }}>
+                    {q.topic.slice(0, 120)}{q.topic.length > 120 ? '...' : ''}
+                  </div>
+                  <div style={{ fontSize: '0.625rem', color: '#78716c', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ color: q.uniqueUsers >= 5 ? '#f87171' : q.uniqueUsers >= 3 ? '#fbbf24' : '#a8a29e', fontWeight: 600 }}>{q.uniqueUsers} users</span>
+                    <span>{q.totalAsks} times</span>
+                    <span style={{ color: '#57534e' }}>{q.keywords.slice(0, 5).join(', ')}</span>
+                  </div>
+                </div>
+                {queued.has(i) ? (
+                  <span style={{ fontSize: '0.625rem', color: '#4ade80', fontWeight: 600, whiteSpace: 'nowrap' }}>Queued</span>
+                ) : (
+                  <button
+                    className="pipeline-retry-btn"
+                    onClick={() => addToQueue(i, q.topic)}
+                    disabled={queueingIdx === i}
+                    style={{ fontSize: '0.6875rem', color: '#4ade80', borderColor: '#166534', whiteSpace: 'nowrap' }}
+                  >
+                    {queueingIdx === i ? 'Adding...' : '+ Queue'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Section>
   );
 }
 
