@@ -1589,15 +1589,10 @@ Expert positions: ${((researchData.expertQuotes as string[]) || []).join("\n")}`
   const isFromQueue = !!researchData._fromQueue;
   const originalQueuedTopic = isFromQueue ? (researchData.topic as string) || "" : "";
 
+  const queueDirective = isFromQueue ? `\n## MANDATORY EDITORIAL DIRECTION\nThis topic was MANUALLY QUEUED by the editor-in-chief. The original topic was:\n"${originalQueuedTopic}"\n\nYou MUST preserve the editorial intent of this topic. If the topic is critical of an industry, your headline and angle must reflect that critical investigation — NOT neutralize it into a "balanced" overview. If the topic asks to follow the money, your brief must direct the writer to follow the money. Do NOT reframe a pointed investigation as a neutral explainer. The editor-in-chief chose this angle for a reason.\n` : "";
+
   const editorPrompt = `Review ${candidates ? `these ${candidates.length} research candidates` : "this research brief"} and create an editorial brief for the writer.
-${isFromQueue ? `
-## MANDATORY EDITORIAL DIRECTION
-This topic was MANUALLY QUEUED by the editor-in-chief. The original topic was:
-"${originalQueuedTopic}"
-
-You MUST preserve the editorial intent of this topic. If the topic is critical of an industry, your headline and angle must reflect that critical investigation — NOT neutralize it into a "balanced" overview. If the topic asks to follow the money, your brief must direct the writer to follow the money. Do NOT reframe a pointed investigation as a neutral explainer. The editor-in-chief chose this angle for a reason.
-` : ""}`;
-
+${queueDirective}
 ## RESEARCH
 ${researchSection}
 ${researchData.searchSummary ? `\nSearch summary: ${researchData.searchSummary}` : ""}
