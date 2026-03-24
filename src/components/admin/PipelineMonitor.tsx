@@ -274,16 +274,29 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     return () => clearInterval(t);
   }, []);
 
+  const [produceResult, setProduceResult] = useState<string | null>(null);
+
   const triggerRun = async () => {
     setTriggering(true);
+    setProduceResult(null);
     try {
-      await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/daily-article-agent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
-        body: JSON.stringify({ action: 'run' }),
+        body: JSON.stringify({ action: 'produce' }),
       });
-      setTimeout(fetchStatus, 2000);
-    } catch { /* next poll */ }
+      const data = await res.json();
+      if (data.skipped) {
+        setProduceResult(`Skipped: ${data.message}`);
+      } else if (data.error) {
+        setProduceResult(`Error: ${data.error}${data.detail ? ' — ' + data.detail : ''}`);
+      } else {
+        setProduceResult(data.message || `Started: ${data.stage || 'produce'}`);
+      }
+      setTimeout(fetchStatus, 3000);
+    } catch (err) {
+      setProduceResult(`Network error: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
     finally { setTriggering(false); }
   };
 
@@ -373,6 +386,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const produceFromQueue = async (queueId: string, topic: string) => {
     if (!confirm(`Produce "${topic.replace(/\*\*/g, '').slice(0, 80)}" now? This will start the full pipeline.`)) return;
     setTriggering(true);
+    setProduceResult(null);
     try {
       // First expedite this item so it's picked first
       await fetch(`${apiBase}/daily-article-agent`, {
@@ -381,13 +395,23 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         body: JSON.stringify({ action: 'update-queue', queueId, expedite: true, priority: 0 }),
       });
       // Then trigger produce
-      await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/daily-article-agent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'produce' }),
       });
+      const data = await res.json();
+      if (data.skipped) {
+        setProduceResult(`Skipped: ${data.message}`);
+      } else if (data.error) {
+        setProduceResult(`Error: ${data.error}${data.detail ? ' — ' + data.detail : ''}`);
+      } else {
+        setProduceResult(data.message || `Started producing topic`);
+      }
       setTimeout(fetchStatus, 3000);
-    } catch { /* next poll */ }
+    } catch (err) {
+      setProduceResult(`Network error: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
     finally { setTriggering(false); }
   };
 
@@ -535,11 +559,17 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         </div>
       </div>
 
-      {/* ── Scout Result ── */}
+      {/* ── Action Results ── */}
       {scoutResult && (
-        <div style={{ padding: '0.5rem 0.75rem', background: '#052e16', border: '1px solid #166534', borderRadius: '0.5rem', marginBottom: '0.75rem', fontSize: '0.75rem', color: '#86efac', whiteSpace: 'pre-line' }}>
+        <div style={{ padding: '0.5rem 0.75rem', background: '#052e16', border: '1px solid #166534', borderRadius: '0.5rem', marginBottom: '0.5rem', fontSize: '0.75rem', color: '#86efac', whiteSpace: 'pre-line' }}>
           {scoutResult}
           <button onClick={() => setScoutResult(null)} style={{ marginLeft: '0.75rem', background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontSize: '0.75rem' }}>{'\u00d7 dismiss'}</button>
+        </div>
+      )}
+      {produceResult && (
+        <div style={{ padding: '0.5rem 0.75rem', background: produceResult.includes('Error') || produceResult.includes('Skipped') ? '#450a0a' : '#052e16', border: `1px solid ${produceResult.includes('Error') || produceResult.includes('Skipped') ? '#991b1b' : '#166534'}`, borderRadius: '0.5rem', marginBottom: '0.5rem', fontSize: '0.75rem', color: produceResult.includes('Error') || produceResult.includes('Skipped') ? '#fca5a5' : '#86efac' }}>
+          {produceResult}
+          <button onClick={() => setProduceResult(null)} style={{ marginLeft: '0.75rem', background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: '0.75rem' }}>{'\u00d7 dismiss'}</button>
         </div>
       )}
 
@@ -697,9 +727,27 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       </div>
                     )}
                     {isActive && (
-                      <span style={{ fontSize: '0.625rem', color: '#16a34a', fontWeight: 600, padding: '0.25rem 0.5rem', background: '#052e16', borderRadius: '0.25rem', whiteSpace: 'nowrap' }}>
-                        {item.status === 'in_progress' ? 'Producing\u2026' : 'Assigned'}
-                      </span>
+                      <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.625rem', color: '#16a34a', fontWeight: 600, padding: '0.25rem 0.5rem', background: '#052e16', borderRadius: '0.25rem', whiteSpace: 'nowrap' }}>
+                          {item.status === 'in_progress' ? 'Producing\u2026' : 'Assigned'}
+                        </span>
+                        <button
+                          className="pipeline-retry-btn"
+                          onClick={() => updateQueueItem(item.id, { status: 'queued' })}
+                          style={{ fontSize: '0.6875rem', color: '#fbbf24', borderColor: '#92400e' }}
+                          title="Reset to queued (if stuck)"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          className="pipeline-retry-btn"
+                          onClick={() => { if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
+                          style={{ color: '#f87171', borderColor: '#7f1d1d', fontSize: '0.6875rem' }}
+                          title="Delete from queue"
+                        >
+                          {'\u2715'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -674,11 +674,12 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
+  const [rotating, setRotating] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setResult(null);
-
     try {
       const res = await fetch(`${apiBase}/articles-api`, {
         method: 'POST',
@@ -696,9 +697,46 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
     }
   }, [apiBase]);
 
+  const backfillCosts = useCallback(async () => {
+    if (!confirm('Estimate costs for all articles with missing cost data? This uses stage-based estimates.')) return;
+    setBackfilling(true);
+    setResult(null);
+    try {
+      const res = await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
+        body: JSON.stringify({ action: 'backfill-costs' }),
+      });
+      const data = await res.json();
+      setResult(data.message || `Updated ${data.updated} logs, estimated $${data.totalEstimated?.toFixed(2) || '?'}`);
+    } catch (err) {
+      setResult(`Backfill failed: ${(err as Error).message || 'Unknown error'}`);
+    } finally {
+      setBackfilling(false);
+    }
+  }, [apiBase]);
+
+  const rotateFeatured = useCallback(async () => {
+    setRotating(true);
+    setResult(null);
+    try {
+      const res = await fetch(`${apiBase}/daily-article-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
+        body: JSON.stringify({ action: 'rotate-featured' }),
+      });
+      const data = await res.json();
+      setResult(data.message || `Featured rotated to: ${data.newFeatured || 'none'}`);
+    } catch (err) {
+      setResult(`Rotation failed: ${(err as Error).message || 'Unknown error'}`);
+    } finally {
+      setRotating(false);
+    }
+  }, [apiBase]);
+
   return (
     <Section
-      title="Database Sync"
+      title="Database & Maintenance"
       icon={
         <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #78350f, #b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
@@ -706,14 +744,23 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
       }
       badge={<span style={{ fontSize: '0.6875rem', color: '#78716c' }}>{count} articles</span>}
     >
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
         <button className="agents-btn agents-btn-primary" disabled={loading} onClick={refresh}>
-          {loading ? 'Syncing...' : 'Refresh DB from Content'}
+          {loading ? 'Syncing...' : 'Refresh DB'}
+        </button>
+        <button className="agents-btn" disabled={backfilling} onClick={backfillCosts}>
+          {backfilling ? 'Estimating...' : 'Backfill Costs'}
+        </button>
+        <button className="agents-btn" disabled={rotating} onClick={rotateFeatured}>
+          {rotating ? 'Rotating...' : 'Rotate Featured'}
         </button>
       </div>
+      <p style={{ fontSize: '0.6875rem', color: '#57534e', marginBottom: '0.5rem' }}>
+        Backfill Costs: estimate spend for articles logged before cost tracking. Rotate Featured: manually trigger featured article rotation.
+      </p>
       {result && (
-        <p style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: result.startsWith('Failed') ? '#f87171' : '#4ade80' }}>
-          {result.startsWith('Failed') ? result : `\u2713 ${result}`}
+        <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: result.includes('Failed') || result.includes('failed') ? '#f87171' : '#4ade80' }}>
+          {result.includes('Failed') || result.includes('failed') ? result : `\u2713 ${result}`}
         </p>
       )}
     </Section>
