@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -912,12 +912,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '0.125rem 0.75rem', fontSize: '0.625rem', color: '#78716c' }}>
                             <span style={{ fontWeight: 600 }}>Stage</span><span style={{ fontWeight: 600 }}>Model</span><span style={{ fontWeight: 600 }}>Tokens</span><span style={{ fontWeight: 600 }}>Cost</span>
                             {tokenUsage.map((t, i) => (
-                              <React.Fragment key={i}>
+                              <Fragment key={i}>
                                 <span style={{ color: '#a8a29e' }}>{t.stage}</span>
                                 <span>{t.model?.split('-').slice(0, 2).join('-') || '?'}</span>
                                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{(t.inputTokens + t.outputTokens).toLocaleString()}</span>
                                 <span style={{ fontVariantNumeric: 'tabular-nums', color: '#a8a29e' }}>${t.costUsd?.toFixed(4) || '?'}</span>
-                              </React.Fragment>
+                              </Fragment>
                             ))}
                           </div>
                           <div style={{ marginTop: '0.25rem', color: '#a8a29e', fontWeight: 600, fontSize: '0.625rem' }}>Total: {formatCost(log.cost_usd)}</div>
