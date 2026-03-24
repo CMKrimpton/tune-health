@@ -1,0 +1,43 @@
+{
+  "title": "The Least Curious Question",
+  "description": "\"Why\" feels like the deepest question you can ask. It might be where thinking goes to die. The people who report the most robust sense of meaning are not those who secured a metaphysical conclusion — they're the ones most deeply embedded in the how.",
+  "category": "Mental Health",
+  "publishDate": "2026-03-24",
+  "author": {
+    "name": "Carl Lundin",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 18,
+  "featured": true,
+  "draft": false,
+  "tags": [
+    "curiosity",
+    "meaning",
+    "psychology",
+    "philosophy",
+    "Viktor Frankl",
+    "Ernest Becker",
+    "cognition",
+    "mental health",
+    "epistemology"
+  ],
+  "gradient": {
+    "to": "blue-600",
+    "from": "sky-500"
+  },
+  "keywords": [
+    "curiosity",
+    "why vs how",
+    "meaning-making",
+    "Viktor Frankl",
+    "intellectual curiosity",
+    "certainty seeking",
+    "open questions",
+    "cognitive posture",
+    "mental health"
+  ],
+  "sortOrder": 1774325300000,
+  "comingSoon": false,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/least-curious-question-why.png",
+  "heroImageAlt": "Editorial illustration for The Least Curious Question"
+}
