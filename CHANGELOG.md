@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.2.0] - 2026-03-24
+
+### Added — Opus Editorial Content & Writer Rotation
+- **3 new Opus articles published**: "The Platonic Problem" (14 min), "The Free Will Debate Is Ridiculous" (6 min + 16 min extended), "Why Humans Keep Inventing Gods" (18 min)
+- **Voice reference in writer prompt**: concrete GOOD vs BAD examples from Opus Plato article as gold standard. Covers irreverent metaphors, short sentences for impact, everyday analogies, parenthetical asides, opinion-taking, anti-padding rules
+- **refine-article fallback**: Claude → Grok → Gemini (was Claude Opus only, no fallback)
+- **Sources section `id="sources"`**: CSS can now target it for footnote-sized styling
+
+### Changed
+- **Grok removed from writer rotation**: only Sonnet and Gemini write articles now. Grok stays on independence review and scouting. Evidence: Grok free will article scored 2-3/10 vs Opus at 10/10 on voice and personality
+- **Writer rotation simplified**: even hours = Sonnet (primary), odd hours = Gemini (primary). Grok is last-resort fallback only
+- **Deleted Grok and Gemini free will articles**: replaced by Opus versions
+
 ## [9.1.0] - 2026-03-24
 
 ### Added — Reader Questions, Fact-Check Pipeline, Creation History

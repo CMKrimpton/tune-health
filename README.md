@@ -129,7 +129,7 @@ Four AI companies, five models, two independent jobs, full fallback on every sta
 - **Produce** (cron: hourly): editor picks best topic from queue → self-chains through:
   1. **Research** — Claude with web search, falls back to Gemini (Google Search). Directed research for queue topics, two-model discovery for scouts
   2. **Editor Brief** (Sonnet → Grok → Gemini fallback) — assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION" preserving the admin's intended angle. Smart duplicate detection: AI editor judges overlap, not word counting
-  3. **Write** (multi-model rotation by hour + fallback) — follows archetype + tone. Anti-AI rules enforced. Editorial independence directive: "you are a journalist, not a PR department." Must include proper conclusion. `model_used` tracked
+  3. **Write** (Sonnet/Gemini rotation by hour, Grok removed from writing) — follows archetype + tone. Voice reference from Opus articles. Anti-AI + anti-padding + zero fabrication rules. Mandatory Sources section. Editorial independence directive. `model_used` tracked
   4. **Grok Independence Review** (Grok 3) — adversarial review on plain text (HTML stripped), category-specific focus, scores use text instructions. Rewrites trigger for `major_issues` OR `minor_issues with score < 7`. PubMed verification in parallel
   5. **PubMed Fact-Check** — if 2+ studies or >50% fail PubMed verification, article revised with "(citation unverified)" tags
   6. **QC + Publish** (Gemini → Sonnet fallback + OpenAI GPT Image) — different model from independence reviewer (not Grok). Headline/description polish only. Illustration parallelized, commit to GitHub. Author byline from writer model pen name
