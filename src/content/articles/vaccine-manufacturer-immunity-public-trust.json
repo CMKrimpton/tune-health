@@ -1,0 +1,34 @@
+{
+  "title": "How Vaccine Maker Immunity Laws Undermine Public Trust",
+  "description": "Vaccine manufacturers in the U.S. are protected from most lawsuits by federal laws like the 1986 National Childhood Vaccine Injury Act and the 2005 PREP Act. This investigation examines how these shields, meant to secure vaccine supply, may damage trust by limiting accountability for adverse events and complicating recourse for affected individuals.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-24",
+  "author": {
+    "name": "Linda Carnes",
+    "role": "Investigative Health Reporter"
+  },
+  "readTime": 11,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "vaccine immunity",
+    "public trust",
+    "NVICP",
+    "CICP",
+    "health policy"
+  ],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [
+    "vaccine lawsuits",
+    "manufacturer immunity",
+    "public health trust",
+    "NVICP compensation",
+    "PREP Act"
+  ],
+  "sortOrder": 1774317613062,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/vaccine-manufacturer-immunity-public-trust.png",
+  "heroImageAlt": "Editorial illustration for How Vaccine Maker Immunity Laws Undermine Public Trust"
+}
