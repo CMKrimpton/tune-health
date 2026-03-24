@@ -1489,9 +1489,9 @@ async function stageEditorBrief(
       const candidatePct = overlapCount / candidateWords.size;
       const existingPct = reverseCount / fp.words.size;
       const maxPct = Math.max(candidatePct, existingPct);
-      // 40% bidirectional overlap AND 4+ matching subject words → duplicate
-      // (Raised from 30%/2 — at 94 articles, the old threshold blocked almost everything)
-      if (maxPct >= 0.40 && overlapCount >= 4) return true;
+      // 55% bidirectional overlap AND 5+ matching subject words → duplicate
+      // Only catches near-exact matches. The AI editor handles nuanced overlap detection.
+      if (maxPct >= 0.55 && overlapCount >= 5) return true;
     }
     return false;
   }
@@ -1521,18 +1521,17 @@ async function stageEditorBrief(
       return;
     }
   } else if (researchData.topic) {
-    // Single topic — check it too
+    // Single topic from queue — let the editor decide if it's a duplicate.
+    // The editor sees ALL existing titles and can make a nuanced judgment.
+    // Only block exact-match duplicates (mechanical check catches near-identical titles).
     if (isDuplicate((researchData.topic as string) || "", (researchData.headline_draft as string) || "", {
       category: researchData.category as string,
       keyFindings: researchData.keyFindings as string[],
       mechanism: researchData.mechanism as string,
     })) {
-      await db.from("daily_article_log").update({
-        status: "failed",
-        error: `Topic "${researchData.topic}" is a duplicate of an existing article.`,
-        completed_at: new Date().toISOString(),
-      }).eq("id", logId);
-      return;
+      console.log(`[Editor] Mechanical dupe check flagged "${researchData.topic}" — passing to editor for final judgment.`);
+      // Don't kill — let the editor see it. The editor prompt includes all existing titles
+      // and will kill it if it's genuinely redundant, or find a fresh angle if it's not.
     }
   }
 
