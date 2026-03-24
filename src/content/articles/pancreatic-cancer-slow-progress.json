@@ -1,0 +1,44 @@
+{
+  "title": "Pancreatic Cancer: Why Progress Is So Slow Despite the Science",
+  "description": "Pancreatic cancer remains one of the deadliest cancers, with survival rates barely budging in decades. This piece",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-24",
+  "author": {
+    "name": "Christine Wright",
+    "role": "Science & Evidence Desk"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Pancreatic Cancer",
+    "PDAC",
+    "Oncology",
+    "Immunotherapy",
+    "Tumor Microenvironment",
+    "Early Detection",
+    "Personalized Medicine",
+    "Chemotherapy",
+    "Survival Rates",
+    "Cancer Research"
+  ],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [
+    "pancreatic cancer",
+    "PDAC",
+    "survival rates",
+    "treatment resistance",
+    "tumor microenvironment",
+    "desmoplastic stroma",
+    "immunotherapy failure",
+    "personalized medicine",
+    "early detection",
+    "combination therapies"
+  ],
+  "sortOrder": 1774320695179,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pancreatic-cancer-slow-progress.png",
+  "heroImageAlt": "Editorial illustration for Pancreatic Cancer: Why Progress Is So Slow Despite the Science"
+}
