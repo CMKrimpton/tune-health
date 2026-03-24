@@ -1257,6 +1257,7 @@ async function stageResearch(
   db: ReturnType<typeof supabase>,
   logId: string,
   queuedTopic?: string,
+  queueSource?: string | null,
 ): Promise<void> {
   const today = todayISO();
   const { titles, categoryCounts } = await getExistingArticles(db);
@@ -1346,6 +1347,7 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
       };
     }
     research._fromQueue = true;
+    research._queueSource = queueSource || "manual";
     await addCostToLog(db, logId, researchUsage);
   } else {
     // TWO-MODEL SCOUT: Gemini discovers via Google Search, Sonnet structures into candidates
@@ -1586,10 +1588,10 @@ Counter-arguments: ${((researchData.counterArguments as string[]) || []).map((c:
 Expert positions: ${((researchData.expertQuotes as string[]) || []).join("\n")}`;
   }
 
-  const isFromQueue = !!researchData._fromQueue;
-  const originalQueuedTopic = isFromQueue ? (researchData.topic as string) || "" : "";
+  const isManuallyQueued = researchData._queueSource === "manual";
+  const originalQueuedTopic = (researchData.topic as string) || "";
 
-  const queueDirective = isFromQueue ? `\n## MANDATORY EDITORIAL DIRECTION\nThis topic was MANUALLY QUEUED by the editor-in-chief. The original topic was:\n"${originalQueuedTopic}"\n\nYou MUST preserve the editorial intent of this topic. If the topic is critical of an industry, your headline and angle must reflect that critical investigation — NOT neutralize it into a "balanced" overview. If the topic asks to follow the money, your brief must direct the writer to follow the money. Do NOT reframe a pointed investigation as a neutral explainer. The editor-in-chief chose this angle for a reason.\n` : "";
+  const queueDirective = isManuallyQueued ? `\n## MANDATORY EDITORIAL DIRECTION\nThis topic was MANUALLY QUEUED by the editor-in-chief. The original topic was:\n"${originalQueuedTopic}"\n\nYou MUST preserve the editorial intent of this topic. If the topic is critical of an industry, your headline and angle must reflect that critical investigation — NOT neutralize it into a "balanced" overview. If the topic asks to follow the money, your brief must direct the writer to follow the money. Do NOT reframe a pointed investigation as a neutral explainer. The editor-in-chief chose this angle for a reason.\n` : "";
 
   const editorPrompt = `Review ${candidates ? `these ${candidates.length} research candidates` : "this research brief"} and create an editorial brief for the writer.
 ${queueDirective}
@@ -2808,7 +2810,7 @@ For each topic return: a one-line topic description, suggested category, and why
       // No articles in production — start a new one from the queue
       const { data: topTopic } = await db
         .from("topic_queue")
-        .select("id, topic, notes, category")
+        .select("id, topic, notes, category, source")
         .eq("status", "queued")
         .order("expedite", { ascending: false })
         .order("priority", { ascending: true })
@@ -2819,7 +2821,7 @@ For each topic return: a one-line topic description, suggested category, and why
         return json({ skipped: true, message: "Queue empty. Run 'scout' to discover topics." });
       }
 
-      const topic = topTopic[0] as { id: string; topic: string; notes: string | null; category: string | null };
+      const topic = topTopic[0] as { id: string; topic: string; notes: string | null; category: string | null; source: string | null };
       await db.from("topic_queue").update({ status: "in_progress" }).eq("id", topic.id);
 
       // Create log, do directed research on the queued topic
@@ -2833,7 +2835,7 @@ For each topic return: a one-line topic description, suggested category, and why
       if (!logEntry) throw new Error("Failed to create log entry");
 
       const { ok: resOk, error: resErr } = await safeStage(db, logEntry.id, "Research", () =>
-        stageResearch(db, logEntry.id, topic.topic));
+        stageResearch(db, logEntry.id, topic.topic, topic.source));
       if (!resOk) return json({ error: "Research failed", detail: resErr }, 500);
 
       // Immediately chain to editor brief
