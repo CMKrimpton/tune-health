@@ -309,6 +309,10 @@ async function grok(opts: { system: string; user: string; maxTokens?: number; te
   if (!res.ok) throw new Error("Grok " + res.status);
   const d = await res.json();
   const text = d.choices?.[0]?.message?.content || "";
+  const finishReason = d.choices?.[0]?.finish_reason || "unknown";
+  if (finishReason === "length") {
+    console.log(`[Grok] WARNING: Response truncated (finish_reason=length) for stage ${stage}. max_tokens=${opts.maxTokens || 2000} was not enough.`);
+  }
   const u = d.usage || {};
   const inputTokens = u.prompt_tokens || 0;
   const outputTokens = u.completion_tokens || 0;
@@ -1778,7 +1782,9 @@ ${((researchData.statistics as string[]) || []).join("\n")}
 
 Today's date: ${today}
 
-IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. Return ONLY valid JSON.`;
+IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. Return ONLY valid JSON.
+
+CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last section should be a conclusion, sign-off, or forward-looking closing — NOT an abrupt stop mid-thought. If you're running low on space, cut a middle section shorter rather than omitting the ending. A missing conclusion is worse than a shorter article. Follow the closing direction from the editorial brief.`;
 
   const { text: articleRaw, usage: writeUsage, modelUsed } = await generateWithFallback({
     system: ARTICLE_WRITING_PROMPT,
