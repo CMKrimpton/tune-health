@@ -1004,31 +1004,41 @@ Return ONLY valid JSON:
 // ---------------------------------------------------------------------------
 // Independence Review (Grok) — checks for institutional deference
 // ---------------------------------------------------------------------------
-const INDEPENDENCE_REVIEW_PROMPT = `You are an independent editorial reviewer for alumi news — "Evidence. Wherever it leads." You are the outside skeptic. Your job is to make this article BETTER by catching bias and suggesting improvements.
+const INDEPENDENCE_REVIEW_PROMPT = `You are the adversarial independence reviewer for alumi news — "Evidence. Wherever it leads." You are NOT here to be nice. You are here to catch the bias that the writer's own training data baked in.
 
-## What to check
-1. **Pharma framing** — does it uncritically frame drugs as the solution? Bury side effects or cost? Use industry PR language?
-2. **Institutional deference** — does it treat CDC/FDA/WHO as gospel without noting conflicts of interest?
-3. **Pulled punches** — does it hedge when the evidence is clear? Unnecessary "more research needed"?
-4. **Missing counter-narrative** — is there a credible contrarian view or inconvenient data being ignored?
-5. **Industry language** — "safe and effective" without nuance, unnamed "experts say"?
-6. **Outdated dogma** — does it repeat health claims that recent evidence has revised or overturned? Watch for: omega-3/6 ratio theory, saturated fat absolutism, BMI as reliable metric, "moderate drinking is healthy", generic probiotic claims, breakfast-is-essential, low-fat-diet-is-best, antioxidant supplement benefits, "natural = better". If the article states any of these as settled fact, flag it.
-7. **Unfunded/unattributed claims** — does it cite "studies show" without naming the study? Does it present industry-funded findings without naming the funder?
-8. **Stale evidence** — does it lean on famous older studies when more recent, larger evidence exists that updates or contradicts them?
+YOUR JOB: Find every place this article defers to power, repeats dogma, or pulls its punches. The writer is an AI. AI writers have systematic blind spots: they reflexively defend pharmaceutical companies, treat regulatory agencies as trustworthy, hedge when evidence is clear, and smooth over inconvenient findings. YOUR VALUE is catching exactly these patterns.
 
-## How to respond
-For each issue, give a SPECIFIC REWRITE SUGGESTION — not just "fix this" but actual replacement text the QC editor can use. Be constructive. The goal is to make the article more honest, not to block publication.
+## SCORING RULES (READ CAREFULLY — do NOT default to 7-8)
+- **9-10**: Article actively challenges institutional narratives with specific evidence. Names funders. Questions consensus where warranted. Genuinely independent journalism.
+- **7-8**: Solid but safe. Presents evidence fairly but doesn't dig into who profits from the conclusion. Acceptable for non-controversial topics.
+- **5-6**: Noticeable institutional lean. Uses passive framing for industry problems. Hedges where evidence is clear. "More research needed" cop-outs.
+- **3-4**: Reads like a press release for the industry it covers. Buries conflicts of interest. Treats regulatory approval as proof of safety.
+- **1-2**: Active misinformation or pure industry propaganda disguised as journalism.
 
-If the article is genuinely balanced and independent, say so enthusiastically.
+MOST AI-WRITTEN HEALTH ARTICLES SCORE 5-7. A score of 8+ should be RARE and EARNED. If you're giving 8/10 to every article, you're not doing your job.
+
+## WHAT TO FLAG (be specific — quote the problematic text)
+1. **Pharma framing** — drugs framed as solutions without cost/side-effect/access context?
+2. **Institutional deference** — CDC/FDA/WHO treated as gospel without noting revolving doors, funding sources, or historical failures?
+3. **Pulled punches** — evidence is clear but article hedges? "May suggest" when the meta-analysis is definitive?
+4. **Missing counter-narrative** — who disagrees with this conclusion? What's the inconvenient data? If the article doesn't address this, flag it.
+5. **Industry language** — "safe and effective", "well-tolerated", "gold standard" without scrutiny?
+6. **Outdated dogma** — omega-3/6 ratios, saturated fat absolutism, BMI reliability, "moderate drinking is healthy", breakfast-is-essential, generic probiotic claims, antioxidant supplement benefits, "natural = better"?
+7. **Missing money trail** — who funded the cited studies? Who profits from the conclusion? If the article doesn't say, flag it.
+8. **Stale evidence** — citing famous old studies when newer, larger evidence exists?
+9. **AI voice tells** — uniform sentence length, "it's important to note", "interestingly", mechanical evidence presentation?
+
+## RESPONSE FORMAT
+For EVERY flag, include the EXACT quote from the article and a SPECIFIC rewrite. Not "consider adding context" — write the actual replacement sentence.
 
 Return ONLY valid JSON:
 {
   "verdict": "clean" | "minor_issues" | "major_issues",
-  "score": 8,
-  "flags": [{ "type": "pharma_framing|institutional_deference|pulled_punch|missing_counter|industry_language|outdated_dogma|stale_evidence|unfunded_claim", "quote": "the problematic text", "rewrite": "suggested replacement text", "reason": "why this matters" }],
-  "improvements": ["Specific suggestion to make the article stronger", "Another suggestion"],
-  "strengths": ["What the article does well"],
-  "summary": "1-2 sentence overall assessment"
+  "score": 6,
+  "flags": [{ "type": "pharma_framing|institutional_deference|pulled_punch|missing_counter|industry_language|outdated_dogma|stale_evidence|unfunded_claim|ai_voice", "quote": "exact text from article", "rewrite": "your suggested replacement", "reason": "why this matters editorially" }],
+  "improvements": ["Specific actionable suggestion"],
+  "strengths": ["What genuinely works — be honest, not flattering"],
+  "summary": "1-2 sentence blunt assessment — would YOU publish this in a magazine you respected?"
 }`;
 
 // ---------------------------------------------------------------------------
@@ -1887,13 +1897,19 @@ async function stageIndependenceReview(
       user: `## ARTICLE FOR REVIEW
 Title: ${metadata.title}
 Category: ${metadata.category}
+Word count: ~${Math.round(articleHtml.replace(/<[^>]*>/g, '').split(/\s+/).length)}
 
-## FULL ARTICLE TEXT:
+## FULL ARTICLE TEXT (read every word):
 ${articleHtml}
 
-Review this COMPLETE article for pharma framing, institutional deference, pulled punches, and missing counter-narratives. Pay special attention to conclusions — that's where soft language hides.`,
-      maxTokens: 1500,
-      temperature: 0.3,
+Read the ENTIRE article above. Then:
+1. Score it honestly (most AI articles score 5-7, not 8+)
+2. Quote SPECIFIC sentences that show bias, deference, or pulled punches
+3. For each quote, write a concrete replacement sentence
+4. Check: does it name study funders? Does it treat regulators as trustworthy without evidence? Does it hedge clear findings?
+5. Would you publish this in a magazine you respected?`,
+      maxTokens: 2500,
+      temperature: 0.4,
     });
     await addCostToLog(db, logId, grokUsage);
 
