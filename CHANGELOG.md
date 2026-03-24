@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.3.0] - 2026-03-24
+
+### Added — Opus Editorial Series & First Localization
+- **"Meaning & Mind" series** — 5-part Opus series published:
+  1. The Least Curious Question (22 min) — why vs how
+  2. The Certainty Dealers (20 min) — the $5.6T meaning industry
+  3. The Examined Life Is Overrated (20 min) — Socrates got the floor, not the ceiling
+  4. Your Doctor Can't Answer That Either (24 min) — the clinical encounter mismatch
+  5. Boredom Is a Superpower (18 min) — the pause we engineered away
+- **"The Kids Who Learned Not to Need"** (38 min) — three-part series on abandonment trauma, five siblings, earned secure attachment. 12 peer-reviewed sources
+- **First Spanish article**: "Los Niños Que Aprendieron a No Necesitar" — proof of concept for site localization
+- **"The Platonic Problem"** (14 min), **"Why Humans Keep Inventing Gods"** (18 min), **"The Free Will Debate Is Ridiculous"** (6 + 16 min) — standalone Opus articles
+- All articles include AI-generated editorial illustrations
+
 ## [9.2.0] - 2026-03-24
 
 ### Added — Opus Editorial Content & Writer Rotation

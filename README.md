@@ -101,7 +101,10 @@ src/
 - **All navigation is collection-driven** — topics, series, and featured articles auto-populate from content collection
 
 ### Content
-- **79 published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, and Pharmacology
+- **110+ published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, and Pharmacology
+- **"Meaning & Mind" series** — 5-part Opus editorial series on curiosity, certainty, self-examination, clinical meaning, and boredom
+- **"The Kids Who Learned Not to Need"** — 38-min three-part series on abandonment trauma (also available in Spanish)
+- **First Spanish localization** — proof of concept for multilingual content
 - **Series support** — multi-part article series with `series`/`seriesOrder` fields, prev/next navigation, and progress indicators
 - **Deep Dives page** dynamically renders published series (e.g., 6-part Thyroid Deep Dive) alongside coming-soon series
 - Content Collections with Zod schema validation
