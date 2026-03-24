@@ -453,10 +453,12 @@ function getByline(model: string): { name: string; role: string } {
 
 // Pick a writer model — rotates to distribute across providers
 function pickWriterModel(): string[] {
+  // Grok removed from writer rotation — good at independence review, bad at editorial voice.
+  // Priority: Sonnet (best balance of quality + speed) → Gemini (testing) → Grok (last resort only)
+  // When Anthropic spending limit resets, Sonnet will be primary again.
   const hour = new Date().getUTCHours();
-  if (hour % 3 === 0) return ["claude-sonnet-4-6", "grok-3", "gemini-2.5-flash"];
-  if (hour % 3 === 1) return ["grok-3", "claude-sonnet-4-6", "gemini-2.5-flash"];
-  return ["gemini-2.5-flash", "grok-3", "claude-sonnet-4-6"];
+  if (hour % 2 === 0) return ["claude-sonnet-4-6", "gemini-2.5-flash", "grok-3"];
+  return ["gemini-2.5-flash", "claude-sonnet-4-6", "grok-3"];
 }
 
 // ---------------------------------------------------------------------------

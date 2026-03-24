@@ -130,9 +130,9 @@ const STAGES: StageConfig[] = [
 
 // Current primary writer model based on UTC hour (matches backend pickWriterModel)
 function getCurrentWriterModel(): { name: string; color: string } {
+  // Matches backend pickWriterModel() — Grok removed from writing rotation
   const hour = new Date().getUTCHours();
-  if (hour % 3 === 0) return { name: 'Sonnet', color: '#f97316' };
-  if (hour % 3 === 1) return { name: 'Grok', color: '#3b82f6' };
+  if (hour % 2 === 0) return { name: 'Sonnet', color: '#f97316' };
   return { name: 'Gemini', color: '#fbbf24' };
 }
 
