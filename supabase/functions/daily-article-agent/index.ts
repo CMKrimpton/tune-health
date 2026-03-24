@@ -1236,10 +1236,8 @@ async function stageResearch(
   let research: Record<string, unknown>;
 
   if (queuedTopic) {
-    // Directed research for a queued topic
-    const { text: researchRaw, usage: researchUsage } = await claude({
-      system: DIRECTED_RESEARCH_PROMPT,
-      user: `Today's date: ${today}
+    // Directed research for a queued topic — try Claude (web search), fall back to Gemini (Google Search)
+    const researchPrompt = `Today's date: ${today}
 
 ## ASSIGNED TOPIC
 ${queuedTopic}
@@ -1247,12 +1245,38 @@ ${queuedTopic}
 ## Existing Articles (DO NOT duplicate):
 ${titles.map((t) => `- ${t}`).join("\n")}
 
-Deep-research this topic thoroughly. Find the key studies, statistics, expert positions, mechanisms, and counter-arguments. Return structured JSON.`,
-      model: "claude-sonnet-4-6",
-      maxTokens: 4000,
-      webSearch: true,
-      maxSearches: 5,
-    });
+Deep-research this topic thoroughly. Find the key studies, statistics, expert positions, mechanisms, and counter-arguments. Return structured JSON.`;
+
+    let researchRaw: string;
+    let researchUsage: ApiUsage;
+
+    try {
+      const result = await claude({
+        system: DIRECTED_RESEARCH_PROMPT,
+        user: researchPrompt,
+        model: "claude-sonnet-4-6",
+        maxTokens: 4000,
+        webSearch: true,
+        maxSearches: 5,
+      });
+      researchRaw = result.text;
+      researchUsage = result.usage;
+    } catch (claudeErr: unknown) {
+      const errMsg = claudeErr instanceof Error ? claudeErr.message : "";
+      if (errMsg.includes("SPENDING_LIMIT") || errMsg.includes("usage limits") || errMsg.includes("rate_limit")) {
+        console.log("[Research fallback] Claude spending limit hit, falling back to Gemini...");
+        const gemResult = await gemini({
+          system: DIRECTED_RESEARCH_PROMPT,
+          user: researchPrompt,
+          maxTokens: 4000,
+          temperature: 0.35,
+        }, "research-fallback-gemini");
+        researchRaw = gemResult.text;
+        researchUsage = gemResult.usage;
+      } else {
+        throw claudeErr;
+      }
+    }
 
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
     research._fromQueue = true;
@@ -1276,10 +1300,9 @@ For each: headline, key finding, source, why it matters. Plain text, numbered 1-
     }, "scout-gemini");
     await addCostToLog(db, logId, geminiUsage);
 
-    // Step 2: Sonnet structures Gemini's raw findings into candidate JSON
-    const { text: researchRaw, usage: structureUsage } = await claude({
-      system: `You structure raw research findings into JSON. For each candidate, also suggest how the article should be treated — is it a deep investigation, a quick explainer, a provocative opinion piece, a case study about one key paper, or a roundup of recent findings? This affects the entire downstream pipeline. Return ONLY valid JSON, no explanation.`,
-      user: `From these research findings, pick the 5 BEST topics that are NOT in the off-limits list. Prioritize: diversity across categories, scientific substance, counter-narrative potential. For each topic, suggest a treatment — how should this article be shaped?
+    // Step 2: Structure raw findings into candidate JSON — with fallback
+    const structureSystem = `You structure raw research findings into JSON. For each candidate, also suggest how the article should be treated — is it a deep investigation, a quick explainer, a provocative opinion piece, a case study about one key paper, or a roundup of recent findings? This affects the entire downstream pipeline. Return ONLY valid JSON, no explanation.`;
+    const structureUser = `From these research findings, pick the 5 BEST topics that are NOT in the off-limits list. Prioritize: diversity across categories, scientific substance, counter-narrative potential. For each topic, suggest a treatment — how should this article be shaped?
 
 Return ONLY this JSON (5 candidates max):
 
@@ -1292,10 +1315,15 @@ ${geminiFindings}
 ${titles.map((t) => `- ${t}`).join("\n")}
 
 ## PRIORITY CATEGORIES (need more articles):
-${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 3).map(([cat]) => `- ${cat}`).join("\n") || "All categories well-covered"}`,
-      model: "claude-sonnet-4-6",
+${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 3).map(([cat]) => `- ${cat}`).join("\n") || "All categories well-covered"}`;
+
+    const { text: researchRaw, usage: structureUsage, modelUsed: _structModel } = await generateWithFallback({
+      system: structureSystem,
+      user: structureUser,
+      models: WRITER_FALLBACK_CHAIN,
       maxTokens: 4000,
-    }, "scout-structure");
+      stage: "scout-structure",
+    });
     await addCostToLog(db, logId, structureUsage);
 
     research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
@@ -1968,13 +1996,15 @@ Make your final call. Publish, request revisions, or kill.`;
     : Promise.resolve(null);
 
   // Use Grok for QC — different model family reviewing Sonnet's work
-  // prevents same-model self-review blindness
-  const { text: qcRaw, usage: qcUsage } = await grok({
+  // prevents same-model self-review blindness. Falls back to Gemini → Sonnet if Grok unavailable.
+  const { text: qcRaw, usage: qcUsage } = await generateWithFallback({
     system: SENIOR_EDITOR_QC_PROMPT + `\n\nCRITICAL: Return ONLY valid JSON. No markdown, no explanation — just the JSON object.`,
     user: qcPrompt,
+    models: ["grok-3", "gemini-2.5-flash", "claude-sonnet-4-6"],
     maxTokens: 1500,
     temperature: 0.3,
-  }, "qc");
+    stage: "qc",
+  });
   await addCostToLog(db, logId, qcUsage);
 
   const qcResult = parseClaudeJSON(qcRaw) as Record<string, unknown>;
@@ -2568,8 +2598,20 @@ For each topic return: a one-line topic description, suggested category, and why
         const r = await grok({ system: "You are a health science researcher. Find stories the mainstream misses — contrarian findings, underfunded research, industry-inconvenient data. Prioritize independence and surprise.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-grok");
         rawFindings = r.text; scoutCost = r.usage;
       } else {
-        const r = await claude({ system: "You are a health science researcher. Find stories with strong evidence and editorial potential. Look for mechanism discoveries, policy failures, and emerging fields.", user: scoutPrompt, model: "claude-sonnet-4-6", maxTokens: 4000, temperature: 0.5, webSearch: true, maxSearches: 8 }, "scout-sonnet");
-        rawFindings = r.text; scoutCost = r.usage;
+        // Sonnet scout with web search — fall back to Gemini if Claude spending limit hit
+        try {
+          const r = await claude({ system: "You are a health science researcher. Find stories with strong evidence and editorial potential. Look for mechanism discoveries, policy failures, and emerging fields.", user: scoutPrompt, model: "claude-sonnet-4-6", maxTokens: 4000, temperature: 0.5, webSearch: true, maxSearches: 8 }, "scout-sonnet");
+          rawFindings = r.text; scoutCost = r.usage;
+        } catch (scoutErr: unknown) {
+          const errMsg = scoutErr instanceof Error ? scoutErr.message : "";
+          if (errMsg.includes("SPENDING_LIMIT") || errMsg.includes("usage limits") || errMsg.includes("rate_limit")) {
+            console.log("[Scout fallback] Claude spending limit, falling back to Gemini for Sonnet scout...");
+            const r = await gemini({ system: "You are a health science researcher. Find stories with strong evidence and editorial potential. Look for mechanism discoveries, policy failures, and emerging fields.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-sonnet-fallback");
+            rawFindings = r.text; scoutCost = r.usage;
+          } else {
+            throw scoutErr;
+          }
+        }
       }
 
       // Parse raw findings directly — no expensive Sonnet structuring step.
