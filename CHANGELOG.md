@@ -6,6 +6,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.0.0] - 2026-03-24
+
+### Added — Admin Dashboard Overhaul & Pipeline Hardening
+- **Admin dashboard overhaul**: 8 compact stat cards, 3-tab layout (Pipeline, Articles, AI Agents)
+- **Manual scout triggers**: individual Gemini / Sonnet / Grok buttons + "All 3" from Pipeline tab
+- **Manual produce trigger**: "Produce Now" with full API response feedback (success/skipped/error)
+- **Topic queue controls**: every queued item has Produce, Expedite, Priority ↑↓, Delete buttons
+- **Stuck queue recovery**: IN_PROGRESS items get Reset + Delete controls
+- **Article Improve button**: purple button on every article in Articles tab — sends through AI review + auto-fix in place
+- **Backfill Costs button**: estimate spend for articles published before cost tracking (AI Agents tab)
+- **Rotate Featured button**: manual featured rotation trigger (AI Agents tab)
+- **Cron Schedule section**: shows all 5 cron jobs with schedules, models, and status (AI Agents tab)
+- **Independence & editor scores** displayed on article rows and edit page
+- **Model pen names** on published articles in pipeline view (Max Quilici, Linda Carnes, Christine Wright)
+- **Sort by independence score** option in Articles tab
+- **Refresh button** in Articles tab to re-fetch from DB
+- **Login error handling**: wrong token shows inline error, middleware redirects to `/admin/login?error=1`
+- **Edit page autosave**: 2-second debounce with "Autosaving..." / "Saved" indicator
+- **Edit page Cmd+S / Ctrl+S** keyboard shortcut
+- **Edit page score badges**: independence and editor scores in header
+- **Edit page Delete from GitHub** button
+- **XSS fix**: all innerHTML replaced with createElement/textContent in edit page chat
+
+### Changed — Pipeline Intelligence
+- **Fallback chain on ALL stages**: Research, Scout structuring, Sonnet scout, QC — all now fall back through Sonnet → Grok → Gemini (previously only Editor Brief and Write had fallback)
+- **Smart duplicate detection**: mechanical word-overlap check raised to 55%/5 words (near-exact only). Single queued topics always pass to the AI editor for intelligent judgment instead of being mechanically killed
+- **Grok scout markdown stripping**: `**Topic Description**:` prefix stripped before dedup and queue insertion
+- **Gemini research JSON**: explicit JSON schema in prompt when Gemini is research fallback, plus plain-text extraction safety net
+- **Gemini auto-retry**: retries once if first response is empty (Google Search grounding sometimes returns empty)
+- **Duplicate threshold relaxed**: 55% overlap + 5 matching words (was 30%/2 — too aggressive at 94 articles)
+
+### Changed — Editorial Quality
+- **Editorial independence directive**: writer and editor prompts now explicitly say "you are a journalist, not a PR department" — if assigned a critical investigation, investigate it, don't flip to defense
+- **Queue source tracking**: manually queued topics (`source: manual`) get "MANDATORY EDITORIAL DIRECTION" telling editor to preserve the original angle. Scout topics (`source: trending`) get normal editorial freedom
+- **Grok independence review rewritten**: default score example lowered from 8 to 6, "8+ should be RARE", must quote exact article text, must provide concrete replacement sentences, adds AI voice detection
+- **Grok review now triggers rewrites**: fires for `major_issues` OR `minor_issues with score < 7` (previously only `major_issues` — which never happened with the old soft prompt)
+- **QC stage fallback**: Grok → Gemini → Sonnet chain (was Grok-only, crashed on xAI outage)
+- **Article endings enforced**: writer prompt requires proper conclusion — "cut a middle section shorter rather than omitting the ending"
+- **Pipeline stage labels**: reflect actual multi-model system (Research: Gemini + Sonnet, Write: rotates hourly, QC: Sonnet + GPT Image)
+- **Write stage shows current primary model**: based on UTC hour, matching backend `pickWriterModel()` logic
+
+### Fixed
+- Pipeline 503 BOOT_ERROR from duplicate `grokScore` variable declaration
+- Template literal syntax error in editor prompt (broke function deployment)
+- Scout topics with Grok markdown formatting passing dedup filter
+- Empty Gemini responses crashing research stage (now retries once)
+- Queue form silently swallowing errors (now shows success/failure feedback)
+- Manual topics defaulting to P50 (now P10 — appear near top of queue)
+
 ## [8.6.0] - 2026-03-23
 
 ### Added — Model Pen Names & Cron Activation

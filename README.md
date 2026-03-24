@@ -114,27 +114,29 @@ src/
 - **Pagination** — articles index shows 12 initially with "Show More" button; auto-expands on search/filter
 
 ### Admin Mission Control (`/admin`)
-- Token-based authentication with logout (server-side only, no `PUBLIC_` prefix)
-- **Dashboard**: 8 stat cards (Total, Published, Drafts, Featured, Illustrated, Avg Read Time, Total AI Spend, Avg Cost/Article), 3 tab panels (Pipeline, Articles, AI Agents)
-- **Pipeline Monitor**: 5-stage visual pipeline (Research → Editor → Write → Grok Review → QC+Publish) with model badges, per-article cost tracking, topic queue management, kill buttons, independence scores
-- **Articles Manager**: search, filter, sort, inline editing, bulk actions, featured toggle
-- **AI Agents**: editorial QC, illustration agent, DB sync, editor decision log
+- Token-based authentication with inline error handling (wrong token shows error, doesn't silently redirect)
+- **Dashboard**: 8 compact stat cards, 3 tab panels (Pipeline, Articles, AI Agents)
+- **Pipeline Monitor**: 5-stage visual pipeline with live model labels (Research: Gemini + Sonnet, Write: rotates hourly, etc.). Manual triggers: individual scout buttons (Gemini/Sonnet/Grok/All 3) + Produce Now with API response feedback. Topic queue with full controls per item (Produce, Expedite, Priority ↑↓, Delete, Reset stuck items). Published articles show model pen names + independence scores. Failed articles have Re-queue + Retry buttons.
+- **Articles Manager**: search, filter, sort (including by independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh from DB
+- **AI Agents**: Cron Schedule (5 active jobs), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
+- **Edit page**: metadata/content/AI refine tabs, 2s autosave + Cmd+S, score badges, live preview auto-refresh, Publish + Delete from GitHub, XSS-safe chat
 - **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish
 
 ### Autonomous AI Newsroom
-Four AI companies, five models, two independent jobs:
+Four AI companies, five models, two independent jobs, full fallback on every stage:
 
-- **Scout** (3 crons/day): **Gemini** (6am, Google Search), **Sonnet** (2pm, web search), **Grok** (10pm, contrarian). Each finds 20 topics, deduped and inserted directly into topic_queue. No expensive structuring step. ~$0.14/day total. Category balance prioritizes underserved areas
+- **Scout** (3 crons/day): **Gemini** (6am, Google Search), **Sonnet** (2pm, web search, falls back to Gemini), **Grok** (10pm, contrarian). Each finds 20 topics, Grok markdown stripped, deduped and inserted into topic_queue. ~$0.14/day total
 - **Produce** (cron: hourly): editor picks best topic from queue → self-chains through:
-  1. **Editor Brief** (Sonnet 4.6) — assigns archetype (7 types) + **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated) + density + pacing. Overlap detection, can replace older articles
-  2. **Write** (Sonnet 4.6, temp 0.5) — follows archetype + tone preset. Anti-AI rules enforced. Deterministic category gradients + programmatic SVG (no AI tokens on visuals). Variable word counts per archetype
-  3. **Grok Independence Review** (Grok 3, xAI) — reviews FULL article. When `major_issues` flagged, writer model applies rewrite suggestions. PubMed citation verification runs in parallel
-  4. **QC + Publish** (Grok 3 + OpenAI GPT Image) — different model family reviews writer's work. Illustration parallelized with QC. Commit to GitHub. Author byline set from writer model (Max Quilici / Linda Carnes / Christine Wright)
-- **Cost tracking**: every API call logs token usage + USD cost. Dashboard shows per-article cost and total spend
-- **Featured rotation**: every 6h via independent `pg_cron` job (works when pipeline is paused). Uses `updated_at` for freshness. Quality-gated: must have illustration, score >30. Standalone `rotate-featured` action
-- **Topic queue**: vetted ideas always ready. Admin can add manually with priority/expedite. Hard dedup on inserts
-- **Error handling**: `safeStage()` fails hard (no rollback loops), 135s API timeouts, spending limit detection, category sanitization
-- **78 articles published**, diverse categories (1 duplicate archived)
+  1. **Research** — Claude with web search, falls back to Gemini (Google Search). Directed research for queue topics, two-model discovery for scouts
+  2. **Editor Brief** (Sonnet → Grok → Gemini fallback) — assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION" preserving the admin's intended angle. Smart duplicate detection: AI editor judges overlap, not word counting
+  3. **Write** (multi-model rotation by hour + fallback) — follows archetype + tone. Anti-AI rules enforced. Editorial independence directive: "you are a journalist, not a PR department." Must include proper conclusion. `model_used` tracked
+  4. **Grok Independence Review** (Grok 3) — adversarial review with honest scoring (default 5-7, "8+ should be RARE"). Must quote exact article text. Rewrites trigger for `major_issues` OR `minor_issues with score < 7`. PubMed verification in parallel
+  5. **QC + Publish** (Grok → Gemini → Sonnet fallback + OpenAI GPT Image) — headline polish, illustration parallelized, commit to GitHub. Author byline from writer model pen name
+- **Fallback chain**: every stage has provider fallback — pipeline survives any single provider outage or spending limit
+- **Cost tracking**: every API call logs token usage + USD cost. Backfill Costs button for pre-tracking articles
+- **Featured rotation**: every 6h via independent `pg_cron` job. Manual trigger available in admin
+- **Topic queue**: admin can add manually (P10 high priority), edit priority/expedite, produce specific topics on demand
+- **94+ articles published**, diverse categories
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app
@@ -228,9 +230,9 @@ The site is deployed on Vercel with automatic deployments:
   - `fetch-article` — GitHub file fetching
   - `generate-illustration` — AI illustration generation (OpenAI GPT Image 1.5) with batch support
   - `editorial-qc` — Autonomous editorial quality control (Claude audits full collection, auto-fixes headlines/descriptions/illustrations)
-  - `daily-article-agent` — 4-stage article pipeline (research → write → independence review → QC+publish). 10 tone presets, PubMed verification, Grok rewrite wiring, parallel illustration. Smart featured rotation.
+  - `daily-article-agent` — 5-stage article pipeline (research → editor brief → write → independence review → QC+publish). Multi-model rotation with full fallback chain. 10 tone presets, PubMed verification, Grok rewrite wiring, parallel illustration. Smart featured rotation. Manual scout/produce triggers.
 - **Storage**: `article-illustrations` bucket for AI-generated editorial art
-- **Cron**: `pg_cron` + `pg_net` trigger article pipeline every 15 min (requires extensions enabled in Dashboard)
+- **Cron**: `pg_cron` + `pg_net` — scout-gemini (6am), scout-sonnet (2pm), scout-grok (10pm), article-produce (hourly), featured-rotation (every 6h)
 
 ## Documentation
 

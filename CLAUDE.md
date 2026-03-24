@@ -182,19 +182,21 @@ const articles = await getCollection('articles');
 - Keyboard navigation (↑↓ Enter Esc)
 
 #### Admin Mission Control (/admin)
-- Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix)
-- **Dashboard**: 8 stat cards (Total, Published, Drafts, Featured, Illustrated, Avg Read Time, Total AI Spend, Avg Cost/Article), 3 tab panels (Pipeline, Articles, AI Agents)
+- Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix). Wrong token redirects to `/admin/login?error=1` with inline error display.
+- **Dashboard**: 8 compact stat cards (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 3 tab panels (Pipeline, Articles, AI Agents)
 - **Pipeline tab** (React island: `PipelineMonitor`):
-  - 5-stage visual pipeline: Research → Editor → Write → Grok Review → QC+Publish
-  - Model badges per stage (Sonnet 4.6, Grok 3) with color coding
+  - 5-stage visual pipeline: Research (Gemini + Sonnet) → Editor (Sonnet → Grok → Gemini) → Write (rotates hourly) → Independence (Grok 3) → QC+Publish (Sonnet + GPT Image)
+  - Write stage dynamically shows current primary model based on UTC hour (matches backend `pickWriterModel()`)
   - Real-time polling (15s), "in flight" counter, progress bar to 100 articles
-  - Topic Queue: add topics manually, set category/priority/expedite, delete
-  - Published articles with independence scores, editor decisions with kill reasons
-  - Kill button on every pipeline card, retry on failed articles
-  - Trigger Run / Scout buttons for manual control
-- **Articles tab** (React island: `ArticlesManager`): search, filter, sort, inline editing, bulk actions, featured toggle
-- **AI Agents tab** (React island: `AgentsPanel`): editorial QC, illustration agent, DB sync, editor decision log
+  - **Manual triggers**: individual scout buttons (Gemini / Sonnet / Grok / All 3) + "Produce Now" with full API response feedback
+  - **Topic Queue with full controls**: every queued item has Produce (expedite + trigger), Expedite toggle, Priority ↑↓, Delete. IN_PROGRESS items get Reset + Delete buttons. Manual topics default to P10 (high priority). Queue form shows success/error feedback.
+  - Published articles with model pen names, independence scores, Edit + View links
+  - Editor decisions with kill reasons, failed articles with Re-queue + Retry buttons
+  - Scout/produce results shown in colored banners (green success, red error)
+- **Articles tab** (React island: `ArticlesManager`): search, filter (status/category), sort (newest/oldest/A-Z/read time/independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh button, independence & editor score display per row
+- **AI Agents tab** (React island: `AgentsPanel`): Cron Schedule (5 active jobs with schedule/model display), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
 - **New Article Editor** (`/admin/new`): drag-and-drop upload, AI generation, chat refinement, live preview, one-click publish
+- **Edit page** (`/admin/edit/[slug]`): metadata/content/AI refine tabs, autosave with 2s debounce + indicator, Cmd+S keyboard shortcut, score badges (independence/editor), live preview auto-refresh, Publish + Delete from GitHub buttons, XSS-safe chat rendering
 
 #### Autonomous AI Newsroom (Two-Job Architecture)
 
@@ -207,12 +209,14 @@ Three-model discovery — each finds 20 topics, all deduped and inserted directl
 Picks the best topic from the queue, self-chains through 4 production stages:
   - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, assigns **article archetype** (deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), picks **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated), sets density + pacing. Hard category balance rule: underserved categories (<5%) get priority over overserved (>15%) unless score gap >3. Can flag `replacesSlug` to replace an older article.
   - **Write** (~90s, temp 0.5): Multi-model rotation (Sonnet → Grok → Gemini, with automatic fallback). Same prompts, same rules for all models. Epistemic integrity framework: evidence hierarchy, dogma traps list, contrarian checkpoint, follow-the-money. Anti-AI rules enforced. Deterministic category gradients + programmatic SVG. Variable word counts per archetype (1,200–2,400). `model_used` tracked for quality comparison.
-  - **Grok Independence Review** (~30s): Grok 3 (xAI) reviews FULL article for pharma framing, institutional deference, pulled punches, **outdated dogma**, **stale evidence**, **unfunded claims**. When verdict is `major_issues`, Claude applies Grok's rewrite suggestions before QC. PubMed citation verification runs in parallel (non-blocking, up to 5 studies verified).
-  - **QC + Publish** (~60s): Grok 3 (different model family — prevents same-model self-review) polishes headline/description. Illustration generation runs in parallel with QC (saves 30-60s). Defaults to publish, max 1 revision. OpenAI GPT Image generates illustration. Commits .astro + .json to GitHub. Featured rotation with early-exit optimization.
+  - **Grok Independence Review** (~30s): Grok 3 (xAI) reviews FULL article for pharma framing, institutional deference, pulled punches, **outdated dogma**, **stale evidence**, **unfunded claims**, **AI voice tells**. Adversarial prompt — default score 5-7, "8+ should be RARE." When verdict is `major_issues` OR `minor_issues with score < 7`, Claude applies Grok's specific rewrite suggestions before QC. Must quote exact article text and provide concrete replacements. PubMed citation verification runs in parallel (non-blocking, up to 5 studies verified).
+  - **QC + Publish** (~60s): Grok → Gemini → Sonnet fallback chain (prevents single-provider outage). Polishes headline/description. Illustration generation runs in parallel with QC (saves 30-60s). Defaults to publish, max 1 revision. OpenAI GPT Image generates illustration. Commits .astro + .json to GitHub. Featured rotation with early-exit optimization.
 
 **Self-chaining**: each stage triggers the next via HTTP POST. Cron is just the initial trigger.
-**Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill via UI. Spending limit errors surface immediately with `SPENDING_LIMIT:` prefix.
-**Duplicate filter**: `isDuplicate()` — bidirectional 30% word overlap with stop-word filtering. Candidate fingerprint includes topic + headline + category + keyFindings + mechanism. Existing fingerprint includes title + slug + keywords + tags + description. Checks against ALL articles + queue. Runs before editor sees candidates AND before queue inserts.
+**Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill/re-queue via UI. Spending limit errors surface immediately with `SPENDING_LIMIT:` prefix. All stages have provider fallback chains — pipeline survives any single provider outage.
+**Fallback chain**: Every model call goes through `generateWithFallback()` or has explicit try/catch with provider fallback. Research falls back Claude → Gemini. Scout structuring uses full Sonnet → Grok → Gemini chain. QC uses Grok → Gemini → Sonnet chain.
+**Editorial independence**: Manually queued topics (`source: manual`) get "MANDATORY EDITORIAL DIRECTION" — editor must preserve the original angle. Writer prompt says "you are a journalist, not a PR department." Critical investigations must not be neutralized into balanced overviews.
+**Duplicate filter**: `isDuplicate()` — bidirectional 55% word overlap with 5+ matching subject words (near-exact only). Single queued topics always pass through to the AI editor for intelligent judgment. Mechanical filter only pre-screens multi-candidate scout batches. Scout topics have Grok markdown stripped before dedup.
 **Category sanitization**: validates against whitelist of 9 categories.
 **Article ordering**: `sortOrder` field (epoch ms) ensures newest articles always appear first.
 **Cost tracking**: every API call (Claude, Grok, Gemini) logs input/output tokens and USD cost to `daily_article_log.cost_usd` + `token_usage` (jsonb breakdown). Dashboard shows per-article and total spend.
