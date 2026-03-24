@@ -1,13 +1,13 @@
 {
-  "title": "Birth Control’s Eugenic Shadow: A History We Can’t Ignore",
-  "description": "The birth control movement, often celebrated as a triumph of women’s autonomy, has deep ties to eugenics—a pseudoscientific ideology aimed at 'improving' humanity through selective breeding. This piece traces how figures like Margaret Sanger embraced eugenic arguments, how policies targeted marginalized communities, and why this history still shapes reproductive rights debates today.",
+  "title": "Birth Control's Eugenic Roots: A History of Control and Coercion",
+  "description": "The birth control movement, often celebrated as",
   "category": "Clinical Evidence",
   "publishDate": "2026-03-24",
   "author": {
     "name": "Linda Carnes",
     "role": "Investigative Health Reporter"
   },
-  "readTime": 11,
+  "readTime": 10,
   "featured": false,
   "draft": false,
   "tags": [
@@ -25,10 +25,10 @@
     "birth control history",
     "eugenics movement",
     "Margaret Sanger eugenics",
-    "reproductive justice",
-    "forced sterilization"
+    "forced sterilization",
+    "reproductive justice"
   ],
-  "sortOrder": 1774322670002,
+  "sortOrder": 1774322761572,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/birth-control-eugenic-history.png",
-  "heroImageAlt": "Editorial illustration for Birth Control’s Eugenic Shadow: A History We Can’t Ignore"
+  "heroImageAlt": "Editorial illustration for Birth Control's Eugenic Roots: A History of Control and Coercion"
 }
