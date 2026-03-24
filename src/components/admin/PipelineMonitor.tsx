@@ -361,25 +361,38 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     finally { setRetryingId(null); }
   };
 
+  const [queueResult, setQueueResult] = useState<string | null>(null);
+
   const queueTopic = async () => {
     if (!newTopic.trim()) return;
     setQueueing(true);
+    setQueueResult(null);
     try {
-      await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/daily-article-agent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
           action: 'queue-topic',
           topic: newTopic.trim(),
           category: newCategory || undefined,
+          priority: 10,
           expedite: newExpedite,
         }),
       });
-      setNewTopic('');
-      setNewCategory('');
-      setNewExpedite(false);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setQueueResult(`Failed: ${data.error || data.message || res.status}`);
+      } else {
+        setQueueResult(`Queued: "${newTopic.trim().slice(0, 60)}"`);
+        setNewTopic('');
+        setNewCategory('');
+        setNewExpedite(false);
+        setTimeout(() => setQueueResult(null), 4000);
+      }
       setTimeout(fetchStatus, 1000);
-    } catch { /* next poll */ }
+    } catch (err) {
+      setQueueResult(`Error: ${err instanceof Error ? err.message : 'network failure'}`);
+    }
     finally { setQueueing(false); }
   };
 
@@ -626,7 +639,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
           <input
             type="text"
-            placeholder="Topic idea (e.g. 'Microbiome-sleep connection')"
+            placeholder="Topic idea (e.g. 'Microbiome-sleep connection') — added with high priority"
             value={newTopic}
             onChange={e => setNewTopic(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') queueTopic(); }}
@@ -660,6 +673,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             {queueing ? 'Adding\u2026' : '+ Queue'}
           </button>
         </div>
+
+        {queueResult && (
+          <div style={{ padding: '0.375rem 0.75rem', marginBottom: '0.5rem', borderRadius: '0.375rem', fontSize: '0.75rem', background: queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? '#450a0a' : '#052e16', color: queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? '#fca5a5' : '#86efac', border: `1px solid ${queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? '#991b1b' : '#166534'}` }}>
+            {queueResult}
+          </div>
+        )}
 
         {queue.length > 0 && (
           <div className="pipeline-completed-list">
