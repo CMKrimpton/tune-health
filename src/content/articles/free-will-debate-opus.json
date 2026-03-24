@@ -1,0 +1,38 @@
+{
+  "title": "The Free Will Debate Is Ridiculous. Here's Why.",
+  "description": "Every few years, philosophers and neuroscientists gather to argue about whether you chose to read this sentence. They've been doing this for 2,500 years. Nobody has won. That should tell you something.",
+  "category": "Neuroscience",
+  "publishDate": "2026-03-24",
+  "author": {
+    "name": "Carl Lundin",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 6,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "free will",
+    "neuroscience",
+    "philosophy",
+    "determinism",
+    "Daniel Dennett",
+    "Sam Harris",
+    "Libet experiment",
+    "mental health"
+  ],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [
+    "free will",
+    "determinism",
+    "neuroscience",
+    "Libet experiment",
+    "compatibilism",
+    "philosophy of mind",
+    "mental health"
+  ],
+  "sortOrder": 1774325000000,
+  "comingSoon": false
+}
