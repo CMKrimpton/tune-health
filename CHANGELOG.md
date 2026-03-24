@@ -40,12 +40,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed — Editorial Quality
 - **Editorial independence directive**: writer and editor prompts now explicitly say "you are a journalist, not a PR department" — if assigned a critical investigation, investigate it, don't flip to defense
 - **Queue source tracking**: manually queued topics (`source: manual`) get "MANDATORY EDITORIAL DIRECTION" telling editor to preserve the original angle. Scout topics (`source: trending`) get normal editorial freedom
-- **Grok independence review rewritten**: default score example lowered from 8 to 6, "8+ should be RARE", must quote exact article text, must provide concrete replacement sentences, adds AI voice detection
+- **Grok independence review rewritten**: adversarial prompt, must quote exact article text, must provide concrete replacement sentences, adds AI voice detection. Scores use text instructions instead of example numbers
 - **Grok review now triggers rewrites**: fires for `major_issues` OR `minor_issues with score < 7` (previously only `major_issues` — which never happened with the old soft prompt)
-- **QC stage fallback**: Grok → Gemini → Sonnet chain (was Grok-only, crashed on xAI outage)
+- **QC uses Gemini, not Grok**: QC stage now uses Gemini → Sonnet (not Grok). Independence review uses Grok — different models for review vs QC prevents same-model rubber-stamping
+- **QC prompt rewritten**: focused on headline/description polish only, not re-reviewing content
+- **All score examples removed from prompts**: every `"score"`, `"qualityScore"`, `"topicScore"` in JSON templates replaced with text instructions ("integer 1-10, see scoring rules"). Models were copying hardcoded example numbers verbatim
 - **Article endings enforced**: writer prompt requires proper conclusion — "cut a middle section shorter rather than omitting the ending"
-- **Pipeline stage labels**: reflect actual multi-model system (Research: Gemini + Sonnet, Write: rotates hourly, QC: Sonnet + GPT Image)
+- **Pipeline stage labels**: reflect actual multi-model system (Research: Gemini + Sonnet, Write: rotates hourly, QC: Gemini + GPT Image)
 - **Write stage shows current primary model**: based on UTC hour, matching backend `pickWriterModel()` logic
+- **Status API returns published + recent**: fetches 30 recent logs + 15 published separately, deduplicates. Published articles no longer pushed out by failures
 
 ### Fixed
 - Pipeline 503 BOOT_ERROR from duplicate `grokScore` variable declaration
@@ -54,6 +57,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Empty Gemini responses crashing research stage (now retries once)
 - Queue form silently swallowing errors (now shows success/failure feedback)
 - Manual topics defaulting to P50 (now P10 — appear near top of queue)
+- Published articles disappearing from "Recently Published" when failures flooded the 20-entry log window
+- CSS duplicate class definitions (.agents-btn, .agents-decision-card, .agents-grade, .agents-issue) causing cascade conflicts
 
 ## [8.6.0] - 2026-03-23
 
