@@ -117,10 +117,12 @@ src/
 - **Pagination** — articles index shows 12 initially with "Show More" button; auto-expands on search/filter
 
 ### Admin Mission Control (`/admin`)
+- **Premium glass design system** — CSS custom properties, glass morphism header/cards/modals, ambient gradient glow background, layered shadow system, refined animations with `cubic-bezier(0.22, 1, 0.36, 1)` easing
+- **Login**: glass card with animated gradient background, entrance animation, error slide-in
 - Token-based authentication with inline error handling (wrong token shows error, doesn't silently redirect)
-- **Dashboard**: 8 compact stat cards, 3 tab panels (Pipeline, Articles, AI Agents)
-- **Pipeline Monitor**: 5-stage visual pipeline with live model labels (Research: Gemini + Sonnet, Write: rotates hourly, etc.). Manual triggers: individual scout buttons (Gemini/Sonnet/Grok/All 3) + Produce Now with API response feedback. Topic queue with full controls per item (Produce, Expedite, Priority ↑↓, Delete, Reset stuck items). Published articles show model pen names + independence scores. Failed articles have Re-queue + Retry buttons.
-- **Articles Manager**: search, filter, sort (including by independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh from DB
+- **Dashboard**: 8 compact stat cards with gradient overlays, 3 tab panels with fade-in transitions (Pipeline, Articles, AI Agents)
+- **Pipeline Monitor**: 5-stage visual pipeline with live model labels, hover-reveal gradient lines, active card glow animations. Manual triggers: individual scout buttons (Gemini/Sonnet/Grok/All 3) + Produce Now with API response feedback. Topic queue with full controls per item (Produce, Expedite, Priority ↑↓, Delete, Reset stuck items). Published articles show model pen names + independence scores. Failed articles have Re-queue + Retry buttons.
+- **Articles Manager**: search, filter, sort (including by independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh from DB. Semitransparent status badges
 - **AI Agents**: Reader Questions (mines alumi Health chat data for popular user questions), Cron Schedule (5 active jobs), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
 - **Edit page**: metadata/content/AI refine tabs, 2s autosave + Cmd+S, score badges, live preview auto-refresh, Publish + Delete from GitHub, XSS-safe chat
 - **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish

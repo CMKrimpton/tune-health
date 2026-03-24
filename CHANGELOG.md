@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.4.0] - 2026-03-24
+
+### Changed — Admin Portal Complete Redesign
+- **admin.css rewritten from scratch** — CSS custom properties design system (`--admin-bg`, `--admin-surface`, `--admin-border`, `--admin-accent`, etc.) replacing all hardcoded hex values. Darker, richer background (`#0f0e0c`), rgba-based borders at varying opacities, layered shadow system, 12px/8px/6px border-radius scale
+- **Glass morphism throughout** — header uses `backdrop-filter: blur(20px)`, login card uses `blur(24px)`, modals use `blur(8px)` backdrop. Subtle gradient overlays on stat cards and pipeline stages
+- **Ambient background** — radial gradient glow (red/purple) behind the dashboard body, subtle grid pattern on login page
+- **Login page redesigned** — animated drifting glow orbs, glass card with entrance animation, "mission control" pill badge, footer tagline, error slide-in animation
+- **Refined animations** — `cubic-bezier(0.22, 1, 0.36, 1)` ease throughout, tab panel fade-in, modal scale+translate entry, button lift effect (`translateY(-1px)` + shadow on hover), pipeline card pulse glow
+- **Pipeline stages** — hover reveals top-edge gradient line, active cards have green glow animation, stage count badges glow red when items present
+- **Status badges** — all use semitransparent `rgba()` backgrounds instead of opaque dark blocks (published, draft, killed, failed, etc.)
+- **200+ inline style updates** across PipelineMonitor, ArticlesManager, and AgentsPanel — all hardcoded hex colors replaced with the new warmer, higher-contrast palette
+- **Feedback banners** — redesigned with semitransparent backgrounds, rounded 10px corners, inline dismiss buttons
+- **Better focus states** — red ring glow (`box-shadow: 0 0 0 3px rgba(239,68,68,0.15)`) on all focused inputs
+- **Dashboard widened** — max-width 1400px (was 1200px) for better screen utilization
+- **Consistent branding** — "mission control" pill badge on all admin pages (login, dashboard, new article)
+
 ## [9.3.0] - 2026-03-24
 
 ### Added — Opus Editorial Series & First Localization

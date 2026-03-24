@@ -102,9 +102,9 @@ function gradeColor(grade: string): string {
 }
 
 function gradeBg(grade: string): string {
-  if (grade.startsWith('A')) return '#052e16';
-  if (grade.startsWith('B')) return '#422006';
-  return '#450a0a';
+  if (grade.startsWith('A')) return 'rgba(34, 197, 94, 0.1)';
+  if (grade.startsWith('B')) return 'rgba(245, 158, 11, 0.1)';
+  return 'rgba(239, 68, 68, 0.1)';
 }
 
 // ─── Collapsible Section ────────────────────────────────────────────
@@ -206,7 +206,7 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
       }
       badge={questions.length > 0 ? <span style={{ fontSize: '0.6875rem', color: '#4ade80', fontWeight: 500 }}>{questions.length} found</span> : undefined}
     >
-      <p style={{ fontSize: '0.6875rem', color: '#78716c', marginBottom: '0.75rem' }}>
+      <p style={{ fontSize: '0.6875rem', color: '#7d7871', marginBottom: '0.75rem' }}>
         Finds health questions asked by 2+ different users in the alumi Health AI assistant. Real reader interest = real article ideas.
       </p>
       <button className="agents-btn agents-btn-primary" disabled={loading} onClick={fetchQuestions}>
@@ -220,16 +220,16 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
       {questions.length > 0 && (
         <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.375rem', maxHeight: 400, overflowY: 'auto' }}>
           {questions.map((q, i) => (
-            <div key={i} style={{ padding: '0.5rem 0.75rem', background: '#1c1917', borderRadius: '0.375rem', borderLeft: `3px solid ${q.uniqueUsers >= 5 ? '#dc2626' : q.uniqueUsers >= 3 ? '#f59e0b' : '#44403c'}` }}>
+            <div key={i} style={{ padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.375rem', borderLeft: `3px solid ${q.uniqueUsers >= 5 ? '#ef4444' : q.uniqueUsers >= 3 ? '#f59e0b' : 'rgba(255,255,255,0.08)'}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#e7e6e3', marginBottom: '0.25rem' }}>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#eae8e4', marginBottom: '0.25rem' }}>
                     {q.topic.slice(0, 120)}{q.topic.length > 120 ? '...' : ''}
                   </div>
                   <div style={{ fontSize: '0.625rem', color: '#78716c', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <span style={{ color: q.uniqueUsers >= 5 ? '#f87171' : q.uniqueUsers >= 3 ? '#fbbf24' : '#a8a29e', fontWeight: 600 }}>{q.uniqueUsers} users</span>
                     <span>{q.totalAsks} times</span>
-                    <span style={{ color: '#57534e' }}>{q.keywords.slice(0, 5).join(', ')}</span>
+                    <span style={{ color: '#5c5752' }}>{q.keywords.slice(0, 5).join(', ')}</span>
                   </div>
                 </div>
                 {queued.has(i) ? (
@@ -277,14 +277,14 @@ function CronSchedule() {
     >
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
         {cronJobs.map(job => (
-          <div key={job.name} style={{ padding: '0.5rem 0.75rem', background: '#1c1917', borderRadius: '0.375rem', borderLeft: `3px solid ${job.color}` }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#e7e6e3', marginBottom: '0.125rem' }}>{job.name}</div>
-            <div style={{ fontSize: '0.6875rem', color: '#78716c' }}>{job.schedule}</div>
+          <div key={job.name} style={{ padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.375rem', borderLeft: `3px solid ${job.color}`, border: '1px solid rgba(255,255,255,0.06)', borderLeftWidth: '3px', borderRadius: '8px' }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#eae8e4', marginBottom: '0.125rem' }}>{job.name}</div>
+            <div style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{job.schedule}</div>
             <div style={{ fontSize: '0.625rem', color: job.color, marginTop: '0.125rem' }}>{job.model}</div>
           </div>
         ))}
       </div>
-      <p style={{ fontSize: '0.6875rem', color: '#57534e', marginTop: '0.75rem' }}>
+      <p style={{ fontSize: '0.6875rem', color: '#5c5752', marginTop: '0.75rem' }}>
         Managed via pg_cron in Supabase. Use Scout Now / Produce Now in Pipeline tab for manual triggers.
       </p>
     </Section>
@@ -335,7 +335,7 @@ function DecisionLog({ apiBase }: { apiBase: string }) {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '1.5rem' }}>
           <div className="admin-spinner admin-spinner-lg" style={{ margin: '0 auto 0.75rem' }} />
-          <p style={{ fontSize: '0.8125rem', color: '#a8a29e' }}>Loading decision log...</p>
+          <p style={{ fontSize: '0.8125rem', color: '#b5b0a9' }}>Loading decision log...</p>
         </div>
       ) : decisionsLogs.length === 0 ? (
         <p style={{ fontSize: '0.8125rem', color: '#78716c', textAlign: 'center', padding: '1.5rem' }}>
@@ -364,10 +364,10 @@ function DecisionCard({ log }: { log: LogEntry }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
-            {isPublished && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: '#052e16', color: '#4ade80', borderRadius: '0.25rem', fontWeight: 600 }}>Published</span>}
-            {isKilled && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: '#450a0a', color: '#f87171', borderRadius: '0.25rem', fontWeight: 600 }}>Killed</span>}
-            {isFailed && !isKilled && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: '#450a0a', color: '#f87171', borderRadius: '0.25rem', fontWeight: 600 }}>Failed</span>}
-            {!isPublished && !isFailed && brief?.decision === 'approve' && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: '#1e3a5f', color: '#93c5fd', borderRadius: '0.25rem', fontWeight: 600 }}>{log.status}</span>}
+            {isPublished && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', borderRadius: '6px', fontWeight: 600 }}>Published</span>}
+            {isKilled && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: '6px', fontWeight: 600 }}>Killed</span>}
+            {isFailed && !isKilled && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: '6px', fontWeight: 600 }}>Failed</span>}
+            {!isPublished && !isFailed && brief?.decision === 'approve' && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: 'rgba(59, 130, 246, 0.12)', color: '#93c5fd', borderRadius: '6px', fontWeight: 600 }}>{log.status}</span>}
             {brief?.topicScore != null && (
               <span style={{ fontSize: '0.625rem', color: brief.topicScore >= 7 ? '#4ade80' : brief.topicScore >= 5 ? '#fbbf24' : '#f87171', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                 {brief.topicScore}/10
@@ -378,7 +378,7 @@ function DecisionCard({ log }: { log: LogEntry }) {
             {brief?.headline || log.title || log.topic || 'Untitled'}
           </h4>
           {brief?.angle && !isKilled && (
-            <p style={{ fontSize: '0.6875rem', color: '#a8a29e', lineHeight: 1.5, marginBottom: '0.25rem' }}>{brief.angle}</p>
+            <p style={{ fontSize: '0.6875rem', color: '#b5b0a9', lineHeight: 1.5, marginBottom: '0.25rem' }}>{brief.angle}</p>
           )}
           {isKilled && brief?.killReason && (
             <p style={{ fontSize: '0.6875rem', color: '#f87171', lineHeight: 1.5, marginBottom: '0.25rem' }}>
@@ -391,14 +391,14 @@ function DecisionCard({ log }: { log: LogEntry }) {
             </p>
           )}
           {isPublished && qc && (
-            <div style={{ fontSize: '0.6875rem', color: '#a8a29e', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '0.6875rem', color: '#b5b0a9', lineHeight: 1.5 }}>
               {qc.qualityScore != null && <span style={{ color: qc.qualityScore >= 7 ? '#4ade80' : '#fbbf24', fontWeight: 600 }}>QC {qc.qualityScore}/10</span>}
               {qc.edits?.headlineChanged && <span style={{ marginLeft: '0.5rem' }}>Headline revised</span>}
-              {qc.edits?.notes && <p style={{ marginTop: '0.125rem', color: '#78716c', fontStyle: 'italic' }}>{qc.edits.notes}</p>}
+              {qc.edits?.notes && <p style={{ marginTop: '0.125rem', color: '#7d7871', fontStyle: 'italic' }}>{qc.edits.notes}</p>}
             </div>
           )}
         </div>
-        <span style={{ fontSize: '0.625rem', color: '#57534e', whiteSpace: 'nowrap', flexShrink: 0 }}>
+        <span style={{ fontSize: '0.625rem', color: '#5c5752', whiteSpace: 'nowrap', flexShrink: 0 }}>
           {timeAgo(log.completed_at || log.created_at)}
         </span>
       </div>
@@ -491,7 +491,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
     >
       {/* Severity selector */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-        <label style={{ fontSize: '0.6875rem', color: '#78716c', whiteSpace: 'nowrap' }}>Min severity:</label>
+        <label style={{ fontSize: '0.6875rem', color: '#7d7871', whiteSpace: 'nowrap' }}>Min severity:</label>
         <div style={{ display: 'flex', gap: '0.375rem' }}>
           {(['high', 'medium', 'low'] as Severity[]).map(s => (
             <button
@@ -535,8 +535,8 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
       {loading && (
         <div style={{ textAlign: 'center', padding: '1.5rem' }}>
           <div className="admin-spinner admin-spinner-lg" style={{ margin: '0 auto 0.75rem' }} />
-          <p style={{ fontSize: '0.8125rem', color: '#a8a29e' }}>{loadingText}</p>
-          <p style={{ fontSize: '0.6875rem', color: '#57534e', marginTop: '0.25rem' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#b5b0a9' }}>{loadingText}</p>
+          <p style={{ fontSize: '0.6875rem', color: '#5c5752', marginTop: '0.25rem' }}>
             Claude is analyzing {articleCount} articles holistically (30-60s)
           </p>
         </div>
@@ -547,13 +547,13 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
         <div className="agents-qc-results">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
             <span className="agents-grade" style={{ color: gradeColor(grade) }}>{grade}</span>
-            <div style={{ flex: 1, fontSize: '0.75rem', color: '#a8a29e', lineHeight: 1.6 }}>
+            <div style={{ flex: 1, fontSize: '0.75rem', color: '#b5b0a9', lineHeight: 1.6 }}>
               <strong>{summary?.total_issues || 0} issues</strong> ({summary?.high || 0} high, {summary?.medium || 0} medium, {summary?.low || 0} low)
               {dryRun && <><br /><span style={{ color: '#818cf8' }}>DRY RUN -- no changes applied. Use Auto-Fix to apply.</span></>}
               {applied != null && !dryRun && (
                 <>
                   <br /><span style={{ color: '#4ade80' }}>Applied {applied} fixes</span>
-                  {skipped > 0 && <span style={{ color: '#78716c' }}> / {skipped} skipped</span>}
+                  {skipped > 0 && <span style={{ color: '#7d7871' }}> / {skipped} skipped</span>}
                   {errored > 0 && <span style={{ color: '#f87171' }}> / {errored} errors</span>}
                 </>
               )}
@@ -569,7 +569,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
           {summary?.patterns && summary.patterns.length > 0 && (
             <div style={{ marginBottom: '0.75rem' }}>
               {summary.patterns.map((p, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', padding: '0.375rem 0', fontSize: '0.6875rem', color: '#a8a29e' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', padding: '0.375rem 0', fontSize: '0.6875rem', color: '#b5b0a9' }}>
                   <span style={{ color: '#fbbf24', flexShrink: 0 }}>&#9888;</span>
                   <span>{p}</span>
                 </div>
@@ -589,18 +589,18 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ color, fontWeight: 600, textTransform: 'uppercase', fontSize: '0.625rem' }}>
                       {issue.severity}
-                      {fix && (fix.status === 'applied' ? <span style={{ color: '#4ade80' }}> &#10003;</span> : fix.status === 'skipped' ? <span style={{ color: '#78716c' }}> &#9678;</span> : <span style={{ color: '#f87171' }}> &#10007;</span>)}
+                      {fix && (fix.status === 'applied' ? <span style={{ color: '#4ade80' }}> &#10003;</span> : fix.status === 'skipped' ? <span style={{ color: '#7d7871' }}> &#9678;</span> : <span style={{ color: '#f87171' }}> &#10007;</span>)}
                     </span>
-                    <span style={{ color: '#a8a29e', fontSize: '0.6875rem' }}>{issue.slug}</span>
-                    <span style={{ color: '#57534e', fontSize: '0.625rem', marginLeft: 'auto' }}>{issue.field}</span>
+                    <span style={{ color: '#b5b0a9', fontSize: '0.6875rem' }}>{issue.slug}</span>
+                    <span style={{ color: '#5c5752', fontSize: '0.625rem', marginLeft: 'auto' }}>{issue.field}</span>
                   </div>
                   {issue.suggested && issue.suggested !== issue.current && issue.suggested !== 'Keep as is' ? (
-                    <div style={{ marginTop: '0.25rem', color: '#57534e', fontSize: '0.6875rem' }}>
+                    <div style={{ marginTop: '0.25rem', color: '#5c5752', fontSize: '0.6875rem' }}>
                       <span style={{ textDecoration: 'line-through' }}>{issue.current.length > 80 ? issue.current.slice(0, 80) + '...' : issue.current}</span>
-                      <br /><span style={{ color: '#e7e6e3' }}>&rarr; {issue.suggested.length > 80 ? issue.suggested.slice(0, 80) + '...' : issue.suggested}</span>
+                      <br /><span style={{ color: '#eae8e4' }}>&rarr; {issue.suggested.length > 80 ? issue.suggested.slice(0, 80) + '...' : issue.suggested}</span>
                     </div>
                   ) : (
-                    <div style={{ marginTop: '0.25rem', color: '#57534e', fontSize: '0.6875rem' }}>
+                    <div style={{ marginTop: '0.25rem', color: '#5c5752', fontSize: '0.6875rem' }}>
                       {issue.reason.length > 100 ? issue.reason.slice(0, 100) + '...' : issue.reason}
                     </div>
                   )}
@@ -714,11 +714,11 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
     >
       {/* Single article selector */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', alignItems: 'center' }}>
-        <label style={{ fontSize: '0.6875rem', color: '#78716c', whiteSpace: 'nowrap' }}>Single article:</label>
+        <label style={{ fontSize: '0.6875rem', color: '#7d7871', whiteSpace: 'nowrap' }}>Single article:</label>
         <select
           value={selectedSlug}
           onChange={e => setSelectedSlug(e.target.value)}
-          style={{ flex: 1, background: '#292524', border: '1px solid #3f3f46', borderRadius: 4, padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#e7e6e3', outline: 'none' }}
+          style={{ flex: 1, background: '#292524', border: '1px solid #3f3f46', borderRadius: 4, padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#eae8e4', outline: 'none' }}
         >
           <option value="">Select article...</option>
           {articles.map(a => (
@@ -752,14 +752,14 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
       {loading && (
         <div style={{ textAlign: 'center', padding: '1rem' }}>
           <div className="admin-spinner admin-spinner-lg" style={{ margin: '0 auto 0.75rem' }} />
-          <p style={{ fontSize: '0.75rem', color: '#a8a29e' }}>{loadingText}</p>
+          <p style={{ fontSize: '0.75rem', color: '#b5b0a9' }}>{loadingText}</p>
         </div>
       )}
 
       {/* Results */}
       {result && !loading && (
         <div>
-          <p style={{ fontSize: '0.75rem', color: '#a8a29e', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: result.startsWith('Batch') ? `<span style="color:#fbbf24">${result}</span>` : `<span style="color:#4ade80">&#10003; ${result}</span>` }} />
+          <p style={{ fontSize: '0.75rem', color: '#b5b0a9', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: result.startsWith('Batch') ? `<span style="color:#fbbf24">${result}</span>` : `<span style="color:#4ade80">&#10003; ${result}</span>` }} />
           <div style={{ marginTop: '0.5rem', height: 4, background: '#292524', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{ height: '100%', background: '#059669', width: `${progress}%`, transition: 'width 0.3s' }} />
           </div>
@@ -843,7 +843,7 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
         </div>
       }
-      badge={<span style={{ fontSize: '0.6875rem', color: '#78716c' }}>{count} articles</span>}
+      badge={<span style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{count} articles</span>}
     >
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
         <button className="agents-btn agents-btn-primary" disabled={loading} onClick={refresh}>
@@ -856,7 +856,7 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
           {rotating ? 'Rotating...' : 'Rotate Featured'}
         </button>
       </div>
-      <p style={{ fontSize: '0.6875rem', color: '#57534e', marginBottom: '0.5rem' }}>
+      <p style={{ fontSize: '0.6875rem', color: '#5c5752', marginBottom: '0.5rem' }}>
         Backfill Costs: estimate spend for articles logged before cost tracking. Rotate Featured: manually trigger featured article rotation.
       </p>
       {result && (

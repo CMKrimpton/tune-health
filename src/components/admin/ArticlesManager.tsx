@@ -318,9 +318,9 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
   // ─── Status badge ────────────────────────────────────────────────
 
   function statusBadge(article: ArticleRecord) {
-    if (article.coming_soon) return <span className="articles-badge" style={{ background: '#44403c', color: '#a8a29e' }}>Coming Soon</span>;
-    if (article.draft || article.status === 'draft') return <span className="articles-badge" style={{ background: '#92400e', color: '#fbbf24' }}>Draft</span>;
-    return <span className="articles-badge" style={{ background: '#052e16', color: '#4ade80' }}>Published</span>;
+    if (article.coming_soon) return <span className="articles-badge" style={{ background: 'rgba(255,255,255,0.06)', color: '#b5b0a9' }}>Coming Soon</span>;
+    if (article.draft || article.status === 'draft') return <span className="articles-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24' }}>Draft</span>;
+    return <span className="articles-badge" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80' }}>Published</span>;
   }
 
   // ─── Render ───────────────────────────────────────────────────────
@@ -386,16 +386,16 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
       {/* ── Bulk bar ── */}
       {selected.size > 0 && (
         <div className="articles-bulk-bar">
-          <button onClick={selectAll} className="admin-action-btn" style={{ color: '#a8a29e', borderColor: '#44403c' }}>
+          <button onClick={selectAll} className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }}>
             Select all ({filtered.length})
           </button>
-          <button onClick={deselectAll} className="admin-action-btn" style={{ color: '#a8a29e', borderColor: '#44403c' }}>
+          <button onClick={deselectAll} className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }}>
             Deselect all
           </button>
-          <button onClick={() => bulkSetFeatured(true)} className="admin-action-btn" style={{ color: '#fbbf24', borderColor: '#92400e' }}>
+          <button onClick={() => bulkSetFeatured(true)} className="admin-action-btn" style={{ color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.3)' }}>
             Feature selected
           </button>
-          <button onClick={() => bulkSetFeatured(false)} className="admin-action-btn" style={{ color: '#a8a29e', borderColor: '#44403c' }}>
+          <button onClick={() => bulkSetFeatured(false)} className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }}>
             Unfeature selected
           </button>
           <button onClick={() => setBulkDeleteConfirm(true)} className="admin-action-btn admin-action-delete">
@@ -490,14 +490,14 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
 
                   {/* Meta row */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="articles-badge" style={{ background: '#1c1917', border: '1px solid #44403c', color: '#d6d3d1' }}>
+                    <span className="articles-badge" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#d6d3d1' }}>
                       {article.category}
                     </span>
                     {statusBadge(article)}
-                    <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>{formatDate(article.publish_date)}</span>
-                    <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>{article.read_time || 0} min</span>
+                    <span style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{formatDate(article.publish_date)}</span>
+                    <span style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{article.read_time || 0} min</span>
                     {article.tags && article.tags.length > 0 && (
-                      <span style={{ fontSize: '0.6875rem', color: '#78716c' }} title={article.tags.join(', ')}>
+                      <span style={{ fontSize: '0.6875rem', color: '#7d7871' }} title={article.tags.join(', ')}>
                         {article.tags.length} tag{article.tags.length !== 1 ? 's' : ''}
                       </span>
                     )}
@@ -508,7 +508,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                       </span>
                     )}
                     {(article as ArticleWithScores).editor_score != null && (
-                      <span style={{ fontSize: '0.6875rem', color: '#a8a29e', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontSize: '0.6875rem', color: '#b5b0a9', fontVariantNumeric: 'tabular-nums' }}>
                         Ed: {(article as ArticleWithScores).editor_score}/10
                       </span>
                     )}
@@ -540,7 +540,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                     disabled={improvingSlug === article.slug}
                     aria-label={`Improve ${article.title}`}
                     title="AI review + auto-fix"
-                    style={{ color: '#a78bfa', borderColor: '#6d28d9' }}
+                    style={{ color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.3)' }}
                   >
                     {improvingSlug === article.slug ? (
                       <span style={{ fontSize: '0.625rem' }}>Improving\u2026</span>
@@ -573,7 +573,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                   </button>
                 </div>
                 {improveResult?.slug === article.slug && (
-                  <div style={{ gridColumn: '1 / -1', padding: '0.375rem 0.75rem', marginTop: '0.25rem', borderRadius: '0.25rem', fontSize: '0.6875rem', background: improveResult.ok ? '#052e16' : '#450a0a', color: improveResult.ok ? '#86efac' : '#fca5a5', border: `1px solid ${improveResult.ok ? '#166534' : '#991b1b'}` }}>
+                  <div style={{ gridColumn: '1 / -1', padding: '0.5rem 0.75rem', marginTop: '0.25rem', borderRadius: '8px', fontSize: '0.6875rem', background: improveResult.ok ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)', color: improveResult.ok ? '#86efac' : '#fca5a5', border: `1px solid ${improveResult.ok ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}` }}>
                     {improveResult.message}
                     <button onClick={() => setImproveResult(null)} style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '0.6875rem' }}>{'\u00d7'}</button>
                   </div>
@@ -594,7 +594,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
               Delete <strong>{deleteTarget.title}</strong>? This removes the article from the database and GitHub.
             </p>
             <div className="admin-modal-actions">
-              <button className="admin-action-btn" style={{ color: '#a8a29e', borderColor: '#44403c' }} onClick={() => setDeleteTarget(null)}>
+              <button className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }} onClick={() => setDeleteTarget(null)}>
                 Cancel
               </button>
               <button className="admin-action-btn admin-action-delete" onClick={() => confirmDelete(deleteTarget.slug)}>
@@ -615,7 +615,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
               This will permanently remove {selected.size} article{selected.size !== 1 ? 's' : ''} from the database and GitHub. This cannot be undone.
             </p>
             <div className="admin-modal-actions">
-              <button className="admin-action-btn" style={{ color: '#a8a29e', borderColor: '#44403c' }} onClick={() => setBulkDeleteConfirm(false)}>
+              <button className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }} onClick={() => setBulkDeleteConfirm(false)}>
                 Cancel
               </button>
               <button className="admin-action-btn admin-action-delete" onClick={confirmBulkDelete}>

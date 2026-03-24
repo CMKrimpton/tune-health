@@ -514,7 +514,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               {inPipeline} in flight
             </span>
           )}
-          <span style={{ color: '#57534e', fontSize: '0.7rem', marginLeft: '0.5rem' }}>
+          <span style={{ color: '#5c5752', fontSize: '0.7rem', marginLeft: '0.5rem' }}>
             {timeAgo(lastPoll.toISOString())}
           </span>
         </div>
@@ -527,9 +527,9 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         </div>
 
         {totalCost > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.5rem', background: '#1c1917', borderRadius: '6px', border: '1px solid #44403c' }}>
-            <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>Total Spend</span>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: totalCost > 50 ? '#f87171' : totalCost > 20 ? '#f59e0b' : '#a8a29e', fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <span style={{ fontSize: '0.6875rem', color: '#7d7871' }}>Total Spend</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: totalCost > 50 ? '#f87171' : totalCost > 20 ? '#f59e0b' : '#b5b0a9', fontVariantNumeric: 'tabular-nums' }}>
               ${totalCost.toFixed(2)}
             </span>
           </div>
@@ -537,7 +537,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
         <div className="pipeline-quick-actions">
           <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.5625rem', color: '#57534e', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '0.25rem' }}>Scout</span>
+            <span style={{ fontSize: '0.5625rem', color: '#5c5752', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginRight: '0.25rem', fontWeight: 600 }}>Scout</span>
             {[
               { id: 'gemini', label: 'Gemini', color: '#fbbf24' },
               { id: 'sonnet', label: 'Sonnet', color: '#f97316' },
@@ -574,15 +574,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
       {/* ── Action Results ── */}
       {scoutResult && (
-        <div style={{ padding: '0.5rem 0.75rem', background: '#052e16', border: '1px solid #166534', borderRadius: '0.5rem', marginBottom: '0.5rem', fontSize: '0.75rem', color: '#86efac', whiteSpace: 'pre-line' }}>
-          {scoutResult}
-          <button onClick={() => setScoutResult(null)} style={{ marginLeft: '0.75rem', background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontSize: '0.75rem' }}>{'\u00d7 dismiss'}</button>
+        <div style={{ padding: '0.625rem 1rem', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '10px', marginBottom: '0.75rem', fontSize: '0.75rem', color: '#86efac', whiteSpace: 'pre-line', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>{scoutResult}</span>
+          <button onClick={() => setScoutResult(null)} style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontSize: '0.8125rem', padding: '0.25rem 0.5rem' }}>{'\u00d7'}</button>
         </div>
       )}
       {produceResult && (
-        <div style={{ padding: '0.5rem 0.75rem', background: produceResult.includes('Error') || produceResult.includes('Skipped') ? '#450a0a' : '#052e16', border: `1px solid ${produceResult.includes('Error') || produceResult.includes('Skipped') ? '#991b1b' : '#166534'}`, borderRadius: '0.5rem', marginBottom: '0.5rem', fontSize: '0.75rem', color: produceResult.includes('Error') || produceResult.includes('Skipped') ? '#fca5a5' : '#86efac' }}>
-          {produceResult}
-          <button onClick={() => setProduceResult(null)} style={{ marginLeft: '0.75rem', background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: '0.75rem' }}>{'\u00d7 dismiss'}</button>
+        <div style={{ padding: '0.625rem 1rem', background: produceResult.includes('Error') || produceResult.includes('Skipped') ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)', border: `1px solid ${produceResult.includes('Error') || produceResult.includes('Skipped') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`, borderRadius: '10px', marginBottom: '0.75rem', fontSize: '0.75rem', color: produceResult.includes('Error') || produceResult.includes('Skipped') ? '#fca5a5' : '#86efac', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>{produceResult}</span>
+          <button onClick={() => setProduceResult(null)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '0.8125rem', padding: '0.25rem 0.5rem', opacity: 0.7 }}>{'\u00d7'}</button>
         </div>
       )}
 
@@ -643,24 +643,24 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             value={newTopic}
             onChange={e => setNewTopic(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') queueTopic(); }}
-            style={{ flex: 1, minWidth: '200px', padding: '0.5rem 0.75rem', background: '#292524', border: '1px solid #44403c', borderRadius: '6px', color: '#e7e6e3', fontSize: '0.8125rem' }}
+            style={{ flex: 1, minWidth: '200px', padding: '0.5rem 0.75rem', background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#eae8e4', fontSize: '0.8125rem', outline: 'none' }}
           />
           <select
             value={newCategory}
             onChange={e => setNewCategory(e.target.value)}
-            style={{ padding: '0.5rem', background: '#292524', border: '1px solid #44403c', borderRadius: '6px', color: '#a8a29e', fontSize: '0.8125rem' }}
+            style={{ padding: '0.5rem', background: '#222120', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#b5b0a9', fontSize: '0.8125rem' }}
           >
             <option value="">Category</option>
             {['Neuroscience', 'Mental Health', 'Longevity', 'Clinical Evidence', 'Environmental Health', 'Nutrition', 'Fitness', 'Sleep Science', 'Pharmacology'].map(c => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: '#a8a29e', cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: '#b5b0a9', cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={newExpedite}
               onChange={e => setNewExpedite(e.target.checked)}
-              style={{ accentColor: '#dc2626' }}
+              style={{ accentColor: '#ef4444' }}
             />
             Expedite
           </label>
@@ -675,7 +675,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         </div>
 
         {queueResult && (
-          <div style={{ padding: '0.375rem 0.75rem', marginBottom: '0.5rem', borderRadius: '0.375rem', fontSize: '0.75rem', background: queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? '#450a0a' : '#052e16', color: queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? '#fca5a5' : '#86efac', border: `1px solid ${queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? '#991b1b' : '#166534'}` }}>
+          <div style={{ padding: '0.5rem 0.75rem', marginBottom: '0.5rem', borderRadius: '8px', fontSize: '0.75rem', background: queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)', color: queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? '#fca5a5' : '#86efac', border: `1px solid ${queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}` }}>
             {queueResult}
           </div>
         )}
@@ -687,16 +687,16 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               const isQueued = item.status === 'queued';
               const cleanTopic = item.topic.replace(/\*\*/g, '').replace(/^[\s\-]*Topic\s*Description\s*:?\s*/i, '').trim();
               return (
-                <div key={item.id} className="pipeline-card" style={{ borderLeftColor: item.expedite ? '#dc2626' : isActive ? '#16a34a' : '#44403c', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85 }}>
+                <div key={item.id} className="pipeline-card" style={{ borderLeftColor: item.expedite ? '#ef4444' : isActive ? '#22c55e' : 'rgba(255,255,255,0.08)', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="pipeline-card-title" style={{ fontSize: '0.8125rem' }}>{cleanTopic}</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#78716c', display: 'flex', gap: '0.5rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: '0.6875rem', color: '#7d7871', display: 'flex', gap: '0.5rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
                         {item.category && <span>{item.category}</span>}
-                        {item.expedite && <span style={{ color: '#dc2626', fontWeight: 600 }}>EXPEDITE</span>}
-                        {isActive && <span style={{ color: '#16a34a', fontWeight: 600 }}>{item.status.toUpperCase()}</span>}
-                        <span style={{ color: '#57534e' }}>P{item.priority}</span>
-                        <span style={{ color: '#57534e' }}>{item.source}</span>
+                        {item.expedite && <span style={{ color: '#ef4444', fontWeight: 600 }}>EXPEDITE</span>}
+                        {isActive && <span style={{ color: '#22c55e', fontWeight: 600 }}>{item.status.toUpperCase()}</span>}
+                        <span style={{ color: '#5c5752' }}>P{item.priority}</span>
+                        <span style={{ color: '#5c5752' }}>{item.source}</span>
                       </div>
                     </div>
                     {/* ── Queue Item Controls ── */}
@@ -738,7 +738,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         <button
                           className="pipeline-retry-btn"
                           onClick={() => { if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
-                          style={{ color: '#f87171', borderColor: '#7f1d1d', fontSize: '0.6875rem' }}
+                          style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.25)', fontSize: '0.6875rem' }}
                           title="Delete from queue"
                         >
                           {'\u2715'}
@@ -747,13 +747,13 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                     )}
                     {isActive && (
                       <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.625rem', color: '#16a34a', fontWeight: 600, padding: '0.25rem 0.5rem', background: '#052e16', borderRadius: '0.25rem', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.625rem', color: '#22c55e', fontWeight: 600, padding: '0.25rem 0.5rem', background: 'rgba(34, 197, 94, 0.08)', borderRadius: '0.25rem', whiteSpace: 'nowrap' }}>
                           {item.status === 'in_progress' ? 'Producing\u2026' : 'Assigned'}
                         </span>
                         <button
                           className="pipeline-retry-btn"
                           onClick={() => updateQueueItem(item.id, { status: 'queued' })}
-                          style={{ fontSize: '0.6875rem', color: '#fbbf24', borderColor: '#92400e' }}
+                          style={{ fontSize: '0.6875rem', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.3)' }}
                           title="Reset to queued (if stuck)"
                         >
                           Reset
@@ -761,7 +761,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         <button
                           className="pipeline-retry-btn"
                           onClick={() => { if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
-                          style={{ color: '#f87171', borderColor: '#7f1d1d', fontSize: '0.6875rem' }}
+                          style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.25)', fontSize: '0.6875rem' }}
                           title="Delete from queue"
                         >
                           {'\u2715'}
@@ -802,18 +802,18 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       <div className="pipeline-card-title" style={{ marginBottom: '0.25rem' }}>
                         {log.title || log.topic || 'Untitled'}
                       </div>
-                      <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6875rem', color: '#78716c', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6875rem', color: '#7d7871', flexWrap: 'wrap', alignItems: 'center' }}>
                         {penName && <span style={{ color: '#a78bfa', fontWeight: 500 }}>{penName}</span>}
                         {indScore !== null && (
-                          <span style={{ color: indScore >= 7 ? '#16a34a' : indScore >= 4 ? '#f59e0b' : '#dc2626' }}>
+                          <span style={{ color: indScore >= 7 ? '#22c55e' : indScore >= 4 ? '#f59e0b' : '#ef4444' }}>
                             Independence: {indScore}/10
                           </span>
                         )}
                         {log.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
-                          <span style={{ color: '#a8a29e', fontVariantNumeric: 'tabular-nums' }}>{formatCost(log.cost_usd)}</span>
+                          <span style={{ color: '#b5b0a9', fontVariantNumeric: 'tabular-nums' }}>{formatCost(log.cost_usd)}</span>
                         )}
                         <span>{timeAgo(log.completed_at || log.created_at)}</span>
-                        <span style={{ color: '#57534e' }}>{isExpanded ? '\u25B2 collapse' : '\u25BC history'}</span>
+                        <span style={{ color: '#5c5752', fontSize: '0.625rem' }}>{isExpanded ? '\u25B2' : '\u25BC'}</span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
@@ -823,23 +823,23 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                   </div>
 
                   {isExpanded && (
-                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #44403c', fontSize: '0.75rem' }}>
+                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '0.75rem' }}>
                       {/* ── Research ── */}
                       <div style={{ marginBottom: '0.75rem' }}>
-                        <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>1. Research</div>
-                        {rd.topic && <div style={{ color: '#a8a29e' }}>Topic: {rd.topic as string}</div>}
+                        <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>1. Research</div>
+                        {rd.topic && <div style={{ color: '#b5b0a9' }}>Topic: {rd.topic as string}</div>}
                         {(rd.keyFindings as string[] | undefined)?.slice(0, 3).map((f: string, i: number) => (
-                          <div key={i} style={{ color: '#78716c', paddingLeft: '0.5rem', borderLeft: '2px solid #44403c', marginTop: '0.25rem' }}>{f}</div>
+                          <div key={i} style={{ color: '#7d7871', paddingLeft: '0.5rem', borderLeft: '2px solid rgba(255,255,255,0.06)', marginTop: '0.25rem' }}>{f}</div>
                         ))}
                       </div>
 
                       {/* ── Editor Brief ── */}
                       {brief && (
                         <div style={{ marginBottom: '0.75rem' }}>
-                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>2. Editor Brief</div>
-                          <div style={{ color: '#a8a29e' }}>Score: <span style={{ color: '#e7e6e3', fontWeight: 600 }}>{brief.topicScore as number}/10</span> | Archetype: {brief.archetype as string || '?'}</div>
-                          {brief.angle && <div style={{ color: '#a8a29e', fontStyle: 'italic', marginTop: '0.25rem' }}>Angle: {(brief.angle as string).slice(0, 150)}</div>}
-                          {briefDetails?.tonePreset && <div style={{ color: '#78716c' }}>Tone: {briefDetails.tonePreset as string} | Density: {briefDetails.density as string || '?'} | Pacing: {briefDetails.pacing as string || '?'}</div>}
+                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>2. Editor Brief</div>
+                          <div style={{ color: '#b5b0a9' }}>Score: <span style={{ color: '#eae8e4', fontWeight: 600 }}>{brief.topicScore as number}/10</span> | Archetype: {brief.archetype as string || '?'}</div>
+                          {brief.angle && <div style={{ color: '#b5b0a9', fontStyle: 'italic', marginTop: '0.25rem' }}>Angle: {(brief.angle as string).slice(0, 150)}</div>}
+                          {briefDetails?.tonePreset && <div style={{ color: '#7d7871' }}>Tone: {briefDetails.tonePreset as string} | Density: {briefDetails.density as string || '?'} | Pacing: {briefDetails.pacing as string || '?'}</div>}
                           {(briefDetails?.dogmaWarnings as string[] | undefined)?.length ? (
                             <div style={{ color: '#f59e0b', marginTop: '0.25rem' }}>Dogma warnings: {(briefDetails!.dogmaWarnings as string[]).join('; ')}</div>
                           ) : null}
@@ -848,41 +848,41 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
                       {/* ── Writer ── */}
                       <div style={{ marginBottom: '0.75rem' }}>
-                        <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>3. Writer</div>
-                        <div style={{ color: '#a8a29e' }}>Model: <span style={{ color: '#a78bfa', fontWeight: 500 }}>{log.model_used || '?'}</span>{penName ? ` (${penName})` : ''} | Revision: {log.revision_count || 0}</div>
+                        <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>3. Writer</div>
+                        <div style={{ color: '#b5b0a9' }}>Model: <span style={{ color: '#a78bfa', fontWeight: 500 }}>{log.model_used || '?'}</span>{penName ? ` (${penName})` : ''} | Revision: {log.revision_count || 0}</div>
                       </div>
 
                       {/* ── Independence Review ── */}
                       {indReview && (
-                        <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: '#1c1917', borderRadius: '0.375rem' }}>
-                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>4. Grok Independence Review</div>
-                          <div style={{ color: '#a8a29e' }}>
+                        <div style={{ marginBottom: '0.75rem', padding: '0.625rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>4. Grok Independence Review</div>
+                          <div style={{ color: '#b5b0a9' }}>
                             Verdict: <span style={{ color: (indReview.verdict as string) === 'clean' ? '#4ade80' : (indReview.verdict as string) === 'minor_issues' ? '#fbbf24' : '#f87171', fontWeight: 600 }}>{indReview.verdict as string}</span>
                             {' | '}Score: {(indReview.score as number) || '?'}/10
                             {indReview._revisionApplied && <span style={{ color: '#a78bfa', marginLeft: '0.5rem' }}>Revisions applied</span>}
                           </div>
                           {(indReview.flags as Array<{ type: string; quote: string; rewrite: string }> | undefined)?.map((f, i) => (
                             <div key={i} style={{ marginTop: '0.375rem', paddingLeft: '0.5rem', borderLeft: `2px solid ${f.type === 'fabrication' ? '#f87171' : '#f59e0b'}` }}>
-                              <span style={{ color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.5625rem' }}>[{f.type}]</span>
-                              <div style={{ color: '#78716c', fontSize: '0.6875rem' }}>{(f.quote || '').slice(0, 100)}</div>
-                              {f.rewrite && <div style={{ color: '#e7e6e3', fontSize: '0.6875rem' }}>{'\u2192'} {(f.rewrite || '').slice(0, 100)}</div>}
+                              <span style={{ color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase' as const, fontSize: '0.5625rem' }}>[{f.type}]</span>
+                              <div style={{ color: '#7d7871', fontSize: '0.6875rem' }}>{(f.quote || '').slice(0, 100)}</div>
+                              {f.rewrite && <div style={{ color: '#eae8e4', fontSize: '0.6875rem' }}>{'\u2192'} {(f.rewrite || '').slice(0, 100)}</div>}
                             </div>
                           ))}
-                          {(indReview.summary as string) && <div style={{ color: '#78716c', fontStyle: 'italic', marginTop: '0.375rem' }}>{(indReview.summary as string).slice(0, 200)}</div>}
+                          {(indReview.summary as string) && <div style={{ color: '#7d7871', fontStyle: 'italic', marginTop: '0.375rem' }}>{(indReview.summary as string).slice(0, 200)}</div>}
                         </div>
                       )}
 
                       {/* ── PubMed Verification ── */}
                       {pubmed && pubmed.total && pubmed.total > 0 && (
                         <div style={{ marginBottom: '0.75rem' }}>
-                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>5. PubMed Verification</div>
-                          <div style={{ color: '#a8a29e' }}>
+                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>5. PubMed Verification</div>
+                          <div style={{ color: '#b5b0a9' }}>
                             <span style={{ color: '#4ade80' }}>{pubmed.verified} verified</span>
                             {pubmed.failed ? <span style={{ color: '#f87171', marginLeft: '0.5rem' }}>{pubmed.failed} NOT FOUND</span> : null}
                             {' / '}{pubmed.total} checked
                           </div>
                           {pubmed.details?.filter(d => !d.found).map((d, i) => (
-                            <div key={i} style={{ color: '#f87171', fontSize: '0.6875rem', paddingLeft: '0.5rem', borderLeft: '2px solid #7f1d1d', marginTop: '0.25rem' }}>
+                            <div key={i} style={{ color: '#f87171', fontSize: '0.6875rem', paddingLeft: '0.5rem', borderLeft: '2px solid rgba(239, 68, 68, 0.2)', marginTop: '0.25rem' }}>
                               {'\u2717'} {d.title.slice(0, 80)}
                             </div>
                           ))}
@@ -892,15 +892,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       {/* ── QC Result ── */}
                       {qcResult && (
                         <div style={{ marginBottom: '0.75rem' }}>
-                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>6. QC + Publish</div>
-                          <div style={{ color: '#a8a29e' }}>
+                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>6. QC + Publish</div>
+                          <div style={{ color: '#b5b0a9' }}>
                             Decision: <span style={{ color: '#4ade80', fontWeight: 600 }}>{qcResult.decision as string}</span>
                             {' | '}Score: {qcResult.qualityScore as number || '?'}/10
                             {(qcResult.edits as Record<string, unknown>)?.headlineChanged && <span style={{ marginLeft: '0.5rem', color: '#fbbf24' }}>Headline revised</span>}
                             {(qcResult.edits as Record<string, unknown>)?.descriptionChanged && <span style={{ marginLeft: '0.5rem', color: '#fbbf24' }}>Description revised</span>}
                           </div>
                           {(qcResult.edits as Record<string, unknown>)?.notes && (
-                            <div style={{ color: '#78716c', fontStyle: 'italic', marginTop: '0.25rem' }}>{((qcResult.edits as Record<string, unknown>).notes as string).slice(0, 150)}</div>
+                            <div style={{ color: '#7d7871', fontStyle: 'italic', marginTop: '0.25rem' }}>{((qcResult.edits as Record<string, unknown>).notes as string).slice(0, 150)}</div>
                           )}
                         </div>
                       )}
@@ -908,23 +908,23 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       {/* ── Cost Breakdown ── */}
                       {tokenUsage && tokenUsage.length > 0 && (
                         <div>
-                          <div style={{ color: '#78716c', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.5625rem', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>Cost Breakdown</div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '0.125rem 0.75rem', fontSize: '0.625rem', color: '#78716c' }}>
+                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>Cost Breakdown</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '0.125rem 0.75rem', fontSize: '0.625rem', color: '#7d7871' }}>
                             <span style={{ fontWeight: 600 }}>Stage</span><span style={{ fontWeight: 600 }}>Model</span><span style={{ fontWeight: 600 }}>Tokens</span><span style={{ fontWeight: 600 }}>Cost</span>
                             {tokenUsage.map((t, i) => (
                               <Fragment key={i}>
-                                <span style={{ color: '#a8a29e' }}>{t.stage}</span>
+                                <span style={{ color: '#b5b0a9' }}>{t.stage}</span>
                                 <span>{t.model?.split('-').slice(0, 2).join('-') || '?'}</span>
                                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{(t.inputTokens + t.outputTokens).toLocaleString()}</span>
-                                <span style={{ fontVariantNumeric: 'tabular-nums', color: '#a8a29e' }}>${t.costUsd?.toFixed(4) || '?'}</span>
+                                <span style={{ fontVariantNumeric: 'tabular-nums', color: '#b5b0a9' }}>${t.costUsd?.toFixed(4) || '?'}</span>
                               </Fragment>
                             ))}
                           </div>
-                          <div style={{ marginTop: '0.25rem', color: '#a8a29e', fontWeight: 600, fontSize: '0.625rem' }}>Total: {formatCost(log.cost_usd)}</div>
+                          <div style={{ marginTop: '0.375rem', color: '#b5b0a9', fontWeight: 600, fontSize: '0.625rem' }}>Total: {formatCost(log.cost_usd)}</div>
                         </div>
                       )}
 
-                      <div style={{ marginTop: '0.5rem', color: '#57534e', fontSize: '0.625rem' }}>
+                      <div style={{ marginTop: '0.625rem', color: '#5c5752', fontSize: '0.625rem' }}>
                         Source: {log.source || '?'} | Started: {log.created_at ? new Date(log.created_at).toLocaleString() : '?'} | Completed: {log.completed_at ? new Date(log.completed_at).toLocaleString() : '?'}
                       </div>
                     </div>
@@ -947,7 +947,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               const reason = (log.error || '').replace('Senior Editor killed: ', '');
               return (
                 <div key={log.id} className="pipeline-card" style={{ borderLeftColor: '#f59e0b', borderLeftWidth: '3px' }}>
-                  <div className="pipeline-card-title" style={{ color: '#a8a29e' }}>
+                  <div className="pipeline-card-title" style={{ color: '#b5b0a9' }}>
                     {log.title || log.topic || 'Untitled'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.375rem', fontStyle: 'italic' }}>
@@ -987,7 +987,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       <button
                         className="pipeline-retry-btn"
                         onClick={() => requeueFromFailed(log.id, log.topic!)}
-                        style={{ color: '#fbbf24', borderColor: '#92400e' }}
+                        style={{ color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.3)' }}
                       >
                         Re-queue
                       </button>
@@ -1040,8 +1040,8 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
       </div>
       <div className="pipeline-card-time">
         {timeAgo(log.created_at)}
-        {modelShort && <span style={{ marginLeft: '0.375rem', color: '#57534e' }}>{modelShort}</span>}
-        {log.source && <span style={{ marginLeft: '0.375rem', color: '#57534e' }}>{log.source}</span>}
+        {modelShort && <span style={{ marginLeft: '0.375rem', color: '#5c5752' }}>{modelShort}</span>}
+        {log.source && <span style={{ marginLeft: '0.375rem', color: '#5c5752' }}>{log.source}</span>}
       </div>
 
       {(score !== null || indScore !== null || (log.cost_usd && parseFloat(String(log.cost_usd)) > 0)) && (
@@ -1065,19 +1065,19 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
       )}
 
       {expanded && (
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #44403c', fontSize: '0.75rem' }}>
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '0.75rem' }}>
           {/* Candidates from research */}
           {candidates && candidates.length > 1 && (
             <div style={{ marginBottom: '0.75rem' }}>
-              <span style={{ color: '#78716c', fontWeight: 600 }}>Research Candidates:</span>
+              <span style={{ color: '#7d7871', fontWeight: 600 }}>Research Candidates:</span>
               {candidates.map((c, i) => {
                 const cScore = candidateScores?.find(cs => cs.rank === c.rank);
                 return (
-                  <div key={i} style={{ marginTop: '0.25rem', paddingLeft: '0.5rem', borderLeft: '2px solid #44403c' }}>
-                    <span style={{ color: cScore ? (cScore.score >= 7 ? '#16a34a' : '#f59e0b') : '#a8a29e' }}>
+                  <div key={i} style={{ marginTop: '0.25rem', paddingLeft: '0.5rem', borderLeft: '2px solid rgba(255,255,255,0.06)' }}>
+                    <span style={{ color: cScore ? (cScore.score >= 7 ? '#22c55e' : '#f59e0b') : '#b5b0a9' }}>
                       #{c.rank}: {c.headline_draft || c.topic}
                     </span>
-                    {cScore && <span style={{ color: '#78716c', marginLeft: '0.5rem' }}>({cScore.score}/10) {cScore.verdict}</span>}
+                    {cScore && <span style={{ color: '#7d7871', marginLeft: '0.5rem' }}>({cScore.score}/10) {cScore.verdict}</span>}
                   </div>
                 );
               })}
@@ -1086,15 +1086,15 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
 
           {angle && (
             <div style={{ marginBottom: '0.5rem' }}>
-              <span style={{ color: '#78716c', fontWeight: 600 }}>Angle: </span>
-              <span style={{ color: '#a8a29e', fontStyle: 'italic' }}>{angle}</span>
+              <span style={{ color: '#7d7871', fontWeight: 600 }}>Angle: </span>
+              <span style={{ color: '#b5b0a9', fontStyle: 'italic' }}>{angle}</span>
             </div>
           )}
 
           {/* Independence Review */}
           {indReview && indReview.overallAssessment !== 'skipped' && (
-            <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: '#1c1917', borderRadius: '6px' }}>
-              <span style={{ color: '#78716c', fontWeight: 600 }}>Grok Independence: </span>
+            <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ color: '#7d7871', fontWeight: 600 }}>Grok Independence: </span>
               <span style={{
                 color: indReview.overallAssessment === 'independent' ? '#16a34a'
                   : indReview.overallAssessment === 'minor_concerns' ? '#f59e0b'
@@ -1121,22 +1121,22 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
 
           {log.slug && (
             <div style={{ marginBottom: '0.25rem' }}>
-              <span style={{ color: '#78716c' }}>Slug: </span>
-              <code style={{ color: '#57534e' }}>{log.slug}</code>
+              <span style={{ color: '#7d7871' }}>Slug: </span>
+              <code style={{ color: '#5c5752', fontSize: '0.6875rem' }}>{log.slug}</code>
             </div>
           )}
           <div style={{ marginBottom: '0.25rem' }}>
-            <span style={{ color: '#78716c' }}>Status: </span>
-            <span style={{ color: '#a8a29e' }}>{log.status}</span>
+            <span style={{ color: '#7d7871' }}>Status: </span>
+            <span style={{ color: '#b5b0a9' }}>{log.status}</span>
           </div>
           <div>
-            <span style={{ color: '#78716c' }}>Started: </span>
-            <span style={{ color: '#a8a29e' }}>{new Date(log.created_at).toLocaleTimeString()}</span>
+            <span style={{ color: '#7d7871' }}>Started: </span>
+            <span style={{ color: '#b5b0a9' }}>{new Date(log.created_at).toLocaleTimeString()}</span>
           </div>
           {log.research_data?.category && (
             <div style={{ marginTop: '0.25rem' }}>
-              <span style={{ color: '#78716c' }}>Category: </span>
-              <span style={{ color: '#a8a29e' }}>{log.research_data.category}</span>
+              <span style={{ color: '#7d7871' }}>Category: </span>
+              <span style={{ color: '#b5b0a9' }}>{log.research_data.category}</span>
             </div>
           )}
           {log.research_data?._queueId && (
@@ -1145,14 +1145,15 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
             </div>
           )}
 
-          <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid #3a3633' }}>
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <button
               onClick={(e) => { e.stopPropagation(); onKill(); }}
               disabled={killing}
               style={{
-                fontSize: '0.6875rem', padding: '0.25rem 0.625rem',
-                background: 'transparent', color: '#f87171', border: '1px solid #7f1d1d',
-                borderRadius: '0.25rem', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                fontSize: '0.6875rem', padding: '0.3125rem 0.75rem',
+                background: 'transparent', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: '6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                transition: 'all 0.15s',
               }}
             >
               {killing ? 'Killing\u2026' : 'Kill Article'}

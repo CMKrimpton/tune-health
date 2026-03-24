@@ -58,6 +58,9 @@ const withIllustration = articles.filter(a => a.hero_image);
 const featuredCount = published.filter(a => a.featured).length;
 const avgReadTime = articles.length > 0 ? Math.round(articles.reduce((s, a) => s + (a.read_time || 0), 0) / articles.length) : 0;
 const avgCostPerArticle = published.length > 0 && totalCost > 0 ? (totalCost / published.length).toFixed(2) : '—';
+
+// Determine categories count
+const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
 ---
 
 <html lang="en">
@@ -80,38 +83,39 @@ const avgCostPerArticle = published.length > 0 && totalCost > 0 ? (totalCost / p
         <a href="/admin" class="admin-nav-link active">Dashboard</a>
         <a href="/admin/new" class="admin-nav-link">New Article</a>
         <a href="/" class="admin-nav-link" target="_blank">View Site &rarr;</a>
-        <button id="logoutBtn" class="admin-nav-link" style="border:none;background:none;cursor:pointer;font-family:inherit;font-size:inherit">Logout</button>
+        <button id="logoutBtn" class="admin-nav-link" style="border:none;background:none;cursor:pointer;font-family:inherit;font-size:inherit;color:inherit">Logout</button>
       </nav>
     </div>
   </header>
 
   <main class="admin-main">
     {fetchError && (
-      <div style="background:#7f1d1d; border:1px solid #991b1b; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8125rem; color:#fca5a5">
-        <strong>Database error:</strong> {fetchError}
+      <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8125rem; color:#fca5a5; display:flex; align-items:center; gap:0.5rem">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>Database error:</strong> {fetchError}</span>
       </div>
     )}
 
     <!-- Stats Row -->
-    <div class="admin-stats" style="grid-template-columns: repeat(8, 1fr); margin-bottom: 1rem">
+    <div class="admin-stats" style="grid-template-columns: repeat(8, 1fr); margin-bottom: 1.25rem">
       <div class="admin-stat-card">
         <span class="admin-stat-number">{articleCount}</span>
-        <span class="admin-stat-label">Total (DB)</span>
+        <span class="admin-stat-label">Total</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number">{published.length}</span>
+        <span class="admin-stat-number" style="color: #22c55e">{published.length}</span>
         <span class="admin-stat-label">Published</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number">{drafts.length}</span>
+        <span class="admin-stat-number" style={drafts.length > 0 ? "color: #f59e0b" : ""}>{drafts.length}</span>
         <span class="admin-stat-label">Drafts</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number">{featuredCount}</span>
+        <span class="admin-stat-number" style="color: #ef4444">{featuredCount}</span>
         <span class="admin-stat-label">Featured</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number" style={withIllustration.length < articles.length ? "color:#f59e0b" : ""}>{withIllustration.length}</span>
+        <span class="admin-stat-number" style={withIllustration.length < articles.length ? "color: #f59e0b" : "color: #22c55e"}>{withIllustration.length}</span>
         <span class="admin-stat-label">Illustrated</span>
       </div>
       <div class="admin-stat-card">
@@ -119,7 +123,7 @@ const avgCostPerArticle = published.length > 0 && totalCost > 0 ? (totalCost / p
         <span class="admin-stat-label">Avg Read</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number" style={totalCost > 50 ? "color:#f87171" : totalCost > 20 ? "color:#f59e0b" : ""}>${totalCost > 0 ? totalCost.toFixed(2) : '—'}</span>
+        <span class="admin-stat-number" style={totalCost > 50 ? "color: #f87171" : totalCost > 20 ? "color: #f59e0b" : ""}>${totalCost > 0 ? totalCost.toFixed(2) : '—'}</span>
         <span class="admin-stat-label">Pipeline Spend</span>
       </div>
       <div class="admin-stat-card">
@@ -166,7 +170,7 @@ const avgCostPerArticle = published.length > 0 && totalCost > 0 ? (totalCost / p
   </main>
 
   <script is:inline>
-    // Tab switching — is:inline ensures this runs immediately, not blocked by React hydration errors
+    // Tab switching
     try {
       document.querySelectorAll('.admin-dashboard-tab').forEach(function(btn) {
         btn.addEventListener('click', function() {

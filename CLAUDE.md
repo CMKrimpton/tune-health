@@ -140,10 +140,11 @@ const articles = await getCollection('articles');
 ### Styling Approach
 - Tailwind utility classes with custom component layer in `src/styles/global.css`
 - Dark mode via `class` strategy (toggle in JS, persisted to localStorage)
-- **Warm color palette**:
+- **Warm color palette** (public site):
   - `black` = `#1b1a18` (HSL 47°, 3%, 10%) - warm dark gray
   - `white` = `#e7e6e3` (HSL 47°, 3%, 90%) - warm off-white
   - Primary: red tones (`primary-500` = `#ef4444`)
+- **Admin design system** (`admin.css`): CSS custom properties (`--admin-bg: #0f0e0c`, `--admin-surface`, `--admin-border`, `--admin-accent`, etc.). Glass morphism with `backdrop-filter: blur()`, rgba-based borders, layered shadow system (`--admin-shadow-sm/md/lg`), border-radius scale (12px/8px/6px). All admin inline styles use the same palette — never reference old hex values like `#44403c` or `#292524`
 - Custom typography: Playfair Display (headings), Inter (sans), Crimson Pro (body)
 - Custom easing: `ease-editorial` = `cubic-bezier(0.22, 1, 0.36, 1)`
 - **Category-based gradient art**: `getArticleGradientStyle()` in `src/utils/articles.ts` generates CSS gradients per category for card visuals — no stock photos, no dynamic Tailwind classes (which get purged)
@@ -182,8 +183,10 @@ const articles = await getCollection('articles');
 - Keyboard navigation (↑↓ Enter Esc)
 
 #### Admin Mission Control (/admin)
+- **Glass design system**: CSS custom properties in `admin.css` (`--admin-bg`, `--admin-surface`, `--admin-border`, `--admin-accent`, etc.). Glass morphism header/cards/modals, ambient gradient glow background, layered shadows, `cubic-bezier(0.22, 1, 0.36, 1)` easing, border-radius scale (12px/8px/6px). All React component inline styles use the same palette
+- **Login**: glass card with animated gradient orbs, entrance animation, "mission control" pill badge
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix). Wrong token redirects to `/admin/login?error=1` with inline error display.
-- **Dashboard**: 8 compact stat cards (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 3 tab panels (Pipeline, Articles, AI Agents)
+- **Dashboard**: 8 compact stat cards with gradient overlays and hover shadows (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 3 tab panels with fade-in animation (Pipeline, Articles, AI Agents). Max-width 1400px
 - **Pipeline tab** (React island: `PipelineMonitor`):
   - 5-stage visual pipeline: Research (Gemini + Sonnet) → Editor (Sonnet → Grok → Gemini) → Write (rotates hourly) → Independence (Grok 3) → QC+Publish (Sonnet + GPT Image)
   - Write stage dynamically shows current primary model based on UTC hour (matches backend `pickWriterModel()`)
