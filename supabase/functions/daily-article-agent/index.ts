@@ -346,10 +346,35 @@ async function gemini(opts: { system: string; user: string; maxTokens?: number; 
     const errText = await res.text();
     throw new Error(`Gemini ${res.status}: ${errText.slice(0, 500)}`);
   }
-  const data = await res.json();
-  const parts = data.candidates?.[0]?.content?.parts || [];
-  const text = parts.map((p: { text?: string }) => p.text || "").join("");
-  if (!text.trim()) throw new Error("Empty Gemini response");
+  let data = await res.json();
+  let parts = data.candidates?.[0]?.content?.parts || [];
+  let text = parts.map((p: { text?: string }) => p.text || "").join("");
+
+  // Retry once if empty (Gemini sometimes returns empty on first try with search grounding)
+  if (!text.trim()) {
+    console.log(`[Gemini] Empty response on first try for ${stage}, retrying...`);
+    const retry = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: opts.system }] },
+          contents: [{ role: "user", parts: [{ text: opts.user }] }],
+          generationConfig: { maxOutputTokens: opts.maxTokens || 4000, temperature: opts.temperature || 0.4 },
+          tools: [{ google_search: {} }],
+        }),
+        signal: AbortSignal.timeout(120_000),
+      },
+    );
+    if (retry.ok) {
+      data = await retry.json();
+      parts = data.candidates?.[0]?.content?.parts || [];
+      text = parts.map((p: { text?: string }) => p.text || "").join("");
+    }
+  }
+
+  if (!text.trim()) throw new Error("Empty Gemini response (after retry)");
   const um = data.usageMetadata || {};
   const inputTokens = um.promptTokenCount || 0;
   const outputTokens = um.candidatesTokenCount || 0;
@@ -1464,8 +1489,9 @@ async function stageEditorBrief(
       const candidatePct = overlapCount / candidateWords.size;
       const existingPct = reverseCount / fp.words.size;
       const maxPct = Math.max(candidatePct, existingPct);
-      // 30% bidirectional overlap OR 3+ matching subject words → duplicate
-      if (maxPct >= 0.30 && overlapCount >= 2) return true;
+      // 40% bidirectional overlap AND 4+ matching subject words → duplicate
+      // (Raised from 30%/2 — at 94 articles, the old threshold blocked almost everything)
+      if (maxPct >= 0.40 && overlapCount >= 4) return true;
     }
     return false;
   }
