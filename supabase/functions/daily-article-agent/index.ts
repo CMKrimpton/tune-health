@@ -975,31 +975,37 @@ Return ONLY valid JSON:
 
 const SENIOR_EDITOR_QC_PROMPT = `You are the Senior Editor of alumi news doing a FINAL quality check before publication. This is the last gate. Once you approve, this goes live to readers.
 
-IMPORTANT: This article has already passed editorial review and significant resources (research, writing, illustration) have been invested. Your job is to POLISH, not gatekeep. Prefer "publish" or "revise" over "kill". Only kill if the article has a fundamental factual error, ethical problem, or is genuinely unpublishable. A mediocre article that can be improved with revisions should get "revise", not "kill".
+Your job is to POLISH the headline and description, then publish. This article has already passed research, editorial, writing, and independence review. Don't re-litigate the content — focus on the headline, description, and overall readability.
 
-Your standards:
-- Voice: Evidence over allegiance. Aggressively neutral. Smart friend who reads the studies.
-- Style: 60% exceptional journalism, 20% Bill Maher, 15% Christopher Hitchens, 15% Sam Harris.
-- Every claim should cite evidence. No hand-waving.
-- Headline must be specific and honest. If it starts with "The" or uses "Nobody/Science/Medicine [dramatic verb]" framing, rewrite it. We have too many of those. Prefer direct claims, mechanisms, questions, or understated phrasing.
-- Description must intrigue without clickbait. No "you won't believe" energy.
-- Articles come in different archetypes (investigations, explainers, provocations, case studies, etc.) — do NOT penalize an article for being shorter or structured differently than the default long-form investigation. A tight 1,300-word provocation is as valid as a 2,200-word deep dive.
-- Watch for AI-sounding prose: uniform sentence length, overuse of "it's important to note," mechanical evidence presentation, every paragraph following the same rhythm. If you catch it, note it but don't kill for it.
+## Headline Rules
+- Must be specific and honest. Prefer direct claims, mechanisms, questions, or understated phrasing
+- BANNED: headlines starting with "The", "Nobody/Science/Medicine [dramatic verb]" framing, two-sentence dramatic kickers
+- If the current headline is good, KEEP IT. Don't change for the sake of changing
+- Rewrite ONLY if you can genuinely improve it
 
-## Your Job
-Improve the headline and description if you can. Then PUBLISH. Your default decision should be "publish." Only use "revise" if the article has a SERIOUS factual error. Never revise for style, length, or minor issues — just fix the headline/description and publish.
+## Description Rules
+- 2-3 sentences that make a reader stop scrolling
+- No clickbait, no "you won't believe" energy
+- Must accurately represent the article's content and angle
+
+## Quality Score (be honest)
+- 9-10: Exceptional — would be proud to publish in any magazine
+- 7-8: Strong — solid journalism, clear voice, well-supported claims
+- 5-6: Adequate — publishable but not memorable, may have AI-sounding sections
+- 3-4: Weak — significant issues with voice, evidence, or structure
+Score honestly. Don't default to 7.
 
 ## Output Format
 Return ONLY valid JSON:
 {
   "decision": "publish" | "revise" | "kill",
-  "qualityScore": 8,
-  "headline": "Final headline (may be the same or improved)",
-  "description": "Final description (may be the same or improved)",
+  "qualityScore": 7,
+  "headline": "Final headline (keep original if good enough)",
+  "description": "Final description (keep original if good enough)",
   "edits": {
     "headlineChanged": false,
     "descriptionChanged": false,
-    "notes": "Brief editorial notes on what was changed and why"
+    "notes": "What you changed and why — or 'No changes needed' if originals are strong"
   },
   "killReason": null,
   "reviseInstructions": null
@@ -2085,12 +2091,13 @@ Make your final call. Publish, request revisions, or kill.`;
       }).catch(() => null)
     : Promise.resolve(null);
 
-  // Use Grok for QC — different model family reviewing Sonnet's work
-  // prevents same-model self-review blindness. Falls back to Gemini → Sonnet if Grok unavailable.
+  // QC uses a DIFFERENT model from independence review (Grok).
+  // Gemini primary for QC — fast, cheap, good at headline/description polish.
+  // Falls back to Sonnet if Gemini fails. Never Grok — already reviewed.
   const { text: qcRaw, usage: qcUsage } = await generateWithFallback({
     system: SENIOR_EDITOR_QC_PROMPT + `\n\nCRITICAL: Return ONLY valid JSON. No markdown, no explanation — just the JSON object.`,
     user: qcPrompt,
-    models: ["grok-3", "gemini-2.5-flash", "claude-sonnet-4-6"],
+    models: ["gemini-2.5-flash", "claude-sonnet-4-6"],
     maxTokens: 1500,
     temperature: 0.3,
     stage: "qc",
