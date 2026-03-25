@@ -1415,7 +1415,11 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
       system: "You are a health science researcher. Find the most compelling, evidence-based health stories. Every topic must be backed by real studies. No celebrity health, no supplement hype.",
       user: `Find 10 compelling health stories we should cover. Mix of recent (last 30 days) and landmark (last 5 years).
 
-FOCUS on these underserved categories: ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 5).map(([cat, count]) => `${cat} (only ${count} articles)`).join(", ") || "Nutrition, Fitness, Sleep Science"}
+FOCUS on these underserved categories: ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 7).map(([cat, count]) => `${cat} (only ${count} articles)`).join(", ") || "Nutrition, Fitness, Sleep Science, Pharmacology, Longevity"}
+
+CRITICAL SUBJECT GAPS (zero coverage — highest priority):
+Cardiology/heart disease, diabetes/metabolic syndrome, immunology, kidney disease, liver disease (NAFLD), respiratory/pulmonary, musculoskeletal/arthritis, addiction biology, prostate health, pain science, dermatology.
+At least 3 of your 10 topics MUST address these gaps. Do NOT default to neuroscience — we have 23 of those.
 
 Every topic must be COMPLETELY DIFFERENT from these subjects we already covered (${titles.length} articles):
 ${titles.map((t) => `- ${t.split(" (")[0]}`).join("\n")}
@@ -1441,7 +1445,9 @@ ${geminiFindings}
 ${titles.map((t) => `- ${t}`).join("\n")}
 
 ## PRIORITY CATEGORIES (need more articles):
-${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 3).map(([cat]) => `- ${cat}`).join("\n") || "All categories well-covered"}`;
+${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 7).map(([cat]) => `- ${cat}`).join("\n") || "All categories well-covered"}
+
+## CRITICAL: Prefer candidates covering these zero-coverage subjects: cardiology, diabetes, immunology, kidney disease, liver disease, respiratory, musculoskeletal, addiction, prostate health, pain science, dermatology.`;
 
     const { text: researchRaw, usage: structureUsage, modelUsed: _structModel } = await generateWithFallback({
       system: structureSystem,
@@ -1668,15 +1674,30 @@ ${titles.length > 30 ? `... and ${titles.length - 30} more` : ""}
 ## CATEGORY BALANCE RULE (HARD CONSTRAINT)
 ${(() => {
     const total = titles.length || 1;
-    const overserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / total > 0.15).map(([cat]) => cat);
-    const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / total < 0.05).map(([cat]) => cat);
+    const overserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / total > 0.12).map(([cat]) => cat);
+    const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / total < 0.08).map(([cat]) => cat);
     const missing = VALID_CATEGORIES.filter(c => !categoryCounts[c]);
     const all = [...underserved, ...missing];
     if (all.length > 0) {
-      return `PRIORITY: These categories are severely underserved: ${all.join(", ")}. If ANY candidate is in one of these categories AND scores 5+, pick it OVER a higher-scoring candidate from an overserved category (${overserved.join(", ")}) — UNLESS the score difference is >3 points.`;
+      return `PRIORITY: These categories are severely underserved: ${all.join(", ")}. If ANY candidate is in one of these categories AND scores 5+, pick it OVER a higher-scoring candidate from an overserved category (${overserved.join(", ")}) — UNLESS the score difference is >3 points.\n\nDo NOT approve another Clinical Evidence or Neuroscience article unless it scores 8+ AND no underserved-category candidate scores 5+. We need to rebalance.`;
     }
     return "Categories are well-balanced. Pick purely on quality.";
   })()}
+
+## SUBJECT-LEVEL GAPS (editorial priority)
+Beyond category balance, these specific SUBJECTS have zero or near-zero coverage and should be prioritized when candidates touch them:
+- Cardiology / cardiovascular disease (ZERO articles — #1 killer worldwide)
+- Diabetes / metabolic syndrome (near-zero — affects 500M+ people)
+- Immunology beyond vaccines (ZERO dedicated immune system articles)
+- Kidney disease (ZERO — affects 1 in 7 adults)
+- Liver disease / NAFLD (ZERO — affects 25% of adults)
+- Respiratory medicine (ZERO — no asthma, COPD, or pulmonary content)
+- Musculoskeletal / arthritis / back pain (ZERO)
+- Addiction biology (ZERO)
+- Prostate / male reproductive health (ZERO)
+- Pain science (near-zero)
+- Dermatology (ZERO)
+If a candidate covers any of the above, give it a +2 score bonus in your assessment. A 6/10 cardiology topic is worth more to the collection than an 8/10 neuroscience topic right now.
 
 ${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
@@ -2913,13 +2934,39 @@ Deno.serve(async (req: Request) => {
         return false;
       }
 
-      const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / (titles.length || 1) < 0.08).map(([cat]) => cat);
+      const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / (titles.length || 1) < 0.10).map(([cat]) => cat);
       const missing = VALID_CATEGORIES.filter(c => !categoryCounts[c]);
-      const priorityCats = [...underserved, ...missing];
+      const priorityCats = [...new Set([...underserved, ...missing])];
 
       const scoutPrompt = `Find 20 compelling, evidence-based health stories. Mix of recent (last 30 days) and landmark (last 5 years). Every topic must be backed by real studies — no celebrity health, no supplement hype.
 
 PRIORITY CATEGORIES (need more articles): ${priorityCats.join(", ") || "all balanced"}
+
+## CRITICAL COVERAGE GAPS — at least 8 of your 20 topics MUST come from these underserved subjects:
+Our collection is heavily skewed toward Neuroscience (23%) and Clinical Evidence (31%). The following subjects have ZERO or near-zero coverage and urgently need articles:
+
+**Zero coverage (top priority — find multiple topics in these):**
+- Cardiology / cardiovascular disease (heart failure, atherosclerosis, hypertension, statin debate — #1 killer worldwide, we have NOTHING)
+- Diabetes / metabolic syndrome (type 2 diabetes mechanisms, insulin resistance, GLP-1 beyond weight loss)
+- Immunology / immune system biology (beyond vaccines — autoimmune mechanisms, allergy science, immune aging)
+- Kidney disease / nephrology (CKD affects 1 in 7 adults — completely absent)
+- Liver disease / hepatology (NAFLD/MASLD affects 25% of adults globally — completely absent)
+- Respiratory / pulmonary (asthma, COPD, long COVID pulmonary effects)
+- Musculoskeletal / rheumatology (arthritis, back pain, lupus, fibromyalgia)
+- Addiction biology (alcohol neuroscience, behavioral addiction, stimulant pharmacology)
+- Prostate health / male reproductive health (most common cancer in men — zero coverage)
+- Pain science / neuropathic pain mechanisms
+- Dermatology (psoriasis, eczema, wound healing, skin-gut axis)
+- Pediatric health (childhood development, pediatric conditions)
+
+**Underdeveloped categories (need 3-4x more articles):**
+- Nutrition: missing fasting science, protein and aging, hydration, alcohol metabolism, micronutrient deficiencies (vitamin D, iron, B12), artificial sweeteners, seed oils debate
+- Fitness: missing VO2 max as mortality predictor, strength training and mortality data, exercise dose-response for mental health, mobility science, overtraining
+- Sleep Science: missing circadian disruption and metabolic disease, sleep apnea, melatonin evidence, shift work health effects
+- Longevity: missing caloric restriction evidence, NAD+/NMN data, blue zones (real vs myth), rapamycin/metformin off-label use, telomere biology
+- Pharmacology: missing psychedelic therapy (psilocybin, MDMA, ketamine), polypharmacy in elderly, drug pricing mechanisms, generic vs brand bioequivalence
+
+DO NOT give me 15 more neuroscience or brain mechanism articles. We have 23 of those. Diversify.
 
 ALREADY COVERED (${titles.length} articles — avoid these subjects):
 ${titles.map(t => `- ${t.split(" (")[0]}`).join("\n")}
@@ -2930,21 +2977,21 @@ For each topic return: a one-line topic description, suggested category, and why
       let scoutCost: ApiUsage;
 
       if (scoutModel === "gemini") {
-        const r = await gemini({ system: "You are a health science researcher with access to Google Search. Find the most compelling stories. Prioritize recent meta-analyses, large cohort studies, and findings that challenge conventional wisdom.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-gemini");
+        const r = await gemini({ system: "You are a health science researcher with access to Google Search. Find the most compelling stories. Prioritize recent meta-analyses, large cohort studies, and findings that challenge conventional wisdom. IMPORTANT: Our collection is overweight in neuroscience and brain science — actively seek out cardiology, diabetes, immunology, kidney disease, liver disease, respiratory, and musculoskeletal topics. These are the biggest gaps.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-gemini");
         rawFindings = r.text; scoutCost = r.usage;
       } else if (scoutModel === "grok") {
-        const r = await grok({ system: "You are a health science researcher. Find stories the mainstream misses — contrarian findings, underfunded research, industry-inconvenient data. Prioritize independence and surprise.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-grok");
+        const r = await grok({ system: "You are a health science researcher. Find stories the mainstream misses — contrarian findings, underfunded research, industry-inconvenient data. Prioritize independence and surprise. IMPORTANT: Our collection badly needs cardiology, diabetes/metabolic, immunology, addiction biology, pain science, and pharmacology topics. We have almost nothing in these areas. Do NOT default to neuroscience — we have 23 of those already.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-grok");
         rawFindings = r.text; scoutCost = r.usage;
       } else {
         // Sonnet scout with web search — fall back to Gemini if Claude spending limit hit
         try {
-          const r = await claude({ system: "You are a health science researcher. Find stories with strong evidence and editorial potential. Look for mechanism discoveries, policy failures, and emerging fields.", user: scoutPrompt, model: "claude-sonnet-4-6", maxTokens: 4000, temperature: 0.5, webSearch: true, maxSearches: 8 }, "scout-sonnet");
+          const r = await claude({ system: "You are a health science researcher. Find stories with strong evidence and editorial potential. Look for mechanism discoveries, policy failures, and emerging fields. IMPORTANT: Our biggest coverage gaps are cardiology (zero articles on #1 killer), diabetes/metabolic syndrome, immunology, kidney/liver disease, respiratory, musculoskeletal, addiction, and dermatology. At least half your suggestions should address these gaps. Do NOT over-index on neuroscience or brain mechanism stories — we have 23 of those.", user: scoutPrompt, model: "claude-sonnet-4-6", maxTokens: 4000, temperature: 0.5, webSearch: true, maxSearches: 8 }, "scout-sonnet");
           rawFindings = r.text; scoutCost = r.usage;
         } catch (scoutErr: unknown) {
           const errMsg = scoutErr instanceof Error ? scoutErr.message : "";
           if (errMsg.includes("SPENDING_LIMIT") || errMsg.includes("usage limits") || errMsg.includes("rate_limit")) {
             console.log("[Scout fallback] Claude spending limit, falling back to Gemini for Sonnet scout...");
-            const r = await gemini({ system: "You are a health science researcher. Find stories with strong evidence and editorial potential. Look for mechanism discoveries, policy failures, and emerging fields.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-sonnet-fallback");
+            const r = await gemini({ system: "You are a health science researcher. Find stories with strong evidence and editorial potential. Look for mechanism discoveries, policy failures, and emerging fields. IMPORTANT: Our biggest coverage gaps are cardiology, diabetes/metabolic, immunology, kidney/liver disease, respiratory, and musculoskeletal. Prioritize these over neuroscience.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-sonnet-fallback");
             rawFindings = r.text; scoutCost = r.usage;
           } else {
             throw scoutErr;
