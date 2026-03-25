@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.7.0] - 2026-03-25
+
+### Fixed — Admin CSS, Layouts, Writer Prompts
+- **Admin CSS was never loading in production**: Astro's frontmatter `import './admin.css'` was silently dropped for SSR pages. The entire admin portal was unstyled raw HTML on Vercel. Fixed by placing `admin.css` in `public/` and linking via `<link rel="stylesheet" href="/admin.css">` in each admin page's `<head>`
+- **Multi-column layouts**: Pipeline tab now shows Topic Queue alongside Recently Published/Kills/Errors in a 2-column grid. AI Agents tab splits 6 sections into 2 columns. Both collapse to single-column below 1100px. Articles tab stays single-column (rows need full width for inline editing and metadata)
+- **Stats grid**: changed from cramped 8-column single row to 4-column grid (2 rows of 4)
+- **Pre-flight checklist added to writer prompt**: 10-item self-verification at the END of the prompt (recency bias) — checks opening, banned phrases, paragraph length, short sentences, "you" count, analogies, editorial opinion, rhetorical questions, section count, and the Bill Maher test
+- **Hardcoded examples removed from all prompts**: 6 voice examples, 7 headline examples, short-sentence/parenthetical/analogy examples all replaced with structural descriptions and "invent your own" directives. Models were copying them verbatim
+- **Fallback chain fixed**: was Sonnet → Grok → Gemini, now Sonnet → Gemini → Grok everywhere (Gemini is better than Grok at following structure)
+- **Expanded banned phrases**: "Picture this", "Imagine", "What if" as openers, "Let's explore/dive in", "hidden in plain sight", "marvel of biology", "Remarkably", rhetorical question paragraph endings
+- **ArticlesManager init order**: `apiCall` moved above `improveArticle` to fix `ReferenceError: Cannot access before initialization`
+
 ## [9.6.0] - 2026-03-25
 
 ### Fixed — Writer Quality & Pipeline Reliability

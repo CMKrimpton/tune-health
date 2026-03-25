@@ -117,7 +117,7 @@ src/
 - **Pagination** — articles index shows 12 initially with "Show More" button; auto-expands on search/filter
 
 ### Admin Mission Control (`/admin`)
-- **Premium glass design system** — CSS custom properties, glass morphism header/cards/modals, ambient gradient glow background, layered shadow system, refined animations with `cubic-bezier(0.22, 1, 0.36, 1)` easing
+- **Premium glass design system** — CSS custom properties served from `public/admin.css`, glass morphism header/cards/modals, ambient gradient glow, layered shadows, `cubic-bezier(0.22, 1, 0.36, 1)` easing. Multi-column layouts: Pipeline (2-col queue + published), AI Agents (2-col sections), 4-column stat grid
 - **Login**: glass card with animated gradient background, entrance animation, error slide-in
 - Token-based authentication with inline error handling (wrong token shows error, doesn't silently redirect)
 - **Dashboard**: 8 compact stat cards with gradient overlays, 3 tab panels with fade-in transitions (Pipeline, Articles, AI Agents)

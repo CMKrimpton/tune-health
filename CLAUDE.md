@@ -91,7 +91,7 @@ src/
 │   └── reading-time.ts       # Reading time calculation
 └── styles/
     ├── global.css            # Tailwind directives + custom styles
-    └── admin.css             # Admin portal styles
+    └── admin.css             # Admin portal styles (source copy — public/admin.css is the served file)
 supabase/
 ├── migrations/
 │   ├── 20260315_create_articles.sql    # Articles table schema
@@ -183,10 +183,10 @@ const articles = await getCollection('articles');
 - Keyboard navigation (↑↓ Enter Esc)
 
 #### Admin Mission Control (/admin)
-- **Glass design system**: CSS custom properties in `admin.css` (`--admin-bg`, `--admin-surface`, `--admin-border`, `--admin-accent`, etc.). Glass morphism header/cards/modals, ambient gradient glow background, layered shadows, `cubic-bezier(0.22, 1, 0.36, 1)` easing, border-radius scale (12px/8px/6px). All React component inline styles use the same palette
+- **Glass design system**: CSS served from `public/admin.css` (SSR pages cannot use frontmatter CSS imports — Astro silently drops them). CSS custom properties (`--admin-bg`, `--admin-surface`, `--admin-border`, `--admin-accent`, etc.). Glass morphism header/cards/modals, ambient gradient glow background, layered shadows, `cubic-bezier(0.22, 1, 0.36, 1)` easing, border-radius scale (12px/8px/6px). All React component inline styles use the same palette. **IMPORTANT**: when adding new admin pages, always link CSS via `<link rel="stylesheet" href="/admin.css">` in `<head>`, never via frontmatter import
 - **Login**: glass card with animated gradient orbs, entrance animation, "mission control" pill badge
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix). Wrong token redirects to `/admin/login?error=1` with inline error display.
-- **Dashboard**: 8 compact stat cards with gradient overlays and hover shadows (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 3 tab panels with fade-in animation (Pipeline, Articles, AI Agents). Max-width 1400px
+- **Dashboard**: 4-column stat grid (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 3 tab panels with fade-in animation (Pipeline, Articles, AI Agents). Max-width 1400px. Multi-column layouts: Pipeline tab has 2-col grid (queue + published side-by-side), AI Agents tab has 2-col grid (6 sections split). Articles tab is single-column (rows need full width for inline editing)
 - **Pipeline tab** (React island: `PipelineMonitor`):
   - 5-stage visual pipeline: Research (Gemini + Sonnet) → Editor (Sonnet → Grok → Gemini) → Write (rotates hourly) → Independence (Grok 3) → QC+Publish (Sonnet + GPT Image)
   - Write stage dynamically shows current primary model based on UTC hour (matches backend `pickWriterModel()`)
