@@ -31,10 +31,11 @@ function supabase() {
 // ---------------------------------------------------------------------------
 // Pipeline constants
 // ---------------------------------------------------------------------------
-const MAX_CONCURRENT = 1; // Serial until pipeline is proven stable
-const STALE_MS = 5 * 60 * 1000;
-const ACTIVE = ["started","searching","writing","publishing","editor_reviewing","editor_qc","independence_review","researching","topic_selected"];
-const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","saved"];
+const MAX_CONCURRENT = 1;
+const STALE_MS = 2 * 60 * 1000; // 2 min — aggressive self-heal. 1-min cron catches stuck stages fast.
+const API_TIMEOUT = 75_000; // 75s — leaves ~75s margin within the ~150s edge function timeout
+const ACTIVE = ["started","searching","writing","publishing","editor_reviewing","editor_qc","independence_review","researching","topic_selected","rewriting_voice"];
+const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","voice_rewrite_pending","voice_rewrite_done","saved"];
 
 // ---------------------------------------------------------------------------
 // API usage tracking & cost calculation
@@ -49,11 +50,15 @@ interface ApiUsage {
 
 // Pricing per million tokens (USD)
 const PRICING: Record<string, { input: number; output: number }> = {
-  "claude-sonnet-4-6":       { input: 3,    output: 15 },
-  "claude-sonnet-4-20250514": { input: 3,   output: 15 },
-  "claude-opus-4-20250514":  { input: 15,   output: 75 },
-  "grok-3":                  { input: 3,    output: 15 },
-  "gemini-2.5-flash":        { input: 0.15, output: 0.60 },
+  "claude-opus-4-6":          { input: 15,   output: 75 },
+  "claude-sonnet-4-6":        { input: 3,    output: 15 },
+  "claude-sonnet-4-20250514": { input: 3,    output: 15 },
+  "claude-opus-4-20250514":   { input: 15,   output: 75 },
+  "gpt-5.4":                  { input: 2.50, output: 15 },
+  "gemini-3.1-pro-preview":   { input: 2,    output: 12 },
+  "gemini-2.5-pro":           { input: 1.25, output: 10 },
+  "grok-3":                   { input: 3,    output: 15 },
+  "gemini-2.5-flash":         { input: 0.15, output: 0.60 },
 };
 
 // ---------------------------------------------------------------------------
@@ -279,13 +284,14 @@ async function claude(opts: ClaudeOptions, stage = "unknown"): Promise<ApiResult
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(135_000),
+    signal: AbortSignal.timeout(API_TIMEOUT),
   });
 
   if (!res.ok) {
     const errText = await res.text();
     // Surface spending limit errors clearly so pipeline can bail early
-    if (res.status === 400 && errText.includes("usage limits")) {
+    // Anthropic returns 400 or 429 for spending/rate limits
+    if (errText.includes("usage limits") || errText.includes("rate_limit") || errText.includes("spending") || res.status === 429) {
       throw new Error("SPENDING_LIMIT: Anthropic API usage limit reached. Pipeline paused until limit resets.");
     }
     throw new Error(`Claude API ${res.status}: ${errText.slice(0, 500)}`);
@@ -411,6 +417,46 @@ async function safeStage(
 }
 
 // ---------------------------------------------------------------------------
+// GPT-5.4 API (OpenAI) — voice rewrite + fallback
+// ---------------------------------------------------------------------------
+async function openai(opts: { system: string; user: string; model?: string; maxTokens?: number; temperature?: number }, stage = "unknown"): Promise<ApiResult> {
+  const key = (Deno.env.get("OPENAI_API_KEY") || "").trim();
+  if (!key) throw new Error("OPENAI_API_KEY not set");
+  const model = opts.model || "gpt-5.4";
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "system", content: opts.system }, { role: "user", content: opts.user }],
+      max_tokens: opts.maxTokens || 4000,
+      temperature: opts.temperature || 0.4,
+    }),
+    signal: AbortSignal.timeout(API_TIMEOUT),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    if (res.status === 429 || errText.includes("rate_limit") || errText.includes("quota")) {
+      throw new Error(`SPENDING_LIMIT: OpenAI rate/quota limit. ${errText.slice(0, 200)}`);
+    }
+    throw new Error(`OpenAI ${res.status}: ${errText.slice(0, 500)}`);
+  }
+  const d = await res.json();
+  const text = d.choices?.[0]?.message?.content || "";
+  const finishReason = d.choices?.[0]?.finish_reason || "unknown";
+  if (finishReason === "length") {
+    console.log(`[OpenAI] WARNING: Response truncated (finish_reason=length) for stage ${stage}. max_tokens=${opts.maxTokens || 4000} was not enough.`);
+  }
+  const u = d.usage || {};
+  const inputTokens = u.prompt_tokens || 0;
+  const outputTokens = u.completion_tokens || 0;
+  return {
+    text,
+    usage: { model, stage, inputTokens, outputTokens, costUsd: calcCost(model, inputTokens, outputTokens) },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Grok API (xAI) — independence review
 // ---------------------------------------------------------------------------
 async function grok(opts: { system: string; user: string; maxTokens?: number; temperature?: number }, stage = "independence"): Promise<ApiResult> {
@@ -449,10 +495,10 @@ async function grok(opts: { system: string; user: string; maxTokens?: number; te
 // ---------------------------------------------------------------------------
 // Gemini API (Google) — topic discovery & web search
 // ---------------------------------------------------------------------------
-async function gemini(opts: { system: string; user: string; maxTokens?: number; temperature?: number; webSearch?: boolean }, stage = "research"): Promise<ApiResult> {
+async function gemini(opts: { system: string; user: string; model?: string; maxTokens?: number; temperature?: number; webSearch?: boolean }, stage = "research"): Promise<ApiResult> {
   const key = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
   if (!key) throw new Error("GOOGLE_API_KEY not set");
-  const model = "gemini-2.5-flash";
+  const model = opts.model || "gemini-2.5-flash";
   const useSearch = opts.webSearch !== false; // default true, explicitly disable with false
   const requestBody: Record<string, unknown> = {
     system_instruction: { parts: [{ text: opts.system }] },
@@ -471,7 +517,7 @@ async function gemini(opts: { system: string; user: string; maxTokens?: number; 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(API_TIMEOUT),
     },
   );
   if (!res.ok) {
@@ -492,7 +538,7 @@ async function gemini(opts: { system: string; user: string; maxTokens?: number; 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(retryBody),
-        signal: AbortSignal.timeout(120_000),
+        signal: AbortSignal.timeout(API_TIMEOUT),
       },
     );
     if (retry.ok) {
@@ -515,28 +561,38 @@ async function gemini(opts: { system: string; user: string; maxTokens?: number; 
 // ---------------------------------------------------------------------------
 // Universal model dispatch — call any model through one interface
 // ---------------------------------------------------------------------------
-type ModelProvider = "anthropic" | "xai" | "google";
+type ModelProvider = "anthropic" | "xai" | "google" | "openai";
 
 const MODEL_PROVIDERS: Record<string, ModelProvider> = {
+  "claude-opus-4-6": "anthropic",
   "claude-sonnet-4-6": "anthropic",
   "claude-sonnet-4-20250514": "anthropic",
   "claude-opus-4-20250514": "anthropic",
+  "gpt-5.4": "openai",
+  "gemini-3.1-pro-preview": "google",
+  "gemini-2.5-pro": "google",
   "grok-3": "xai",
   "gemini-2.5-flash": "google",
 };
 
-// Ordered fallback chain: Sonnet → Gemini → Grok
-// Gemini writes wiki-style but follows structure. Grok is worst at editorial voice.
-const WRITER_FALLBACK_CHAIN = ["claude-sonnet-4-6", "gemini-2.5-flash", "grok-3"];
+// Quality fallback chain — best models first. Grok excluded from writing.
+// NOTE: Sonnet spending-limited until April 1, 2026.
+// TODO: Revert to Sonnet-primary ["claude-sonnet-4-6", "gemini-3.1-pro-preview"] after April 1.
+const WRITER_FALLBACK_CHAIN = ["gemini-3.1-pro-preview", "claude-sonnet-4-6", "gpt-5.4"];
+
+// Voice rewrite chain — premium models only, maximum quality
+const VOICE_REWRITE_CHAIN = ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5.4", "gemini-3.1-pro-preview", "grok-3"];
 
 async function generate(opts: { system: string; user: string; model: string; maxTokens?: number; temperature?: number; stage?: string; webSearch?: boolean }): Promise<ApiResult> {
   const provider = MODEL_PROVIDERS[opts.model];
   if (provider === "anthropic") {
     return claude({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
+  } else if (provider === "openai") {
+    return openai({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
   } else if (provider === "xai") {
     return grok({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
   } else if (provider === "google") {
-    return gemini({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature, webSearch: opts.webSearch }, opts.stage || "unknown");
+    return gemini({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature, webSearch: opts.webSearch }, opts.stage || "unknown");
   }
   throw new Error(`Unknown model: ${opts.model}`);
 }
@@ -565,10 +621,14 @@ async function generateWithFallback(opts: { system: string; user: string; models
 
 // Model pen names — each model gets a human byline
 const MODEL_BYLINES: Record<string, { name: string; role: string }> = {
-  "claude-sonnet-4-6":        { name: "Max Quilici",      role: "Senior Health Correspondent" },
-  "claude-sonnet-4-20250514": { name: "Max Quilici",      role: "Senior Health Correspondent" },
-  "claude-opus-4-20250514":   { name: "Carl Lundin",      role: "Editor-at-Large" },
-  "grok-3":                   { name: "Linda Carnes",     role: "Investigative Health Reporter" },
+  "claude-opus-4-6":          { name: "Carl Lundin",       role: "Editor-at-Large" },
+  "claude-sonnet-4-6":        { name: "Max Quilici",       role: "Senior Health Correspondent" },
+  "claude-sonnet-4-20250514": { name: "Max Quilici",       role: "Senior Health Correspondent" },
+  "claude-opus-4-20250514":   { name: "Carl Lundin",       role: "Editor-at-Large" },
+  "gpt-5.4":                  { name: "Eli Vance",         role: "Health & Science Editor" },
+  "gemini-3.1-pro-preview":   { name: "Christine Wright",  role: "Science & Evidence Desk" },
+  "gemini-2.5-pro":           { name: "Christine Wright",  role: "Science & Evidence Desk" },
+  "grok-3":                   { name: "Linda Carnes",      role: "Investigative Health Reporter" },
   "gemini-2.5-flash":         { name: "Christine Wright",  role: "Science & Evidence Desk" },
 };
 
@@ -576,12 +636,11 @@ function getByline(model: string): { name: string; role: string } {
   return MODEL_BYLINES[model] || { name: "alumi news Editorial", role: "Medical Review Board" };
 }
 
-// Pick a writer model — Sonnet is ALWAYS primary. Gemini/Grok are fallback only.
-// Gemini writes dead, wiki-style prose that ignores editorial voice instructions.
-// Grok is good at review but bad at editorial writing.
-// Sonnet consistently follows tone presets, uses fragments, analogies, and personality.
+// Writer model selection — best models only. Grok excluded from writing.
+// NOTE: Sonnet spending-limited until April 1, 2026. Gemini 3.1 Pro primary until then.
+// TODO: Revert to ["claude-sonnet-4-6", "gemini-3.1-pro-preview"] after April 1.
 function pickWriterModel(): string[] {
-  return ["claude-sonnet-4-6", "gemini-2.5-flash", "grok-3"];
+  return ["gemini-3.1-pro-preview", "claude-sonnet-4-6", "gpt-5.4"];
 }
 
 // ---------------------------------------------------------------------------
@@ -625,21 +684,11 @@ async function verifyPubMedCitations(
 }
 
 // ---------------------------------------------------------------------------
-// Self-chaining — fire-and-forget next stage invocation
+// Stage progression is now driven by the produce handler's loop —
+// each invocation runs ALL stages sequentially instead of self-chaining
+// via HTTP. This avoids the Deno runtime killing fire-and-forget fetches.
+// The 15-min cron acts as a safety net if an invocation times out.
 // ---------------------------------------------------------------------------
-function chainNextStage(logId: string) {
-  const u = Deno.env.get("SUPABASE_URL"), k = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!u || !k) return;
-  const doFetch = () => fetch(u + "/functions/v1/daily-article-agent", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + k },
-    body: JSON.stringify({ action: "produce", logId }),
-  });
-  // Try immediately, retry once after 10s if first attempt fails
-  doFetch().catch(() => {
-    setTimeout(() => doFetch().catch(() => {}), 10_000);
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Date helpers
@@ -711,7 +760,7 @@ ${tocHtml}
 
   <!-- Article Content -->
   <div class="article-content">
-    ${html}
+    ${html.replace(/<(?![a-zA-Z/!])/g, "&lt;")}
   </div>
 
   <!-- Tags -->
@@ -757,57 +806,78 @@ async function publishToGitHub(
     return (await res.json()).sha;
   }
 
-  const refRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, { headers });
-  if (!refRes.ok) throw new Error(`Failed to get branch ref: ${refRes.status}`);
-  const currentCommitSha = (await refRes.json()).object.sha;
-
-  const commitRes = await fetch(
-    `${apiBase}/git/commits/${currentCommitSha}`,
-    { headers },
-  );
-  if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
-  const baseTreeSha = (await commitRes.json()).tree.sha;
-
   const jsonContent = JSON.stringify(metadata, null, 2) + "\n";
   const [jsonBlob, astroBlob] = await Promise.all([
     createBlob(jsonContent),
     createBlob(astroContent),
   ]);
 
-  const treeRes = await fetch(`${apiBase}/git/trees`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      base_tree: baseTreeSha,
-      tree: [
-        { path: `src/content/articles/${slug}.json`, mode: "100644", type: "blob", sha: jsonBlob },
-        { path: `src/pages/articles/${slug}.astro`, mode: "100644", type: "blob", sha: astroBlob },
-      ],
-    }),
-  });
-  if (!treeRes.ok) throw new Error(`Failed to create tree: ${treeRes.status}`);
-  const treeData = await treeRes.json();
+  // Retry loop handles 422 "ref update" race conditions when concurrent
+  // pipeline runs commit at nearly the same time. On 422, re-fetch the
+  // latest ref SHA, rebuild tree+commit with the new parent, and retry.
+  const MAX_COMMIT_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_COMMIT_RETRIES; attempt++) {
+    const refRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, { headers });
+    if (!refRes.ok) throw new Error(`Failed to get branch ref: ${refRes.status}`);
+    const currentCommitSha = (await refRes.json()).object.sha;
 
-  const newCommitRes = await fetch(`${apiBase}/git/commits`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      message: `feat: Publish article — '${slug}'`,
-      tree: treeData.sha,
-      parents: [currentCommitSha],
-    }),
-  });
-  if (!newCommitRes.ok) throw new Error(`Failed to create commit: ${newCommitRes.status}`);
-  const newCommitData = await newCommitRes.json();
+    const commitRes = await fetch(`${apiBase}/git/commits/${currentCommitSha}`, { headers });
+    if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
+    const baseTreeSha = (await commitRes.json()).tree.sha;
 
-  const updateRefRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, {
-    method: "PATCH",
-    headers,
-    body: JSON.stringify({ sha: newCommitData.sha }),
-  });
-  if (!updateRefRes.ok) throw new Error(`Failed to update ref: ${updateRefRes.status}`);
+    const treeRes = await fetch(`${apiBase}/git/trees`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        base_tree: baseTreeSha,
+        tree: [
+          { path: `src/content/articles/${slug}.json`, mode: "100644", type: "blob", sha: jsonBlob },
+          { path: `src/pages/articles/${slug}.astro`, mode: "100644", type: "blob", sha: astroBlob },
+        ],
+      }),
+    });
+    if (!treeRes.ok) throw new Error(`Failed to create tree: ${treeRes.status}`);
+    const treeData = await treeRes.json();
 
-  return { commitSha: newCommitData.sha, commitUrl: newCommitData.html_url };
+    const newCommitRes = await fetch(`${apiBase}/git/commits`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        message: `feat: Publish article — '${slug}'`,
+        tree: treeData.sha,
+        parents: [currentCommitSha],
+      }),
+    });
+    // 422 on commit creation = stale parent SHA (another commit landed)
+    if (!newCommitRes.ok) {
+      if (newCommitRes.status === 422 && attempt < MAX_COMMIT_RETRIES) {
+        console.log(`[GitHub] Commit creation 422 (attempt ${attempt}/${MAX_COMMIT_RETRIES}) — stale parent. Retrying with fresh ref...`);
+        continue;
+      }
+      throw new Error(`Failed to create commit: ${newCommitRes.status}`);
+    }
+    const newCommitData = await newCommitRes.json();
+
+    const updateRefRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ sha: newCommitData.sha }),
+    });
+
+    if (updateRefRes.ok) {
+      return { commitSha: newCommitData.sha, commitUrl: newCommitData.html_url };
+    }
+
+    // 422 on ref update = another commit advanced HEAD between our fetch and patch
+    if (updateRefRes.status === 422 && attempt < MAX_COMMIT_RETRIES) {
+      console.log(`[GitHub] Ref update 422 (attempt ${attempt}/${MAX_COMMIT_RETRIES}) — another commit landed. Retrying with fresh ref...`);
+      continue;
+    }
+
+    throw new Error(`Failed to update ref: ${updateRefRes.status}`);
+  }
+
+  throw new Error("Failed to publish after max retries");
 }
 
 // ---------------------------------------------------------------------------
@@ -1106,14 +1176,23 @@ You have TWO jobs: (1) polish the headline and description, and (2) VERIFY VOICE
 
 You will receive a MECHANICAL VOICE AUDIT with the article. This audit is generated by code — it counts banned phrases, paragraph length, "you" usage, etc. Trust it. If the audit reports failures, those failures are REAL.
 
-**Auto-revise triggers** (if ANY of these are true, decision MUST be "revise"):
+**VOICE REWRITE triggers** (if ANY of these are true AND the content/evidence is solid, decision MUST be "rewrite_voice"):
 - Banned phrases found (the audit will list them)
 - "you/your" count below 6
 - More than 2 paragraphs exceed 3 sentences
 - Zero editorial opinions (article merely explains without taking positions)
+- Article reads like a Wikipedia entry or textbook — uniform sentence length, no personality, no rhythm variation
+- Fails the Bill Maher test (no moment of irreverence or uncomfortable honesty)
+- Doesn't follow the money (doesn't name who profits)
+A "rewrite_voice" decision sends the article to our BEST models (Opus/Sonnet) for a voice-only rewrite. The facts stay — only the prose gets personality. USE THIS LIBERALLY. A boring article with good facts is fixable. Don't kill fixable articles.
+
+**Content REVISE triggers** (decision = "revise" — sends back to full rewrite):
+- Factual/structural problems, wrong angle, missing evidence, bad citations
+- Content is fundamentally flawed, not just bland
 
 **Auto-kill trigger** (decision MUST be "kill"):
 - 3+ banned phrases AND zero editorial opinion → this is AI slop, not journalism
+- Topic is unsalvageable or evidence is too thin
 
 **Manual voice check** (you assess these yourself):
 - Does the article pass the Bill Maher test? Is there at least ONE moment of irreverence, controlled anger, or uncomfortable honesty that a hospital pamphlet would never include?
@@ -1121,7 +1200,7 @@ You will receive a MECHANICAL VOICE AUDIT with the article. This audit is genera
 - Are the pull quotes striking, or do they read like abstracts?
 - Would a reader of The Atlantic keep reading past paragraph 3, or would they bounce?
 
-If the voice fails but the content is solid, decision = "revise" with specific instructions on what to fix. Don't rubber-stamp bland articles.
+If the voice fails but the content is solid, decision = "rewrite_voice" — NOT "revise". Voice problems are fixed by the voice rewriter, not by regenerating the whole article.
 
 ## Headline Rules
 - Must be specific and honest. Prefer direct claims, mechanisms, questions, or understated phrasing
@@ -1144,7 +1223,7 @@ Score honestly. An article that merely conveys accurate information without pers
 ## Output Format
 Return ONLY valid JSON:
 {
-  "decision": "publish" | "revise" | "kill",
+  "decision": "publish" | "rewrite_voice" | "revise" | "kill",
   "qualityScore": "(integer 1-10, see scoring guide above)",
   "headline": "Final headline (keep original if good enough)",
   "description": "Final description — MUST be complete sentences, never truncated",
@@ -1670,6 +1749,7 @@ ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 7).m
       models: WRITER_FALLBACK_CHAIN,
       maxTokens: 4000,
       stage: "scout-structure",
+      webSearch: false, // Structuring existing data — no search needed
     });
     await addCostToLog(db, logId, structureUsage);
 
@@ -1697,7 +1777,6 @@ ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 7).m
     })
     .eq("id", logId);
 
-  chainNextStage(logId);
 }
 
 // ---------------------------------------------------------------------------
@@ -1923,6 +2002,7 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
     maxTokens: 4000,
     temperature: 0.4,
     stage: "editor-brief",
+    webSearch: false, // Editorial decision on existing data — no search needed
   });
   await addCostToLog(db, logId, editorUsage);
 
@@ -2020,7 +2100,6 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
     })
     .eq("id", logId);
 
-  chainNextStage(logId);
 }
 
 // ---------------------------------------------------------------------------
@@ -2112,6 +2191,7 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
     maxTokens: 16384,
     temperature: 0.5,
     stage: "write",
+    webSearch: false, // Writing stage — no search grounding (breaks Gemini JSON output)
   });
   await addCostToLog(db, logId, writeUsage);
 
@@ -2200,7 +2280,6 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
     })
     .eq("id", logId);
 
-  chainNextStage(logId);
 }
 
 // ---------------------------------------------------------------------------
@@ -2419,11 +2498,117 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
     })
     .eq("id", logId);
 
-  chainNextStage(logId);
 }
 
 // ---------------------------------------------------------------------------
-// STAGE 4b: Senior Editor QC + Publish (~60s)
+// STAGE 5: Voice Rewrite — premium models rewrite for voice quality only (~60s)
+// Triggered when QC says "rewrite_voice" — content is solid but prose is bland.
+// Uses VOICE_REWRITE_CHAIN: Opus → Sonnet → GPT-5.4 → Gemini 3.1 Pro → Grok
+// ---------------------------------------------------------------------------
+async function stageVoiceRewrite(
+  db: ReturnType<typeof supabase>,
+  logId: string,
+  articleData: Record<string, unknown>,
+): Promise<void> {
+  await db.from("daily_article_log").update({
+    status: "rewriting_voice",
+    stage_started_at: new Date().toISOString(),
+  }).eq("id", logId);
+
+  const metadata = articleData.metadata as Record<string, unknown>;
+  const articleHtml = (articleData.html as string) || "";
+
+  // Get QC feedback for targeted rewrite instructions
+  const { data: logEntry } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
+  const researchData = (logEntry?.research_data as Record<string, unknown>) || {};
+  const qcResult = (researchData._qcResult as Record<string, unknown>) || {};
+  const qcFeedback = (qcResult.reviseInstructions as string) || "Voice is too bland/Wikipedia-like. Needs personality, editorial positions, and direct reader address.";
+
+  // Run mechanical voice audit to give the rewriter hard metrics
+  const voiceAudit = auditVoiceQuality(articleHtml);
+
+  const VOICE_REWRITE_PROMPT = `You are the VOICE DOCTOR for alumi news. Your ONLY job is to rewrite this article's PROSE for voice quality. The facts, citations, evidence, structure, and sources are ALL CORRECT — do NOT change any of them.
+
+## WHAT YOU MUST FIX
+${qcFeedback}
+
+## MECHANICAL AUDIT (code-generated, these numbers are facts):
+- "you/your" count: ${voiceAudit.youCount} (minimum 6 — ADD MORE)
+- Banned phrases found: ${voiceAudit.bannedPhrases.length > 0 ? voiceAudit.bannedPhrases.map(p => `"${p}"`).join(", ") : "none"}
+- Paragraphs over 3 sentences: ${voiceAudit.paragraphsOver3Sentences} (BREAK THEM UP)
+- Short sentences (< 8 words): ${voiceAudit.shortSentenceCount} total across ${voiceAudit.totalParagraphs} paragraphs (need at least 1 per 3 paragraphs)
+- Rhetorical questions: ${voiceAudit.rhetoricQuestionCount} (max 2)
+- Word count: ${voiceAudit.wordCount}
+
+## BRAND VOICE (this is non-negotiable)
+60% exceptional journalism (The Atlantic, Wired, Atavist)
+20% Bill Maher (irreverent, says the uncomfortable thing, calls out hypocrisy)
+15% Christopher Hitchens (precise demolition of lazy thinking, no sacred cows)
+15% Sam Harris (calm clarity on controversial topics, follows logic wherever it leads)
+
+## REWRITE RULES
+1. Add "you" and "your" — talk TO the reader, not AT them. "Your doctor probably hasn't ordered this test." "You're paying for a system that profits from your confusion."
+2. Break paragraphs over 3 sentences. Short paragraphs are power.
+3. Add SHORT sentences (under 8 words). "That's the problem." "Nobody's talking about this." "Follow the money." These create rhythm.
+4. Remove ALL banned phrases. Replace with specific, vivid language.
+5. Add at least 2 editorial opinions. Not hedged — actual verdicts. "Doctors are undertesting." "This industry profits from ignorance."
+6. Earn the Bill Maher moment. One paragraph where you say what a hospital pamphlet never would.
+7. Add 2+ everyday analogies. "Think of your immune system like a fire department that sometimes torches the building it's trying to save."
+8. KEEP every fact, study citation, number, source, and HTML structure tag (<section>, <h2>, <aside>, etc.) EXACTLY as they are.
+9. Keep the same approximate word count. You're rewriting sentences, not adding new content.
+
+Return ONLY the rewritten HTML. No JSON wrapper, no explanation, no markdown fences.`;
+
+  const { text: rewrittenRaw, usage: rewriteUsage, modelUsed } = await generateWithFallback({
+    system: VOICE_REWRITE_PROMPT,
+    user: articleHtml,
+    models: VOICE_REWRITE_CHAIN,
+    maxTokens: 16384,
+    temperature: 0.5,
+    stage: "voice-rewrite",
+    webSearch: false,
+  });
+  await addCostToLog(db, logId, rewriteUsage);
+
+  // Clean up — strip markdown fences if present
+  const cleaned = rewrittenRaw.replace(/^```html?\n?/, "").replace(/\n?```$/, "").trim();
+
+  // Validate: must be at least 50% of original length (don't accept garbage)
+  if (cleaned.length < articleHtml.length * 0.5) {
+    console.warn(`[VoiceRewrite] Output too short (${cleaned.length} vs ${articleHtml.length}). Keeping original.`);
+  } else {
+    // Update article in database with rewritten HTML
+    const slug = (metadata.slug as string);
+    if (slug) {
+      await db.from("articles").update({ article_html: cleaned }).eq("slug", slug);
+    }
+    // Update article data for downstream publish
+    articleData.html = cleaned;
+  }
+
+  // Run voice audit on the result to log improvement
+  const afterAudit = auditVoiceQuality(articleData.html as string);
+  console.log(`[VoiceRewrite] Model: ${modelUsed}. Before: you=${voiceAudit.youCount}, banned=${voiceAudit.bannedPhrases.length}. After: you=${afterAudit.youCount}, banned=${afterAudit.bannedPhrases.length}`);
+
+  // Update log — article goes to voice_rewrite_done, produce loop will publish it
+  const existingResearch = (logEntry?.research_data as Record<string, unknown>) || {};
+  await db.from("daily_article_log").update({
+    status: "voice_rewrite_done",
+    research_data: {
+      ...existingResearch,
+      _article: articleData,
+      _voiceRewrite: {
+        modelUsed,
+        beforeAudit: { youCount: voiceAudit.youCount, bannedPhrases: voiceAudit.bannedPhrases.length, passed: voiceAudit.passed },
+        afterAudit: { youCount: afterAudit.youCount, bannedPhrases: afterAudit.bannedPhrases.length, passed: afterAudit.passed },
+      },
+      _voiceRewriteCompleted: true,
+    },
+  }).eq("id", logId);
+}
+
+// ---------------------------------------------------------------------------
+// STAGE 6: Senior Editor QC + Publish (~60s)
 // ---------------------------------------------------------------------------
 async function stageQCAndPublish(
   db: ReturnType<typeof supabase>,
@@ -2434,13 +2619,29 @@ async function stageQCAndPublish(
   independenceReview?: Record<string, unknown> | null,
 ): Promise<{ commitSha?: string; commitUrl?: string; newFeatured?: string | null; qcResult?: Record<string, unknown> }> {
   const today = todayISO();
-
-  await db
-    .from("daily_article_log")
-    .update({ status: "editor_qc", stage_started_at: new Date().toISOString() })
-    .eq("id", logId);
-
   const metadata = articleData.metadata as Record<string, unknown>;
+
+  // Check if this article already went through voice rewrite — skip QC, go straight to publish
+  const { data: checkLog } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
+  const checkData = (checkLog?.research_data as Record<string, unknown>) || {};
+  const skipQC = !!(checkData._voiceRewriteCompleted);
+
+  if (skipQC) {
+    console.log(`[QC] Skipping AI QC for ${slug} — already voice-rewritten. Going straight to publish.`);
+    await db.from("daily_article_log").update({
+      status: "publishing",
+      stage_started_at: new Date().toISOString(),
+    }).eq("id", logId);
+  } else {
+    await db.from("daily_article_log").update({
+      status: "editor_qc",
+      stage_started_at: new Date().toISOString(),
+    }).eq("id", logId);
+  }
+
+  // If not skipping QC, run the full editorial review
+  let qcResult: Record<string, unknown> = {};
+  if (!skipQC) {
 
   // Build independence review section for QC prompt
   let independenceSection = "";
@@ -2494,18 +2695,6 @@ ${((articleData.toc as Array<{ title: string }>) || []).map((t) => `- ${t.title}
 ${independenceSection}
 Make your final call. Publish, request revisions, or kill. Remember: voice failures from the mechanical audit are auto-revise triggers.`;
 
-  // Fire illustration generation in parallel with QC (they're independent)
-  // This saves 30-60s per article vs sequential
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const illustrationPromise = (supabaseUrl && action !== "dry-run")
-    ? fetch(`${supabaseUrl}/functions/v1/generate-illustration`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "generate", slug }),
-        signal: AbortSignal.timeout(60000),
-      }).catch(() => null)
-    : Promise.resolve(null);
-
   // QC uses a DIFFERENT model from independence review (Grok).
   // Gemini primary for QC — fast, cheap, good at headline/description polish.
   // Falls back to Sonnet if Gemini fails. Never Grok — already reviewed.
@@ -2513,7 +2702,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
   const { text: qcRaw, usage: qcUsage } = await generateWithFallback({
     system: SENIOR_EDITOR_QC_PROMPT + `\n\nCRITICAL: Return ONLY valid JSON. No markdown, no explanation — just the JSON object.`,
     user: qcPrompt,
-    models: ["gemini-2.5-flash", "claude-sonnet-4-6"],
+    models: ["gemini-2.5-pro", "claude-sonnet-4-6", "gpt-5.4"],
     maxTokens: 2000,
     temperature: 0.3,
     stage: "qc",
@@ -2521,14 +2710,14 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
   });
   await addCostToLog(db, logId, qcUsage);
 
-  const qcResult = parseClaudeJSON(qcRaw) as Record<string, unknown>;
+  qcResult = parseClaudeJSON(qcRaw) as Record<string, unknown>;
 
   // DEFAULT-DENY: if decision is missing or unrecognized, treat as revise (not silent publish)
   const qcDecision = qcResult.decision as string;
-  if (!qcDecision || !["publish", "revise", "kill"].includes(qcDecision)) {
-    console.warn(`[QC] ⚠️ Invalid/missing decision: "${qcDecision}" — treating as revise (default-deny). Raw QC output may be truncated.`);
-    qcResult.decision = "revise";
-    qcResult.reviseInstructions = "QC output was truncated or invalid. Re-run editorial QC on this article.";
+  if (!qcDecision || !["publish", "rewrite_voice", "revise", "kill"].includes(qcDecision)) {
+    console.warn(`[QC] ⚠️ Invalid/missing decision: "${qcDecision}" — treating as rewrite_voice (default-deny). Raw QC output may be truncated.`);
+    qcResult.decision = "rewrite_voice";
+    qcResult.reviseInstructions = "QC output was truncated or invalid. Voice rewrite requested as safety fallback.";
   }
 
   // If editor kills the article, mark as failed
@@ -2567,9 +2756,40 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
           },
         })
         .eq("id", logId);
-      chainNextStage(logId);
+      // Produce handler loop will pick up editor_approved → write again
       return { qcResult };
     }
+  }
+
+  // If voice needs rewriting, send to voice rewrite stage (max 1 voice rewrite)
+  if (qcResult.decision === "rewrite_voice") {
+    const currentLog = (await db.from("daily_article_log").select("research_data, revision_count").eq("id", logId).single()).data as { research_data: Record<string, unknown>; revision_count: number | null } | null;
+    const currentData = (currentLog?.research_data as Record<string, unknown>) || {};
+    const voiceRewriteCount = (currentData._voiceRewriteCount as number) || 0;
+
+    if (voiceRewriteCount > 0) {
+      // Already voice-rewritten once — force publish
+      console.log(`[QC] Voice rewrite already applied for ${slug} — force publishing`);
+      // Fall through to publish logic
+    } else {
+      await db.from("daily_article_log").update({
+        status: "voice_rewrite_pending",
+        research_data: {
+          ...currentData,
+          _qcResult: qcResult,
+          _voiceRewriteRequested: true,
+          _voiceRewriteCount: 1,
+        },
+      }).eq("id", logId);
+      return { qcResult };
+    }
+  }
+
+  } // end if (!skipQC)
+
+  // For voice-rewritten articles, use metadata directly (QC already approved content)
+  if (skipQC) {
+    qcResult = { decision: "publish", qualityScore: 7, headline: metadata.title, description: metadata.description };
   }
 
   // Editor approved — apply any headline/description improvements
@@ -2651,21 +2871,21 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
 
   const readTime = (articleData.readTime as number) || 12;
 
-  // Await illustration that was fired in parallel with QC
+  // Check if illustration already exists (handles retry after timeout)
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
   let heroImage: string | undefined;
   let heroImageAlt: string | undefined;
 
-  try {
-    const illustrationRes = await illustrationPromise;
-    if (illustrationRes && illustrationRes.ok) {
-      const illustrationData = await illustrationRes.json();
-      if (illustrationData.success && illustrationData.imageUrl) {
-        heroImage = illustrationData.imageUrl;
-        heroImageAlt = `Editorial illustration for ${finalTitle}`;
-      }
-    }
-  } catch (illErr) {
-    console.warn(`[Publish] ⚠️ Illustration retrieval failed: ${illErr instanceof Error ? illErr.message : "unknown"}. Article will publish without hero image.`);
+  const { data: existingArticle } = await db
+    .from("articles")
+    .select("hero_image, hero_image_alt")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (existingArticle?.hero_image) {
+    heroImage = existingArticle.hero_image;
+    heroImageAlt = existingArticle.hero_image_alt || `Editorial illustration for ${finalTitle}`;
+    console.log(`[Publish] Hero image already exists for ${slug} — skipping illustration generation.`);
   }
 
   // Publish to GitHub
@@ -2706,12 +2926,106 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
 
     commitInfo = await publishToGitHub(slug, astroContent, jsonMetadata);
 
+    // Trigger Vercel rebuild — GitHub API commits don't always fire the push webhook
+    const deployHook = Deno.env.get("VERCEL_DEPLOY_HOOK");
+    if (deployHook) {
+      fetch(deployHook, { method: "POST" }).catch(err =>
+        console.warn(`[Vercel] Deploy hook failed: ${err instanceof Error ? err.message : "unknown"}`)
+      );
+    } else {
+      console.warn("[Vercel] VERCEL_DEPLOY_HOOK not set — Vercel won't auto-rebuild from pipeline commits");
+    }
+
     // If this article replaces an older one, archive the old one
     const { data: logForReplace } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
     const replacesSlug = ((logForReplace?.research_data as Record<string, unknown>)?._editorBrief as Record<string, unknown>)?.replacesSlug as string | null;
     if (replacesSlug) {
       await db.from("articles").update({ status: "archived", draft: true }).eq("slug", replacesSlug);
       console.log(`[Publish] Archived old article "${replacesSlug}" — replaced by "${slug}"`);
+    }
+
+    // ---- POST-PUBLISH ILLUSTRATION RECOVERY ----
+    // Illustration runs AFTER publish (not in parallel with QC) so that:
+    // 1. We don't waste GPU time on articles QC kills/revises
+    // 2. If the function timed out mid-illustration, retry picks it up here
+    // 3. If hero_image already existed (from a previous run), we skip generation
+    if (!heroImage && supabaseUrl) {
+      console.log(`[Publish] No hero image for ${slug} — generating illustration post-publish.`);
+      try {
+        const illRes = await fetch(`${supabaseUrl}/functions/v1/generate-illustration`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({ action: "generate", slug, title: finalTitle, category: metadata.category }),
+          signal: AbortSignal.timeout(API_TIMEOUT),
+        });
+        if (illRes.ok) {
+          const illData = await illRes.json();
+          if (illData.success && illData.imageUrl) {
+            heroImage = illData.imageUrl;
+            heroImageAlt = `Editorial illustration for ${finalTitle}`;
+            console.log(`[Publish] Illustration generated for ${slug}: ${heroImage}`);
+
+            // Update the article DB record with the hero image
+            await db.from("articles").update({
+              hero_image: heroImage,
+              hero_image_alt: heroImageAlt,
+            }).eq("slug", slug);
+
+            // Update the GitHub .json file to include heroImage
+            const githubToken = (Deno.env.get("GITHUB_TOKEN") || "").trim();
+            const githubRepo = (Deno.env.get("GITHUB_REPO") || "").trim();
+            if (githubToken && githubRepo) {
+              try {
+                const jsonPath = `src/content/articles/${slug}.json`;
+                const apiBase = `https://api.github.com/repos/${githubRepo}`;
+                const ghHeaders = {
+                  Authorization: `Bearer ${githubToken}`,
+                  Accept: "application/vnd.github.v3+json",
+                  "Content-Type": "application/json",
+                };
+                // Fetch current .json file from GitHub to get its SHA and content
+                const fileRes = await fetch(`${apiBase}/contents/${jsonPath}?ref=main`, { headers: ghHeaders });
+                if (fileRes.ok) {
+                  const fileData = await fileRes.json();
+                  const existingContent = JSON.parse(atob(fileData.content.replace(/\n/g, "")));
+                  existingContent.heroImage = heroImage;
+                  existingContent.heroImageAlt = heroImageAlt;
+                  const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(existingContent, null, 2) + "\n")));
+                  const updateRes = await fetch(`${apiBase}/contents/${jsonPath}`, {
+                    method: "PUT",
+                    headers: ghHeaders,
+                    body: JSON.stringify({
+                      message: `feat: Add hero image — '${slug}'`,
+                      content: updatedContent,
+                      sha: fileData.sha,
+                      branch: "main",
+                    }),
+                  });
+                  if (updateRes.ok) {
+                    console.log(`[Publish] Updated GitHub .json with hero image for ${slug}`);
+                    // Trigger another Vercel rebuild for the hero image update
+                    const rebuildHook = Deno.env.get("VERCEL_DEPLOY_HOOK");
+                    if (rebuildHook) {
+                      fetch(rebuildHook, { method: "POST" }).catch(() => {});
+                    }
+                  } else {
+                    console.warn(`[Publish] ⚠️ Failed to update GitHub .json with hero image: ${updateRes.status}`);
+                  }
+                }
+              } catch (ghErr) {
+                console.warn(`[Publish] ⚠️ GitHub .json hero image update failed: ${ghErr instanceof Error ? ghErr.message : "unknown"}`);
+              }
+            }
+          }
+        } else {
+          console.warn(`[Publish] ⚠️ Illustration generation returned ${illRes.status} for ${slug}`);
+        }
+      } catch (illErr) {
+        console.warn(`[Publish] ⚠️ Illustration generation failed for ${slug}: ${illErr instanceof Error ? illErr.message : "unknown"}. Article published without hero image — will recover on next retry.`);
+      }
     }
   }
 
@@ -3174,7 +3488,11 @@ Deno.serve(async (req: Request) => {
 
         // Self-healing: determine the best resumption checkpoint from saved data
         let resumeStatus: string | null = null;
-        if (research._independenceReview && research._article) {
+        if (research._voiceRewriteCompleted && research._article) {
+          resumeStatus = "voice_rewrite_done";
+        } else if (research._voiceRewriteRequested && !research._voiceRewriteCompleted && research._article) {
+          resumeStatus = "voice_rewrite_pending";
+        } else if (research._independenceReview && research._article) {
           resumeStatus = "independence_done";
         } else if (research._article) {
           resumeStatus = "written";
@@ -3209,8 +3527,7 @@ Deno.serve(async (req: Request) => {
       .from("articles")
       .select("*", { count: "exact", head: true });
 
-    // Multi-model rotation — cycles through Sonnet, Grok, Gemini based on hour
-    // All models get the same prompts, same rules, same editorial standards
+    // Writer models: Sonnet primary, Gemini fallback. Grok excluded from writing.
     const writerModels = pickWriterModel();
 
     // ==============================================================
@@ -3341,26 +3658,64 @@ For each topic return: a one-line topic description, suggested category, and why
             .replace(/^\s*Topic\s*Description\s*:?\s*/i, "")
             .replace(/^\s*[-–—]\s*/, "")
             .trim();
-          // Try to extract category from the line
-          const catMatch = VALID_CATEGORIES.find(c => text.toLowerCase().includes(c.toLowerCase()));
-          current = { topic: text, category: catMatch || "", why: "" };
-        } else if (current && !current.why && line.trim().length > 20) {
-          current.why = line.trim().replace(/\*\*/g, "").slice(0, 200);
+          current = { topic: text, category: "", why: "" };
+        } else if (current) {
+          const stripped = line.trim().replace(/\*\*/g, "");
+          // Check if this line has an explicit "Category: X" label
+          const catLabel = stripped.match(/(?:category|suggested\s*category)\s*[:=]\s*(.+)/i);
+          if (catLabel && !current.category) {
+            const catName = catLabel[1].trim().replace(/[."']/g, "");
+            const match = VALID_CATEGORIES.find(c => catName.toLowerCase().includes(c.toLowerCase()));
+            if (match) current.category = match;
+          } else if (!current.why && stripped.length > 20) {
+            current.why = stripped.slice(0, 200);
+          }
         }
       }
       if (current) topics.push(current);
+
+      // Keyword-to-category classifier — deterministic fallback when models don't
+      // include an explicit category label. Maps health keywords to our 9 categories.
+      const CATEGORY_KEYWORDS: Array<[string, string[]]> = [
+        ["Pharmacology", ["drug", "drugs", "medication", "pharmaceutical", "pharma", "prescri", "dosing", "FDA", "therapy", "therapeutic", "GLP-1", "SGLT2", "statin", "antibiotic", "opioid", "psychedelic", "psilocybin", "MDMA", "ketamine", "SSRI", "biologic", "inhibitor", "receptor", "agonist"]],
+        ["Neuroscience", ["brain", "neuron", "neural", "cortex", "hippocampus", "dopamine", "serotonin", "synap", "neuro", "cognitive", "cognition", "amygdala", "prefrontal", "cerebell", "neuroplasticity", "EEG", "fMRI"]],
+        ["Mental Health", ["depression", "anxiety", "PTSD", "trauma", "psychiatric", "psycholog", "bipolar", "schizophren", "OCD", "ADHD", "therapy", "counseling", "suicide", "mental illness", "emotional", "burnout", "stress resilience"]],
+        ["Sleep Science", ["sleep", "insomnia", "circadian", "melatonin", "REM", "sleep apnea", "chronotype", "shift work"]],
+        ["Nutrition", ["diet", "dietary", "nutrient", "vitamin", "mineral", "protein", "omega-3", "fasting", "microbiome", "gut bacteria", "prebiotic", "probiotic", "calori", "plant-based", "food", "meal", "eating", "supplement"]],
+        ["Fitness", ["exercise", "workout", "strength training", "resistance training", "VO2", "aerobic", "HIIT", "cardio", "muscle", "physical activity", "sedentary", "mobility", "athletic"]],
+        ["Longevity", ["aging", "lifespan", "healthspan", "longevity", "senescence", "telomere", "NAD+", "NMN", "rapamycin", "metformin", "caloric restriction", "blue zone", "mTOR", "sirtuin", "epigenetic clock"]],
+        ["Environmental Health", ["pollution", "pollutant", "PFAS", "microplastic", "pesticide", "toxin", "endocrine disrupt", "lead exposure", "air quality", "water contam", "chemical", "BPA", "EMF", "environmental"]],
+        ["Clinical Evidence", ["clinical trial", "meta-analysis", "cohort study", "randomized", "systematic review", "evidence-based", "diagnosis", "biomarker", "screening", "treatment outcome", "mortality", "morbidity", "epidemiol", "incidence", "prevalence", "cardiovascular", "heart", "cardiac", "diabetes", "insulin", "kidney", "renal", "liver", "hepat", "respiratory", "lung", "COPD", "asthma", "cancer", "tumor", "oncol", "autoimmune", "arthritis", "pain", "prostate", "dermatol", "vaccine", "immunol"]],
+      ];
+
+      function classifyCategory(text: string): string {
+        const lower = text.toLowerCase();
+        // First: check if any VALID_CATEGORIES name appears literally
+        const exact = VALID_CATEGORIES.find(c => lower.includes(c.toLowerCase()));
+        if (exact) return exact;
+        // Second: keyword scoring — count matches per category, pick highest
+        let bestCat = "";
+        let bestScore = 0;
+        for (const [cat, keywords] of CATEGORY_KEYWORDS) {
+          const score = keywords.filter(kw => lower.includes(kw.toLowerCase())).length;
+          if (score > bestScore) { bestScore = score; bestCat = cat; }
+        }
+        return bestScore >= 1 ? bestCat : "";
+      }
 
       // Dedup and insert into queue
       let added = 0;
       let dupes = 0;
       for (const t of topics) {
         if (isScoutDupe(t.topic)) { dupes++; continue; }
-        // Validate category
-        const cat = VALID_CATEGORIES.find(c => (t.category || "").toLowerCase().includes(c.toLowerCase())) || null;
+        // Classify category: explicit label → keyword classifier → null
+        const cat = t.category
+          || classifyCategory(t.topic + " " + (t.why || ""))
+          || null;
         await db.from("topic_queue").insert({
           topic: t.topic,
           category: cat,
-          notes: `${scoutModel} scout: ${t.why || ""}. Treatment: ${t.suggestedTreatment || "TBD"}`,
+          notes: `${scoutModel} scout: ${t.why || ""}.`,
           priority: 50,
           source: "trending",
           research_summary: t.why || null,
@@ -3390,9 +3745,38 @@ For each topic return: a one-line topic description, suggested category, and why
     // Triggered by: cron (every 5 min), action="produce", or action="run"
     // ==============================================================
     if (action === "run" || action === "produce") {
+      // FIRST: clean up stale runs BEFORE the concurrency guard.
+      // Without this, a timed-out stage keeps blocking new invocations
+      // because each attempt refreshes stage_started_at.
+      const staleMs = 5 * 60 * 1000;
+      const staleCheck = new Date(Date.now() - staleMs).toISOString();
+      const { data: staleActive } = await db
+        .from("daily_article_log")
+        .select("id, status, research_data")
+        .in("status", ACTIVE)
+        .lt("stage_started_at", staleCheck);
+
+      if (staleActive && staleActive.length > 0) {
+        for (const stale of staleActive) {
+          const sid = (stale as { id: string }).id;
+          const rd = ((stale as { research_data: Record<string, unknown> | null }).research_data) || {};
+          let resume: string | null = null;
+          if (rd._voiceRewriteCompleted && rd._article) resume = "voice_rewrite_done";
+          else if (rd._voiceRewriteRequested && !rd._voiceRewriteCompleted && rd._article) resume = "voice_rewrite_pending";
+          else if (rd._independenceReview && rd._article) resume = "independence_done";
+          else if (rd._article) resume = "written";
+          else if (rd._editorBrief) resume = "editor_approved";
+          else if (rd.topic || rd.keyFindings || rd.candidates) resume = "research_done";
+          if (resume) {
+            await db.from("daily_article_log").update({ status: resume, stage_started_at: new Date().toISOString() }).eq("id", sid);
+            console.log(`[Produce] Reset stale ${(stale as { status: string }).status} → ${resume} for log ${sid}`);
+          }
+        }
+      }
+
       // Guard: block if another production stage is actively running
-      // 5-minute window — write stages can take 2-3 min, don't expire too early
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      // 5-minute window — stages can take 2-3 min, don't expire too early
+      const fiveMinutesAgo = new Date(Date.now() - staleMs).toISOString();
       const { data: activeRuns } = await db
         .from("daily_article_log")
         .select("id, status")
@@ -3406,37 +3790,77 @@ For each topic return: a one-line topic description, suggested category, and why
           active: activeRuns.map((r: Record<string, unknown>) => r.status),
         });
       }
-      // First: advance any article already in the production pipeline
-      // Priority: finish existing before starting new
-      for (const [status, stageName, handler] of [
-        ["independence_done", "QC+Publish", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
-          const artData = e.research_data?._article as Record<string, unknown>;
-          const indReview = e.research_data?._independenceReview as Record<string, unknown> | null;
-          if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
-          return safeStage(db, e.id, "QC+Publish", () => stageQCAndPublish(db, e.id, e.slug, artData, action, indReview));
-        }],
-        ["written", "Independence", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
-          const artData = e.research_data?._article as Record<string, unknown>;
-          if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
-          return safeStage(db, e.id, "Independence Review", () => stageIndependenceReview(db, e.id, artData));
-        }],
-        ["editor_approved", "Write", async (e: { id: string; research_data: Record<string, unknown> }) => {
-          return safeStage(db, e.id, "Write", () => stageWrite(db, e.id, e.research_data, writerModels));
-        }],
-      ] as const) {
-        const { data: entries } = await db
-          .from("daily_article_log")
-          .select("id, slug, research_data")
-          .eq("status", status)
-          .order("created_at", { ascending: true })
-          .limit(1);
+      // Drive all stages in a single invocation — no self-chaining HTTP calls.
+      // Each stage updates DB status. After each stage completes, re-check for
+      // the next stage and run it immediately. This avoids the Deno runtime
+      // killing fire-and-forget fetches before they complete.
+      const stagesCompleted: string[] = [];
+      let lastLogId = "";
 
-        if (entries && entries.length > 0) {
-          const entry = entries[0] as { id: string; slug: string; research_data: Record<string, unknown> };
-          const result = await (handler as (e: typeof entry) => Promise<{ ok: boolean; result?: unknown; error?: string } | null>)(entry);
-          if (result && !result.ok) return json({ error: `${stageName} failed`, detail: result.error }, 500);
-          return json({ success: true, stage: stageName, logId: entry.id });
+      // Run exactly 1 stage per invocation. Gemini 3.1 Pro calls take 60-120s
+      // and the edge function timeout is ~150s. The 1-minute cron drives the
+      // next stage. Each article takes ~7 minutes to go from queue to published.
+      for (let iteration = 0; iteration < 1; iteration++) {
+        let advanced = false;
+
+        for (const [status, stageName, handler] of [
+          // Priority 1: voice-rewritten articles → publish (skip QC, go straight to publish)
+          ["voice_rewrite_done", "Publish (post-rewrite)", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
+            const artData = e.research_data?._article as Record<string, unknown>;
+            const indReview = e.research_data?._independenceReview as Record<string, unknown> | null;
+            if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+            // Skip QC — article already passed QC for content, just had voice issues
+            return safeStage(db, e.id, "Publish (post-rewrite)", () => stageQCAndPublish(db, e.id, e.slug, artData, action, indReview));
+          }],
+          // Priority 2: articles needing voice rewrite
+          ["voice_rewrite_pending", "Voice Rewrite", async (e: { id: string; research_data: Record<string, unknown> }) => {
+            const artData = e.research_data?._article as Record<string, unknown>;
+            if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+            return safeStage(db, e.id, "Voice Rewrite", () => stageVoiceRewrite(db, e.id, artData));
+          }],
+          // Priority 3: independence done → QC
+          ["independence_done", "QC+Publish", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
+            const artData = e.research_data?._article as Record<string, unknown>;
+            const indReview = e.research_data?._independenceReview as Record<string, unknown> | null;
+            if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+            return safeStage(db, e.id, "QC+Publish", () => stageQCAndPublish(db, e.id, e.slug, artData, action, indReview));
+          }],
+          // Priority 4: written → independence review
+          ["written", "Independence", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
+            const artData = e.research_data?._article as Record<string, unknown>;
+            if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+            return safeStage(db, e.id, "Independence Review", () => stageIndependenceReview(db, e.id, artData));
+          }],
+          // Priority 5: editor approved → write
+          ["editor_approved", "Write", async (e: { id: string; research_data: Record<string, unknown> }) => {
+            return safeStage(db, e.id, "Write", () => stageWrite(db, e.id, e.research_data, writerModels));
+          }],
+        ] as const) {
+          const { data: entries } = await db
+            .from("daily_article_log")
+            .select("id, slug, research_data")
+            .eq("status", status)
+            .order("created_at", { ascending: true })
+            .limit(1);
+
+          if (entries && entries.length > 0) {
+            const entry = entries[0] as { id: string; slug: string; research_data: Record<string, unknown> };
+            const result = await (handler as (e: typeof entry) => Promise<{ ok: boolean; result?: unknown; error?: string } | null>)(entry);
+            lastLogId = entry.id;
+            if (result && !result.ok) {
+              return json({ error: `${stageName} failed`, detail: result.error, stagesCompleted }, 500);
+            }
+            stagesCompleted.push(stageName);
+            advanced = true;
+            break; // Re-check from highest priority stage
+          }
         }
+
+        if (!advanced) break; // No more stages to advance
+      }
+
+      if (stagesCompleted.length > 0) {
+        return json({ success: true, stages: stagesCompleted, logId: lastLogId });
       }
 
       // No articles in production — start a new one from the queue
@@ -3495,15 +3919,60 @@ For each topic return: a one-line topic description, suggested category, and why
       // Mark queue topic complete (editor approved)
       await db.from("topic_queue").update({ status: "completed" }).eq("id", topic.id);
 
-      // Self-chain to continue production (write stage next)
-      chainNextStage(logEntry.id);
+      // Article is now editor_approved — the stage loop above already ran
+      // before this code path (and found nothing). We need to loop again
+      // to drive the article through write → independence → QC → publish.
+      // Fall through to re-run the stage advancement loop.
+      const newStages: string[] = ["Research", "Editor Brief"];
+      // Research + editor brief already ran above. Run 1 more stage (write).
+      // The 15-min cron drives remaining stages to avoid timeout.
+      for (let iteration = 0; iteration < 1; iteration++) {
+        let advanced = false;
+        for (const [st, sn, hd] of [
+          ["voice_rewrite_done", "Publish (post-rewrite)", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
+            const artData = e.research_data?._article as Record<string, unknown>;
+            const indReview = e.research_data?._independenceReview as Record<string, unknown> | null;
+            if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+            return safeStage(db, e.id, "Publish (post-rewrite)", () => stageQCAndPublish(db, e.id, e.slug, artData, action, indReview));
+          }],
+          ["voice_rewrite_pending", "Voice Rewrite", async (e: { id: string; research_data: Record<string, unknown> }) => {
+            const artData = e.research_data?._article as Record<string, unknown>;
+            if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+            return safeStage(db, e.id, "Voice Rewrite", () => stageVoiceRewrite(db, e.id, artData));
+          }],
+          ["independence_done", "QC+Publish", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
+            const artData = e.research_data?._article as Record<string, unknown>;
+            const indReview = e.research_data?._independenceReview as Record<string, unknown> | null;
+            if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+            return safeStage(db, e.id, "QC+Publish", () => stageQCAndPublish(db, e.id, e.slug, artData, action, indReview));
+          }],
+          ["written", "Independence", async (e: { id: string; slug: string; research_data: Record<string, unknown> }) => {
+            const artData = e.research_data?._article as Record<string, unknown>;
+            if (!artData) { await db.from("daily_article_log").update({ status: "failed", error: "Missing article data" }).eq("id", e.id); return null; }
+            return safeStage(db, e.id, "Independence Review", () => stageIndependenceReview(db, e.id, artData));
+          }],
+          ["editor_approved", "Write", async (e: { id: string; research_data: Record<string, unknown> }) => {
+            return safeStage(db, e.id, "Write", () => stageWrite(db, e.id, e.research_data, writerModels));
+          }],
+        ] as const) {
+          const { data: entries } = await db.from("daily_article_log").select("id, slug, research_data").eq("status", st).order("created_at", { ascending: true }).limit(1);
+          if (entries && entries.length > 0) {
+            const entry = entries[0] as { id: string; slug: string; research_data: Record<string, unknown> };
+            const result = await (hd as (e: typeof entry) => Promise<{ ok: boolean; result?: unknown; error?: string } | null>)(entry);
+            if (result && !result.ok) return json({ error: `${sn} failed`, detail: result.error, stagesCompleted: newStages }, 500);
+            newStages.push(sn);
+            advanced = true;
+            break;
+          }
+        }
+        if (!advanced) break;
+      }
 
       return json({
         success: true,
-        stage: "produce_started",
+        stages: newStages,
         logId: logEntry.id,
         topic: topic.topic,
-        message: `Started producing: "${topic.topic}". Self-chaining through write → Grok → publish.`,
       });
     }
   } catch (err: unknown) {

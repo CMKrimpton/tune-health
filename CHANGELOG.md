@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [10.0.0] - 2026-03-25
+
+### BREAKING — Model Upgrade (Flash → Premium)
+- **ALL quality stages upgraded from `gemini-2.5-flash` to premium models**. Flash was writing every article — the #1 cause of boring, Wikipedia-like output
+- **Writer**: `gemini-3.1-pro-preview` primary, `claude-sonnet-4-6` + `gpt-5.4` fallback
+- **QC**: `gemini-2.5-pro` primary (fast enough for edge function timeout)
+- **Editor Brief**: `gemini-3.1-pro-preview` primary
+- **Voice Rewrite**: `claude-opus-4-6` → `claude-sonnet-4-6` → `gpt-5.4` → `gemini-3.1-pro-preview` → `grok-3`
+- **Flash kept ONLY for**: scout discovery, fact-check verification
+- **New API integrations**: GPT-5.4 (OpenAI), Gemini 3.1 Pro Preview, Gemini 2.5 Pro, Claude Opus 4.6
+- **New model byline**: Eli Vance (GPT-5.4, Health & Science Editor)
+
+### Added — Voice Rewrite Stage (7-Stage Pipeline)
+- **New QC decision: `rewrite_voice`** — when content is solid but prose is bland, QC sends to voice rewrite instead of killing or full-rewriting
+- **`stageVoiceRewrite()`**: focused voice-only rewrite using premium models (Opus → Sonnet → GPT-5.4 → Gemini Pro → Grok). Keeps all facts, citations, structure. Rewrites for personality, "you" usage, short sentences, editorial positions, Bill Maher moments
+- **Before/after voice audit**: mechanical metrics logged for each rewrite (you count, banned phrases, paragraph length)
+- **Pipeline now 7 stages**: Research → Editor Brief → Write → Independence Review → QC → Voice Polish → Publish
+- **Admin PipelineMonitor updated**: 7-stage display with new model names and Voice Polish stage
+
+### Added — Vercel Deploy Hook
+- Pipeline commits via GitHub API now trigger Vercel rebuild via deploy hook
+- `VERCEL_DEPLOY_HOOK` secret set in Supabase — POSTs after every publish
+- Fixes: articles were committed to GitHub but Vercel never rebuilt
+
+### Added — Illustration Recovery
+- Illustration generation moved from pre-QC (parallel) to post-publish (sequential)
+- Checks DB for existing `hero_image` before generating — avoids duplicate generation on retry
+- If illustration fails, article still publishes with gradient fallback
+
+### Fixed — Self-Chaining Was Dead
+- **`chainNextStage()` (fire-and-forget HTTP) removed** — Deno runtime killed fetches before they completed. Stages were only advancing via the 15-min cron, not self-chaining
+- **Replaced with synchronous stage loop** in produce handler — runs 1 stage per invocation
+- **Cron changed from `*/15` to `* * * * *`** (every minute) — drives stage progression. Each article publishes in ~7 minutes
+
+### Fixed — Stale Run Recovery
+- **Stale cleanup now runs BEFORE concurrency guard** — previously a timed-out stage blocked all future produce calls because the guard saw it as "active" and the stale cleanup never ran
+- **Stale threshold reduced**: 5 min → 2 min for faster self-healing
+- **Voice rewrite states added** to stale recovery: `voice_rewrite_pending` and `voice_rewrite_done`
+
+### Fixed — Multiple Pipeline Bugs
+- **Grok removed from ALL writer/editor fallback chains** — was writing 67% of articles despite being designated "independence review only"
+- **`webSearch: false` on all non-research stages** — Gemini's Google Search was corrupting JSON output during write/QC/editor stages
+- **Scout category classifier**: keyword-based (90+ health terms → 9 categories) replaces broken literal-match parser. 25 existing queue topics backfilled
+- **GitHub commit 422 retry**: 3-attempt loop handles both `create commit: 422` and `update ref: 422` race conditions
+- **HTML `<` sanitization**: `assembleAstroFile` escapes stray `<` not followed by tag characters. Fixes Astro build break from `(<0.25 nmol/L)` in article content
+- **API timeout reduced**: 135s → 75s constant (`API_TIMEOUT`) — leaves margin within ~150s edge function timeout
+- **Spending limit detection expanded**: catches 429, "spending", and "quota" in error text
+
+### Known Issues — CRITICAL for Next Session
+- **Monolith architecture**: entire 7-stage pipeline is ONE edge function (~4000 lines). Each stage risks timeout. MUST be split into separate edge functions (see NEXT-SESSION-PLAN.md)
+- **Gemini 3.1 Pro Preview is slow** ("thinking" model) — may still timeout on complex articles. Gemini 2.5 Pro used for QC as workaround
+- **Sonnet spending-limited until April 1** — revert writer chain to Sonnet-primary after limit resets
+
 ## [9.10.0] - 2026-03-25
 
 ### Fixed — Pipeline Silent Failures & Data Integrity
