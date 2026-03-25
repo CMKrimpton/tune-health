@@ -9,52 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="8 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-<defs>
-  <filter id="glow">
-    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-    <feMerge>
-      <feMergeNode in="coloredBlur"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
-  </filter>
-  <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
-    <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
-  </linearGradient>
-  <linearGradient id="face-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" style="stop-color:#dc2626;stop-opacity:0.3" />
-    <stop offset="100%" style="stop-color:#b91c1c;stop-opacity:0.5" />
-  </linearGradient>
-</defs>
-<rect width="1200" height="630" fill="url(#bg-gradient)"/>
-<g transform="translate(600,315)">
-  <circle cx="0" cy="0" r="120" fill="none" stroke="#dc2626" stroke-width="0.5" opacity="0.3" filter="url(#glow)"/>
-  <circle cx="0" cy="0" r="100" fill="none" stroke="#dc2626" stroke-width="0.5" opacity="0.4" filter="url(#glow)"/>
-  <circle cx="0" cy="0" r="80" fill="none" stroke="#dc2626" stroke-width="0.5" opacity="0.5" filter="url(#glow)"/>
-  <ellipse cx="0" cy="0" rx="60" ry="75" fill="url(#face-gradient)" opacity="0.8" filter="url(#glow)"/>
-  <path d="M-30,-20 Q0,-25 30,-20" fill="none" stroke="#dc2626" stroke-width="2" opacity="0.6"/>
-  <path d="M-30,20 Q0,25 30,20" fill="none" stroke="#dc2626" stroke-width="2" opacity="0.6"/>
-  <circle cx="-20" cy="-5" r="3" fill="#dc2626" opacity="0.8"/>
-  <circle cx="20" cy="-5" r="3" fill="#dc2626" opacity="0.8"/>
-  <g transform="translate(-150,-50)">
-    <path d="M0,0 Q20,-10 40,0 Q20,10 0,0" fill="none" stroke="#dc2626" stroke-width="1" opacity="0.3" filter="url(#glow)"/>
-    <circle cx="20" cy="0" r="2" fill="#dc2626" opacity="0.4"/>
-  </g>
-  <g transform="translate(110,-50)">
-    <path d="M0,0 Q20,-10 40,0 Q20,10 0,0" fill="none" stroke="#dc2626" stroke-width="1" opacity="0.3" filter="url(#glow)"/>
-    <circle cx="20" cy="0" r="2" fill="#dc2626" opacity="0.4"/>
-  </g>
-  <g transform="translate(-100,100)">
-    <path d="M0,0 L30,0 M15,-15 L15,15" stroke="#dc2626" stroke-width="1" opacity="0.2"/>
-  </g>
-  <g transform="translate(70,100)">
-    <path d="M0,0 L30,0 M15,-15 L15,15" stroke="#dc2626" stroke-width="1" opacity="0.2"/>
-  </g>
-</g>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

@@ -9,66 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="22 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-    <defs>
-      <linearGradient id="serotoninGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#1a1a2e"/>
-        <stop offset="100%" style="stop-color:#16213e"/>
-      </linearGradient>
-      <linearGradient id="serotoninGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" style="stop-color:#e11d48"/>
-        <stop offset="100%" style="stop-color:#ef4444"/>
-      </linearGradient>
-      <filter id="serotoninGlow">
-        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-    <rect width="1200" height="600" fill="url(#serotoninGrad1)"/>
-    <!-- Serotonin molecule structure (simplified) -->
-    <g opacity="0.5" filter="url(#serotoninGlow)">
-      <!-- Benzene ring -->
-      <polygon points="500,220 540,200 580,220 580,260 540,280 500,260" fill="none" stroke="#e11d48" stroke-width="2"/>
-      <!-- Pyrrole ring -->
-      <polygon points="580,220 620,200 650,230 635,265 580,260" fill="none" stroke="#e11d48" stroke-width="2"/>
-      <!-- Side chain -->
-      <line x1="650" y1="230" x2="700" y2="210" stroke="#e11d48" stroke-width="2"/>
-      <line x1="700" y1="210" x2="750" y2="230" stroke="#e11d48" stroke-width="2"/>
-      <circle cx="750" cy="230" r="8" fill="#e11d48" opacity="0.6"/>
-      <!-- Hydroxyl group -->
-      <line x1="500" y1="260" x2="460" y2="290" stroke="#e11d48" stroke-width="2"/>
-      <circle cx="460" cy="290" r="6" fill="#ef4444" opacity="0.6"/>
-      <!-- Nitrogen markers -->
-      <circle cx="620" cy="200" r="5" fill="#fbbf24" opacity="0.7"/>
-      <circle cx="750" cy="230" r="5" fill="#fbbf24" opacity="0.7"/>
-      <!-- Atom nodes -->
-      <circle cx="500" cy="220" r="4" fill="#e11d48"/>
-      <circle cx="540" cy="200" r="4" fill="#e11d48"/>
-      <circle cx="580" cy="220" r="4" fill="#e11d48"/>
-      <circle cx="580" cy="260" r="4" fill="#e11d48"/>
-      <circle cx="540" cy="280" r="4" fill="#e11d48"/>
-      <circle cx="500" cy="260" r="4" fill="#e11d48"/>
-      <circle cx="650" cy="230" r="4" fill="#e11d48"/>
-      <circle cx="635" cy="265" r="4" fill="#e11d48"/>
-      <circle cx="700" cy="210" r="4" fill="#e11d48"/>
-    </g>
-    <!-- "Broken" / fractured lines suggesting the theory crumbling -->
-    <g opacity="0.25">
-      <line x1="100" y1="400" x2="250" y2="380" stroke="#ef4444" stroke-width="1" stroke-dasharray="8,4"/>
-      <line x1="300" y1="420" x2="450" y2="390" stroke="#ef4444" stroke-width="1" stroke-dasharray="8,4"/>
-      <line x1="750" y1="380" x2="900" y2="400" stroke="#ef4444" stroke-width="1" stroke-dasharray="8,4"/>
-      <line x1="950" y1="390" x2="1100" y2="420" stroke="#ef4444" stroke-width="1" stroke-dasharray="8,4"/>
-    </g>
-    <!-- Decorative circles -->
-    <circle cx="600" cy="300" r="200" fill="none" stroke="url(#serotoninGrad2)" stroke-width="1" opacity="0.15"/>
-    <circle cx="600" cy="300" r="100" fill="url(#serotoninGrad2)" opacity="0.08"/>
-    <path d="M0 550 Q300 500 600 530 T1200 510 V600 H0 Z" fill="#0c0a09" opacity="0.3"/>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

@@ -438,7 +438,6 @@ const editorScore = article.editor_score ?? null;
         const desc = dbArticle.description.replace(/"/g, '&quot;');
 
         const astroContent = '---\nimport ArticleLayout from \'../../layouts/ArticleLayout.astro\';\n---\n\n<ArticleLayout\n  title="' + title + '"\n  description="' + desc + '"\n  category="' + dbArticle.category + '"\n  readTime="' + dbArticle.read_time + ' min read"\n  publishDate="' + publishDate + '"\n>\n' +
-          (dbArticle.article_svg ? '  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">\n' + dbArticle.article_svg + '\n  </svg>\n\n' : '') +
           '  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">\n    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>\n    <nav class="space-y-2">\n' + tocHtml + '\n    </nav>\n  </div>\n\n  <div class="article-content">\n' + dbArticle.article_html + '\n  </div>\n\n  <Fragment slot="tags">\n' + tagsHtml + '\n  </Fragment>\n</ArticleLayout>\n';
 
         // Build metadata JSON for content collection

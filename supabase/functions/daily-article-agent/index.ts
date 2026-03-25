@@ -78,9 +78,124 @@ function getCategoryGradient(category: string): { from: string; to: string } {
   return g ? { from: g.from, to: g.to } : { from: "rose-600", to: "red-700" };
 }
 
-function generateMinimalSvg(category: string): string {
-  const color = CATEGORY_GRADIENTS[category]?.hex || "#dc2626";
-  return `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0a0a15"/></linearGradient></defs><rect width="1200" height="600" fill="url(#bg)"/><circle cx="900" cy="200" r="120" fill="${color}15"/><circle cx="300" cy="400" r="80" fill="${color}10"/>`;
+// ---------------------------------------------------------------------------
+// Mechanical Voice Quality Scanner — code, not AI
+// Runs on raw article HTML and returns hard metrics + violations.
+// Fed into QC so the editor has objective data, not vibes.
+// ---------------------------------------------------------------------------
+interface VoiceAudit {
+  bannedPhrases: string[];       // exact matches found
+  paragraphsOver3Sentences: number;
+  longestParagraphSentences: number;
+  youCount: number;
+  wordCount: number;
+  shortSentenceCount: number;    // sentences under 8 words
+  totalParagraphs: number;
+  shortSentenceRatio: string;    // "X per 3 paragraphs"
+  rhetoricQuestionCount: number;
+  passed: boolean;
+  failures: string[];            // human-readable list of what failed
+}
+
+function auditVoiceQuality(html: string): VoiceAudit {
+  // Strip HTML to plain text, preserving paragraph boundaries
+  const text = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, "")  // skip pull quotes
+    .replace(/<div class="info-card[\s\S]*?<\/div>/gi, "")  // skip info cards
+    .replace(/<div class="mt-12[\s\S]*?<\/div>/gi, "")  // skip disclaimer
+    .replace(/<section id="sources"[\s\S]*?<\/section>/gi, "")  // skip sources
+    .replace(/<[^>]+>/g, "\n")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+
+  // Split into paragraphs (non-empty lines)
+  const paragraphs = text
+    .split(/\n+/)
+    .map(p => p.trim())
+    .filter(p => p.length > 20);  // skip headings and short fragments
+
+  // Count sentences per paragraph (rough: split on . ! ?)
+  const sentenceCounts = paragraphs.map(p => {
+    const sentences = p.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 5);
+    return sentences.length;
+  });
+
+  const paragraphsOver3 = sentenceCounts.filter(c => c > 3).length;
+  const longestParagraph = Math.max(...sentenceCounts, 0);
+
+  // Count all sentences for short-sentence check
+  const allSentences = paragraphs
+    .flatMap(p => p.split(/(?<=[.!?])\s+/))
+    .filter(s => s.trim().length > 3);
+  const shortSentences = allSentences.filter(s => s.trim().split(/\s+/).length < 8);
+
+  // "you" / "your" count
+  const youCount = (text.match(/\byou\b|\byour\b|\byou're\b|\byou've\b|\byourself\b/gi) || []).length;
+
+  // Word count
+  const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+
+  // Rhetorical questions (sentences ending in ? that aren't in headings)
+  const rhetoricQuestions = allSentences.filter(s => s.trim().endsWith("?")).length;
+
+  // Banned phrase scan (case-insensitive)
+  const BANNED = [
+    "let's explore", "let's dive in", "let's break this down", "let's unpack",
+    "picture this", "think of your", "think of it as",
+    "hidden in plain sight", "marvel of biology", "game-changer", "paradigm shift",
+    "the honest answer is", "what is not in dispute", "in short",
+    "what emerges from the research", "the research has produced",
+    "this is not a theoretical construct",
+    "it's important to note", "it's worth mentioning",
+    "interestingly", "remarkably", "fascinatingly",
+    "it turns out", "buckle up", "here's the thing",
+    "moreover", "furthermore", "additionally",
+    "the mechanism by which",
+    "growing body of evidence", "the landscape is evolving",
+    "imagine a", "imagine you",
+  ];
+
+  const textLower = text.toLowerCase();
+  const foundBanned = BANNED.filter(phrase => textLower.includes(phrase));
+
+  // Compute failures
+  const failures: string[] = [];
+  if (foundBanned.length > 0) {
+    failures.push(`BANNED PHRASES found: ${foundBanned.map(p => `"${p}"`).join(", ")}`);
+  }
+  if (paragraphsOver3 > 0) {
+    failures.push(`${paragraphsOver3} paragraph(s) exceed 3-sentence max`);
+  }
+  if (youCount < 6) {
+    failures.push(`"you/your" count is ${youCount} — minimum is 6`);
+  }
+  const shortPer3 = paragraphs.length > 0 ? (shortSentences.length / paragraphs.length) * 3 : 0;
+  if (shortPer3 < 1 && paragraphs.length >= 3) {
+    failures.push(`Short sentences (< 8 words): ${shortSentences.length} total = ${shortPer3.toFixed(1)} per 3 paragraphs — need at least 1 per 3`);
+  }
+  if (rhetoricQuestions > 2) {
+    failures.push(`${rhetoricQuestions} rhetorical questions — max is 2`);
+  }
+
+  return {
+    bannedPhrases: foundBanned,
+    paragraphsOver3Sentences: paragraphsOver3,
+    longestParagraphSentences: longestParagraph,
+    youCount,
+    wordCount,
+    shortSentenceCount: shortSentences.length,
+    totalParagraphs: paragraphs.length,
+    shortSentenceRatio: `${shortPer3.toFixed(1)} per 3 paragraphs`,
+    rhetoricQuestionCount: rhetoricQuestions,
+    passed: failures.length === 0,
+    failures,
+  };
 }
 
 function calcCost(model: string, inputTokens: number, outputTokens: number): number {
@@ -235,6 +350,8 @@ function parseClaudeJSON(text: string): unknown {
   }
 
   // Step 3: Try to repair truncated JSON (close open braces/brackets)
+  // WARNING: This means the model's output was truncated (likely hit token limit).
+  // Fields at the end of the JSON may contain garbage/partial data.
   let candidate = text.slice(start);
   // Count unclosed braces/brackets
   let openBraces = 0, openBrackets = 0;
@@ -248,6 +365,10 @@ function parseClaudeJSON(text: string): unknown {
     if (ch === "}") openBraces--;
     if (ch === "[") openBrackets++;
     if (ch === "]") openBrackets--;
+  }
+  const needsRepair = inString || openBrackets > 0 || openBraces > 0;
+  if (needsRepair) {
+    console.warn(`[parseClaudeJSON] ⚠️ TRUNCATED OUTPUT — repairing ${openBraces} unclosed braces, ${openBrackets} unclosed brackets, inString=${inString}. Fields near the end of the JSON may be corrupt.`);
   }
   // Close any trailing string, then close brackets/braces
   if (inString) candidate += '"';
@@ -306,7 +427,10 @@ async function grok(opts: { system: string; user: string; maxTokens?: number; te
       temperature: opts.temperature || 0.4,
     }),
   });
-  if (!res.ok) throw new Error("Grok " + res.status);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Grok ${res.status}: ${errText.slice(0, 500)}`);
+  }
   const d = await res.json();
   const text = d.choices?.[0]?.message?.content || "";
   const finishReason = d.choices?.[0]?.finish_reason || "unknown";
@@ -325,24 +449,28 @@ async function grok(opts: { system: string; user: string; maxTokens?: number; te
 // ---------------------------------------------------------------------------
 // Gemini API (Google) — topic discovery & web search
 // ---------------------------------------------------------------------------
-async function gemini(opts: { system: string; user: string; maxTokens?: number; temperature?: number }, stage = "research"): Promise<ApiResult> {
+async function gemini(opts: { system: string; user: string; maxTokens?: number; temperature?: number; webSearch?: boolean }, stage = "research"): Promise<ApiResult> {
   const key = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
   if (!key) throw new Error("GOOGLE_API_KEY not set");
   const model = "gemini-2.5-flash";
+  const useSearch = opts.webSearch !== false; // default true, explicitly disable with false
+  const requestBody: Record<string, unknown> = {
+    system_instruction: { parts: [{ text: opts.system }] },
+    contents: [{ role: "user", parts: [{ text: opts.user }] }],
+    generationConfig: {
+      maxOutputTokens: opts.maxTokens || 4000,
+      temperature: opts.temperature || 0.4,
+    },
+  };
+  if (useSearch) {
+    requestBody.tools = [{ google_search: {} }];
+  }
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: opts.system }] },
-        contents: [{ role: "user", parts: [{ text: opts.user }] }],
-        generationConfig: {
-          maxOutputTokens: opts.maxTokens || 4000,
-          temperature: opts.temperature || 0.4,
-        },
-        tools: [{ google_search: {} }],
-      }),
+      body: JSON.stringify(requestBody),
       signal: AbortSignal.timeout(120_000),
     },
   );
@@ -357,17 +485,13 @@ async function gemini(opts: { system: string; user: string; maxTokens?: number; 
   // Retry once if empty (Gemini sometimes returns empty on first try with search grounding)
   if (!text.trim()) {
     console.log(`[Gemini] Empty response on first try for ${stage}, retrying...`);
+    const retryBody = { ...requestBody };
     const retry = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: opts.system }] },
-          contents: [{ role: "user", parts: [{ text: opts.user }] }],
-          generationConfig: { maxOutputTokens: opts.maxTokens || 4000, temperature: opts.temperature || 0.4 },
-          tools: [{ google_search: {} }],
-        }),
+        body: JSON.stringify(retryBody),
         signal: AbortSignal.timeout(120_000),
       },
     );
@@ -405,20 +529,20 @@ const MODEL_PROVIDERS: Record<string, ModelProvider> = {
 // Gemini writes wiki-style but follows structure. Grok is worst at editorial voice.
 const WRITER_FALLBACK_CHAIN = ["claude-sonnet-4-6", "gemini-2.5-flash", "grok-3"];
 
-async function generate(opts: { system: string; user: string; model: string; maxTokens?: number; temperature?: number; stage?: string }): Promise<ApiResult> {
+async function generate(opts: { system: string; user: string; model: string; maxTokens?: number; temperature?: number; stage?: string; webSearch?: boolean }): Promise<ApiResult> {
   const provider = MODEL_PROVIDERS[opts.model];
   if (provider === "anthropic") {
     return claude({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
   } else if (provider === "xai") {
     return grok({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
   } else if (provider === "google") {
-    return gemini({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
+    return gemini({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature, webSearch: opts.webSearch }, opts.stage || "unknown");
   }
   throw new Error(`Unknown model: ${opts.model}`);
 }
 
 // Try models in order, falling back on failure (especially spending limits)
-async function generateWithFallback(opts: { system: string; user: string; models: string[]; maxTokens?: number; temperature?: number; stage?: string }): Promise<ApiResult & { modelUsed: string }> {
+async function generateWithFallback(opts: { system: string; user: string; models: string[]; maxTokens?: number; temperature?: number; stage?: string; webSearch?: boolean }): Promise<ApiResult & { modelUsed: string }> {
   let lastError = "";
   for (const model of opts.models) {
     try {
@@ -538,7 +662,7 @@ function publishDateDisplay(): string {
 // Assemble .astro file
 // ---------------------------------------------------------------------------
 function escapeAttr(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function assembleAstroFile(
@@ -550,7 +674,6 @@ function assembleAstroFile(
     tags: string[];
   },
   html: string,
-  svg: string,
   toc: { id: string; title: string }[],
 ): string {
   const tocHtml = toc
@@ -578,11 +701,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="${metadata.readTime} min read"
   publishDate="${publishDateDisplay()}"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-    ${svg}
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
@@ -982,7 +1100,28 @@ Return ONLY valid JSON:
 
 const SENIOR_EDITOR_QC_PROMPT = `You are the Senior Editor of alumi news doing a FINAL quality check before publication. This is the last gate. Once you approve, this goes live to readers.
 
-Your job is to POLISH the headline and description, then publish. This article has already passed research, editorial, writing, and independence review. Don't re-litigate the content — focus on the headline, description, and overall readability.
+You have TWO jobs: (1) polish the headline and description, and (2) VERIFY VOICE QUALITY. This article has passed writing and independence review, but those stages don't catch blandness. YOU are the voice quality gate.
+
+## VOICE QUALITY CHECK (read the article, then answer honestly)
+
+You will receive a MECHANICAL VOICE AUDIT with the article. This audit is generated by code — it counts banned phrases, paragraph length, "you" usage, etc. Trust it. If the audit reports failures, those failures are REAL.
+
+**Auto-revise triggers** (if ANY of these are true, decision MUST be "revise"):
+- Banned phrases found (the audit will list them)
+- "you/your" count below 6
+- More than 2 paragraphs exceed 3 sentences
+- Zero editorial opinions (article merely explains without taking positions)
+
+**Auto-kill trigger** (decision MUST be "kill"):
+- 3+ banned phrases AND zero editorial opinion → this is AI slop, not journalism
+
+**Manual voice check** (you assess these yourself):
+- Does the article pass the Bill Maher test? Is there at least ONE moment of irreverence, controlled anger, or uncomfortable honesty that a hospital pamphlet would never include?
+- Does the article follow the money? Does it name who profits from the status quo?
+- Are the pull quotes striking, or do they read like abstracts?
+- Would a reader of The Atlantic keep reading past paragraph 3, or would they bounce?
+
+If the voice fails but the content is solid, decision = "revise" with specific instructions on what to fix. Don't rubber-stamp bland articles.
 
 ## Headline Rules
 - Must be specific and honest. Prefer direct claims, mechanisms, questions, or understated phrasing
@@ -991,16 +1130,16 @@ Your job is to POLISH the headline and description, then publish. This article h
 - Rewrite ONLY if you can genuinely improve it
 
 ## Description Rules
-- 2-3 sentences that make a reader stop scrolling
+- 2-3 sentences that make a reader stop scrolling. Must be COMPLETE sentences (no truncation)
 - No clickbait, no "you won't believe" energy
 - Must accurately represent the article's content and angle
 
-## Quality Score (be honest)
-- 9-10: Exceptional — would be proud to publish in any magazine
-- 7-8: Strong — solid journalism, clear voice, well-supported claims
-- 5-6: Adequate — publishable but not memorable, may have AI-sounding sections
-- 3-4: Weak — significant issues with voice, evidence, or structure
-Score honestly. Don't default to 7.
+## Quality Score (be honest — voice quality heavily weighted)
+- 9-10: Exceptional — strong voice, clear opinions, would be proud to publish in any magazine
+- 7-8: Strong — solid journalism, clear voice, well-supported claims, has edge
+- 5-6: Adequate — content is fine but reads like a health blog, not alumi news. Missing personality, opinion, or follow-the-money. SHOULD TRIGGER REVISE.
+- 3-4: Weak — AI slop. No voice, no opinion, banned phrases present. SHOULD TRIGGER KILL.
+Score honestly. An article that merely conveys accurate information without personality or editorial opinion is a 5, not a 7.
 
 ## Output Format
 Return ONLY valid JSON:
@@ -1008,7 +1147,14 @@ Return ONLY valid JSON:
   "decision": "publish" | "revise" | "kill",
   "qualityScore": "(integer 1-10, see scoring guide above)",
   "headline": "Final headline (keep original if good enough)",
-  "description": "Final description (keep original if good enough)",
+  "description": "Final description — MUST be complete sentences, never truncated",
+  "voiceCheck": {
+    "billMaherTest": true/false,
+    "followsTheMoney": true/false,
+    "hasEditorialOpinion": true/false,
+    "pullQuotesStrong": true/false,
+    "overallVoicePass": true/false
+  },
   "edits": {
     "headlineChanged": false,
     "descriptionChanged": false,
@@ -1074,7 +1220,7 @@ You are writing MAGAZINE JOURNALISM, not a Wikipedia article or a textbook chapt
 **Concrete rules**:
 - MAX 3 sentences per paragraph. 2 is better. Dense 5-6 sentence paragraphs are a textbook, not a magazine.
 - At least 1 sentence in every 3 paragraphs should be under 8 words. Short declarative sentences that deliver a verdict or land a point. Invent your own — never reuse the same short sentence across articles.
-- Use "you" at least 4 times in the article. Talk TO the reader, not AT them.
+- Use "you" at least 6 times in the article. Talk TO the reader, not AT them.
 - At least 2 everyday analogies (cars, kitchens, plumbing, software — not other science). These make mechanisms visceral.
 - At least 1 parenthetical aside per article — "(let's be honest)", "(though nobody frames it that way)", "(which raises an obvious question)". These feel human.
 - NEVER open a paragraph with "The [noun]..." three times in a row. Vary your sentence openings aggressively.
@@ -1180,7 +1326,7 @@ CRITICAL ANTI-AI RULES (apply to ALL presets):
 - Never use corporate report language ("this expansion reflects", "growing body of evidence suggests", "the landscape is evolving")
 - Never restate the previous paragraph in different words. If you catch yourself doing it, DELETE the weaker paragraph.
 - Use parenthetical asides naturally — invent your own for each article. They make prose feel like a person thinking, not a machine generating. Never reuse the same parenthetical across articles.
-- Use "you" when it's natural. Address the reader directly at least 4 times per article.
+- Use "you" when it's natural. Address the reader directly at least 6 times per article.
 - USE ANALOGIES FROM EVERYDAY LIFE, not from other science. Draw from cars, plumbing, kitchens, software, construction, sports — whatever fits the topic. Invent fresh ones each time. These make abstract concepts land.
 - Short sentences after complex ones. Under 8 words. These are your most powerful tool — invent fresh ones for each article. Use them to land points, not to fill space.
 - **OPENING VARIETY IS MANDATORY.** Do NOT default to scene-setting vignettes ("Picture someone...", "Imagine a patient...", "In 2019, a 45-year-old..."). 34% of our articles already open this way. Only use narrative openings for storyteller preset. Otherwise, open with: a striking claim, a provocative observation, a metaphor, a contradiction, or the single most important insight stated directly.
@@ -1267,7 +1413,8 @@ Return ONLY valid JSON:
   "html": "...",
   "metadata": { ... },
   "toc": [ ... ],
-  "readTime": number
+  "readTime": number,
+  "selfAudit": { ... }
 }
 
 ### html field
@@ -1315,20 +1462,36 @@ Array of { "id": "section-id", "title": "Display Title" }.
 ### readTime field
 Estimated minutes (220 wpm, rounded up).
 
-## PRE-FLIGHT CHECKLIST (verify EVERY item before outputting — this is the most important section)
+### selfAudit field (MANDATORY — this is verified mechanically after you submit)
+Your output will be checked by automated code that scans for banned phrases, counts "you" usage, measures paragraph length, and verifies opinion presence. If the audit fails, your article will be sent back for revision — costing extra time and tokens. Get it right the first time.
 
-Before you return the JSON, mentally verify each of these. If ANY fails, rewrite that part.
+{
+  "bannedPhrasesFound": [],         // list any banned phrases you almost used and removed. Empty = clean.
+  "maxParagraphSentences": 3,       // the most sentences in any single paragraph
+  "youCount": 7,                    // how many times "you/your/you're" appears
+  "analogies": ["thermostat for metabolism", "car with no brakes"],  // list your everyday analogies
+  "editorialPositions": ["TSH alone is insufficient — doctors should order full panels"],  // list clear opinions
+  "followTheMoney": "Named insurance reimbursement incentives for TSH-only testing",  // who profits from status quo
+  "billMaherMoment": "Called out the 1970s reference ranges still used as gospel",  // your most irreverent line
+  "rhetoricQuestionCount": 1        // total rhetorical questions
+}
 
-1. **OPENING**: Does the first paragraph start with "Picture this", "Imagine", "What if", or a scene-setting vignette? If YES → rewrite. Open with a direct claim, a number, a contradiction, or the single most important insight.
-2. **BANNED PHRASES**: Ctrl-F your output for: "Let's explore", "Let's dive in", "Buckle up", "Remarkable", "Fascinating", "It turns out", "Interestingly", "It's important to note", "The honest answer is", "What emerges from the research", "hidden in plain sight". If ANY appear → delete them.
-3. **PARAGRAPH LENGTH**: Is any paragraph longer than 3 sentences? If YES → split it.
-4. **SHORT SENTENCES**: Do you have at least 1 sentence under 8 words in every 3 paragraphs? Short, punchy verdicts that land a point. If NO → add them.
-5. **"YOU" COUNT**: Does "you" or "your" appear at least 4 times? If NO → rewrite to address the reader directly.
-6. **ANALOGIES**: Do you have at least 2 analogies from EVERYDAY life (cars, plumbing, kitchens, software, sports)? NOT from other science. If NO → add them.
-7. **OPINION**: Does the article take at least ONE clear editorial position? ("This is underresearched", "The pharmaceutical focus here is backwards", "This should change how doctors think about X"). If the article merely explains without ever taking a stance → add opinion where the evidence warrants it. THIS IS WHAT SEPARATES US FROM WIKIPEDIA.
-8. **RHETORICAL QUESTIONS**: Count them. If more than 2 in the entire article → cut the rest. State claims directly.
-9. **SECTION COUNT**: For explainers: 5-6 sections max. For provocations: 3-5. Don't over-fragment.
-10. **BILL MAHER TEST**: Read your article back. Is there at least ONE moment of irreverence, one uncomfortable observation, one moment where you call out an inconvenient truth that a hospital pamphlet would never include? If the article is 100% neutral information delivery → it failed the brand voice test. Add edge.
+If you cannot fill in "editorialPositions", "followTheMoney", or "billMaherMoment" with real content from your article, YOUR ARTICLE HAS FAILED and you must rewrite before outputting.
+
+## PRE-FLIGHT CHECKLIST (verify EVERY item — rewrite if any fails)
+
+These checks are NOT optional. Your output will be mechanically audited against them. Failures trigger revision.
+
+1. **OPENING**: Does the first paragraph start with "Picture this", "Imagine", "What if", "Think of", or a scene-setting vignette? If YES → rewrite. Open with a direct claim, a number, a contradiction, or the single most important insight.
+2. **BANNED PHRASES**: Scan your entire output for: "Let's explore", "Let's dive in", "Let's unpack", "Buckle up", "Think of your/it as", "Remarkable", "Fascinating", "It turns out", "Interestingly", "It's important to note", "The honest answer is", "What emerges from the research", "hidden in plain sight", "Moreover", "Furthermore", "Additionally", "The mechanism by which". If ANY appear → delete and rewrite that sentence.
+3. **PARAGRAPH LENGTH**: Is any paragraph longer than 3 sentences? If YES → split it. This is checked by code — you cannot cheat it.
+4. **SHORT SENTENCES**: At least 1 sentence under 8 words per 3 paragraphs. These land verdicts. "That's the real story." "Insurance doesn't cover it." "Nobody tracks this."
+5. **"YOU" COUNT**: "you/your/you're" must appear at least 6 times (raised from 4 — articles consistently underdelivered). Rewrite to address the reader directly.
+6. **ANALOGIES**: At least 2 from everyday life (cars, plumbing, kitchens, software, sports). NOT "those tiny power plants in your cells" (patronizing). Real analogies that make mechanisms visceral.
+7. **EDITORIAL OPINION** (NON-NEGOTIABLE): The article MUST take at least 2 clear positions. Not hedged suggestions — actual verdicts. "This should change." "The current standard is inadequate." "Doctors are undertesting." If the article merely explains without taking sides, it is Wikipedia, not journalism. REWRITE.
+8. **FOLLOW THE MONEY** (NON-NEGOTIABLE): Every health topic has someone profiting from the status quo. Name them. Insurance companies, pharma manufacturers, supplement brands, hospital systems, testing labs — whoever benefits from the current consensus. If you can't identify a financial angle, you haven't thought hard enough.
+9. **RHETORICAL QUESTIONS**: Max 2 in the entire article. State claims directly instead.
+10. **BILL MAHER TEST**: Is there at least ONE moment where you say something a hospital pamphlet never would? ONE moment of controlled anger at institutional failure? ONE observation that makes the reader think "finally, someone said it"? If the article is 100% neutral information delivery → it has failed. Add edge. This is verified in QC — don't skip it.
 
 ## Final Rules
 - Follow the editorial brief's archetype, angle, opening direction, emphasis points, and closing direction.
@@ -1757,13 +1920,32 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
     system: SENIOR_EDITOR_BRIEF_PROMPT,
     user: editorPrompt,
     models: WRITER_FALLBACK_CHAIN,
-    maxTokens: 2500,
+    maxTokens: 4000,
     temperature: 0.4,
     stage: "editor-brief",
   });
   await addCostToLog(db, logId, editorUsage);
 
   const editorBrief = parseClaudeJSON(editorRaw) as Record<string, unknown>;
+
+  // Validate critical editor brief fields — catch truncation early
+  if (editorBrief.decision === "approve") {
+    const slug = editorBrief.slug as string;
+    const headline = editorBrief.headline as string;
+    const description = editorBrief.description as string;
+    if (!slug || slug.length < 5) {
+      console.warn(`[Editor] ⚠️ Missing/corrupt slug: "${slug}" — editor brief may be truncated`);
+    }
+    if (!headline || headline.length < 10) {
+      console.warn(`[Editor] ⚠️ Missing/corrupt headline: "${headline}" — editor brief may be truncated`);
+    }
+    if (!description || description.length < 40 || !/[.!?]["')\u2019]?\s*$/.test(description.trim())) {
+      console.warn(`[Editor] ⚠️ Missing/truncated description: "${(description || "").slice(-50)}" (${(description || "").length} chars)`);
+    }
+    if (!editorBrief.brief || !(editorBrief.brief as Record<string, unknown>).tonePreset) {
+      console.warn(`[Editor] ⚠️ Missing brief.tonePreset — writer will get generic defaults. Editor brief may be truncated.`);
+    }
+  }
 
   if (editorBrief.decision === "kill") {
     await db
@@ -1911,13 +2093,23 @@ Today's date: ${today}
 
 IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. Return ONLY valid JSON.
 
-CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last section should be a conclusion, sign-off, or forward-looking closing — NOT an abrupt stop mid-thought. If you're running low on space, cut a middle section shorter rather than omitting the ending. A missing conclusion is worse than a shorter article. Follow the closing direction from the editorial brief.`;
+CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last section should be a conclusion, sign-off, or forward-looking closing — NOT an abrupt stop mid-thought. If you're running low on space, cut a middle section shorter rather than omitting the ending. A missing conclusion is worse than a shorter article. Follow the closing direction from the editorial brief.
+
+## EDITORIAL DIRECTIVES (from the Editor-in-Chief — non-negotiable)
+
+**FOLLOW THE MONEY**: Before you write a single word, ask yourself: who profits from the current consensus on this topic? Insurance companies? Pharma manufacturers? Supplement brands? Hospital systems? Testing labs? Food industry? Name them in the article. Every health topic has a financial angle — if you can't find one, you haven't looked hard enough. This is not optional.
+
+**TAKE POSITIONS**: This article must contain at least 2 clear editorial opinions — not hedged suggestions, not "some experts believe," but actual verdicts. "Doctors are undertesting." "The standard of care is outdated." "This industry profits from your confusion." If you can only explain without ever judging, you are writing an encyclopedia, not journalism.
+
+**EARN THE BILL MAHER MOMENT**: Somewhere in this article, say the thing a hospital pamphlet never would. The uncomfortable observation. The pointed question about who benefits from keeping patients uninformed. The moment where you drop the neutral voice and speak directly. This is what makes our readers come back.
+
+**DESCRIPTION MUST BE COMPLETE**: The description field must be 2-3 complete, compelling sentences. Never truncate mid-sentence. This appears in search results and social cards — a cut-off description looks broken and unprofessional.`;
 
   const { text: articleRaw, usage: writeUsage, modelUsed } = await generateWithFallback({
     system: ARTICLE_WRITING_PROMPT,
     user: articleUserPrompt,
     models,
-    maxTokens: 8192,
+    maxTokens: 16384,
     temperature: 0.5,
     stage: "write",
   });
@@ -1941,6 +2133,17 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
   if (editorBrief?.description) article.metadata.description = editorBrief.description as string;
   if (editorBrief?.slug) article.metadata.slug = editorBrief.slug as string;
 
+  // Guard against truncated descriptions (from token-limit JSON repair)
+  const desc = (article.metadata.description as string) || "";
+  if (desc.length < 80 || !/[.!?]["')\u2019]?\s*$/.test(desc.trim())) {
+    console.warn(`[Write] ⚠️ Description appears truncated (${desc.length} chars, no terminal punctuation): "${desc.slice(-50)}"`);
+    // Fall back to editor brief description if available, otherwise mark it
+    if (editorBrief?.description && (editorBrief.description as string).length > desc.length) {
+      article.metadata.description = editorBrief.description as string;
+      console.log(`[Write] Restored description from editor brief`);
+    }
+  }
+
   // Sanitize category to valid values only
   const rawCat = (editorBrief?.categoryOverride as string) || (article.metadata.category as string) || (researchData.category as string) || "";
   article.metadata.category = VALID_CATEGORIES.find(c => rawCat.toLowerCase().includes(c.toLowerCase())) || "Clinical Evidence";
@@ -1949,7 +2152,6 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
   const categoryStr = article.metadata.category as string;
   const gradient = getCategoryGradient(categoryStr);
   article.metadata.gradient = gradient;
-  const svg = generateMinimalSvg(categoryStr);
 
   // Save article to database as draft (editor QC hasn't happened yet)
   const dbArticle = {
@@ -1967,7 +2169,6 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
     read_time: readTime,
     publish_date: today,
     article_html: article.html,
-    article_svg: svg,
     toc: article.toc,
     source_text: `[Article Agent — ${today}]\nTopic: ${researchData.topic}\nEditor: ${editorBrief?.headline || "No brief"}`,
     status: "draft" as const,
@@ -1991,7 +2192,6 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
         ...researchData,
         _article: {
           metadata: article.metadata,
-          svg,
           html: article.html,
           toc: article.toc,
           readTime,
@@ -2105,7 +2305,9 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
   // Previously only major_issues triggered rewrites — which meant Grok's
   // feedback was stored but never acted on (and the old prompt always said "minor").
   const grokVerdict = reviewResult?.verdict as string;
-  const grokScore = (reviewResult?.score as number) ?? 10;
+  // Default to 5 (not 10) when score is missing — a missing score means truncated output,
+  // which should trigger rewrites rather than silently passing
+  const grokScore = (typeof reviewResult?.score === "number") ? reviewResult.score as number : 5;
   if (grokVerdict === "major_issues" || (grokVerdict === "minor_issues" && grokScore < 7)) {
     const flags = (reviewResult!.flags as Array<{ type: string; quote: string; rewrite: string; reason: string }>) || [];
     if (flags.length > 0) {
@@ -2121,6 +2323,7 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
           maxTokens: 8192,
           temperature: 0.2,
           stage: "independence-revision",
+          webSearch: false,
         });
         await addCostToLog(db, logId, revisionUsage);
 
@@ -2136,8 +2339,8 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
             await db.from("articles").update({ article_html: revisedHtml }).eq("slug", slug);
           }
         }
-      } catch {
-        // Non-fatal — if revision fails, proceed with original article
+      } catch (revErr) {
+        console.warn(`[Independence] ⚠️ Revision application failed: ${revErr instanceof Error ? revErr.message : "unknown"}. Proceeding with original article.`);
       }
     }
   }
@@ -2173,6 +2376,7 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
           maxTokens: 8192,
           temperature: 0.15,
           stage: "fact-check",
+          webSearch: false,
         });
         await addCostToLog(db, logId, factCheckUsage);
 
@@ -2247,13 +2451,31 @@ async function stageQCAndPublish(
 Verdict: ${independenceReview.verdict}
 Summary: ${independenceReview.summary}
 Flags:
-${flags.map((f) => `- [${f.type}] "${f.quote}" — Suggestion: ${f.suggestion}`).join("\n")}
+${flags.map((f) => `- [${f.type}] "${f.quote}" — Rewrite: ${f.rewrite || f.suggestion || "no suggestion"} (Reason: ${f.reason || "not stated"})`).join("\n")}
 
 Consider these flags in your review. Address any legitimate concerns.\n`;
     } else {
       independenceSection = `\n## INDEPENDENCE REVIEW: Clean — no flags raised.\n`;
     }
   }
+
+  // Run mechanical voice audit — code, not AI
+  const voiceAudit = auditVoiceQuality((articleData.html as string) || "");
+  const voiceAuditSection = `\n## MECHANICAL VOICE AUDIT (generated by code — these are facts, not opinions)
+${voiceAudit.passed ? "✅ ALL CHECKS PASSED" : "❌ FAILURES DETECTED:"}
+${voiceAudit.failures.map(f => `- ❌ ${f}`).join("\n")}
+
+Metrics:
+- Word count: ${voiceAudit.wordCount}
+- Paragraphs: ${voiceAudit.totalParagraphs}
+- "you/your" count: ${voiceAudit.youCount} (minimum: 6)
+- Paragraphs over 3 sentences: ${voiceAudit.paragraphsOver3Sentences}
+- Longest paragraph: ${voiceAudit.longestParagraphSentences} sentences
+- Short sentences (< 8 words): ${voiceAudit.shortSentenceCount} (${voiceAudit.shortSentenceRatio})
+- Rhetorical questions: ${voiceAudit.rhetoricQuestionCount} (max: 2)
+- Banned phrases: ${voiceAudit.bannedPhrases.length > 0 ? voiceAudit.bannedPhrases.map(p => `"${p}"`).join(", ") : "none"}
+
+${!voiceAudit.passed ? "⚠️ This article has mechanical voice failures. You MUST factor these into your decision. Banned phrases and low 'you' count are auto-revise triggers per your editorial policy." : ""}\n`;
 
   // Senior Editor QC pass
   const qcPrompt = `Review this article before publication.
@@ -2262,15 +2484,15 @@ Consider these flags in your review. Address any legitimate concerns.\n`;
 Title: ${metadata.title}
 Description: ${metadata.description}
 Category: ${metadata.category}
-Word count: ~${((articleData.html as string) || "").split(/\s+/).length}
-
+Word count: ~${voiceAudit.wordCount}
+${voiceAuditSection}
 ## FULL ARTICLE HTML:
 ${(articleData.html as string) || ""}
 
 ## TABLE OF CONTENTS
 ${((articleData.toc as Array<{ title: string }>) || []).map((t) => `- ${t.title}`).join("\n")}
 ${independenceSection}
-Make your final call. Publish, request revisions, or kill.`;
+Make your final call. Publish, request revisions, or kill. Remember: voice failures from the mechanical audit are auto-revise triggers.`;
 
   // Fire illustration generation in parallel with QC (they're independent)
   // This saves 30-60s per article vs sequential
@@ -2287,17 +2509,27 @@ Make your final call. Publish, request revisions, or kill.`;
   // QC uses a DIFFERENT model from independence review (Grok).
   // Gemini primary for QC — fast, cheap, good at headline/description polish.
   // Falls back to Sonnet if Gemini fails. Never Grok — already reviewed.
+  // webSearch: false — QC analyzes the article text, doesn't need web search
   const { text: qcRaw, usage: qcUsage } = await generateWithFallback({
     system: SENIOR_EDITOR_QC_PROMPT + `\n\nCRITICAL: Return ONLY valid JSON. No markdown, no explanation — just the JSON object.`,
     user: qcPrompt,
     models: ["gemini-2.5-flash", "claude-sonnet-4-6"],
-    maxTokens: 1500,
+    maxTokens: 2000,
     temperature: 0.3,
     stage: "qc",
+    webSearch: false,
   });
   await addCostToLog(db, logId, qcUsage);
 
   const qcResult = parseClaudeJSON(qcRaw) as Record<string, unknown>;
+
+  // DEFAULT-DENY: if decision is missing or unrecognized, treat as revise (not silent publish)
+  const qcDecision = qcResult.decision as string;
+  if (!qcDecision || !["publish", "revise", "kill"].includes(qcDecision)) {
+    console.warn(`[QC] ⚠️ Invalid/missing decision: "${qcDecision}" — treating as revise (default-deny). Raw QC output may be truncated.`);
+    qcResult.decision = "revise";
+    qcResult.reviseInstructions = "QC output was truncated or invalid. Re-run editorial QC on this article.";
+  }
 
   // If editor kills the article, mark as failed
   if (qcResult.decision === "kill") {
@@ -2342,7 +2574,44 @@ Make your final call. Publish, request revisions, or kill.`;
 
   // Editor approved — apply any headline/description improvements
   const finalTitle = (qcResult.headline as string) || (metadata.title as string);
-  const finalDescription = (qcResult.description as string) || (metadata.description as string);
+  let finalDescription = (qcResult.description as string) || (metadata.description as string);
+
+  // HARD GATE: reject truncated descriptions at the last line of defense.
+  // parseClaudeJSON Step 3 silently repairs truncated JSON — which can produce
+  // descriptions like "Thyroid hormones are the master regulators of your metabolism, but interpreting their"
+  // (cut off mid-sentence). This check catches it at publish time.
+  const descTrimmed = (finalDescription || "").trim();
+  const endsWithPunctuation = /[.!?]["')\u2019]?\s*$/.test(descTrimmed);
+  if (!endsWithPunctuation || descTrimmed.length < 80) {
+    console.warn(`[Publish] ⚠️ Description appears truncated: "${descTrimmed.slice(-60)}" (${descTrimmed.length} chars, endsPunct=${endsWithPunctuation})`);
+    // Try each fallback source in order: QC → writer metadata → editor brief (from log's research_data)
+    const { data: logForBrief } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
+    const editorBriefDesc = ((logForBrief?.research_data as Record<string, unknown>)?._editorBrief as Record<string, unknown>)?.description as string | undefined;
+    const candidates = [
+      qcResult.description as string,
+      metadata.description as string,
+      editorBriefDesc,
+    ].filter((d): d is string => !!d && d.trim().length >= 80 && /[.!?]["')\u2019]?\s*$/.test(d.trim()));
+
+    if (candidates.length > 0) {
+      finalDescription = candidates[0];
+      console.log(`[Publish] Restored description from fallback (${finalDescription.length} chars)`);
+    } else {
+      // All sources are truncated — synthesize from the article's first paragraph
+      const firstParagraph = ((articleData.html as string) || "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(/(?<=[.!?])\s+/)
+        .slice(0, 2)
+        .join(" ")
+        .trim();
+      if (firstParagraph.length >= 60) {
+        finalDescription = firstParagraph;
+        console.log(`[Publish] Synthesized description from article opening (${finalDescription.length} chars)`);
+      }
+    }
+  }
 
   // Fetch log entry scores for the articles table
   const { data: logScores } = await db
@@ -2372,7 +2641,12 @@ Make your final call. Publish, request revisions, or kill.`;
 
   await db
     .from("daily_article_log")
-    .update({ title: finalTitle, status: "publishing", stage_started_at: new Date().toISOString() })
+    .update({
+      title: finalTitle,
+      status: "publishing",
+      stage_started_at: new Date().toISOString(),
+      editor_score: (qcResult.qualityScore as number) || logScores?.editor_score || null,
+    })
     .eq("id", logId);
 
   const readTime = (articleData.readTime as number) || 12;
@@ -2390,8 +2664,8 @@ Make your final call. Publish, request revisions, or kill.`;
         heroImageAlt = `Editorial illustration for ${finalTitle}`;
       }
     }
-  } catch {
-    // Non-fatal
+  } catch (illErr) {
+    console.warn(`[Publish] ⚠️ Illustration retrieval failed: ${illErr instanceof Error ? illErr.message : "unknown"}. Article will publish without hero image.`);
   }
 
   // Publish to GitHub
@@ -2407,7 +2681,6 @@ Make your final call. Publish, request revisions, or kill.`;
         tags: (metadata.tags as string[]) || [],
       },
       articleData.html as string,
-      articleData.svg as string,
       (articleData.toc as { id: string; title: string }[]) || [],
     );
 
@@ -3210,7 +3483,16 @@ For each topic return: a one-line topic description, suggested category, and why
         if (!edOk) return json({ error: "Editor brief failed", detail: edErr }, 500);
       }
 
-      // Mark queue topic complete
+      // Check if editor killed the article — if so, re-queue the topic instead of marking complete
+      const { data: postEditorLog } = await db.from("daily_article_log").select("status").eq("id", logEntry.id).maybeSingle();
+      if (postEditorLog?.status === "failed") {
+        // Editor killed it — put topic back in queue so it's not lost
+        await db.from("topic_queue").update({ status: "queued" }).eq("id", topic.id);
+        console.log(`[Produce] Editor killed topic "${topic.topic}" — re-queued`);
+        return json({ success: true, stage: "editor_killed", topic: topic.topic, message: "Editor killed this topic. Re-queued for future consideration." });
+      }
+
+      // Mark queue topic complete (editor approved)
       await db.from("topic_queue").update({ status: "completed" }).eq("id", topic.id);
 
       // Self-chain to continue production (write stage next)

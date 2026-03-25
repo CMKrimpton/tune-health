@@ -9,63 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="8 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-<defs>
-  <filter id="glow">
-    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-    <feMerge>
-      <feMergeNode in="coloredBlur"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
-  </filter>
-  <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
-    <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
-  </linearGradient>
-  <linearGradient id="neuron-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.8" />
-    <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:0.4" />
-  </linearGradient>
-</defs>
-<rect width="100%" height="100%" fill="url(#bg-gradient)"/>
-<g transform="translate(400, 300)">
-  <circle cx="0" cy="0" r="40" fill="url(#neuron-gradient)" filter="url(#glow)" opacity="0.9">
-    <animate attributeName="r" values="40;45;40" dur="3s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="-150" cy="-80" r="25" fill="url(#neuron-gradient)" filter="url(#glow)" opacity="0.7">
-    <animate attributeName="opacity" values="0.7;0.9;0.7" dur="2.5s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="150" cy="-80" r="25" fill="url(#neuron-gradient)" filter="url(#glow)" opacity="0.7">
-    <animate attributeName="opacity" values="0.7;0.9;0.7" dur="2.5s" begin="0.5s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="-120" cy="100" r="30" fill="url(#neuron-gradient)" filter="url(#glow)" opacity="0.8">
-    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" begin="1s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="120" cy="100" r="30" fill="url(#neuron-gradient)" filter="url(#glow)" opacity="0.8">
-    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" begin="1.5s" repeatCount="indefinite"/>
-  </circle>
-  <path d="M -150,-80 Q -75,-40 0,0" stroke="#8b5cf6" stroke-width="2" fill="none" opacity="0.5" filter="url(#glow)">
-    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" repeatCount="indefinite"/>
-  </path>
-  <path d="M 150,-80 Q 75,-40 0,0" stroke="#8b5cf6" stroke-width="2" fill="none" opacity="0.5" filter="url(#glow)">
-    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" begin="0.5s" repeatCount="indefinite"/>
-  </path>
-  <path d="M -120,100 Q -60,50 0,0" stroke="#7c3aed" stroke-width="2" fill="none" opacity="0.5" filter="url(#glow)">
-    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" begin="1s" repeatCount="indefinite"/>
-  </path>
-  <path d="M 120,100 Q 60,50 0,0" stroke="#7c3aed" stroke-width="2" fill="none" opacity="0.5" filter="url(#glow)">
-    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" begin="1.5s" repeatCount="indefinite"/>
-  </path>
-  <circle cx="0" cy="0" r="60" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.3" stroke-dasharray="5,10">
-    <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="20s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="0" cy="0" r="80" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.2" stroke-dasharray="10,5">
-    <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="30s" repeatCount="indefinite"/>
-  </circle>
-</g>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

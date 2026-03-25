@@ -9,59 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="12 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#e11d48;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#b91c1c;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  
-  <!-- Background -->
-  <rect width="400" height="300" fill="#1a1a1a"/>
-  
-  <!-- NO molecule (simplified) -->
-  <circle cx="150" cy="150" r="25" fill="#3b82f6" opacity="0.8"/>
-  <circle cx="180" cy="150" r="20" fill="#ef4444" opacity="0.8"/>
-  <text x="150" y="155" text-anchor="middle" fill="white" font-size="14" font-weight="bold">N</text>
-  <text x="180" y="155" text-anchor="middle" fill="white" font-size="14" font-weight="bold">O</text>
-  
-  <!-- Free radical damage rays -->
-  <path d="M 180 150 L 220 120" stroke="#ef4444" stroke-width="2" opacity="0.6"/>
-  <path d="M 180 150 L 220 150" stroke="#ef4444" stroke-width="2" opacity="0.6"/>
-  <path d="M 180 150 L 220 180" stroke="#ef4444" stroke-width="2" opacity="0.6"/>
-  
-  <!-- CO2 molecule (protective) -->
-  <circle cx="280" cy="150" r="20" fill="#10b981" opacity="0.8"/>
-  <circle cx="250" cy="150" r="18" fill="#10b981" opacity="0.8"/>
-  <circle cx="310" cy="150" r="18" fill="#10b981" opacity="0.8"/>
-  <text x="280" y="155" text-anchor="middle" fill="white" font-size="12" font-weight="bold">C</text>
-  <text x="250" y="155" text-anchor="middle" fill="white" font-size="12" font-weight="bold">O</text>
-  <text x="310" y="155" text-anchor="middle" fill="white" font-size="12" font-weight="bold">O</text>
-  
-  <!-- Title -->
-  <text x="200" y="40" text-anchor="middle" fill="white" font-size="20" font-weight="bold">NO vs CO₂</text>
-  <text x="200" y="65" text-anchor="middle" fill="#9ca3af" font-size="14">The Vasodilation Paradox</text>
-  
-  <!-- Labels -->
-  <text x="150" y="200" text-anchor="middle" fill="#ef4444" font-size="12">Oxidative Damage</text>
-  <text x="280" y="200" text-anchor="middle" fill="#10b981" font-size="12">Protective Effect</text>
-  
-  <!-- Aging arrow -->
-  <path d="M 50 250 L 350 250" stroke="url(#gradient)" stroke-width="3" marker-end="url(#arrowhead)"/>
-  <text x="200" y="270" text-anchor="middle" fill="#9ca3af" font-size="12">Aging Process</text>
-  
-  <!-- Arrow marker -->
-  <defs>
-    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#b91c1c" />
-    </marker>
-  </defs>
-</svg>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

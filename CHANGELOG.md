@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.10.0] - 2026-03-25
+
+### Fixed — Pipeline Silent Failures & Data Integrity
+- **CRITICAL: QC truncation → silent publish**: if `parseClaudeJSON` repaired truncated QC JSON, `decision` field was missing → code fell through kill/revise checks → article auto-published. Now defaults to "revise" when decision is missing/unrecognized (default-deny)
+- **CRITICAL: Editor brief truncation**: `maxTokens` bumped 2500 → 4000. Added validation for slug, headline, description, and tonePreset after parsing — logs warnings when fields are missing/corrupt from truncation
+- **CRITICAL: Description truncation at publish**: hard gate before committing to GitHub validates description ends with punctuation and is ≥ 80 chars. Tries 3 fallback sources; synthesizes from article opening if all are corrupt. No truncated description can reach production
+- **Writer maxTokens**: bumped 8192 → 16384. 8K was causing token-limit truncation on longer articles, which `parseClaudeJSON` Step 3 silently "repaired" into valid JSON with corrupt fields
+- **Grok null score bypass**: `reviewResult.score ?? 10` meant missing scores defaulted to 10 (perfect), skipping all rewrites. Now defaults to 5 (triggers rewrite review)
+- **Queue topic lost on editor kill**: topics were unconditionally marked "completed" after editor stage, even when editor killed the article. Topic was permanently lost. Now re-queued when editor kills
+- **Grok flags field name mismatch**: QC display read `f.suggestion` but independence prompt outputs `f.rewrite`. QC editor never saw Grok's actual rewrite suggestions. Fixed to read `f.rewrite` with `f.suggestion` fallback
+- **Gemini web search on QC/revision stages**: disabled Google Search tool for QC, fact-check, and independence-revision stages — they analyze article text, not the web. Reduces wasted tokens and prevents search interference with JSON output
+- **Silent catch blocks**: independence revision failure and illustration retrieval failure now log warnings instead of swallowing errors silently
+- **Grok error messages**: now include response body (was just status code)
+- **parseClaudeJSON truncation logging**: Step 3 repair now logs `⚠️ TRUNCATED OUTPUT` with counts of unclosed braces/brackets
+
+### Fixed — Article Data Quality
+- **7 truncated descriptions fixed**: thyroid-levels-metabolic-engine, 49ers-injuries-emf-substation-theory, birth-control-eugenic-history, calcium-phosphorus-ratio-diet-health, non-opioid-painkillers-ngf-sodium-blockers, pancreatic-cancer-new-treatments-mrna-kras, resuscitation-long-term-outcomes-babies — all rewritten from article content
+- **8 .astro description mismatches synced**: boredom-is-a-superpower, certainty-dealers-wellness-industry, examined-life-overrated, human-proclivity-religion-psychology, kids-who-learned-not-to-need, least-curious-question-why, ninos-que-aprendieron-no-necesitar, your-doctor-cant-answer-that
+- **Invalid category fixed**: nicotine-research.json changed from "Research Summary" (invalid) to "Pharmacology"
+
+## [9.9.0] - 2026-03-25
+
+### Fixed — Editorial Voice Quality Enforcement
+- **Mechanical voice scanner**: new `auditVoiceQuality()` function runs code (not AI) on every article before QC. Scans for 30+ banned phrases, counts "you" usage, measures paragraph length, checks short-sentence ratio, counts rhetorical questions. Feeds hard metrics into QC prompt so the editor has objective data
+- **QC prompt upgraded to gate on voice**: Senior Editor QC now checks voice quality, not just headlines. Auto-revise triggers: banned phrases found, "you" count below 4, paragraphs over 3 sentences, zero editorial opinions. Auto-kill: 3+ banned phrases AND zero opinion. Previously QC was told "don't re-litigate the content" — it now explicitly must
+- **Writer self-audit required**: output JSON now requires a `selfAudit` field where the writer reports its own banned phrase check, "you" count, analogies, editorial positions, follow-the-money angle, and Bill Maher moment. If the writer can't fill these fields, the article fails before it leaves the write stage
+- **Follow-the-money directive**: every article assignment now explicitly asks "who profits from the status quo on this topic?" — not buried in system prompt, but in the per-article user prompt where recency bias helps
+- **Editorial opinion minimum raised**: articles must now take at least 2 clear positions (up from 1). "you" count minimum raised to 6 (up from 4). Both are mechanically verified
+- **Pre-flight checklist hardened**: "Think of your/it as" added to banned phrases. Description completeness check added. Bill Maher test, follow-the-money, and editorial positions are now mandatory self-audit fields, not mental checks
+
+## [9.8.0] - 2026-03-25
+
+### Fixed — Hero Images Now Display in Articles
+- **Articles now show AI-generated illustrations**: `ArticleLayout.astro` displays `heroImage` from article metadata as full-width hero art. Previously, the layout used a `<slot name="feature-image">` that expected inline SVGs — the generated illustrations (from `generate-illustration`) were only used for OG tags and card thumbnails. Now the illustration pipeline works end-to-end: generate → store in Supabase Storage → display in article
+- **Removed all inline SVG placeholders**: stripped the generic gradient+circle SVG blocks from all 103 article `.astro` files. These were meaningless filler — two circles on a dark gradient, identical across every article
+- **Pipeline no longer generates SVGs**: `generateMinimalSvg()` removed from `daily-article-agent`. `assembleAstroFile()` no longer includes SVG slot. New articles are leaner
+- **Admin publish flow cleaned up**: edit page and ArticleEditor no longer inject `article_svg` into generated `.astro` files or database saves
+- **ArticleCard.astro updated**: now accepts `heroImage`/`heroImageAlt` props and displays the actual illustration instead of Tailwind gradient classes
+- **Gradient fallback preserved**: articles without `heroImage` (if any) get a category-based CSS gradient instead of a broken empty area
+
 ## [9.7.0] - 2026-03-25
 
 ### Fixed — Admin CSS, Layouts, Writer Prompts

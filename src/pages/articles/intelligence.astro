@@ -9,69 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="9 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-    <defs>
-      <linearGradient id="intGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#1a0a1e"/>
-        <stop offset="100%" style="stop-color:#2a0a0a"/>
-      </linearGradient>
-      <linearGradient id="intGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" style="stop-color:#e11d48"/>
-        <stop offset="100%" style="stop-color:#b91c1c"/>
-      </linearGradient>
-      <filter id="intGlow">
-        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-    <rect width="1200" height="600" fill="url(#intGrad1)"/>
-    <!-- Neural network nodes -->
-    <g filter="url(#intGlow)" opacity="0.5">
-      <circle cx="300" cy="150" r="8" fill="#e11d48"/>
-      <circle cx="450" cy="280" r="10" fill="#fb7185"/>
-      <circle cx="600" cy="180" r="12" fill="#e11d48"/>
-      <circle cx="750" cy="320" r="9" fill="#fb7185"/>
-      <circle cx="900" cy="200" r="11" fill="#e11d48"/>
-      <circle cx="350" cy="400" r="7" fill="#fb7185"/>
-      <circle cx="550" cy="420" r="9" fill="#e11d48"/>
-      <circle cx="700" cy="450" r="8" fill="#fb7185"/>
-      <circle cx="850" cy="380" r="10" fill="#e11d48"/>
-      <circle cx="200" cy="300" r="6" fill="#fb7185"/>
-      <circle cx="1000" cy="280" r="7" fill="#e11d48"/>
-    </g>
-    <!-- Connection lines (neural pathways) -->
-    <g stroke="#e11d48" stroke-width="0.8" opacity="0.2">
-      <line x1="300" y1="150" x2="450" y2="280"/>
-      <line x1="450" y1="280" x2="600" y2="180"/>
-      <line x1="600" y1="180" x2="750" y2="320"/>
-      <line x1="750" y1="320" x2="900" y2="200"/>
-      <line x1="200" y1="300" x2="350" y2="400"/>
-      <line x1="350" y1="400" x2="550" y2="420"/>
-      <line x1="550" y1="420" x2="700" y2="450"/>
-      <line x1="700" y1="450" x2="850" y2="380"/>
-      <line x1="300" y1="150" x2="200" y2="300"/>
-      <line x1="450" y1="280" x2="350" y2="400"/>
-      <line x1="600" y1="180" x2="550" y2="420"/>
-      <line x1="750" y1="320" x2="700" y2="450"/>
-      <line x1="900" y1="200" x2="850" y2="380"/>
-      <line x1="900" y1="200" x2="1000" y2="280"/>
-      <line x1="850" y1="380" x2="1000" y2="280"/>
-    </g>
-    <!-- Bell curve outline -->
-    <path d="M200 500 Q400 500 500 400 Q550 350 600 200 Q650 350 700 400 Q800 500 1000 500" fill="none" stroke="url(#intGrad2)" stroke-width="2" opacity="0.3"/>
-    <!-- Scattered measurement marks -->
-    <g opacity="0.15">
-      <rect x="580" y="480" width="40" height="3" fill="#e11d48"/>
-      <rect x="540" y="490" width="120" height="1" fill="#fb7185"/>
-      <rect x="560" y="500" width="80" height="2" fill="#e11d48"/>
-    </g>
-    <path d="M0 550 Q300 530 600 545 T1200 525 V600 H0 Z" fill="#0c0a09" opacity="0.3"/>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

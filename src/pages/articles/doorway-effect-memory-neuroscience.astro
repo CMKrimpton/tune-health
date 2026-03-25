@@ -9,55 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="8 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-<defs>
-  <filter id="glow">
-    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-    <feMerge>
-      <feMergeNode in="coloredBlur"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
-  </filter>
-  <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
-    <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
-  </linearGradient>
-  <linearGradient id="door-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:0.8" />
-    <stop offset="100%" style="stop-color:#9333ea;stop-opacity:0.6" />
-  </linearGradient>
-</defs>
-<rect width="1200" height="630" fill="url(#bg-gradient)"/>
-<g transform="translate(600,315)">
-  <!-- Doorway structure -->
-  <rect x="-150" y="-200" width="300" height="400" fill="none" stroke="url(#door-gradient)" stroke-width="3" filter="url(#glow)"/>
-  <rect x="-130" y="-180" width="260" height="360" fill="none" stroke="url(#door-gradient)" stroke-width="2" opacity="0.6"/>
-  
-  <!-- Neural network nodes fading through door -->
-  <circle cx="-200" cy="-50" r="8" fill="#7c3aed" opacity="0.9" filter="url(#glow)"/>
-  <circle cx="-180" cy="20" r="6" fill="#9333ea" opacity="0.8" filter="url(#glow)"/>
-  <circle cx="-160" cy="-80" r="7" fill="#7c3aed" opacity="0.7" filter="url(#glow)"/>
-  
-  <circle cx="0" cy="-30" r="5" fill="#9333ea" opacity="0.5" filter="url(#glow)"/>
-  <circle cx="20" cy="40" r="4" fill="#7c3aed" opacity="0.4" filter="url(#glow)"/>
-  <circle cx="-20" cy="80" r="6" fill="#9333ea" opacity="0.3" filter="url(#glow)"/>
-  
-  <circle cx="180" cy="-60" r="3" fill="#7c3aed" opacity="0.2" filter="url(#glow)"/>
-  <circle cx="200" cy="10" r="4" fill="#9333ea" opacity="0.15" filter="url(#glow)"/>
-  <circle cx="160" cy="50" r="3" fill="#7c3aed" opacity="0.1" filter="url(#glow)"/>
-  
-  <!-- Connecting lines showing memory fragmentation -->
-  <path d="M-200,-50 L-180,20 L-160,-80" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.6"/>
-  <path d="M0,-30 L20,40 L-20,80" fill="none" stroke="#9333ea" stroke-width="1" opacity="0.3"/>
-  <path d="M180,-60 L200,10 L160,50" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.15"/>
-  
-  <!-- Abstract brain waves -->
-  <path d="M-300,0 Q-250,-50 -200,0 T-100,0" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.4" filter="url(#glow)"/>
-  <path d="M100,0 Q150,50 200,0 T300,0" fill="none" stroke="#9333ea" stroke-width="2" opacity="0.2" filter="url(#glow)"/>
-</g>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

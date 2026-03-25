@@ -9,69 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="10 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-    <defs>
-      <linearGradient id="senoGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#1a1625"/>
-        <stop offset="100%" style="stop-color:#1e1145"/>
-      </linearGradient>
-      <linearGradient id="senoGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" style="stop-color:#6366f1"/>
-        <stop offset="100%" style="stop-color:#9333ea"/>
-      </linearGradient>
-      <filter id="senoGlow">
-        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-      <radialGradient id="cellGrad" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" style="stop-color:#9333ea;stop-opacity:0.3"/>
-        <stop offset="100%" style="stop-color:#9333ea;stop-opacity:0"/>
-      </radialGradient>
-    </defs>
-    <rect width="1200" height="600" fill="url(#senoGrad1)"/>
-    <!-- Senescent cells (irregular, glowing shapes) -->
-    <g filter="url(#senoGlow)" opacity="0.6">
-      <circle cx="250" cy="200" r="45" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="8,4"/>
-      <circle cx="250" cy="200" r="20" fill="#6366f1" opacity="0.15"/>
-      <circle cx="750" cy="350" r="55" fill="none" stroke="#9333ea" stroke-width="2" stroke-dasharray="8,4"/>
-      <circle cx="750" cy="350" r="25" fill="#9333ea" opacity="0.15"/>
-      <circle cx="500" cy="150" r="35" fill="none" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="6,3"/>
-      <circle cx="500" cy="150" r="15" fill="#818cf8" opacity="0.12"/>
-      <circle cx="900" cy="180" r="40" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="8,4"/>
-      <circle cx="900" cy="180" r="18" fill="#6366f1" opacity="0.12"/>
-    </g>
-    <!-- Healthy cells (solid, clean circles) -->
-    <g opacity="0.35">
-      <circle cx="400" cy="320" r="30" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
-      <circle cx="600" cy="250" r="25" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
-      <circle cx="350" cy="450" r="22" fill="none" stroke="#c4b5fd" stroke-width="1"/>
-      <circle cx="850" cy="420" r="28" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
-      <circle cx="150" cy="380" r="20" fill="none" stroke="#c4b5fd" stroke-width="1"/>
-      <circle cx="1050" cy="300" r="24" fill="none" stroke="#c4b5fd" stroke-width="1"/>
-    </g>
-    <!-- Clearance arrows (X marks on senescent cells) -->
-    <g stroke="#ef4444" stroke-width="2" opacity="0.5">
-      <line x1="235" y1="185" x2="265" y2="215"/>
-      <line x1="265" y1="185" x2="235" y2="215"/>
-      <line x1="735" y1="335" x2="765" y2="365"/>
-      <line x1="765" y1="335" x2="735" y2="365"/>
-    </g>
-    <!-- Connective tissue network -->
-    <g stroke="#6366f1" stroke-width="0.5" opacity="0.15">
-      <line x1="250" y1="200" x2="400" y2="320"/>
-      <line x1="400" y1="320" x2="600" y2="250"/>
-      <line x1="600" y1="250" x2="750" y2="350"/>
-      <line x1="500" y1="150" x2="600" y2="250"/>
-      <line x1="750" y1="350" x2="900" y2="180"/>
-      <line x1="850" y1="420" x2="750" y2="350"/>
-    </g>
-    <path d="M0 550 Q300 520 600 540 T1200 520 V600 H0 Z" fill="#0c0a09" opacity="0.3"/>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

@@ -9,68 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="9 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-    <defs>
-      <linearGradient id="gutGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#1a1a2e"/>
-        <stop offset="100%" style="stop-color:#0f2419"/>
-      </linearGradient>
-      <linearGradient id="gutGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" style="stop-color:#84cc16"/>
-        <stop offset="100%" style="stop-color:#16a34a"/>
-      </linearGradient>
-      <filter id="gutGlow">
-        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-    <rect width="1200" height="600" fill="url(#gutGrad1)"/>
-    <!-- Vagus nerve pathway -->
-    <g opacity="0.4" filter="url(#gutGlow)">
-      <path d="M600 80 Q580 150 590 220 Q610 290 580 360 Q560 430 590 500" stroke="#84cc16" stroke-width="3" fill="none" stroke-dasharray="8,4"/>
-      <path d="M600 80 Q620 150 610 220 Q590 290 620 360 Q640 430 610 500" stroke="#16a34a" stroke-width="2" fill="none" stroke-dasharray="6,6"/>
-    </g>
-    <!-- Brain representation (top) -->
-    <g opacity="0.5" filter="url(#gutGlow)">
-      <ellipse cx="600" cy="100" rx="80" ry="50" fill="none" stroke="#84cc16" stroke-width="1.5"/>
-      <path d="M540 100 Q570 70 600 80 Q630 70 660 100" stroke="#84cc16" stroke-width="1" fill="none"/>
-      <path d="M550 110 Q575 130 600 120 Q625 130 650 110" stroke="#16a34a" stroke-width="1" fill="none"/>
-    </g>
-    <!-- Gut microbiome cluster (bottom) -->
-    <g opacity="0.5" filter="url(#gutGlow)">
-      <circle cx="580" cy="480" r="8" fill="#84cc16" opacity="0.6"/>
-      <circle cx="600" cy="500" r="6" fill="#16a34a" opacity="0.7"/>
-      <circle cx="620" cy="475" r="7" fill="#84cc16" opacity="0.5"/>
-      <circle cx="560" cy="500" r="5" fill="#16a34a" opacity="0.6"/>
-      <circle cx="640" cy="495" r="6" fill="#84cc16" opacity="0.5"/>
-      <circle cx="590" cy="520" r="9" fill="#16a34a" opacity="0.4"/>
-      <circle cx="610" cy="515" r="5" fill="#84cc16" opacity="0.6"/>
-      <circle cx="570" cy="460" r="4" fill="#16a34a" opacity="0.5"/>
-      <circle cx="630" cy="460" r="5" fill="#84cc16" opacity="0.4"/>
-    </g>
-    <!-- Scattered metabolite particles -->
-    <g opacity="0.25">
-      <circle cx="200" cy="200" r="3" fill="#84cc16"/>
-      <circle cx="350" cy="350" r="2" fill="#16a34a"/>
-      <circle cx="900" cy="180" r="3" fill="#84cc16"/>
-      <circle cx="850" cy="400" r="2" fill="#16a34a"/>
-      <circle cx="150" cy="450" r="2" fill="#84cc16"/>
-      <circle cx="1050" cy="300" r="3" fill="#16a34a"/>
-      <circle cx="400" cy="150" r="2" fill="#84cc16"/>
-      <circle cx="800" cy="500" r="2" fill="#16a34a"/>
-    </g>
-    <!-- Connecting arcs representing communication pathways -->
-    <g opacity="0.15">
-      <ellipse cx="600" cy="300" rx="250" ry="180" fill="none" stroke="url(#gutGrad2)" stroke-width="1"/>
-      <ellipse cx="600" cy="300" rx="180" ry="130" fill="none" stroke="url(#gutGrad2)" stroke-width="0.8"/>
-    </g>
-    <path d="M0 560 Q300 530 600 550 T1200 535 V600 H0 Z" fill="#0c0a09" opacity="0.3"/>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

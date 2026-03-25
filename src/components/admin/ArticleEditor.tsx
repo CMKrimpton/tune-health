@@ -316,7 +316,6 @@ export default function ArticleEditor() {
               read_time: data.metadata.readTime,
               publish_date: data.metadata.publishDate,
               article_html: data.html,
-              article_svg: data.svg,
               toc: data.toc,
               source_text: sourceText.slice(0, 50000),
               status: 'draft',
@@ -629,8 +628,8 @@ a{color:#dc2626;text-decoration:none}
 .hero{text-align:center;padding:2rem 0 3rem;border-bottom:1px solid #d6d3d1;margin-bottom:2rem}
 .cat{display:inline-block;padding:0.25rem 0.75rem;background:#fef2f2;color:#dc2626;border-radius:1rem;font-family:'Inter',sans-serif;font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:1rem}
 .meta{font-family:'Inter',sans-serif;font-size:0.8125rem;color:#78716c;margin-top:0.75rem}
-.svg-wrap{margin:0 -2rem 2rem}
-.svg-wrap svg{width:100%;height:auto;border-radius:0.5rem}
+.hero-img{margin:0 -2rem 2rem}
+.hero-img img{width:100%;height:auto;border-radius:0.5rem;aspect-ratio:16/9;object-fit:cover}
 section{margin-bottom:1.5rem}
 .disclaimer{background:#f5f5f4;border:1px solid #d6d3d1;border-left:4px solid #dc2626;border-radius:0.5rem;padding:1.5rem;margin:2rem 0;font-size:0.875rem;font-family:'Inter',sans-serif;color:#57534e}
 </style>
@@ -642,7 +641,7 @@ section{margin-bottom:1.5rem}
 <p style="color:#78716c;font-size:1rem;margin-top:0.75rem">${metadata.description}</p>
 <div class="meta">${metadata.readTime} min read &middot; alumi news Editorial</div>
 </div>
-${article.svg ? `<div class="svg-wrap"><svg viewBox="0 0 1200 600">${article.svg}</svg></div>` : ''}
+${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" alt="${metadata.heroImageAlt || metadata.title}" /></div>` : ''}
 <div class="article-content">${article.html}</div>
 </body></html>`;
   })();
@@ -978,9 +977,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="${metadata.readTime} min read"
   publishDate="${publishDate}"
 >
-  <!-- Feature Image -->
-  ${article.svg ? `<svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">\n${article.svg}\n  </svg>` : ''}
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>

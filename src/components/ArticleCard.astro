@@ -16,6 +16,8 @@ interface Props {
   size?: 'default' | 'featured';
   class?: string;
   delay?: number;
+  heroImage?: string;
+  heroImageAlt?: string;
 }
 
 const {
@@ -30,6 +32,8 @@ const {
   size = 'default',
   class: className = '',
   delay = 0,
+  heroImage,
+  heroImageAlt,
 } = Astro.props;
 
 const isFeatured = size === 'featured';
@@ -47,8 +51,12 @@ const slug = href.split('/').pop() || 'article';
 {comingSoon ? (
   <div class:list={['article-card group reveal', delayClass, 'opacity-75 cursor-default', className]}>
     <div class="article-card-image relative">
-      <div class:list={['article-card-image-inner bg-gradient-to-br', gradientClass]}>
-        {number && <span class="article-card-number">{number}</span>}
+      <div class:list={['article-card-image-inner relative overflow-hidden', heroImage ? '' : `bg-gradient-to-br ${gradientClass}`]}>
+        {heroImage ? (
+          <img src={heroImage} alt={heroImageAlt || title} class="w-full h-full object-cover grayscale-[30%]" loading="lazy" />
+        ) : (
+          number && <span class="article-card-number">{number}</span>
+        )}
       </div>
       <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">
         Coming Soon
@@ -65,8 +73,12 @@ const slug = href.split('/').pop() || 'article';
 ) : (
   <a href={href} class:list={['article-card group reveal', delayClass, className]}>
     <div class="article-card-image" transition:name={`card-image-${slug}`}>
-      <div class:list={['article-card-image-inner bg-gradient-to-br', gradientClass]}>
-        {number && <span class="article-card-number">{number}</span>}
+      <div class:list={['article-card-image-inner relative overflow-hidden', heroImage ? '' : `bg-gradient-to-br ${gradientClass}`]}>
+        {heroImage ? (
+          <img src={heroImage} alt={heroImageAlt || title} class="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          number && <span class="article-card-number">{number}</span>
+        )}
       </div>
     </div>
     <div class="article-card-content">

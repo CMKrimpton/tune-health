@@ -27,7 +27,7 @@ export interface ArticleRecord {
   hero_image: string | null;
   hero_image_alt: string | null;
   article_html: string;
-  article_svg: string | null;
+  article_svg: string | null;  // deprecated — no longer generated, kept for DB compat
   toc: TocEntry[];
   source_text: string | null;
   status: ArticleStatus;
@@ -82,7 +82,6 @@ export interface PipelineResearchData {
   /** Populated after stage 3 (article writing) */
   _article?: {
     metadata: Record<string, unknown>;
-    svg: string;
     html: string;
     toc: TocEntry[];
     readTime: number;

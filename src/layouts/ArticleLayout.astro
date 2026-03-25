@@ -129,16 +129,33 @@ const articleSeries = currentArticle?.series;
     </div>
   </section>
 
-  <!-- Feature Image Slot -->
-  <div class="container-editorial">
-    <div
-      class="article-feature-image reveal"
-      transition:name={`image-${slug}`}
-      transition:animate={slide({ duration: '0.5s', delay: '0.1s' })}
-    >
-      <slot name="feature-image" />
+  <!-- Hero Image -->
+  {currentArticle?.heroImage ? (
+    <div class="container-editorial">
+      <div
+        class="article-feature-image reveal"
+        transition:name={`image-${slug}`}
+        transition:animate={slide({ duration: '0.5s', delay: '0.1s' })}
+      >
+        <img
+          src={currentArticle.heroImage}
+          alt={currentArticle.heroImageAlt || title}
+          class="w-full h-full object-cover"
+          loading="eager"
+        />
+      </div>
     </div>
-  </div>
+  ) : (
+    <div class="container-editorial">
+      <div
+        class="article-feature-image reveal"
+        transition:name={`image-${slug}`}
+        transition:animate={slide({ duration: '0.5s', delay: '0.1s' })}
+      >
+        <div class="w-full aspect-[2/1] rounded-2xl" style={getArticleGradientStyle(category)}></div>
+      </div>
+    </div>
+  )}
 
   <!-- Article Content -->
   <article

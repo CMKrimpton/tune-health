@@ -9,65 +9,6 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="9 min read"
   publishDate="March 2026"
 >
-  <!-- Feature Image -->
-  <svg slot="feature-image" viewBox="0 0 1200 600" class="w-full h-full">
-    <defs>
-      <linearGradient id="mpGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#1a0a2e"/>
-        <stop offset="100%" style="stop-color:#140820"/>
-      </linearGradient>
-      <linearGradient id="mpGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#7c3aed"/>
-        <stop offset="100%" style="stop-color:#7e22ce"/>
-      </linearGradient>
-      <filter id="mpGlow">
-        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-      <radialGradient id="mpRadial" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:0.15"/>
-        <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:0"/>
-      </radialGradient>
-    </defs>
-    <rect width="1200" height="600" fill="url(#mpGrad1)"/>
-    <!-- Fragmented particle field -->
-    <g filter="url(#mpGlow)" opacity="0.5">
-      <!-- Irregular angular shapes representing plastic fragments -->
-      <polygon points="200,180 215,170 220,185 208,192" fill="#7c3aed" opacity="0.6"/>
-      <polygon points="350,320 368,310 375,328 360,335" fill="#7e22ce" opacity="0.5"/>
-      <polygon points="500,150 518,142 525,160 510,168 498,158" fill="#7c3aed" opacity="0.4"/>
-      <polygon points="700,250 712,238 722,252 715,265 702,260" fill="#7e22ce" opacity="0.6"/>
-      <polygon points="850,180 865,172 870,188 858,195" fill="#7c3aed" opacity="0.5"/>
-      <polygon points="150,400 165,392 172,408 158,415" fill="#7e22ce" opacity="0.4"/>
-      <polygon points="950,350 968,342 975,360 960,368" fill="#7c3aed" opacity="0.5"/>
-      <polygon points="600,420 615,410 622,428 608,435" fill="#7e22ce" opacity="0.6"/>
-      <polygon points="420,280 435,270 442,288 428,295" fill="#7c3aed" opacity="0.4"/>
-      <polygon points="780,400 795,392 802,408 788,415" fill="#7e22ce" opacity="0.5"/>
-    </g>
-    <!-- Drift lines suggesting particles in circulation -->
-    <g opacity="0.1">
-      <path d="M100 200 Q300 180 500 220 T900 200" stroke="#7c3aed" stroke-width="1" fill="none"/>
-      <path d="M100 350 Q400 330 600 370 T1100 340" stroke="#7e22ce" stroke-width="1" fill="none"/>
-      <path d="M200 450 Q500 430 700 460 T1100 440" stroke="#7c3aed" stroke-width="0.8" fill="none"/>
-    </g>
-    <!-- Central brain-shaped membrane outline -->
-    <ellipse cx="600" cy="280" rx="180" ry="140" fill="none" stroke="#7c3aed" stroke-width="0.8" opacity="0.2" stroke-dasharray="4 6"/>
-    <ellipse cx="600" cy="280" rx="120" ry="95" fill="url(#mpRadial)"/>
-    <!-- Tiny nanoscale dots penetrating barrier -->
-    <g opacity="0.3">
-      <circle cx="520" cy="240" r="1.5" fill="#7c3aed"/>
-      <circle cx="680" cy="260" r="1.5" fill="#7e22ce"/>
-      <circle cx="570" cy="310" r="1" fill="#7c3aed"/>
-      <circle cx="640" cy="230" r="1" fill="#7e22ce"/>
-      <circle cx="590" cy="290" r="1.5" fill="#7c3aed"/>
-      <circle cx="620" cy="270" r="1" fill="#7e22ce"/>
-    </g>
-    <path d="M0 550 Q300 530 600 545 T1200 525 V600 H0 Z" fill="#0c0a09" opacity="0.3"/>
-  </svg>
-
   <!-- Table of Contents -->
   <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
     <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
