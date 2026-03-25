@@ -101,7 +101,7 @@ src/
 - **All navigation is collection-driven** — topics, series, and featured articles auto-populate from content collection
 
 ### Content
-- **110+ published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, and Pharmacology
+- **110+ published articles** across Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, and Pharmacology. Autonomous pipeline actively rebalancing toward underserved subjects (cardiology, diabetes, immunology, etc.)
 - **"Meaning & Mind" series** — 5-part Opus editorial series on curiosity, certainty, self-examination, clinical meaning, and boredom
 - **"The Kids Who Learned Not to Need"** — 38-min three-part series on abandonment trauma (also available in Spanish)
 - **First Spanish localization** — proof of concept for multilingual content
@@ -154,7 +154,7 @@ Four AI companies, five models, two independent jobs, full fallback on every sta
 
 ### Design
 - Responsive design with mobile-first approach
-- Dark/light theme toggle with system preference detection
+- Three-state theme toggle: system (default, follows OS) → light → dark. Monitor/sun/moon icons
 - Magazine-style editorial layout
 - **AI-generated editorial illustrations** (OpenAI GPT Image 1.5) with category gradient fallback
 - Custom View Transition animations

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.5.0] - 2026-03-24
+
+### Changed — Theme System & Pipeline Rebalancing
+- **Three-state theme toggle**: system (default) → light → dark → system. "System" follows `prefers-color-scheme` and listens for live OS changes. Monitor/sun/moon icons in Header, SideNav, and Command Palette. Old localStorage values (`light`/`dark`) preserved; no key = system
+- **Autonomous pipeline rebalanced for coverage gaps**: scout prompts now include explicit subject-level gap guidance listing 12 uncovered subjects (cardiology, diabetes, immunology, kidney, liver, respiratory, musculoskeletal, addiction, prostate, pain, dermatology, pediatrics). At least 8 of 20 scouted topics must come from gaps. Each scout model system prompt reinforced. Editor brief gets +2 score bonus for gap-filling topics and hard constraint against approving more Neuroscience/Clinical Evidence unless scoring 8+ with no underserved alternatives. Category balance thresholds tightened from 5%/15% to 8%/12%. Scout priority threshold raised to 10%
+- **First gap-filling article published**: "Non-Opioid Painkillers: NGF Inhibitors and Sodium Channel Blockers" (pain science + pharmacology)
+
 ## [9.4.0] - 2026-03-24
 
 ### Changed — Admin Portal Complete Redesign

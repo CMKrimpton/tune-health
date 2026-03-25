@@ -139,7 +139,7 @@ const articles = await getCollection('articles');
 
 ### Styling Approach
 - Tailwind utility classes with custom component layer in `src/styles/global.css`
-- Dark mode via `class` strategy (toggle in JS, persisted to localStorage)
+- Dark mode via `class` strategy. Three-state toggle: system (default, follows `prefers-color-scheme` with live listener) → light → dark. Icons: monitor/sun/moon. `localStorage.theme` stores `'light'` or `'dark'`; absent key = system
 - **Warm color palette** (public site):
   - `black` = `#1b1a18` (HSL 47°, 3%, 10%) - warm dark gray
   - `white` = `#e7e6e3` (HSL 47°, 3%, 90%) - warm off-white
@@ -178,7 +178,7 @@ const articles = await getCollection('articles');
 - React component using `cmdk` library
 - **Collection-driven**: article data injected from Astro via `window.__ALUMI_ARTICLES__`
 - Site-wide search: articles, sections, pages
-- Actions: theme toggle, share, print
+- Actions: cycle theme (system/light/dark), share, print
 - Recently used items tracking
 - Keyboard navigation (↑↓ Enter Esc)
 
@@ -206,11 +206,11 @@ const articles = await getCollection('articles');
 Two independent cron jobs power the newsroom:
 
 **Job 1 — Scout** (3 crons/day: `scout-gemini` 6am UTC, `scout-sonnet` 2pm, `scout-grok` 10pm):
-Three-model discovery — each finds 20 topics, all deduped and inserted directly into `topic_queue`. Gemini (Google Search, trending topics), Sonnet (web search, editorial potential), Grok (contrarian, independent perspective). No expensive structuring step — raw findings parsed directly. Per-scout dedup against all articles + queue + within-batch. Category balance prioritizes underserved areas. ~$0.14/day total scout cost.
+Three-model discovery — each finds 20 topics, all deduped and inserted directly into `topic_queue`. Gemini (Google Search, trending topics), Sonnet (web search, editorial potential), Grok (contrarian, independent perspective). No expensive structuring step — raw findings parsed directly. Per-scout dedup against all articles + queue + within-batch. Category balance prioritizes underserved areas (<10% threshold). Scout prompts include explicit subject-level gap guidance listing 12 uncovered subjects (cardiology, diabetes, immunology, kidney, liver, respiratory, musculoskeletal, addiction, prostate, pain, dermatology, pediatrics) — at least 8 of 20 topics must come from gaps. Each model's system prompt reinforced with gap awareness. ~$0.14/day total scout cost.
 
 **Job 2 — Produce** (cron: `0 * * * *`, hourly, action: `produce`):
 Picks the best topic from the queue, self-chains through 4 production stages:
-  - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, assigns **article archetype** (deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), picks **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated), sets density + pacing. Hard category balance rule: underserved categories (<5%) get priority over overserved (>15%) unless score gap >3. Can flag `replacesSlug` to replace an older article.
+  - **Editor Brief** (~30s): Sonnet 4.6 picks topic, checks overlap, assigns **article archetype** (deep-investigation, explainer, provocation, case-study, profile, roundup, myth-autopsy), picks **tone preset** (10 options: straight-science, smart-casual, dry-analytical, storyteller, debunker, wire-dispatch, pointed, measured-authority, curious, understated), sets density + pacing. Hard category balance rule: underserved categories (<8%) get priority over overserved (>12%) unless score gap >3. Subject-level gap bonus: +2 score for candidates covering zero-coverage subjects (cardiology, diabetes, immunology, kidney, liver, respiratory, musculoskeletal, addiction, prostate, pain, dermatology). Hard block on more Neuroscience/Clinical Evidence unless 8+ with no underserved alternatives. Can flag `replacesSlug` to replace an older article.
   - **Write** (~90s, temp 0.5): Sonnet/Gemini rotation by hour (Grok removed from writing — good at review, bad at editorial voice). Voice reference from Opus articles as gold standard. Epistemic integrity framework: evidence hierarchy, dogma traps list, contrarian checkpoint, follow-the-money. Anti-AI rules + anti-padding rules enforced. Zero fabrication rule — only cite research data. Mandatory Sources section with `id="sources"`. Deterministic category gradients + programmatic SVG. Variable word counts per archetype (1,200–2,400). `model_used` tracked for quality comparison.
   - **Grok Independence Review** (~30s): Grok 3 (xAI) reviews FULL article for pharma framing, institutional deference, pulled punches, **outdated dogma**, **stale evidence**, **unfunded claims**, **AI voice tells**. Adversarial prompt — score examples use text instructions (no hardcoded numbers for model to copy). When verdict is `major_issues` OR `minor_issues with score < 7`, Claude applies Grok's specific rewrite suggestions before QC. Must quote exact article text and provide concrete replacements. PubMed citation verification runs in parallel (non-blocking, up to 5 studies verified).
   - **PubMed Fact-Check** (after Grok review): verifies cited studies on PubMed. If 2+ studies or >50% fail verification → article revised with "(citation unverified)" tags. Previously ran but results were ignored.
