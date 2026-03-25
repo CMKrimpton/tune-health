@@ -1,0 +1,32 @@
+{
+  "title": "Cellular Panic: How High-Intensity Training Forces Mitochondria to Remodel",
+  "description": "High-intensity intervals do more than burn energy—they trigger an acute metabolic crisis. Within hours, this cellular panic forces mitochondria to physically fuse, multiply, and increase their respiratory capacity.",
+  "category": "Fitness",
+  "publishDate": "2026-03-25",
+  "author": {
+    "name": "Christine Wright",
+    "role": "Science & Evidence Desk"
+  },
+  "readTime": 5,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Mitochondrial Health",
+    "HIIT",
+    "Cellular Biology",
+    "Metabolic Flexibility",
+    "Exercise Physiology"
+  ],
+  "gradient": {
+    "to": "red-700",
+    "from": "rose-600"
+  },
+  "keywords": [
+    "mitochondrial biogenesis",
+    "PGC-1alpha",
+    "AMPK activation",
+    "mitochondrial fusion",
+    "high-intensity interval training"
+  ],
+  "sortOrder": 1774440488425
+}
