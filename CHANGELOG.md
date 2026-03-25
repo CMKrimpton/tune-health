@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [11.0.0] - 2026-03-25
+
+### BREAKING — Pipeline Split (Monolith → Microservices)
+- **Monolith `daily-article-agent` (3,984 lines) split into 11 edge functions + shared utilities**
+- **`pipeline-orchestrator`**: lightweight dispatcher (~150 lines) called every minute by pg_cron. Checks DB for articles needing work, dispatches the appropriate stage function via HTTP. Does NO AI work itself
+- **7 stage functions** (each does ONE job with its own timeout):
+  - `stage-research` — web search + structure findings
+  - `stage-editor` — editor brief, pick topic, assign archetype/tone
+  - `stage-write` — write article from brief
+  - `stage-independence` — Grok adversarial review + PubMed check
+  - `stage-qc` — QC check (publish/rewrite_voice/revise/kill)
+  - `stage-voice-rewrite` — voice-only rewrite by premium models
+  - `stage-publish` — GitHub commit + Vercel hook + illustration
+- **`pipeline-scout`**: topic discovery (called by 3 daily crons)
+- **`pipeline-admin`**: admin actions (status, queue CRUD, retry, kill, rotate featured, backfill costs)
+- **`_shared/` utilities**: 10 shared modules (api-clients, constants, db, cors, types, voice-audit, astro, github, pubmed, featured)
+
+### Added — New `qc_approved` Status
+- QC stage now sets `qc_approved` when approving for publish (was previously combined in one function)
+- Orchestrator maps `qc_approved` → `stage-publish` and `voice_rewrite_done` → `stage-publish`
+- PipelineMonitor updated with `qc_approved` status display
+
+### Changed — Cron Schedule
+- `article-produce` now calls `pipeline-orchestrator` (not `daily-article-agent`)
+- Scout crons now call `pipeline-scout` (not `daily-article-agent`)
+- `featured-rotation` now calls `pipeline-admin` (not `daily-article-agent`)
+
+### Changed — Admin Frontend
+- All admin API calls updated from `daily-article-agent` to `pipeline-admin`
+- PipelineMonitor, AgentsPanel, admin dashboard all point to new endpoints
+- QC model label updated from "Gemini 3.1 Pro" to "Gemini 2.5 Pro" (matches backend)
+
+### Fixed — Timeout Architecture
+- Each stage function has its OWN ~150s timeout — a slow API call in one stage cannot block other stages
+- Orchestrator completes in <5s (just DB queries + one HTTP call)
+- No more stale detection hacks needed for timeout recovery
+- Articles go from queue to published in ~7 minutes (same as before, but each stage is independent)
+
 ## [10.0.0] - 2026-03-25
 
 ### BREAKING — Model Upgrade (Flash → Premium)

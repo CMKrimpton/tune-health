@@ -129,7 +129,7 @@ const STAGES: StageConfig[] = [
   { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Gemini 3.1 Pro', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
   { key: 'write', icon: '✍️', label: 'Write', model: 'Gemini 3.1 Pro', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
   { key: 'independence', icon: '⚖️', label: 'Independence', model: 'Grok 3', modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
-  { key: 'qc', icon: '✅', label: 'QC', model: 'Gemini 3.1 Pro', modelColor: '#f97316', statuses: ['editor_qc'] },
+  { key: 'qc', icon: '✅', label: 'QC', model: 'Gemini 2.5 Pro', modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
   { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Opus → Sonnet → GPT-5.4', modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
   { key: 'publish', icon: '📡', label: 'Publish', model: 'GPT Image + GitHub', modelColor: '#10b981', statuses: ['publishing', 'published'] },
 ];
@@ -153,7 +153,8 @@ function getStatusText(status: string, log?: PipelineLog): string {
     written: 'Written — awaiting Grok review',
     independence_review: 'Grok 3 reviewing independence...',
     independence_done: 'Reviewed — awaiting QC',
-    editor_qc: 'Gemini 3.1 Pro QC + headline polish...',
+    editor_qc: 'Gemini 2.5 Pro QC + headline polish...',
+    qc_approved: 'QC approved — queued for publish',
     voice_rewrite_pending: 'Voice rewrite queued — Opus/Sonnet...',
     rewriting_voice: 'Opus rewriting for voice quality...',
     voice_rewrite_done: 'Voice polished — publishing...',
@@ -254,7 +255,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'status' }),
@@ -287,7 +288,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     setTriggering(true);
     setProduceResult(null);
     try {
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'produce' }),
@@ -311,7 +312,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     setScouting(model);
     setScoutResult(null);
     try {
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'scout', scoutModel: model }),
@@ -331,7 +332,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     for (const model of models) {
       setScouting(model);
       try {
-        const res = await fetch(`${apiBase}/daily-article-agent`, {
+        const res = await fetch(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({ action: 'scout', scoutModel: model }),
@@ -346,7 +347,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const requeueFromFailed = async (logId: string, topic: string) => {
     try {
-      await fetch(`${apiBase}/daily-article-agent`, {
+      await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'queue-topic', topic, priority: 1, expedite: true }),
@@ -358,7 +359,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const retryArticle = async (logId: string) => {
     setRetryingId(logId);
     try {
-      await fetch(`${apiBase}/daily-article-agent`, {
+      await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'retry', logId }),
@@ -375,7 +376,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     setQueueing(true);
     setQueueResult(null);
     try {
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
@@ -409,13 +410,13 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     setProduceResult(null);
     try {
       // First expedite this item so it's picked first
-      await fetch(`${apiBase}/daily-article-agent`, {
+      await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'update-queue', queueId, expedite: true, priority: 0 }),
       });
       // Then trigger produce
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'produce' }),
@@ -437,7 +438,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const updateQueueItem = async (queueId: string, updates: Record<string, unknown>) => {
     try {
-      await fetch(`${apiBase}/daily-article-agent`, {
+      await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'update-queue', queueId, ...updates }),
@@ -450,7 +451,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const deleteQueueItem = async (queueId: string) => {
     try {
-      await fetch(`${apiBase}/daily-article-agent`, {
+      await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'delete-queue', queueId }),
@@ -463,7 +464,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     if (!confirm('Kill this article? It will be marked as failed and removed from the pipeline.')) return;
     setKillingId(logId);
     try {
-      await fetch(`${apiBase}/daily-article-agent`, {
+      await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'kill-article', logId, reason: 'Killed by admin from Mission Control' }),

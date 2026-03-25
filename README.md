@@ -121,29 +121,32 @@ src/
 - **Login**: glass card with animated gradient background, entrance animation, error slide-in
 - Token-based authentication with inline error handling (wrong token shows error, doesn't silently redirect)
 - **Dashboard**: 8 compact stat cards with gradient overlays, 3 tab panels with fade-in transitions (Pipeline, Articles, AI Agents)
-- **Pipeline Monitor**: 5-stage visual pipeline with live model labels, hover-reveal gradient lines, active card glow animations. Manual triggers: individual scout buttons (Gemini/Sonnet/Grok/All 3) + Produce Now with API response feedback. Topic queue with full controls per item (Produce, Expedite, Priority ↑↓, Delete, Reset stuck items). Published articles show model pen names + independence scores. Failed articles have Re-queue + Retry buttons.
+- **Pipeline Monitor**: 7-stage visual pipeline with live model labels, hover-reveal gradient lines, active card glow animations. Manual triggers: individual scout buttons (Gemini/Sonnet/Grok/All 3) + Produce Now with API response feedback. Topic queue with full controls per item (Produce, Expedite, Priority ↑↓, Delete, Reset stuck items). Published articles show model pen names + independence scores. Failed articles have Re-queue + Retry buttons.
 - **Articles Manager**: search, filter, sort (including by independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh from DB. Semitransparent status badges
 - **AI Agents**: Reader Questions (mines alumi Health chat data for popular user questions), Cron Schedule (5 active jobs), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
 - **Edit page**: metadata/content/AI refine tabs, 2s autosave + Cmd+S, score badges, live preview auto-refresh, Publish + Delete from GitHub, XSS-safe chat
 - **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish
 
 ### Autonomous AI Newsroom
-Four AI companies, five models, two independent jobs, full fallback on every stage:
+Four AI companies, seven models, split-function architecture, full fallback on every stage:
+
+Each pipeline stage is its own independent Supabase Edge Function — no monolith, no timeout pressure. A lightweight orchestrator dispatches one stage per invocation, and a 1-minute cron drives progression. Articles go from queue to published in ~7 minutes.
 
 - **Scout** (3 crons/day): **Gemini** (6am, Google Search), **Sonnet** (2pm, web search, falls back to Gemini), **Grok** (10pm, contrarian). Each finds 20 topics, Grok markdown stripped, deduped and inserted into topic_queue. ~$0.14/day total
-- **Produce** (cron: every 15 min): editor picks best topic from queue → self-chains through:
-  1. **Research** — Claude with web search, falls back to Gemini (Google Search). Directed research for queue topics, two-model discovery for scouts
-  2. **Editor Brief** (Sonnet → Grok → Gemini fallback) — assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION" preserving the admin's intended angle. Smart duplicate detection: AI editor judges overlap, not word counting
-  3. **Write** (Sonnet always primary, Gemini/Grok fallback only) — brand voice formula (60% journalism, 20% Maher, 15% Hitchens, 15% Harris). Anti-wiki rules with measurable targets. Voice reference from Opus articles. Zero fabrication rule. Mandatory Sources section. `model_used` tracked
-  4. **Grok Independence Review** (Grok 3) — adversarial review on plain text (HTML stripped), category-specific focus, scores use text instructions. Rewrites trigger for `major_issues` OR `minor_issues with score < 7`. PubMed verification in parallel
-  5. **PubMed Fact-Check** — if 2+ studies or >50% fail PubMed verification, article revised with "(citation unverified)" tags
-  6. **QC + Publish** (Gemini → Sonnet fallback + OpenAI GPT Image) — different model from independence reviewer (not Grok). Headline/description polish only. Illustration parallelized, commit to GitHub. Author byline from writer model pen name
+- **Produce** (cron: every minute via `pipeline-orchestrator`): picks highest-priority article, runs ONE stage, returns. 7-stage pipeline:
+  1. **Research** (`stage-research`) — Claude web search → Gemini fallback. Directed research for queue topics
+  2. **Editor Brief** (`stage-editor`) — Gemini 3.1 Pro → Sonnet → GPT-5.4 fallback. Assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION" preserving the admin's intended angle. Smart duplicate detection via AI editor
+  3. **Write** (`stage-write`) — Gemini 3.1 Pro primary, GPT-5.4 fallback. Brand voice formula (60% journalism, 20% Maher, 15% Hitchens, 15% Harris). Anti-wiki rules with measurable targets. Zero fabrication rule. Mandatory Sources section
+  4. **Grok Independence Review** (`stage-independence`) — Grok 3 adversarial review on plain text (HTML stripped), category-specific focus. Rewrites trigger for `major_issues` OR `minor_issues with score < 7`. PubMed verification in parallel
+  5. **QC** (`stage-qc`) — Gemini 2.5 Pro → Sonnet → GPT-5.4. Three decisions: `publish`, `rewrite_voice`, `revise`, `kill`. Mechanical voice audit feeds hard metrics
+  6. **Voice Rewrite** (`stage-voice-rewrite`, if QC triggers `rewrite_voice`) — Opus 4.6 → Sonnet → GPT-5.4 → Gemini 3.1 Pro → Grok. Rewrites prose for voice only — keeps all facts, citations, structure
+  7. **Publish** (`stage-publish`) — GitHub commit (.astro + .json), Vercel deploy hook, post-publish illustration generation (GPT Image), featured rotation
 - **Reader Questions**: mines alumi Health AI assistant chat data (same Supabase project) for questions asked by 2+ different users → adds to topic queue as `source: reader_request`
 - **Fallback chain**: every stage has provider fallback — pipeline survives any single provider outage or spending limit
 - **Cost tracking**: every API call logs token usage + USD cost. Backfill Costs button for pre-tracking articles
 - **Featured rotation**: every 6h via independent `pg_cron` job. Manual trigger available in admin
 - **Topic queue**: admin can add manually (P10 high priority), edit priority/expedite, produce specific topics on demand
-- **94+ articles published**, diverse categories
+- **110+ articles published**, diverse categories actively rebalancing toward underserved subjects
 
 ### alumi Health Funnel
 - **5 touchpoints** connecting readers to the [alumi Health](https://tune-sigma.vercel.app) app
@@ -237,9 +240,19 @@ The site is deployed on Vercel with automatic deployments:
   - `fetch-article` — GitHub file fetching
   - `generate-illustration` — AI illustration generation (OpenAI GPT Image 1.5) with batch support
   - `editorial-qc` — Autonomous editorial quality control (Claude audits full collection, auto-fixes headlines/descriptions/illustrations)
-  - `daily-article-agent` — 5-stage article pipeline (research → editor brief → write → independence review → QC+publish). Multi-model rotation with full fallback chain. 10 tone presets, PubMed verification, Grok rewrite wiring, parallel illustration. Smart featured rotation. Manual scout/produce triggers.
+  - `pipeline-orchestrator` — lightweight dispatcher (1-min cron), checks DB for in-progress articles and dispatches the appropriate stage function
+  - `stage-research` — directed research via Claude web search, Gemini fallback
+  - `stage-editor` — AI editor brief (archetype, tone, density, pacing, duplicate detection)
+  - `stage-write` — full article generation with brand voice formula and anti-wiki rules
+  - `stage-independence` — Grok 3 adversarial independence review + PubMed verification
+  - `stage-qc` — quality control with mechanical voice audit (publish/rewrite/revise/kill)
+  - `stage-voice-rewrite` — Opus-led voice polish (facts preserved, prose rewritten)
+  - `stage-publish` — GitHub commit, Vercel deploy hook, illustration generation, featured rotation
+  - `pipeline-scout` — multi-model topic discovery (Gemini, Sonnet, Grok — 3 daily crons)
+  - `pipeline-admin` — admin actions (status, queue CRUD, retry, kill, rotate featured, backfill costs)
+  - `_shared/` — 10 shared utility modules (api-clients, constants, db, dedup, html, models, prompts, research, voice-audit, types)
 - **Storage**: `article-illustrations` bucket for AI-generated editorial art
-- **Cron**: `pg_cron` + `pg_net` — scout-gemini (6am), scout-sonnet (2pm), scout-grok (10pm), article-produce (every 15 min), featured-rotation (every 6h)
+- **Cron**: `pg_cron` + `pg_net` — scout-gemini (6am, calls `pipeline-scout`), scout-sonnet (2pm, calls `pipeline-scout`), scout-grok (10pm, calls `pipeline-scout`), article-produce (every minute, calls `pipeline-orchestrator`), featured-rotation (every 6h, calls `pipeline-admin`)
 
 ## Documentation
 

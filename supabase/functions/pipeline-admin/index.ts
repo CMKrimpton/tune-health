@@ -1,0 +1,467 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { corsHeaders, json } from "../_shared/cors.ts";
+import { supabase, calcCost } from "../_shared/db.ts";
+import { rotateFeatured } from "../_shared/featured.ts";
+import type { ApiUsage } from "../_shared/types.ts";
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const db = supabase();
+
+  try {
+    let body: Record<string, unknown> = {};
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
+    const action = (body.action as string) || "";
+
+    // ------ ROTATE FEATURED — standalone, works even when crons are paused ------
+    if (action === "rotate-featured") {
+      const newFeatured = await rotateFeatured(db);
+      return json({
+        success: true,
+        newFeatured,
+        message: newFeatured
+          ? `Featured rotated to: ${newFeatured}`
+          : "No rotation needed (current featured is still fresh or no eligible articles)",
+      });
+    }
+
+    // ------ STATUS ------
+    if (action === "status") {
+      // Housekeeping: clean up queue items whose topics have already been written
+      const { data: publishedSlugs } = await db.from("articles").select("title").eq("status", "published");
+      if (publishedSlugs && publishedSlugs.length > 0) {
+        const publishedTitles = publishedSlugs.map((a: { title: string }) => a.title.toLowerCase());
+        const { data: queuedItems } = await db.from("topic_queue").select("id, topic").eq("status", "queued");
+        if (queuedItems) {
+          for (const q of queuedItems as Array<{ id: string; topic: string }>) {
+            const topicWords = q.topic.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+            const isWritten = publishedTitles.some(title => {
+              const matchCount = topicWords.filter(w => title.includes(w)).length;
+              return matchCount >= Math.ceil(topicWords.length * 0.5);
+            });
+            if (isWritten) {
+              await db.from("topic_queue").update({ status: "completed" }).eq("id", q.id);
+            }
+          }
+        }
+      }
+
+      // Fetch recent activity (all statuses) + ensure published articles aren't lost
+      const { data: recentLogs } = await db
+        .from("daily_article_log")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      // Also fetch recent published articles separately (may be outside the 30 window)
+      const { data: publishedLogs } = await db
+        .from("daily_article_log")
+        .select("*")
+        .eq("status", "published")
+        .order("completed_at", { ascending: false })
+        .limit(15);
+
+      // Merge: recent activity + published (deduplicated by id)
+      const seenIds = new Set<string>();
+      const data: typeof recentLogs = [];
+      for (const log of [...(recentLogs || []), ...(publishedLogs || [])]) {
+        if (!seenIds.has(log.id)) {
+          seenIds.add(log.id);
+          data.push(log);
+        }
+      }
+
+      const { count: articleCount } = await db
+        .from("articles")
+        .select("*", { count: "exact", head: true });
+
+      const { data: queue } = await db
+        .from("topic_queue")
+        .select("*")
+        .in("status", ["queued", "assigned", "in_progress"])
+        .order("expedite", { ascending: false })
+        .order("priority", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      // Calculate total spend across all logs
+      const { data: costData } = await db
+        .from("daily_article_log")
+        .select("cost_usd");
+      const totalCost = (costData || []).reduce((sum: number, row: { cost_usd: number | string | null }) =>
+        sum + (parseFloat(String(row.cost_usd ?? "0")) || 0), 0);
+
+      return json({ logs: data || [], articleCount, queue: queue || [], totalCost: Math.round(totalCost * 100) / 100 });
+    }
+
+    // ------ READER QUESTIONS — mine user chat data for article ideas ------
+    if (action === "reader-questions") {
+      // Query user questions from alumi Health AI assistant (same Supabase project)
+      // Find questions asked by 2+ different users
+      const { data: userQuestions } = await db
+        .from("chat_messages")
+        .select("content, session_id, created_at")
+        .eq("role", "user")
+        .gte("created_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()) // last 90 days
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (!userQuestions || userQuestions.length === 0) {
+        return json({ questions: [], message: "No user questions found in the last 90 days." });
+      }
+
+      // Get session → user mapping to count unique users
+      const sessionIds = [...new Set(userQuestions.map((q: { session_id: string }) => q.session_id))];
+      const { data: sessions } = await db
+        .from("chat_sessions")
+        .select("id, user_id")
+        .in("id", sessionIds.slice(0, 200));
+
+      const sessionToUser: Record<string, string> = {};
+      for (const s of (sessions || []) as Array<{ id: string; user_id: string }>) {
+        sessionToUser[s.id] = s.user_id;
+      }
+
+      // Group similar questions by keyword extraction
+      const STOP = new Set(["what", "how", "does", "can", "the", "is", "are", "do", "my", "i", "me", "a", "an", "it", "this", "that", "have", "has", "was", "were", "will", "would", "could", "should", "about", "with", "from", "for", "and", "or", "but", "not", "any", "your", "you", "why", "when", "which", "there", "been", "just", "more", "some", "than", "also", "very", "much", "into", "each", "other"]);
+
+      function extractKeywords(text: string): string[] {
+        return text.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/)
+          .filter(w => w.length > 3 && !STOP.has(w));
+      }
+
+      // Build question clusters
+      interface QuestionCluster {
+        representative: string;
+        keywords: Set<string>;
+        userIds: Set<string>;
+        count: number;
+        examples: string[];
+      }
+
+      const clusters: QuestionCluster[] = [];
+
+      for (const q of userQuestions as Array<{ content: string; session_id: string }>) {
+        const text = q.content.trim();
+        if (text.length < 15 || text.length > 500) continue; // skip too short/long
+        const kw = extractKeywords(text);
+        if (kw.length < 2) continue;
+        const userId = sessionToUser[q.session_id] || q.session_id;
+
+        // Find matching cluster (40%+ keyword overlap)
+        let matched = false;
+        for (const cluster of clusters) {
+          const overlap = kw.filter(w => cluster.keywords.has(w)).length;
+          const pct = overlap / Math.min(kw.length, cluster.keywords.size);
+          if (pct >= 0.4 && overlap >= 2) {
+            cluster.userIds.add(userId);
+            cluster.count++;
+            if (cluster.examples.length < 3) cluster.examples.push(text.slice(0, 150));
+            for (const w of kw) cluster.keywords.add(w);
+            matched = true;
+            break;
+          }
+        }
+
+        if (!matched) {
+          clusters.push({
+            representative: text.slice(0, 200),
+            keywords: new Set(kw),
+            userIds: new Set([userId]),
+            count: 1,
+            examples: [text.slice(0, 150)],
+          });
+        }
+      }
+
+      // Filter: 2+ unique users asked similar questions
+      const popular = clusters
+        .filter(c => c.userIds.size >= 2)
+        .sort((a, b) => b.userIds.size - a.userIds.size)
+        .slice(0, 20)
+        .map(c => ({
+          topic: c.representative,
+          uniqueUsers: c.userIds.size,
+          totalAsks: c.count,
+          examples: c.examples,
+          keywords: [...c.keywords].slice(0, 10),
+        }));
+
+      return json({
+        questions: popular,
+        totalAnalyzed: userQuestions.length,
+        clustersFound: clusters.length,
+        popularCount: popular.length,
+        message: `Found ${popular.length} questions asked by 2+ users (from ${userQuestions.length} messages, ${clusters.length} unique topics).`,
+      });
+    }
+
+    // ------ TOPIC QUEUE ACTIONS ------
+    if (action === "queue-topic") {
+      const topic = body.topic as string | undefined;
+      if (!topic) return json({ error: "topic is required" }, 400);
+      const { data: queueEntry, error: qErr } = await db
+        .from("topic_queue")
+        .insert({ topic, category: (body.category as string) || null, priority: (body.priority as number) || 50, expedite: body.expedite || false, notes: (body.notes as string) || null })
+        .select("id")
+        .single();
+      if (qErr) return json({ error: "Failed to queue topic", detail: qErr.message }, 500);
+      return json({ success: true, queueId: queueEntry.id, message: `Topic queued: "${topic}"` });
+    }
+
+    if (action === "list-queue") {
+      const { data: queue } = await db
+        .from("topic_queue")
+        .select("*")
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: true });
+      return json({ queue: queue || [] });
+    }
+
+    if (action === "update-queue") {
+      const queueId = body.queueId as string | undefined;
+      if (!queueId) return json({ error: "queueId is required" }, 400);
+      const updates: Record<string, unknown> = {};
+      if (body.topic) updates.topic = body.topic;
+      if (body.category) updates.category = body.category;
+      if (body.priority != null) updates.priority = body.priority;
+      if (body.status) updates.status = body.status;
+      const { error: uErr } = await db.from("topic_queue").update(updates).eq("id", queueId);
+      if (uErr) return json({ error: "Failed to update queue", detail: uErr.message }, 500);
+      return json({ success: true, queueId });
+    }
+
+    if (action === "delete-queue") {
+      const queueId = body.queueId as string | undefined;
+      if (!queueId) return json({ error: "queueId is required" }, 400);
+      await db.from("topic_queue").delete().eq("id", queueId);
+      return json({ success: true, queueId });
+    }
+
+    // ------ BACKFILL COSTS — estimate costs for pre-tracking articles ------
+    if (action === "backfill-costs") {
+      // Estimated token counts per stage (based on pipeline prompts + typical responses)
+      // Format: [inputTokens, outputTokens, model]
+      const STAGE_ESTIMATES: Record<string, [number, number, string]> = {
+        "scout-gemini":    [1200, 3000, "gemini-2.5-flash"],
+        "scout-structure": [5000, 2500, "claude-sonnet-4-6"],
+        "editor-brief":    [6000, 1800, "claude-sonnet-4-6"],
+        "write":           [8000, 6500, "claude-sonnet-4-6"],
+        "independence":    [5500, 1200, "grok-3"],
+        "qc":              [4500, 1000, "claude-sonnet-4-6"],
+      };
+
+      // Which stages completed based on final status
+      const STAGES_BY_STATUS: Record<string, string[]> = {
+        "published":          ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc"],
+        "publishing":         ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc"],
+        "editor_qc":          ["scout-gemini", "scout-structure", "editor-brief", "write", "independence"],
+        "independence_done":  ["scout-gemini", "scout-structure", "editor-brief", "write", "independence"],
+        "independence_review":["scout-gemini", "scout-structure", "editor-brief", "write"],
+        "written":            ["scout-gemini", "scout-structure", "editor-brief", "write"],
+        "writing":            ["scout-gemini", "scout-structure", "editor-brief"],
+        "editor_approved":    ["scout-gemini", "scout-structure", "editor-brief"],
+        "editor_reviewing":   ["scout-gemini", "scout-structure"],
+        "research_done":      ["scout-gemini", "scout-structure"],
+        "searching":          ["scout-gemini"],
+        "started":            [],
+      };
+
+      // For failed articles, estimate based on the error message to guess last completed stage
+      function guessStagesForFailed(error: string | null, researchData: Record<string, unknown> | null): string[] {
+        if (!researchData && !error) return ["scout-gemini"];
+        if (researchData?._independenceReview) return ["scout-gemini", "scout-structure", "editor-brief", "write", "independence"];
+        if (researchData?._article) return ["scout-gemini", "scout-structure", "editor-brief", "write"];
+        if (researchData?._editorBrief) return ["scout-gemini", "scout-structure", "editor-brief"];
+        if (researchData?.candidates || researchData?.topic) return ["scout-gemini", "scout-structure"];
+        // API limit errors = at least one call was attempted
+        if (error?.includes("Claude API") || error?.includes("SPENDING_LIMIT")) return ["scout-gemini"];
+        return [];
+      }
+
+      const { data: allLogs } = await db
+        .from("daily_article_log")
+        .select("id, status, error, research_data, cost_usd, source")
+        .or("cost_usd.is.null,cost_usd.eq.0");
+
+      if (!allLogs || allLogs.length === 0) {
+        return json({ message: "No logs need backfilling", updated: 0 });
+      }
+
+      let updated = 0;
+      let totalEstimated = 0;
+
+      for (const log of allLogs as Array<{ id: string; status: string; error: string | null; research_data: Record<string, unknown> | null; cost_usd: number | null; source: string | null }>) {
+        let stages: string[];
+        if (log.status === "failed") {
+          stages = guessStagesForFailed(log.error, log.research_data);
+        } else {
+          stages = STAGES_BY_STATUS[log.status] || [];
+        }
+
+        // Queue-sourced articles skip gemini (directed research uses claude with web search instead)
+        const fromQueue = log.source === "queue" || log.research_data?._fromQueue;
+        if (fromQueue) {
+          stages = stages.filter(s => s !== "scout-gemini").map(s =>
+            s === "scout-structure" ? "editor-brief" : s // queue uses one claude call for research, roughly editor-brief cost
+          );
+          // Add the directed research call (claude with web search, ~= write cost)
+          if (stages.length > 0) stages = ["write", ...stages.slice(1)];
+        }
+
+        let cost = 0;
+        const usageEntries: ApiUsage[] = [];
+        for (const stage of stages) {
+          const est = STAGE_ESTIMATES[stage];
+          if (!est) continue;
+          const [input, output, m] = est;
+          const stageCost = calcCost(m, input, output);
+          cost += stageCost;
+          usageEntries.push({ model: m, stage, inputTokens: input, outputTokens: output, costUsd: Math.round(stageCost * 10000) / 10000 });
+        }
+
+        if (cost > 0) {
+          await db.from("daily_article_log").update({
+            cost_usd: Math.round(cost * 10000) / 10000,
+            token_usage: usageEntries,
+          }).eq("id", log.id);
+          updated++;
+          totalEstimated += cost;
+        }
+      }
+
+      return json({
+        message: `Backfilled cost estimates for ${updated} log entries`,
+        updated,
+        totalEstimated: Math.round(totalEstimated * 100) / 100,
+        note: "These are estimates based on typical token counts per stage. Actual costs may vary ±20%.",
+      });
+    }
+
+    // ------ KILL — admin force-kills a pipeline entry ------
+    if (action === "kill-article") {
+      const logId = body.logId as string | undefined;
+      if (!logId) return json({ error: "logId is required" }, 400);
+      await db.from("daily_article_log").update({
+        status: "failed",
+        error: "Admin killed: " + ((body.reason as string) || "Manually stopped by admin"),
+        completed_at: new Date().toISOString(),
+      }).eq("id", logId);
+      // Also archive the article if it exists
+      const { data: logEntry } = await db.from("daily_article_log").select("slug").eq("id", logId).maybeSingle();
+      if (logEntry?.slug) {
+        await db.from("articles").update({ status: "archived", draft: true }).eq("slug", logEntry.slug);
+      }
+      return json({ success: true, message: "Article killed" });
+    }
+
+    // ------ RETRY — resume a failed run from its last good checkpoint ------
+    if (action === "retry") {
+      const logId = body.logId as string | undefined;
+      if (!logId) return json({ error: "logId is required for retry action" }, 400);
+
+      const { data: logEntry, error: logError } = await db
+        .from("daily_article_log")
+        .select("*")
+        .eq("id", logId)
+        .maybeSingle();
+
+      if (logError || !logEntry) {
+        return json({ error: "Log entry not found", detail: logError?.message }, 404);
+      }
+
+      const research = (logEntry.research_data as Record<string, unknown>) || {};
+      let resumeStatus: string;
+
+      if (research._independenceReview && research._article) {
+        // Independence review done — resume at QC + Publish
+        resumeStatus = "independence_done";
+      } else if (research._article) {
+        // Article was written — resume at Independence Review
+        resumeStatus = "written";
+      } else if (research._editorBrief) {
+        // Editor brief exists — resume at Write
+        resumeStatus = "editor_approved";
+      } else if (research.topic || research.keyFindings || research.candidates) {
+        // Research data exists — resume at Editor Brief
+        resumeStatus = "research_done";
+      } else {
+        // Nothing salvageable — restart from scratch
+        resumeStatus = "started";
+      }
+
+      await db
+        .from("daily_article_log")
+        .update({
+          status: resumeStatus,
+          error: null,
+          stage_started_at: new Date().toISOString(),
+        })
+        .eq("id", logId);
+
+      return json({
+        success: true,
+        logId,
+        previousStatus: logEntry.status,
+        resumeStatus,
+        message: `Reset to "${resumeStatus}" — next invocation will resume from this checkpoint.`,
+      });
+    }
+
+    // ------ PRODUCE — manual trigger → calls pipeline-orchestrator via HTTP ------
+    if (action === "produce") {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+      const url = `${supabaseUrl}/functions/v1/pipeline-orchestrator`;
+      console.log("[Admin] Manual produce trigger — calling pipeline-orchestrator");
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const result = await res.json();
+      return json({ success: true, action: "produce", result });
+    }
+
+    // ------ SCOUT — manual trigger → calls pipeline-scout via HTTP ------
+    if (action === "scout") {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const scoutModel = (body.scoutModel as string) || "gemini";
+
+      const url = `${supabaseUrl}/functions/v1/pipeline-scout`;
+      console.log(`[Admin] Manual scout trigger (${scoutModel}) — calling pipeline-scout`);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ scoutModel }),
+      });
+
+      const result = await res.json();
+      return json({ success: true, action: "scout", scoutModel, result });
+    }
+
+    return json({ error: `Unknown action: "${action}"` }, 400);
+  } catch (err: unknown) {
+    return json({
+      error: "An internal error occurred",
+      detail: err instanceof Error ? err.message : "Unknown error",
+    }, 500);
+  }
+});

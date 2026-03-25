@@ -35,7 +35,7 @@ let pipelineLogs: unknown[] = [];
 let articleCount = articles.length;
 let totalCost = 0;
 try {
-  const res = await fetch(`${apiBase}/daily-article-agent`, {
+  const res = await fetch(`${apiBase}/pipeline-admin`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'status' }),

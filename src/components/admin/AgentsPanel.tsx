@@ -170,7 +170,7 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'reader-questions' }),
@@ -189,7 +189,7 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
   const addToQueue = useCallback(async (idx: number, topic: string) => {
     setQueueingIdx(idx);
     try {
-      await fetch(`${apiBase}/daily-article-agent`, {
+      await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'queue-topic', topic, source: 'reader_request', priority: 5, notes: `Asked by multiple users in alumi Health AI assistant` }),
@@ -304,7 +304,7 @@ function DecisionLog({ apiBase }: { apiBase: string }) {
 
   const fetchLogs = useCallback(async () => {
     try {
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'status' }),
@@ -807,7 +807,7 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
     setBackfilling(true);
     setResult(null);
     try {
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'backfill-costs' }),
@@ -825,7 +825,7 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
     setRotating(true);
     setResult(null);
     try {
-      const res = await fetch(`${apiBase}/daily-article-agent`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'rotate-featured' }),

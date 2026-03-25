@@ -98,15 +98,37 @@ supabase/
 │   ├── 20260322_daily_article_agent.sql # Log table + pg_cron schedule
 │   └── 20260324_hourly_article_schedule.sql # Staged pipeline + 15-min cron
 └── functions/
-    ├── articles-api/          # CRUD for articles database (auth on writes)
-    ├── process-article/       # Claude Opus article generation
-    ├── refine-article/        # Chat-based article refinement
-    ├── publish-article/       # GitHub commit pipeline (auth required)
-    ├── delete-article/        # GitHub file deletion (auth required)
-    ├── fetch-article/         # GitHub file fetching
-    ├── generate-illustration/ # OpenAI GPT Image editorial art
-    ├── editorial-qc/          # Autonomous QC agent (Claude audits collection)
-    └── daily-article-agent/   # Staged article pipeline (research → write → publish)
+    ├── _shared/                          # Shared utilities (NOT a deployed function)
+    │   ├── api-clients.ts                # claude(), gemini(), grok(), openai() + generateWithFallback()
+    │   ├── astro.ts                      # assembleAstroFile(), todayISO(), escapeAttr()
+    │   ├── constants.ts                  # PRICING, MODEL_PROVIDERS, MODEL_BYLINES, chains
+    │   ├── cors.ts                       # CORS headers, json() helper
+    │   ├── db.ts                         # supabase(), addCostToLog(), safeStage()
+    │   ├── featured.ts                   # rotateFeatured()
+    │   ├── github.ts                     # publishToGitHub() with retry
+    │   ├── pubmed.ts                     # verifyPubMedCitations()
+    │   ├── types.ts                      # ApiResult, ApiUsage, VoiceAudit interfaces
+    │   └── voice-audit.ts               # auditVoiceQuality()
+    │
+    ├── pipeline-orchestrator/            # 1-min cron — checks DB, dispatches stages via HTTP
+    ├── stage-research/                   # Stage 1: web search + structure findings
+    ├── stage-editor/                     # Stage 2: editor brief — pick topic, assign archetype/tone
+    ├── stage-write/                      # Stage 3: write article from brief
+    ├── stage-independence/               # Stage 4: Grok adversarial review + PubMed check
+    ├── stage-qc/                         # Stage 5: QC check — publish/rewrite_voice/revise/kill
+    ├── stage-voice-rewrite/              # Stage 6: voice-only rewrite by premium models
+    ├── stage-publish/                    # Stage 7: GitHub commit + Vercel hook + illustration
+    ├── pipeline-scout/                   # Scout — discovers topics (called by 3 daily crons)
+    ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, rotate featured
+    │
+    ├── articles-api/                     # (existing) CRUD for articles table
+    ├── process-article/                  # (existing) manual article generation
+    ├── refine-article/                   # (existing) chat refinement
+    ├── publish-article/                  # (existing) manual GitHub publish
+    ├── delete-article/                   # (existing) GitHub deletion
+    ├── fetch-article/                    # (existing) GitHub fetch
+    ├── generate-illustration/            # (existing) AI illustration
+    └── editorial-qc/                     # (existing) collection-wide QC
 ```
 
 ### Content Collections
@@ -205,11 +227,11 @@ const articles = await getCollection('articles');
 
 Two independent cron jobs power the newsroom:
 
-**Job 1 — Scout** (3 crons/day: `scout-gemini` 6am UTC, `scout-sonnet` 2pm, `scout-grok` 10pm):
+**Job 1 — Scout** (3 crons/day → `pipeline-scout`: `scout-gemini` 6am UTC, `scout-sonnet` 2pm, `scout-grok` 10pm):
 Three-model discovery — each finds 20 topics, all deduped and inserted directly into `topic_queue`. Gemini (Google Search, trending topics), Sonnet (web search, editorial potential), Grok (contrarian, independent perspective). No expensive structuring step — raw findings parsed directly. Per-scout dedup against all articles + queue + within-batch. Category balance prioritizes underserved areas (<10% threshold). Scout prompts include explicit subject-level gap guidance listing 12 uncovered subjects (cardiology, diabetes, immunology, kidney, liver, respiratory, musculoskeletal, addiction, prostate, pain, dermatology, pediatrics) — at least 8 of 20 topics must come from gaps. Each model's system prompt reinforced with gap awareness. ~$0.14/day total scout cost.
 
-**Job 2 — Produce** (cron: `* * * * *`, every minute, action: `produce`):
-Orchestrator picks the highest-priority article from the pipeline, runs ONE stage per invocation, returns. 1-minute cron drives progression — each article goes from queue to published in ~7 minutes.
+**Job 2 — Produce** (cron: `* * * * *`, every minute → `pipeline-orchestrator`):
+Orchestrator picks the highest-priority article from the pipeline, determines its next stage, and dispatches to the corresponding `stage-*` edge function via HTTP. One stage per invocation. 1-minute cron drives progression — each article goes from queue to published in ~7 minutes.
 
 **7-stage pipeline** (each stage = 1 cron invocation):
   1. **Research** (~30s): Claude web search → Gemini fallback. Directed research for queue topics.
@@ -220,10 +242,10 @@ Orchestrator picks the highest-priority article from the pipeline, runs ONE stag
   6. **Voice Rewrite** (~60s, if QC triggers `rewrite_voice`): Opus 4.6 → Sonnet → GPT-5.4 → Gemini 3.1 Pro → Grok. Rewrites prose for voice ONLY — keeps all facts, citations, structure. Adds "you", breaks paragraphs, injects editorial positions, Bill Maher moments.
   7. **Publish** (~30s): GitHub commit (.astro + .json) with 422 retry loop. Vercel deploy hook. Post-publish illustration generation (GPT Image). Featured rotation.
 
-**Architecture (CRITICAL — must be refactored next session)**:
-Currently ALL stages are in ONE edge function (`daily-article-agent`, ~4000 lines). This causes timeout issues because premium model calls (60-120s) nearly exhaust the ~150s edge function timeout. **NEXT SESSION: split into separate edge functions per stage** (see `NEXT-SESSION-PLAN.md`).
+**Architecture (split pipeline)**:
+Each stage is its own edge function (`stage-research`, `stage-editor`, `stage-write`, etc.) with shared utilities in `_shared/`. The `pipeline-orchestrator` is the only cron-triggered function — it reads DB state, picks the highest-priority article, determines its next stage, and dispatches via HTTP call to the appropriate `stage-*` function. Each stage function gets its own full edge function timeout (~150s), eliminating the timeout pressure of the old monolith. Shared code (`generateWithFallback()`, `safeStage()`, `assembleAstroFile()`, etc.) lives in `supabase/functions/_shared/` and is imported by all stage functions.
 
-**Stage progression**: 1-minute cron calls produce → finds highest-priority article → runs 1 stage → returns. Stale detection (2-min threshold) runs BEFORE concurrency guard to unstick timed-out stages.
+**Stage progression**: 1-minute cron calls `pipeline-orchestrator` → reads DB for highest-priority in-progress article → determines next stage → dispatches to `stage-*` function via HTTP → stage runs and updates DB → next cron tick picks up the article for its next stage. Stale detection (2-min threshold) runs BEFORE concurrency guard to unstick timed-out stages.
 **Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill/re-queue via UI.
 **Model chains**: Every call uses `generateWithFallback()`. Writer: Gemini 3.1 Pro → Sonnet → GPT-5.4. QC: Gemini 2.5 Pro → Sonnet → GPT-5.4. Voice rewrite: Opus → Sonnet → GPT-5.4 → Gemini 3.1 Pro → Grok. Flash ONLY for scout discovery and fact-check.
 **API timeout**: 75s constant (`API_TIMEOUT`) — leaves margin within edge function timeout.
@@ -273,6 +295,16 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 
 | Function | Purpose | Auth |
 |---|---|---|
+| `pipeline-orchestrator` | 1-min cron entry point — reads DB state, dispatches next stage via HTTP call to the appropriate `stage-*` function | None (called by pg_cron) |
+| `stage-research` | Stage 1: Claude web search → Gemini fallback. Directed research for queue topics | None (called by orchestrator) |
+| `stage-editor` | Stage 2: Gemini 3.1 Pro → Sonnet → GPT-5.4. Editor brief — archetype, tone, density, pacing | None (called by orchestrator) |
+| `stage-write` | Stage 3: Gemini 3.1 Pro → GPT-5.4. Full article generation (16K max tokens) | None (called by orchestrator) |
+| `stage-independence` | Stage 4: Grok 3 adversarial review + PubMed citation verification | None (called by orchestrator) |
+| `stage-qc` | Stage 5: Gemini 2.5 Pro → Sonnet → GPT-5.4. Quality check — publish/rewrite_voice/revise/kill | None (called by orchestrator) |
+| `stage-voice-rewrite` | Stage 6: Opus → Sonnet → GPT-5.4 → Gemini → Grok. Voice-only prose rewrite | None (called by orchestrator) |
+| `stage-publish` | Stage 7: GitHub commit + Vercel deploy hook + illustration generation + featured rotation | None (called by orchestrator) |
+| `pipeline-scout` | Three-model topic discovery (Gemini/Sonnet/Grok). Called by 3 daily crons | None (called by pg_cron) |
+| `pipeline-admin` | Admin API: `status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured` | None (rate-limited internally) |
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |
@@ -281,11 +313,15 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `fetch-article` | Fetches .astro file content from GitHub | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
-| `daily-article-agent` | Two-job newsroom: `scout` (discovers topics, fills queue) + `produce` (editor picks, self-chains through write → Grok review → QC → publish). Also: `status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`. Models: Sonnet 4.6 (research/editor/write/QC), Grok 3 (independence review). Per-call cost tracking. | None (rate-limited internally) |
 
 **Deploy commands:**
 ```bash
 supabase functions deploy <function-name> --no-verify-jwt
+
+# Deploy all pipeline functions at once
+for fn in pipeline-orchestrator stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-publish pipeline-scout pipeline-admin; do
+  supabase functions deploy $fn --no-verify-jwt
+done
 ```
 
 **Required secrets** (set via `supabase secrets set`):
@@ -300,11 +336,11 @@ supabase functions deploy <function-name> --no-verify-jwt
 - `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source)
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
-- `scout-gemini`: daily 6am UTC — Gemini discovers 20 topics via Google Search
-- `scout-sonnet`: daily 2pm UTC — Sonnet discovers 20 topics via web search
-- `scout-grok`: daily 10pm UTC — Grok discovers 20 topics (contrarian perspective)
-- `article-produce`: every 15 min (`*/15 * * * *`) — editor picks best topic, self-chains through production. 15-min interval acts as safety net for dropped self-chains (concurrency guard + empty-queue check are cheap)
-- `featured-rotation`: every 6 hours (`0 */6 * * *`) — independent featured article rotation (runs even when production crons are paused)
+- `scout-gemini`: daily 6am UTC → `pipeline-scout` — Gemini discovers 20 topics via Google Search
+- `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Sonnet discovers 20 topics via web search
+- `scout-grok`: daily 10pm UTC → `pipeline-scout` — Grok discovers 20 topics (contrarian perspective)
+- `article-produce`: every 1 min (`* * * * *`) → `pipeline-orchestrator` — checks DB, dispatches next stage via HTTP to the appropriate `stage-*` function
+- `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation (runs even when production crons are paused)
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
 - View schedule: `SELECT * FROM cron.job;`
 - View run history: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`
