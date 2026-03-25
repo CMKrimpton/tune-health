@@ -1,6 +1,6 @@
 export const MAX_CONCURRENT = 1;
 export const STALE_MS = 5 * 60 * 1000; // 5 min — must be longer than any single stage API call (75s timeout + overhead)
-export const API_TIMEOUT = 75_000;
+export const API_TIMEOUT = 120_000; // 120s — web search and premium model calls need time. Edge function timeout is ~150s.
 export const ACTIVE = ["started","searching","writing","publishing","editor_reviewing","editor_qc","independence_review","researching","topic_selected","rewriting_voice"];
 export const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","voice_rewrite_pending","voice_rewrite_done","qc_approved","saved"];
 
@@ -50,10 +50,8 @@ export const MODEL_PROVIDERS: Record<string, ModelProvider> = {
   "gemini-2.5-flash": "google",
 };
 
-// Quality fallback chains
-// NOTE: Sonnet spending-limited until April 1, 2026.
-// TODO: Revert to Sonnet-primary ["claude-sonnet-4-6", "gemini-3.1-pro-preview"] after April 1.
-export const WRITER_FALLBACK_CHAIN = ["gemini-3.1-pro-preview", "claude-sonnet-4-6", "gpt-5.4"];
+// Quality fallback chains — Sonnet primary (spending limit raised)
+export const WRITER_FALLBACK_CHAIN = ["claude-sonnet-4-6", "gemini-3.1-pro-preview", "gpt-5.4"];
 export const VOICE_REWRITE_CHAIN = ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5.4", "gemini-3.1-pro-preview", "grok-3"];
 
 export const MODEL_BYLINES: Record<string, { name: string; role: string }> = {
@@ -73,7 +71,7 @@ export function getByline(model: string): { name: string; role: string } {
 }
 
 export function pickWriterModel(): string[] {
-  return ["gemini-3.1-pro-preview", "claude-sonnet-4-6", "gpt-5.4"];
+  return ["claude-sonnet-4-6", "gemini-3.1-pro-preview", "gpt-5.4"];
 }
 
 // Category keyword classifier for scouts
