@@ -1745,13 +1745,9 @@
 }
 
 .articles-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.375rem;
-}
-
-@media (max-width: 1200px) {
-  .articles-list { grid-template-columns: 1fr; }
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .articles-row {
