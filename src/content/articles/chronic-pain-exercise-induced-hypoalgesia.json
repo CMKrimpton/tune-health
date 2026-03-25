@@ -1,6 +1,6 @@
 {
   "title": "Prescribing Rest for Chronic Pain Was a Mistake. The Biology Demands Mechanical Load.",
-  "description": "For decades, the standard medical advice for chronic musculoskeletal pain was immobilization — a protocol that turned out to be financially convenient and biologically catastrophic. New evidence confirms that exercising directly into moderate pain isn't just safe — it's mechanistically required to rewire the brain's pain-processing centers, and the opioid industry built around the alternative has cost the economy tens of billions of dollars.",
+  "description": "For decades, the standard medical advice for chronic musculoskeletal pain was immobilization â a protocol that turned out to be financially convenient and biologically catastrophic. New evidence confirms that exercising directly into moderate pain isn't just safe â it's mechanistically required to rewire the brain's pain-processing centers, and the opioid industry built around the alternative has cost the economy tens of billions of dollars.",
   "category": "Fitness",
   "publishDate": "2026-03-25",
   "author": {
@@ -28,5 +28,7 @@
     "endogenous opioids",
     "pain management"
   ],
-  "sortOrder": 1774474355231
+  "sortOrder": 1774474355231,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/chronic-pain-exercise-induced-hypoalgesia.png",
+  "heroImageAlt": "Editorial illustration for Prescribing Rest for Chronic Pain Was a Mistake. The Biology Demands Mechanical Load."
 }
