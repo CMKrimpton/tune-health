@@ -625,8 +625,11 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         })}
       </div>
 
-      {/* ── Topic Queue ── */}
-      <section style={{ marginTop: '1rem' }}>
+      {/* ── Two-column layout: Queue + Published/Kills/Errors ── */}
+      <div className="pipeline-lower-grid">
+
+      {/* ── Topic Queue (left column) ── */}
+      <section style={{ marginTop: '0' }}>
         <h3 className="pipeline-section-title">
           Topic Queue {queue.filter(q => q.status === 'queued').length > 0 && (
             <span style={{ color: '#16a34a', fontSize: '0.75rem', fontWeight: 400 }}>
@@ -775,6 +778,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         )}
       </section>
 
+      {/* ── Right column: Published + Kills + Errors ── */}
+      <div>
       {/* ── Recently Published ── */}
       {completedLogs.length > 0 && (
         <section>
@@ -1005,6 +1010,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           </div>
         </section>
       )}
+      </div>{/* end right column */}
+      </div>{/* end pipeline-lower-grid */}
     </div>
   );
 }

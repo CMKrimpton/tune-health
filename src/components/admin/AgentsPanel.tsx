@@ -142,13 +142,17 @@ function Section({ title, icon, defaultOpen = false, badge, children }: {
 
 export default function AgentsPanel({ apiBase, initialArticleCount }: Props) {
   return (
-    <div className="agents-panel">
-      <ReaderQuestions apiBase={apiBase} />
-      <CronSchedule />
-      <DecisionLog apiBase={apiBase} />
-      <EditorialQC apiBase={apiBase} articleCount={initialArticleCount} />
-      <IllustrationAgent apiBase={apiBase} />
-      <DatabaseSync apiBase={apiBase} initialCount={initialArticleCount} />
+    <div className="agents-panel-grid">
+      <div>
+        <ReaderQuestions apiBase={apiBase} />
+        <EditorialQC apiBase={apiBase} articleCount={initialArticleCount} />
+        <IllustrationAgent apiBase={apiBase} />
+      </div>
+      <div>
+        <DecisionLog apiBase={apiBase} />
+        <CronSchedule />
+        <DatabaseSync apiBase={apiBase} initialCount={initialArticleCount} />
+      </div>
     </div>
   );
 }

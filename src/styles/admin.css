@@ -1745,9 +1745,13 @@
 }
 
 .articles-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.375rem;
+}
+
+@media (max-width: 1200px) {
+  .articles-list { grid-template-columns: 1fr; }
 }
 
 .articles-row {
@@ -1844,6 +1848,38 @@
 /* ═══════════════════════════════════════════════════════════
    AI Agents Panel
    ═══════════════════════════════════════════════════════════ */
+
+/* ─── Pipeline Lower Grid (Queue + Published side by side) ─── */
+
+.pipeline-lower-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 1100px) {
+  .pipeline-lower-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── Agents Panel Grid (2-column sections) ─── */
+
+.agents-panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.agents-panel-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (max-width: 1100px) {
+  .agents-panel-grid { grid-template-columns: 1fr; }
+}
 
 .agents-panel {
   display: flex;
