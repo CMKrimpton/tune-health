@@ -1,0 +1,40 @@
+{
+  "title": "New Non-Opioid Painkillers: How Suzertrigine and NGF Inhibitors Could Reshape Pain Management",
+  "description": "The FDA",
+  "category": "Pharmacology",
+  "publishDate": "2026-03-25",
+  "author": {
+    "name": "Christine Wright",
+    "role": "Science & Evidence Desk"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Non-Opioid Painkillers",
+    "NGF Inhibitors",
+    "Sodium Channel Blockers",
+    "Suzetrigine",
+    "Tanezumab",
+    "Opioid Crisis"
+  ],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [
+    "non-opioid",
+    "painkillers",
+    "NGF inhibitors",
+    "sodium channel blockers",
+    "suzetrigine",
+    "tanezumab",
+    "opioid crisis",
+    "pain management",
+    "pharmacology",
+    "addiction"
+  ],
+  "sortOrder": 1774399967245,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/non-opioid-painkillers-ngf-sodium-blockers.png",
+  "heroImageAlt": "Editorial illustration for New Non-Opioid Painkillers: How Suzertrigine and NGF Inhibitors Could Reshape Pain Management"
+}
