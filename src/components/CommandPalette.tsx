@@ -26,7 +26,7 @@ const pages = [
 
 const actions = [
   { id: 'app', title: 'Open alumi Health', icon: '💊', action: 'openApp' },
-  { id: 'theme', title: 'Toggle Dark Mode', icon: '🌓', action: 'toggleTheme' },
+  { id: 'theme', title: 'Cycle Theme (System / Light / Dark)', icon: '🌓', action: 'toggleTheme' },
   { id: 'top', title: 'Back to Top', icon: '⬆️', action: 'scrollToTop' },
   { id: 'share', title: 'Share Page', icon: '📤', action: 'share' },
   { id: 'print', title: 'Print Article', icon: '🖨️', action: 'print' },

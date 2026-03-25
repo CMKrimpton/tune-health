@@ -168,11 +168,19 @@ const publishedSeries = await getAllSeries();
             <span class="sr-only">Search</span>
           </button>
           <button class="side-nav-action-btn" id="sideNavTheme" title="Toggle theme">
-            <svg class="w-4 h-4 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- System icon (monitor) -->
+            <svg data-theme-icon="system" class="w-4 h-4 text-stone-500 dark:text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke-width="2"/>
+              <line x1="8" y1="21" x2="16" y2="21" stroke-width="2"/>
+              <line x1="12" y1="17" x2="12" y2="21" stroke-width="2"/>
+            </svg>
+            <!-- Light icon (sun) -->
+            <svg data-theme-icon="light" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
               <circle cx="12" cy="12" r="5" stroke-width="2"/>
               <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke-width="2"/>
             </svg>
-            <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Dark icon (moon) -->
+            <svg data-theme-icon="dark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke-width="2"/>
             </svg>
             <span class="sr-only">Toggle theme</span>

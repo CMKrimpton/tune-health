@@ -109,36 +109,56 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
   <div id="command-palette-root"></div>
 
   <script>
-    // Theme management
+    // Theme management — supports 'system' (default), 'light', and 'dark'
     const html = document.documentElement;
-    const getThemePreference = () => {
-      if (localStorage.getItem('theme')) {
-        return localStorage.getItem('theme');
-      }
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const systemQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    // Resolve effective theme from stored preference
+    const getStoredPreference = (): 'system' | 'light' | 'dark' => {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+      return 'system';
     };
 
-    const applyTheme = (theme: string) => {
-      if (theme === 'dark') {
-        html.classList.add('dark');
+    const resolveTheme = (pref: 'system' | 'light' | 'dark'): 'light' | 'dark' => {
+      if (pref === 'system') return systemQuery.matches ? 'dark' : 'light';
+      return pref;
+    };
+
+    const applyTheme = (pref: 'system' | 'light' | 'dark') => {
+      const effective = resolveTheme(pref);
+      html.classList.toggle('dark', effective === 'dark');
+      // Store preference (including 'system')
+      if (pref === 'system') {
+        localStorage.removeItem('theme');
       } else {
-        html.classList.remove('dark');
+        localStorage.setItem('theme', pref);
       }
-      localStorage.setItem('theme', theme);
+      // Update toggle button icons across all instances
+      document.querySelectorAll('[data-theme-icon]').forEach(el => {
+        const mode = el.getAttribute('data-theme-icon');
+        (el as HTMLElement).style.display = mode === pref ? '' : 'none';
+      });
     };
 
-    // Apply theme immediately
-    applyTheme(getThemePreference()!);
+    // Apply immediately
+    applyTheme(getStoredPreference());
 
-    // Make available globally
+    // Listen for system preference changes (only matters when set to 'system')
+    systemQuery.addEventListener('change', () => {
+      if (getStoredPreference() === 'system') applyTheme('system');
+    });
+
+    // Cycle: system → light → dark → system
     (window as unknown as { toggleTheme: () => void }).toggleTheme = () => {
-      const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      const current = getStoredPreference();
+      const next = current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
+      applyTheme(next);
     };
 
     // Persist theme across View Transitions
     document.addEventListener('astro:after-swap', () => {
-      applyTheme(getThemePreference()!);
+      applyTheme(getStoredPreference());
     });
   </script>
 
