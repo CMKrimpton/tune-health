@@ -1,0 +1,32 @@
+{
+  "title": "Veganism Is a Philosophy. Whole-Plant Nutrition Is Pharmacology.",
+  "description": "A vegan label tells you almost nothing about health. This article argues that whole-food, plant-based eating works less like a lifestyle identity and more like a clinical intervention, while also confronting the junk-food trap, nutrient deficiencies, and the industries that profit when diet stays an afterthought.",
+  "category": "Nutrition",
+  "publishDate": "2026-03-25",
+  "author": {
+    "name": "Christine Wright",
+    "role": "Science & Evidence Desk"
+  },
+  "readTime": 6,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Plant-Based Diet",
+    "Cardiovascular Health",
+    "Metabolic Syndrome",
+    "Type 2 Diabetes",
+    "Gut Microbiome"
+  ],
+  "gradient": {
+    "to": "teal-700",
+    "from": "emerald-600"
+  },
+  "keywords": [
+    "whole-food plant-based",
+    "hPDI",
+    "uPDI",
+    "short-chain fatty acids",
+    "apoB reduction"
+  ],
+  "sortOrder": 1774470754546
+}
