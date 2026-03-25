@@ -294,14 +294,20 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         body: JSON.stringify({ action: 'produce' }),
       });
       const data = await res.json();
-      if (data.skipped) {
-        setProduceResult(`Skipped: ${data.message}`);
-      } else if (data.error) {
-        setProduceResult(`Error: ${data.error}${data.detail ? ' — ' + data.detail : ''}`);
+      // pipeline-admin wraps orchestrator response in data.result
+      const result = data.result || data;
+      if (data.skipped || result.skipped) {
+        setProduceResult(`Skipped: ${result.message || data.message || 'Pipeline busy'}`);
+      } else if (data.error || result.error) {
+        const err = data.error || result.error;
+        const detail = data.detail || result.detail || '';
+        setProduceResult(`Error: ${err}${detail ? ' — ' + detail : ''}`);
       } else {
-        setProduceResult(data.message || `Started: ${data.stage || 'produce'}`);
+        const topic = result.topic ? ` — "${result.topic.replace(/\*\*/g, '').slice(0, 60)}"` : '';
+        const dispatched = result.dispatched || data.stage || 'produce';
+        setProduceResult(`Dispatched ${dispatched}${topic}`);
       }
-      setTimeout(fetchStatus, 3000);
+      setTimeout(fetchStatus, 2000);
     } catch (err) {
       setProduceResult(`Network error: ${err instanceof Error ? err.message : 'unknown'}`);
     }
@@ -422,14 +428,16 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         body: JSON.stringify({ action: 'produce' }),
       });
       const data = await res.json();
-      if (data.skipped) {
-        setProduceResult(`Skipped: ${data.message}`);
-      } else if (data.error) {
-        setProduceResult(`Error: ${data.error}${data.detail ? ' — ' + data.detail : ''}`);
+      const result = data.result || data;
+      if (data.skipped || result.skipped) {
+        setProduceResult(`Skipped: ${result.message || data.message || 'Pipeline busy'}`);
+      } else if (data.error || result.error) {
+        setProduceResult(`Error: ${data.error || result.error}`);
       } else {
-        setProduceResult(data.message || `Started producing topic`);
+        const dispatched = result.dispatched || 'produce';
+        setProduceResult(`Dispatched ${dispatched} — "${topic.replace(/\*\*/g, '').slice(0, 60)}"`);
       }
-      setTimeout(fetchStatus, 3000);
+      setTimeout(fetchStatus, 2000);
     } catch (err) {
       setProduceResult(`Network error: ${err instanceof Error ? err.message : 'unknown'}`);
     }
