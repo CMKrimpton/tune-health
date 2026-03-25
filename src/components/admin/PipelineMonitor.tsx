@@ -78,9 +78,13 @@ interface PipelineLog {
 }
 
 const PEN_NAMES: Record<string, string> = {
+  "claude-opus-4-6": "Carl Lundin",
   "claude-sonnet-4-6": "Max Quilici",
   "claude-sonnet-4-20250514": "Max Quilici",
   "claude-opus-4-20250514": "Carl Lundin",
+  "gpt-5.4": "Eli Vance",
+  "gemini-3.1-pro-preview": "Christine Wright",
+  "gemini-2.5-pro": "Christine Wright",
   "grok-3": "Linda Carnes",
   "gemini-2.5-flash": "Christine Wright",
 };
@@ -97,7 +101,7 @@ interface QueueItem {
   created_at: string;
 }
 
-type PipelineStage = 'research' | 'editor_brief' | 'write' | 'independence' | 'qc_publish';
+type PipelineStage = 'research' | 'editor_brief' | 'write' | 'independence' | 'qc' | 'voice_rewrite' | 'publish';
 
 interface StageConfig {
   key: PipelineStage;
@@ -122,17 +126,18 @@ const POLL_INTERVAL = 15_000;
 
 const STAGES: StageConfig[] = [
   { key: 'research', icon: '🔍', label: 'Research', model: 'Gemini + Sonnet', modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
-  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Sonnet → Grok → Gemini', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
-  { key: 'write', icon: '✍️', label: 'Write', model: 'Rotates hourly', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
+  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Gemini 3.1 Pro', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
+  { key: 'write', icon: '✍️', label: 'Write', model: 'Gemini 3.1 Pro', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
   { key: 'independence', icon: '⚖️', label: 'Independence', model: 'Grok 3', modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
-  { key: 'qc_publish', icon: '✅', label: 'QC + Publish', model: 'Sonnet + GPT Image', modelColor: '#f97316', statuses: ['editor_qc', 'publishing', 'published'] },
+  { key: 'qc', icon: '✅', label: 'QC', model: 'Gemini 3.1 Pro', modelColor: '#f97316', statuses: ['editor_qc'] },
+  { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Opus → Sonnet → GPT-5.4', modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
+  { key: 'publish', icon: '📡', label: 'Publish', model: 'GPT Image + GitHub', modelColor: '#10b981', statuses: ['publishing', 'published'] },
 ];
 
 // Current primary writer model (matches backend pickWriterModel)
 function getCurrentWriterModel(): { name: string; color: string } {
-  // Sonnet is ALWAYS primary. Gemini/Grok are fallback only.
-  // Gemini writes wiki-style prose that ignores editorial voice.
-  return { name: 'Sonnet', color: '#f97316' };
+  // Gemini 3.1 Pro primary while Sonnet spending-limited (until April 1, 2026)
+  return { name: 'Gemini 3.1 Pro', color: '#22c55e' };
 }
 
 function getStatusText(status: string, log?: PipelineLog): string {
@@ -148,7 +153,10 @@ function getStatusText(status: string, log?: PipelineLog): string {
     written: 'Written — awaiting Grok review',
     independence_review: 'Grok 3 reviewing independence...',
     independence_done: 'Reviewed — awaiting QC',
-    editor_qc: 'Sonnet final QC + headline polish...',
+    editor_qc: 'Gemini 3.1 Pro QC + headline polish...',
+    voice_rewrite_pending: 'Voice rewrite queued — Opus/Sonnet...',
+    rewriting_voice: 'Opus rewriting for voice quality...',
+    voice_rewrite_done: 'Voice polished — publishing...',
     publishing: 'GPT Image illustrating + GitHub commit...',
     published: 'Published',
     failed: 'Failed',
@@ -157,7 +165,7 @@ function getStatusText(status: string, log?: PipelineLog): string {
 }
 
 const ACTIVE_STATUSES = new Set([
-  'started', 'searching', 'editor_reviewing', 'writing', 'independence_review', 'editor_qc', 'publishing',
+  'started', 'searching', 'editor_reviewing', 'writing', 'independence_review', 'editor_qc', 'rewriting_voice', 'publishing',
 ]);
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -470,7 +478,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const overallStatus = getOverallStatus(logs);
 
   const stageLogsMap: Record<PipelineStage, PipelineLog[]> = {
-    research: [], editor_brief: [], write: [], independence: [], qc_publish: [],
+    research: [], editor_brief: [], write: [], independence: [], qc: [], voice_rewrite: [], publish: [],
   };
   const completedLogs: PipelineLog[] = [];
   const editorKills: PipelineLog[] = [];
@@ -585,7 +593,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         </div>
       )}
 
-      {/* ── 5-Stage Pipeline ── */}
+      {/* ── 7-Stage Pipeline ── */}
       <div className="pipeline-container">
         {STAGES.map((stage) => {
           const items = stageLogsMap[stage.key];
