@@ -401,6 +401,12 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
             completed_at: new Date().toISOString(),
           })
           .eq("id", logId);
+        // Re-queue the topic so it's not lost
+        const queueId = researchData._queueId as string | undefined;
+        if (queueId) {
+          await db.from("topic_queue").update({ status: "queued" }).eq("id", queueId);
+          console.log(`[Editor] Editor killed — re-queued topic (queueId: ${queueId})`);
+        }
         return;
       }
 
@@ -464,6 +470,12 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
           },
         })
         .eq("id", logId);
+
+      // Mark queue topic as completed (editor approved)
+      const queueId = researchData._queueId as string | undefined;
+      if (queueId) {
+        await db.from("topic_queue").update({ status: "completed" }).eq("id", queueId);
+      }
     });
 
     if (!stageResult.ok) {

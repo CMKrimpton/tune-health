@@ -104,7 +104,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { logId, topic, source } = await req.json();
+    const { logId, topic, source, queueId } = await req.json();
     if (!logId) return json({ error: "logId is required" }, 400);
 
     const db = supabase();
@@ -199,6 +199,7 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
         }
         research._fromQueue = true;
         research._queueSource = source || "manual";
+        if (queueId) research._queueId = queueId;
         await addCostToLog(db, logId, researchUsage);
       } else {
         // TWO-MODEL SCOUT: Gemini discovers via Google Search, Sonnet structures into candidates

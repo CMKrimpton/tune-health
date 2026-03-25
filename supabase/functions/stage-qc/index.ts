@@ -91,9 +91,14 @@ Deno.serve(async (req: Request) => {
 
     const db = supabase();
 
-    // Fetch log entry with article data
-    const { data: logEntry } = await db.from("daily_article_log").select("slug, research_data").eq("id", logId).maybeSingle();
+    // Fetch log entry with article data and current status
+    const { data: logEntry } = await db.from("daily_article_log").select("slug, status, research_data").eq("id", logId).maybeSingle();
     if (!logEntry) return json({ error: "Log entry not found" }, 404);
+
+    // Concurrency guard: if QC is already running or past QC, skip
+    if (logEntry.status === "editor_qc" || logEntry.status === "qc_approved" || logEntry.status === "voice_rewrite_pending" || logEntry.status === "voice_rewrite_done") {
+      return json({ skipped: true, logId, message: `Already at ${logEntry.status} — another instance is handling this` });
+    }
 
     const researchData = (logEntry.research_data as Record<string, unknown>) || {};
     const articleData = (researchData._article as Record<string, unknown>) || {};
@@ -103,7 +108,7 @@ Deno.serve(async (req: Request) => {
 
     if (!slug) return json({ error: "No slug found in log entry" }, 400);
 
-    // Update status to editor_qc
+    // Update status to editor_qc (marks "QC is running")
     await db.from("daily_article_log").update({
       status: "editor_qc",
       stage_started_at: new Date().toISOString(),
@@ -266,7 +271,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
         }).eq("id", logId);
         return json({ success: true, logId, qcResult, decision: "publish_forced_already_rewritten" });
       } else {
-        await db.from("daily_article_log").update({
+        const { error: updateErr } = await db.from("daily_article_log").update({
           status: "voice_rewrite_pending",
           research_data: {
             ...currentData,
@@ -275,6 +280,10 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
             _voiceRewriteCount: 1,
           },
         }).eq("id", logId);
+        if (updateErr) {
+          console.error(`[stage-qc] DB update failed for voice_rewrite_pending: ${updateErr.message}`);
+          return json({ error: `DB update failed: ${updateErr.message}`, logId }, 500);
+        }
         return json({ success: true, logId, qcResult, decision: "rewrite_voice" });
       }
     }
@@ -285,7 +294,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
     if (finalTitle) (metadata as Record<string, unknown>).title = finalTitle;
     if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
 
-    await db.from("daily_article_log").update({
+    const { error: publishErr } = await db.from("daily_article_log").update({
       status: "qc_approved",
       editor_score: (qcResult.qualityScore as number) || null,
       research_data: {
@@ -294,9 +303,24 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
         _qcResult: qcResult,
       },
     }).eq("id", logId);
+    if (publishErr) {
+      console.error(`[stage-qc] DB update failed for qc_approved: ${publishErr.message}`);
+      return json({ error: `DB update failed: ${publishErr.message}`, logId }, 500);
+    }
 
     return json({ success: true, logId, qcResult, decision: "publish" });
   } catch (err: unknown) {
+    // Reset status to independence_done so orchestrator can retry on next tick
+    try {
+      const db = supabase();
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[stage-qc] Error: ${msg}`);
+      await db.from("daily_article_log").update({
+        status: "failed",
+        error: `QC stage error: ${msg}`,
+        completed_at: new Date().toISOString(),
+      }).eq("id", (await req.clone().json().catch(() => ({}))).logId || "");
+    } catch { /* best effort */ }
     return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
 });

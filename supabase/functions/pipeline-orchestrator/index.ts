@@ -84,12 +84,13 @@ Deno.serve(async (req: Request) => {
     }
 
     // Step 2: Check concurrency — block if max stages running
-    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    // Uses STALE_MS as the window — anything older than that was already reset in Step 1
+    const concurrencyWindow = new Date(Date.now() - STALE_MS).toISOString();
     const { data: activeRuns } = await db
       .from("daily_article_log")
       .select("id, status")
       .in("status", ACTIVE)
-      .gte("stage_started_at", fiveMinAgo);
+      .gte("stage_started_at", concurrencyWindow);
 
     if (activeRuns && activeRuns.length >= MAX_CONCURRENT) {
       return json({
@@ -112,21 +113,33 @@ Deno.serve(async (req: Request) => {
         const logId = (entries[0] as { id: string }).id;
         const functionName = STAGE_MAP[status];
 
-        // Call the stage function via HTTP
+        // Dispatch stage function via HTTP with a SHORT timeout (5s).
+        // The stage is a SEPARATE Supabase Edge Function invocation — it continues
+        // running even after the orchestrator disconnects. We just need the HTTP
+        // request to be sent and acknowledged. The 5s timeout is enough for the stage
+        // to receive the request and start processing. Its actual work (API calls etc.)
+        // happens on the stage's own ~150s invocation timeout.
+        // Deno kills fire-and-forget fetches on handler exit, so we MUST await.
         const url = `${supabaseUrl}/functions/v1/${functionName}`;
         console.log(`[Orchestrator] Dispatching ${functionName} for log ${logId} (status: ${status})`);
 
-        const stageRes = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serviceKey}`,
-          },
-          body: JSON.stringify({ logId }),
-        });
-
-        const stageResult = await stageRes.json();
-        return json({ dispatched: functionName, logId, status, stageResult });
+        try {
+          const stageRes = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({ logId }),
+            signal: AbortSignal.timeout(5000), // 5s — just enough to send the request
+          });
+          // If stage responds within 5s (unlikely for API-heavy stages), capture result
+          const stageResult = await stageRes.json().catch(() => null);
+          return json({ dispatched: functionName, logId, status, stageResult });
+        } catch {
+          // Timeout is expected — the stage is running on its own invocation
+          return json({ dispatched: functionName, logId, status, note: "Stage dispatched (running independently)" });
+        }
       }
     }
 
@@ -157,72 +170,28 @@ Deno.serve(async (req: Request) => {
 
     if (!logEntry) throw new Error("Failed to create log entry");
 
-    // Call stage-research
+    // Dispatch stage-research with short timeout.
+    // Stage-research is a separate invocation — continues running after disconnect.
+    // Next cron tick: orchestrator sees research_done → dispatches stage-editor.
+    // If editor kills, stage-editor re-queues the topic itself.
     const researchUrl = `${supabaseUrl}/functions/v1/stage-research`;
-    console.log(`[Orchestrator] Starting new topic: "${topic.topic}" — calling stage-research for log ${logEntry.id}`);
+    console.log(`[Orchestrator] Starting new topic: "${topic.topic}" — dispatching stage-research for log ${logEntry.id}`);
 
-    const researchRes = await fetch(researchUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({ logId: logEntry.id, topic: topic.topic, source: topic.source }),
-    });
-
-    const researchResult = await researchRes.json();
-
-    // Check if research succeeded
-    const { data: postResearchLog } = await db.from("daily_article_log").select("status").eq("id", logEntry.id).maybeSingle();
-
-    if (postResearchLog?.status === "failed") {
-      // Research failed — put topic back in queue
-      await db.from("topic_queue").update({ status: "queued" }).eq("id", topic.id);
-      return json({ success: false, stage: "research_failed", topic: topic.topic, researchResult });
-    }
-
-    // Research succeeded (status should be research_done) — immediately call stage-editor
-    if (postResearchLog?.status === "research_done") {
-      console.log(`[Orchestrator] Research done — immediately calling stage-editor for log ${logEntry.id}`);
-      const editorUrl = `${supabaseUrl}/functions/v1/stage-editor`;
-      const editorRes = await fetch(editorUrl, {
+    try {
+      await fetch(researchUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${serviceKey}`,
         },
-        body: JSON.stringify({ logId: logEntry.id }),
+        body: JSON.stringify({ logId: logEntry.id, topic: topic.topic, source: topic.source, queueId: topic.id }),
+        signal: AbortSignal.timeout(5000),
       });
-
-      const editorResult = await editorRes.json();
-
-      // Check if editor killed the article
-      const { data: postEditorLog } = await db.from("daily_article_log").select("status").eq("id", logEntry.id).maybeSingle();
-
-      if (postEditorLog?.status === "failed") {
-        // Editor killed it — put topic back in queue so it's not lost
-        await db.from("topic_queue").update({ status: "queued" }).eq("id", topic.id);
-        console.log(`[Orchestrator] Editor killed topic "${topic.topic}" — re-queued`);
-        return json({ success: true, stage: "editor_killed", topic: topic.topic, editorResult, message: "Editor killed this topic. Re-queued for future consideration." });
-      }
-
-      // Editor approved — mark queue topic complete
-      await db.from("topic_queue").update({ status: "completed" }).eq("id", topic.id);
-
-      return json({
-        success: true,
-        dispatched: ["stage-research", "stage-editor"],
-        logId: logEntry.id,
-        topic: topic.topic,
-        researchResult,
-        editorResult,
-        message: "Research + Editor done. Next cron invocation will start writing.",
-      });
+    } catch {
+      // Timeout expected — stage-research continues on its own invocation
     }
 
-    // Research returned unexpected status — mark queue topic back
-    await db.from("topic_queue").update({ status: "queued" }).eq("id", topic.id);
-    return json({ success: true, dispatched: "stage-research", logId: logEntry.id, topic: topic.topic, researchResult });
+    return json({ dispatched: "stage-research", logId: logEntry.id, topic: topic.topic });
   } catch (err: unknown) {
     return json({
       error: "An internal error occurred",

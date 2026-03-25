@@ -156,7 +156,7 @@ export async function openai(opts: { system: string; user: string; model?: strin
     body: JSON.stringify({
       model,
       messages: [{ role: "system", content: opts.system }, { role: "user", content: opts.user }],
-      max_tokens: opts.maxTokens || 4000,
+      max_completion_tokens: opts.maxTokens || 4000,
       temperature: opts.temperature || 0.4,
     }),
     signal: AbortSignal.timeout(API_TIMEOUT),
@@ -172,7 +172,7 @@ export async function openai(opts: { system: string; user: string; model?: strin
   const text = d.choices?.[0]?.message?.content || "";
   const finishReason = d.choices?.[0]?.finish_reason || "unknown";
   if (finishReason === "length") {
-    console.log(`[OpenAI] WARNING: Response truncated (finish_reason=length) for stage ${stage}. max_tokens=${opts.maxTokens || 4000} was not enough.`);
+    console.log(`[OpenAI] WARNING: Response truncated (finish_reason=length) for stage ${stage}. max_completion_tokens=${opts.maxTokens || 4000} was not enough.`);
   }
   const u = d.usage || {};
   const inputTokens = u.prompt_tokens || 0;
