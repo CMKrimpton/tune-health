@@ -1,0 +1,34 @@
+{
+  "title": "Thyroid Levels: What They Really Say About Your Metabolic Engine",
+  "description": "Thyroid hormones are the master regulators of your metabolism, but interpreting their",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-25",
+  "author": {
+    "name": "Linda Carnes",
+    "role": "Investigative Health Reporter"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "thyroid health",
+    "metabolic rate",
+    "TSH levels",
+    "hypothyroidism",
+    "metabolic syndrome"
+  ],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [
+    "thyroid levels",
+    "metabolism",
+    "TSH test",
+    "hypothyroidism",
+    "metabolic syndrome"
+  ],
+  "sortOrder": 1774414278410,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-levels-metabolic-engine.png",
+  "heroImageAlt": "Editorial illustration for Thyroid Levels: What They Really Say About Your Metabolic Engine"
+}
