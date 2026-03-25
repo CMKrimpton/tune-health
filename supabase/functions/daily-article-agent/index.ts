@@ -401,8 +401,9 @@ const MODEL_PROVIDERS: Record<string, ModelProvider> = {
   "gemini-2.5-flash": "google",
 };
 
-// Ordered fallback chain: try Anthropic → Grok → Gemini
-const WRITER_FALLBACK_CHAIN = ["claude-sonnet-4-6", "grok-3", "gemini-2.5-flash"];
+// Ordered fallback chain: Sonnet → Gemini → Grok
+// Gemini writes wiki-style but follows structure. Grok is worst at editorial voice.
+const WRITER_FALLBACK_CHAIN = ["claude-sonnet-4-6", "gemini-2.5-flash", "grok-3"];
 
 async function generate(opts: { system: string; user: string; model: string; maxTokens?: number; temperature?: number; stage?: string }): Promise<ApiResult> {
   const provider = MODEL_PROVIDERS[opts.model];
@@ -907,16 +908,16 @@ Your research team has delivered candidate topics. You need to:
 - "[Dramatic Claim]. That Explains Everything." — melodramatic.
 - Two-sentence headlines where the second sentence is a short dramatic kicker — overused.
 
-**Good headline models (vary across these):**
-- Direct claim: "Exercise Beats SSRIs for Moderate Depression"
-- Question: "Can a Soil Bacterium Replace Vancomycin?"
-- Mechanism-forward: "How GLP-1 Drugs Quiet the Brain's Reward Circuitry"
-- Person/study-forward: "A Harvard Lab Accidentally Discovered Why Sleep Clears Amyloid"
-- Number-forward: "Three Genes. 75% of Preventable Drug Reactions."
-- Understated: "Mirtazapine Deserves Better Than Its Reputation"
-- Ironic/dry: "The Placebo Worked Better"
+**Good headline STRUCTURES (invent your own — never copy these patterns verbatim):**
+- Direct claim: a specific, falsifiable statement about what the evidence shows
+- Question: a genuine question the article answers — not rhetorical fluff
+- Mechanism-forward: "How [thing] does [surprising action]" — leads with the biology
+- Person/study-forward: names a researcher, lab, or specific study as the hook
+- Number-forward: opens with a striking statistic that earns the click
+- Understated: quiet, confident, lets the topic's weight speak for itself
+- Ironic/dry: the headline itself contains the editorial commentary
 
-The goal: if you read 10 headlines in a row, they should feel like they came from different writers at the same magazine — not from the same headline generator.
+Generate a FRESH headline for each article. If you read 10 of our headlines in a row, they should feel like they came from different writers at the same magazine — not from a headline template.
 6. **Assign the article archetype** — This determines the article's fundamental form and feel. NOT every article should be written the same way. Match the archetype to the material.
 7. **Dogma check** — Before writing the brief, ask: does this topic touch any area where popular health advice is outdated or industry-driven? If so, add a "dogmaWarnings" field listing specific claims the writer must NOT repeat without verification (e.g., "Do not repeat omega-3/6 ratio claims as fact", "Note that the breakfast-is-essential claim is industry-funded"). This is CRITICAL editorial oversight.
 8. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction. Include dogma warnings in the "avoid" field.
@@ -1072,7 +1073,7 @@ You are writing MAGAZINE JOURNALISM, not a Wikipedia article or a textbook chapt
 
 **Concrete rules**:
 - MAX 3 sentences per paragraph. 2 is better. Dense 5-6 sentence paragraphs are a textbook, not a magazine.
-- At least 1 sentence in every 3 paragraphs should be under 8 words. "And it won." "The body obeys." "That's the wrong question." These land points.
+- At least 1 sentence in every 3 paragraphs should be under 8 words. Short declarative sentences that deliver a verdict or land a point. Invent your own — never reuse the same short sentence across articles.
 - Use "you" at least 4 times in the article. Talk TO the reader, not AT them.
 - At least 2 everyday analogies (cars, kitchens, plumbing, software — not other science). These make mechanisms visceral.
 - At least 1 parenthetical aside per article — "(let's be honest)", "(though nobody frames it that way)", "(which raises an obvious question)". These feel human.
@@ -1151,24 +1152,25 @@ MANDATORY: Every article MUST end with a "Sources" section listing every study c
 </ul></section>
 Only list studies that are ACTUALLY CITED in the article text. This section is non-negotiable — it lets readers verify every claim.
 
-## VOICE REFERENCE (study these examples — this is what we sound like at our best)
+## VOICE REFERENCE (principles, not examples — DO NOT copy any specific phrases from this section)
 
-GOOD (our target voice):
-- "The whole Western intellectual tradition is basically Plato's codebase with better fonts." → irreverent metaphor, immediate, makes a huge claim feel casual
-- "Most people don't think about this. Why would you." → fragment on purpose, conversational, breaks grammar rules because the rhythm demands it
-- "It was a blueprint for authoritarian thinking dressed up as a theory of knowledge. And it won." → the 3-word sentence after the complex one is devastating. THIS is how you land a point.
-- "The genome dictates. The body obeys." → parallel structure, punchy, no filler
-- "about as relevant as a car's opinion of its transmission" → everyday analogy that makes an abstract concept visceral
-- "Bertrand Russell... praised the 'subtlety' of their arguments, then spent years trying to work himself free of what were (let's be honest) fairly stupid logic puzzles" → parenthetical aside feels human, opinion stated directly
+WHAT GOOD WRITING IN OUR VOICE DOES (generate your OWN sentences that do these things):
+- Uses irreverent metaphors from technology, everyday life, or pop culture to make complex biology feel immediate and casual
+- Deploys intentional sentence fragments that land a point through rhythm, not grammar
+- Follows a complex sentence with a devastatingly short one (3-5 words) that delivers the verdict
+- Uses parallel structure for punchy, no-filler impact
+- Makes abstract concepts visceral through analogies from cars, kitchens, plumbing, software, sports — NEVER from other science
+- Includes parenthetical asides that feel like a person thinking out loud — honest interjections, not decorative ones. INVENT YOUR OWN for each article — never reuse the same parenthetical across articles
+- States opinions directly rather than hedging them into meaninglessness
 
-BAD (what our AI articles currently sound like — DO NOT WRITE LIKE THIS):
-- "The omega-3 market reaches approximately $2.7 billion currently, with projections climbing to $5.4 billion by 2033" → textbook opening, no voice, no opinion, stat-dump
-- "This expansion reflects consumer appetite for wellness products" → corporate report language, passive, says nothing a reader cares about
-- "Beneath glossy marketing lies complexity" → manufactured drama, cliché
-- "scientific evidence is often selectively interpreted" → passive voice hedge, says nothing specific
-- Paragraphs that restate the previous paragraph in slightly different words → PADDING. Every paragraph must advance the argument.
+WHAT BAD AI WRITING DOES (if you catch yourself doing any of these, rewrite):
+- Opens with a market-size statistic and no opinion about what it means
+- Uses corporate report language: passive constructions, abstract nouns, no reader address
+- Creates fake drama with cliché phrases instead of letting evidence create real drama
+- Hedges everything with passive voice until no claim actually says anything specific
+- Restates the previous paragraph in different words to fill space — PADDING is the cardinal sin
 
-THE CORE DIFFERENCE: Good writing has OPINIONS. It takes positions. It uses metaphors from real life. It addresses the reader directly. It varies rhythm dramatically. It makes complex ideas feel simple through analogy, not through dumbing down. Bad AI writing presents information neutrally, hedges everything, uses passive voice, and restates the same point multiple ways to fill word count.
+THE CORE DIFFERENCE: Good writing has OPINIONS. It takes positions. It addresses the reader directly. It varies rhythm dramatically. Bad AI writing presents information neutrally, hedges everything, uses passive voice, and restates the same point multiple ways to fill word count.
 
 CRITICAL ANTI-AI RULES (apply to ALL presets):
 - Never use manufactured wonder ("fascinatingly", "remarkably", "it turns out")
@@ -1177,10 +1179,10 @@ CRITICAL ANTI-AI RULES (apply to ALL presets):
 - Never use hedging stacks ("it's possible that perhaps this might suggest")
 - Never use corporate report language ("this expansion reflects", "growing body of evidence suggests", "the landscape is evolving")
 - Never restate the previous paragraph in different words. If you catch yourself doing it, DELETE the weaker paragraph.
-- Use parenthetical asides naturally — "(let's be honest)", "(or rather, constructed)", "(nobody's saying that)" — they make prose feel like a person thinking, not a machine generating.
-- Use "you" when it's natural. "Your body", "you'd have a hard time", "if you remember that one."
-- USE ANALOGIES FROM EVERYDAY LIFE, not from science. "A car's opinion of its transmission", "Plato's codebase with better fonts", "disposable packaging." These make abstract concepts land.
-- Short sentences after complex ones. "And it won." "The body obeys." "They're data." These are your most powerful tool. Use them to land points, not to fill space.
+- Use parenthetical asides naturally — invent your own for each article. They make prose feel like a person thinking, not a machine generating. Never reuse the same parenthetical across articles.
+- Use "you" when it's natural. Address the reader directly at least 4 times per article.
+- USE ANALOGIES FROM EVERYDAY LIFE, not from other science. Draw from cars, plumbing, kitchens, software, construction, sports — whatever fits the topic. Invent fresh ones each time. These make abstract concepts land.
+- Short sentences after complex ones. Under 8 words. These are your most powerful tool — invent fresh ones for each article. Use them to land points, not to fill space.
 - **OPENING VARIETY IS MANDATORY.** Do NOT default to scene-setting vignettes ("Picture someone...", "Imagine a patient...", "In 2019, a 45-year-old..."). 34% of our articles already open this way. Only use narrative openings for storyteller preset. Otherwise, open with: a striking claim, a provocative observation, a metaphor, a contradiction, or the single most important insight stated directly.
 - Every paragraph earns its place. If a paragraph just restates what the previous one said in different words, delete it.
 
@@ -1320,13 +1322,13 @@ Before you return the JSON, mentally verify each of these. If ANY fails, rewrite
 1. **OPENING**: Does the first paragraph start with "Picture this", "Imagine", "What if", or a scene-setting vignette? If YES → rewrite. Open with a direct claim, a number, a contradiction, or the single most important insight.
 2. **BANNED PHRASES**: Ctrl-F your output for: "Let's explore", "Let's dive in", "Buckle up", "Remarkable", "Fascinating", "It turns out", "Interestingly", "It's important to note", "The honest answer is", "What emerges from the research", "hidden in plain sight". If ANY appear → delete them.
 3. **PARAGRAPH LENGTH**: Is any paragraph longer than 3 sentences? If YES → split it.
-4. **SHORT SENTENCES**: Do you have at least 1 sentence under 8 words in every 3 paragraphs? Sentences like "And it worked." or "That's the wrong question." If NO → add them.
+4. **SHORT SENTENCES**: Do you have at least 1 sentence under 8 words in every 3 paragraphs? Short, punchy verdicts that land a point. If NO → add them.
 5. **"YOU" COUNT**: Does "you" or "your" appear at least 4 times? If NO → rewrite to address the reader directly.
 6. **ANALOGIES**: Do you have at least 2 analogies from EVERYDAY life (cars, plumbing, kitchens, software, sports)? NOT from other science. If NO → add them.
 7. **OPINION**: Does the article take at least ONE clear editorial position? ("This is underresearched", "The pharmaceutical focus here is backwards", "This should change how doctors think about X"). If the article merely explains without ever taking a stance → add opinion where the evidence warrants it. THIS IS WHAT SEPARATES US FROM WIKIPEDIA.
 8. **RHETORICAL QUESTIONS**: Count them. If more than 2 in the entire article → cut the rest. State claims directly.
 9. **SECTION COUNT**: For explainers: 5-6 sections max. For provocations: 3-5. Don't over-fragment.
-10. **BILL MAHER TEST**: Read your article back. Is there at least ONE moment of irreverence, one uncomfortable observation, one "nobody wants to say this but..."? If the article is 100% neutral information delivery → it failed the brand voice test. Add edge.
+10. **BILL MAHER TEST**: Read your article back. Is there at least ONE moment of irreverence, one uncomfortable observation, one moment where you call out an inconvenient truth that a hospital pamphlet would never include? If the article is 100% neutral information delivery → it failed the brand voice test. Add edge.
 
 ## Final Rules
 - Follow the editorial brief's archetype, angle, opening direction, emphasis points, and closing direction.
