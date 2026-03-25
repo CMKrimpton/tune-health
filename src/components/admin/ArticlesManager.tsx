@@ -134,6 +134,22 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
     finally { setRefreshing(false); }
   }, [apiBase]);
 
+  // ─── API helpers ──────────────────────────────────────────────────
+
+  const apiCall = useCallback(async (endpoint: string, body: Record<string, unknown>) => {
+    const token = getAdminToken();
+    const res = await fetch(`${apiBase}/${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+    return res.json();
+  }, [apiBase]);
+
   // ─── Improve article (Grok review + auto-fix) ───────────────────
 
   const improveArticle = useCallback(async (slug: string) => {
@@ -179,22 +195,6 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => setSearch(val), 300);
   }, []);
-
-  // ─── API helpers ──────────────────────────────────────────────────
-
-  const apiCall = useCallback(async (endpoint: string, body: Record<string, unknown>) => {
-    const token = getAdminToken();
-    const res = await fetch(`${apiBase}/${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
-    return res.json();
-  }, [apiBase]);
 
   const saveField = useCallback(async (slug: string, field: string, value: string) => {
     setSaving(true);
