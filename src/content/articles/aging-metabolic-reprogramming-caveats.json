@@ -1,0 +1,34 @@
+{
+  "title": "Aging's New Logic: Metabolic Reprogramming Beyond Calorie Restriction, And the Data That Demands Caution",
+  "description": "The quest to reverse aging is moving beyond simple calorie restriction. This article explores the cutting-edge science of metabolic and epigenetic reprogramming, examining pathways like NAD+, AMPK, and Yamanaka factors. It dissects the profound promise of these interventions while rigorously scrutinizing the emerging data that demands caution, including potential risks and challenges to prevailing theories.",
+  "category": "Longevity",
+  "publishDate": "2026-03-25",
+  "author": {
+    "name": "Christine Wright",
+    "role": "Science & Evidence Desk"
+  },
+  "readTime": 10,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Aging",
+    "Metabolic Reprogramming",
+    "NAD+",
+    "Epigenetics",
+    "Longevity Science"
+  ],
+  "gradient": {
+    "to": "teal-600",
+    "from": "emerald-500"
+  },
+  "keywords": [
+    "Aging reversal",
+    "Metabolic reprogramming",
+    "NAD+ supplementation risks",
+    "Yamanaka factors",
+    "Epigenetic clocks"
+  ],
+  "sortOrder": 1774435451543,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/aging-metabolic-reprogramming-caveats.png",
+  "heroImageAlt": "Editorial illustration for Aging's New Logic: Metabolic Reprogramming Beyond Calorie Restriction, And the Data That Demands Caution"
+}
