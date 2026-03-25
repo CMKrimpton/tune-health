@@ -131,10 +131,10 @@ src/
 Four AI companies, five models, two independent jobs, full fallback on every stage:
 
 - **Scout** (3 crons/day): **Gemini** (6am, Google Search), **Sonnet** (2pm, web search, falls back to Gemini), **Grok** (10pm, contrarian). Each finds 20 topics, Grok markdown stripped, deduped and inserted into topic_queue. ~$0.14/day total
-- **Produce** (cron: hourly): editor picks best topic from queue → self-chains through:
+- **Produce** (cron: every 15 min): editor picks best topic from queue → self-chains through:
   1. **Research** — Claude with web search, falls back to Gemini (Google Search). Directed research for queue topics, two-model discovery for scouts
   2. **Editor Brief** (Sonnet → Grok → Gemini fallback) — assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION" preserving the admin's intended angle. Smart duplicate detection: AI editor judges overlap, not word counting
-  3. **Write** (Sonnet/Gemini rotation by hour, Grok removed from writing) — follows archetype + tone. Voice reference from Opus articles. Anti-AI + anti-padding + zero fabrication rules. Mandatory Sources section. Editorial independence directive. `model_used` tracked
+  3. **Write** (Sonnet always primary, Gemini/Grok fallback only) — brand voice formula (60% journalism, 20% Maher, 15% Hitchens, 15% Harris). Anti-wiki rules with measurable targets. Voice reference from Opus articles. Zero fabrication rule. Mandatory Sources section. `model_used` tracked
   4. **Grok Independence Review** (Grok 3) — adversarial review on plain text (HTML stripped), category-specific focus, scores use text instructions. Rewrites trigger for `major_issues` OR `minor_issues with score < 7`. PubMed verification in parallel
   5. **PubMed Fact-Check** — if 2+ studies or >50% fail PubMed verification, article revised with "(citation unverified)" tags
   6. **QC + Publish** (Gemini → Sonnet fallback + OpenAI GPT Image) — different model from independence reviewer (not Grok). Headline/description polish only. Illustration parallelized, commit to GitHub. Author byline from writer model pen name
@@ -239,7 +239,7 @@ The site is deployed on Vercel with automatic deployments:
   - `editorial-qc` — Autonomous editorial quality control (Claude audits full collection, auto-fixes headlines/descriptions/illustrations)
   - `daily-article-agent` — 5-stage article pipeline (research → editor brief → write → independence review → QC+publish). Multi-model rotation with full fallback chain. 10 tone presets, PubMed verification, Grok rewrite wiring, parallel illustration. Smart featured rotation. Manual scout/produce triggers.
 - **Storage**: `article-illustrations` bucket for AI-generated editorial art
-- **Cron**: `pg_cron` + `pg_net` — scout-gemini (6am), scout-sonnet (2pm), scout-grok (10pm), article-produce (hourly), featured-rotation (every 6h)
+- **Cron**: `pg_cron` + `pg_net` — scout-gemini (6am), scout-sonnet (2pm), scout-grok (10pm), article-produce (every 15 min), featured-rotation (every 6h)
 
 ## Documentation
 

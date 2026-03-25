@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [9.6.0] - 2026-03-25
+
+### Fixed — Writer Quality & Pipeline Reliability
+- **Sonnet is now always-primary writer**: Gemini removed from hourly rotation — it writes dead, wiki-style prose that ignores editorial voice instructions. Gemini/Grok are fallback only (spending limit or rate limit)
+- **Brand voice formula added to ALL editorial prompts**: the 60/20/15/15 formula (journalism/Maher/Hitchens/Harris) was missing from the autonomous writer prompt, Senior Editor brief, and independence review. Now in: `daily-article-agent` writer + editor + Grok review, `refine-article`, `process-article`, `editorial-qc`
+- **Anti-wiki rules added to writer prompt**: concrete measurable rules — max 3 sentences per paragraph, at least 1 sub-8-word sentence per 3 paragraphs, 4+ uses of "you", 2+ everyday analogies, 1+ parenthetical aside, ban on consecutive "The [noun]..." openings, 90% of rhetorical questions cut
+- **Pipeline hardened against stuck articles**: produce cron changed from hourly to every 15 minutes (safety net for dropped self-chains). `chainNextStage()` now retries once after 10s on failure. Concurrency guard widened from 2 to 5 minutes (write stages can take 2-3 min)
+- **Grok independence review flags voice failures**: AI voice tell #9 now checks for 80+ word paragraphs, missing "you", zero analogies, Wikipedia tone — using the brand voice formula as the standard
+
 ## [9.5.0] - 2026-03-24
 
 ### Changed — Theme System & Pipeline Rebalancing
