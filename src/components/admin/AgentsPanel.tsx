@@ -277,7 +277,7 @@ function CronSchedule() {
     >
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
         {cronJobs.map(job => (
-          <div key={job.name} style={{ padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.375rem', borderLeft: `3px solid ${job.color}`, border: '1px solid rgba(255,255,255,0.06)', borderLeftWidth: '3px', borderRadius: '8px' }}>
+          <div key={job.name} style={{ padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: `3px solid ${job.color}`, borderRadius: '8px' }}>
             <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#eae8e4', marginBottom: '0.125rem' }}>{job.name}</div>
             <div style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{job.schedule}</div>
             <div style={{ fontSize: '0.625rem', color: job.color, marginTop: '0.125rem' }}>{job.model}</div>

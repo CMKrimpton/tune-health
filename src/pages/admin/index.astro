@@ -1,6 +1,5 @@
 ---
 export const prerender = false;
-import '../../styles/admin.css';
 import PipelineMonitor from '../../components/admin/PipelineMonitor';
 import ArticlesManager from '../../components/admin/ArticlesManager';
 import AgentsPanel from '../../components/admin/AgentsPanel';
@@ -71,6 +70,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin.css" />
 </head>
 <body class="admin-body">
   <header class="admin-header">
@@ -96,8 +96,8 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
       </div>
     )}
 
-    <!-- Stats Row -->
-    <div class="admin-stats" style="grid-template-columns: repeat(8, 1fr); margin-bottom: 1.25rem">
+    <!-- Stats Row — 4 columns, 2 rows -->
+    <div class="admin-stats" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1.5rem">
       <div class="admin-stat-card">
         <span class="admin-stat-number">{articleCount}</span>
         <span class="admin-stat-label">Total</span>
