@@ -128,12 +128,11 @@ const STAGES: StageConfig[] = [
   { key: 'qc_publish', icon: '✅', label: 'QC + Publish', model: 'Sonnet + GPT Image', modelColor: '#f97316', statuses: ['editor_qc', 'publishing', 'published'] },
 ];
 
-// Current primary writer model based on UTC hour (matches backend pickWriterModel)
+// Current primary writer model (matches backend pickWriterModel)
 function getCurrentWriterModel(): { name: string; color: string } {
-  // Matches backend pickWriterModel() — Grok removed from writing rotation
-  const hour = new Date().getUTCHours();
-  if (hour % 2 === 0) return { name: 'Sonnet', color: '#f97316' };
-  return { name: 'Gemini', color: '#fbbf24' };
+  // Sonnet is ALWAYS primary. Gemini/Grok are fallback only.
+  // Gemini writes wiki-style prose that ignores editorial voice.
+  return { name: 'Sonnet', color: '#f97316' };
 }
 
 function getStatusText(status: string, log?: PipelineLog): string {

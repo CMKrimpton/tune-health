@@ -451,14 +451,12 @@ function getByline(model: string): { name: string; role: string } {
   return MODEL_BYLINES[model] || { name: "alumi news Editorial", role: "Medical Review Board" };
 }
 
-// Pick a writer model — rotates to distribute across providers
+// Pick a writer model — Sonnet is ALWAYS primary. Gemini/Grok are fallback only.
+// Gemini writes dead, wiki-style prose that ignores editorial voice instructions.
+// Grok is good at review but bad at editorial writing.
+// Sonnet consistently follows tone presets, uses fragments, analogies, and personality.
 function pickWriterModel(): string[] {
-  // Grok removed from writer rotation — good at independence review, bad at editorial voice.
-  // Priority: Sonnet (best balance of quality + speed) → Gemini (testing) → Grok (last resort only)
-  // When Anthropic spending limit resets, Sonnet will be primary again.
-  const hour = new Date().getUTCHours();
-  if (hour % 2 === 0) return ["claude-sonnet-4-6", "gemini-2.5-flash", "grok-3"];
-  return ["gemini-2.5-flash", "claude-sonnet-4-6", "grok-3"];
+  return ["claude-sonnet-4-6", "gemini-2.5-flash", "grok-3"];
 }
 
 // ---------------------------------------------------------------------------
@@ -1058,6 +1056,22 @@ Return ONLY valid JSON:
 // Article Writer
 // ---------------------------------------------------------------------------
 const ARTICLE_WRITING_PROMPT = `You are a senior health journalist at alumi news, a premium editorial publication. You are writing a piece assigned by your Senior Editor. Follow the editorial brief precisely — especially the archetype, voice modulation, and structural notes. These shape the article's form. Every article should feel like it was written by the same publication but NOT by the same person on the same day.
+
+## ANTI-WIKI RULE (READ THIS FIRST — THE MOST IMPORTANT INSTRUCTION)
+You are writing MAGAZINE JOURNALISM, not a Wikipedia article or a textbook chapter. If your output reads like an encyclopedia entry — neutral, exhaustive, no personality, no opinion, no rhythm variation — you have FAILED.
+
+**The #1 failure mode**: writing paragraphs that are 80-120 words of flat, informational prose with no voice. Every paragraph over 60 words should make you suspicious. Break it up. Add a short sentence. Add an opinion. Add "you." Cut the throat-clearing.
+
+**Test every paragraph**: Would a human editor at The Atlantic or Wired keep this paragraph? Or would they write "BORING" in the margin? If the latter, rewrite it. A paragraph that merely conveys information without personality, rhythm, or point of view is a failed paragraph, even if the information is correct.
+
+**Concrete rules**:
+- MAX 3 sentences per paragraph. 2 is better. Dense 5-6 sentence paragraphs are a textbook, not a magazine.
+- At least 1 sentence in every 3 paragraphs should be under 8 words. "And it won." "The body obeys." "That's the wrong question." These land points.
+- Use "you" at least 4 times in the article. Talk TO the reader, not AT them.
+- At least 2 everyday analogies (cars, kitchens, plumbing, software — not other science). These make mechanisms visceral.
+- At least 1 parenthetical aside per article — "(let's be honest)", "(though nobody frames it that way)", "(which raises an obvious question)". These feel human.
+- NEVER open a paragraph with "The [noun]..." three times in a row. Vary your sentence openings aggressively.
+- Rhetorical questions ("What if...?", "Could this mean...?") are FILLER. State the claim directly instead. Cut 90% of your rhetorical questions.
 
 ## Core Editorial Standards (apply to ALL archetypes)
 - Evidence over allegiance. Aggressively neutral. Smart friend who reads the studies.
