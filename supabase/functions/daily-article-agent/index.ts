@@ -505,11 +505,15 @@ async function verifyPubMedCitations(
 function chainNextStage(logId: string) {
   const u = Deno.env.get("SUPABASE_URL"), k = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!u || !k) return;
-  fetch(u + "/functions/v1/daily-article-agent", {
+  const doFetch = () => fetch(u + "/functions/v1/daily-article-agent", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + k },
     body: JSON.stringify({ action: "produce", logId }),
-  }).catch(() => {});
+  });
+  // Try immediately, retry once after 10s if first attempt fails
+  doFetch().catch(() => {
+    setTimeout(() => doFetch().catch(() => {}), 10_000);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -3093,12 +3097,13 @@ For each topic return: a one-line topic description, suggested category, and why
     // ==============================================================
     if (action === "run" || action === "produce") {
       // Guard: block if another production stage is actively running
-      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      // 5-minute window — write stages can take 2-3 min, don't expire too early
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: activeRuns } = await db
         .from("daily_article_log")
         .select("id, status")
         .in("status", ACTIVE)
-        .gte("stage_started_at", twoMinutesAgo);
+        .gte("stage_started_at", fiveMinutesAgo);
 
       if (activeRuns && activeRuns.length >= MAX_CONCURRENT) {
         return json({
