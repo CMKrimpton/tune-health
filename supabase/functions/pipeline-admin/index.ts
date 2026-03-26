@@ -414,6 +414,17 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // ------ CRON LOGS — query pg_cron execution history ------
+    if (action === "cron-logs") {
+      const { data: cronLogs, error: cronErr } = await db.rpc("get_cron_logs");
+      if (cronErr) {
+        // Fallback: query directly
+        const { data: jobs } = await db.from("cron.job_run_details" as string).select("jobname, status, return_message, start_time").order("start_time", { ascending: false }).limit(10);
+        return json({ logs: jobs || [], error: cronErr?.message });
+      }
+      return json({ logs: cronLogs });
+    }
+
     // ------ PRODUCE — manual trigger → calls pipeline-orchestrator via HTTP ------
     if (action === "produce") {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
