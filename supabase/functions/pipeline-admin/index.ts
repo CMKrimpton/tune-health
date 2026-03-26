@@ -653,6 +653,40 @@ End with a disclaimer div.
       });
     }
 
+    // ------ PRODUCE-TOPIC — directly start research for a specific queue topic (bypasses daily cap) ------
+    if (action === "produce-topic") {
+      const queueId = body.queueId as string;
+      if (!queueId) return json({ error: "queueId is required" }, 400);
+
+      const { data: topic } = await db.from("topic_queue").select("id, topic, source").eq("id", queueId).maybeSingle();
+      if (!topic) return json({ error: "Queue item not found" }, 404);
+
+      // Mark queue item as in_progress
+      await db.from("topic_queue").update({ status: "in_progress" }).eq("id", queueId);
+
+      // Create log entry
+      const { data: logEntry } = await db.from("daily_article_log").insert({
+        run_date: new Date().toISOString().split("T")[0],
+        status: "started",
+        topic: topic.topic,
+        source: "queue",
+        stage_started_at: new Date().toISOString(),
+      }).select("id").single();
+
+      if (!logEntry) return json({ error: "Failed to create log entry" }, 500);
+
+      // Dispatch research directly via pg_net (bypasses daily cap)
+      await dispatchStage("stage-research", logEntry.id);
+
+      console.log(`[Admin] Produce-topic: "${topic.topic}" — dispatched stage-research directly (bypasses cap)`);
+      return json({
+        success: true,
+        logId: logEntry.id,
+        topic: topic.topic,
+        message: `Research dispatched for "${topic.topic}". Pipeline will process through editor brief then pause for your writing.`,
+      });
+    }
+
     // ------ PRODUCE — manual trigger → calls dispatch_pipeline_stage() via SQL ------
     if (action === "produce") {
       console.log("[Admin] Manual produce trigger — calling dispatch_pipeline_stage()");

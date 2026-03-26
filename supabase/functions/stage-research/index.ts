@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, addCostToLog, getExistingArticles, safeStage } from "../_shared/db.ts";
+import { supabase, addCostToLog, getExistingArticles, safeStage, dispatchStage } from "../_shared/db.ts";
 import { gemini, claude, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { RESEARCH_TIMEOUT } from "../_shared/constants.ts";
 import { todayISO } from "../_shared/astro.ts";
@@ -232,6 +232,8 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
       return json({ error: stageResult.error, logId }, 500);
     }
 
+    // Chain-dispatch: fire editor brief immediately (no 5-min cron wait)
+    await dispatchStage("stage-editor", logId);
     return json({ success: true, logId, status: "research_done" });
   } catch (err: unknown) {
     return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);

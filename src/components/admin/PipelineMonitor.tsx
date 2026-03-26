@@ -412,31 +412,21 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   };
 
   const produceFromQueue = async (queueId: string, topic: string) => {
-    if (!confirm(`Produce "${topic.replace(/\*\*/g, '').slice(0, 80)}" now? This will start the full pipeline.`)) return;
+    if (!confirm(`Produce "${topic.replace(/\*\*/g, '').slice(0, 80)}" now? This will research + create editorial brief.`)) return;
     setTriggering(true);
     setProduceResult(null);
     try {
-      // First expedite this item so it's picked first
-      await fetch(`${apiBase}/pipeline-admin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
-        body: JSON.stringify({ action: 'update-queue', queueId, expedite: true, priority: 0 }),
-      });
-      // Then trigger produce
+      // Directly dispatch research for this specific topic (bypasses daily cap)
       const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
-        body: JSON.stringify({ action: 'produce' }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'produce-topic', queueId }),
       });
       const data = await res.json();
-      const result = data.result || data;
-      if (data.skipped || result.skipped) {
-        setProduceResult(`Skipped: ${result.message || data.message || 'Pipeline busy'}`);
-      } else if (data.error || result.error) {
-        setProduceResult(`Error: ${data.error || result.error}`);
+      if (data.error) {
+        setProduceResult(`Error: ${data.error}`);
       } else {
-        const dispatched = result.dispatched || 'produce';
-        setProduceResult(`Dispatched ${dispatched} — "${topic.replace(/\*\*/g, '').slice(0, 60)}"`);
+        setProduceResult(data.message || `Dispatched research for "${topic.replace(/\*\*/g, '').slice(0, 60)}"`);
       }
       setTimeout(fetchStatus, 2000);
     } catch (err) {
