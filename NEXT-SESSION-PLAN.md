@@ -1,39 +1,39 @@
 # Next Session Plan
 
-> **Status**: v12.2.0 live. Scouts rewritten for 20-35 demographic. Dashboard has Clear All Briefs + dismiss buttons. Chain-dispatch via pg_net. 14 fresh topics in queue (Ozempic, PFAS, gut-cancer link).
+> **Status**: v12.3.0 live. Full chain-dispatch everywhere (produce → research → editor, submit → independence → QC → publish). Manual Produce bypasses daily cap. Queue items expandable.
 
 ---
 
-## Current Architecture (v12.2.0)
+## Current Architecture (v12.3.0)
 
-- **Scouts (3x/day)**: rewritten for younger readers — TikTok/Reddit/Trends, shareability filter, "would a 25-year-old text this?"
-- **Pinger (4x/hour)**: Gemini Flash/Grok/PubMed RSS breaking news detection
-- **Pre-submit**: 5-min cron processes ≤5 queue items/day → research → editor brief → PAUSE
-- **Human writes**: Copy Brief for Claude → Opus writes → Submit Article
-- **Post-submit**: chain-dispatch via pg_net → independence → QC → publish (seconds, not minutes)
-- **Dashboard**: Clear All Briefs button, × dismiss per card, BREAKING badges, pinger activity panel
+- **Manual Produce**: `produce-topic` action → pg_net → research → chain-dispatch → editor → pause. Bypasses 5-brief daily cap.
+- **Auto-produce**: 5-min cron processes ≤5 queue items/day. Research chain-dispatches editor.
+- **Post-submit**: chain-dispatch → independence → QC → publish. Seconds to publish.
+- **Scouts (3x/day)**: rewritten for 20-35 demographic, shareability filter
+- **Pinger (4x/hour)**: Gemini Flash/Grok/PubMed RSS breaking news
+- **Dashboard**: expandable queue items, Clear All Briefs, dismiss buttons, pinger panel
 
 ## What's Working
-- 14 queue topics from rewritten scouts (Ozempic psychiatric benefits, PFAS in bones, etc.)
-- Chain-dispatch eliminates cron waits after submit
+- Topics in queue with scout notes visible on click
+- Produce button dispatches immediately (no cap block)
+- Chain-dispatch eliminates cron waits on all user-triggered flows
 - Human-written articles skip voice rewrite and force-publish on revise
-- Pinger monitoring for breaking health news
 
 ## Priority for Next Session
 
-### 1. Write Your First Hybrid Article End-to-End
-- Wait for pipeline to process queue topics into editor_approved briefs
-- Pick one, Copy Brief, write in Claude Mac with Opus, Submit
+### 1. Write First Hybrid Article End-to-End
+- Pick a topic, hit Produce, wait for editor brief (~1 min)
+- Copy Brief, write in Claude Mac with Opus, Submit
 - Watch it chain-dispatch through independence → QC → publish
-- Verify: published on Vercel, correct layout, hero image generated
+- Verify on Vercel: correct layout, hero image, no Opus HTML artifacts
 
-### 2. Monitor Scout Quality
-- Are the new younger-reader topics better? Check the next scout run (6am UTC)
-- Is the dedup catching the obvious duplicates (multiple Ozempic angles)?
-- Are editor briefs generating shareable headlines (no medical jargon)?
+### 2. Monitor 24 Hours
+- Pinger signals: is it detecting real breaking news?
+- Scout quality: are the younger-reader topics better?
+- Daily cap: are exactly 5 auto-briefs being created?
+- API costs: should be dramatically lower
 
 ### 3. Consider
-- Reduce scouts from 3x/day to 1x/day (queue accumulates faster than human writes)
-- On-demand research: let human pick from raw queue THEN research runs (instead of auto)
-- Reader analytics: Vercel traffic data → inform scout prompts
-- Trim editor brief prompt (also very long, same attention dilution issue as writer prompt was)
+- Reduce scouts from 3x/day to 1x/day
+- On-demand research: pick from raw queue THEN research runs
+- Reader analytics: Vercel traffic → scout prompts

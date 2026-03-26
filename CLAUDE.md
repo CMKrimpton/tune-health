@@ -253,9 +253,12 @@ Safety-net cron. Chain-dispatch via `chain_dispatch()` SQL → `pg_net.http_post
 **Architecture (split pipeline, SQL dispatch)**:
 Each stage is its own edge function with shared utilities in `_shared/`. The SQL function `dispatch_pipeline_stage()` (called by pg_cron) reads DB state, picks the highest-priority article, and dispatches via `pg_net.http_post()` (fire-and-forget — no shared timeout). `editor_approved` is EXCLUDED from auto-dispatch — articles pause there for human writing. Dead code deleted: `daily-article-agent/` (old monolith) and `pipeline-orchestrator/` (replaced by SQL dispatch).
 
-**Chain-dispatch (post-submit)**: submit-article → `chain_dispatch()` SQL → `pg_net.http_post()` → stage-independence → chain-dispatches stage-qc → chain-dispatches stage-publish. Each stage fires the next directly via pg_net. No cron waits. Articles publish seconds after the last stage completes.
-**Safety-net cron**: `dispatch_pipeline_stage()` runs every 5 min (`*/5 * * * *`) to catch stuck articles and process up to 5 queue items/day. NOT the primary dispatch mechanism — chain-dispatch handles post-submit flow.
-**5-brief daily cap**: dispatch function counts today's non-failed log entries and stops auto-processing queue after 5. Prevents wasting API on 57 unused briefs/day.
+**Chain-dispatch (all user-triggered flows)**: All stages fire the next directly via `chain_dispatch()` SQL → `pg_net.http_post()`. No cron waits.
+- Post-submit: submit-article → independence → QC → publish (seconds to publish)
+- Manual produce: produce-topic → research → editor brief → pause (bypasses daily cap)
+- Pre-submit auto: cron processes ≤5 queue items/day, research chain-dispatches editor
+**Safety-net cron**: `dispatch_pipeline_stage()` runs every 5 min (`*/5 * * * *`) to catch stuck articles and auto-process queue. NOT the primary dispatch mechanism.
+**5-brief daily cap**: cron-driven auto-processing caps at 5/day. Manual "Produce" button bypasses this cap via `produce-topic` action.
 **Error handling**: `safeStage()` wrapper + `parseScore()` for safe integer parsing. All stages log errors to DB on failure.
 **Model chains**: Writer (fallback path): Gemini 3.1 Pro → Sonnet → GPT-5.4. QC: Flash → Sonnet. Voice rewrite: Sonnet → Gemini → GPT-5.4 → Grok. Independence revision: Flash → Sonnet.
 **API timeout**: 75s constant (`API_TIMEOUT`).
@@ -311,7 +314,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `stage-publish` | Stage 7: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
 | `pipeline-scout` | 3x/day topic discovery — all Gemini + Google Search grounding. Trending signals, search demand, "why now" | None (called by pg_cron) |
 | `pipeline-pinger` | 4x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
-| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `produce`, `scout` | None (rate-limited internally) |
+| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured` | None (rate-limited internally) |
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |

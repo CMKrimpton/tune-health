@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.3.0] - 2026-03-26
+
+### Fixed — Produce Button Bypasses Daily Cap
+- "Produce" button was calling `dispatch_pipeline_stage()` which checks the 5-brief daily cap. Manual topic selection should never be blocked by a cap meant to prevent auto-processing waste
+- New `produce-topic` action dispatches research directly via pg_net for a specific queue topic — no cap check
+- Chain-dispatch added from stage-research → stage-editor — manually produced topics don't wait 5 min for the cron
+
+### Added — Dashboard UX
+- Click-to-expand on queue items — shows scout notes, why now, search demand, research summary, editor score
+- `editor_score` and `research_summary` added to QueueItem interface
+
 ## [12.2.0] - 2026-03-26
 
 ### Changed — Scout & Editor Rewrite for Younger Readers (20-35)
