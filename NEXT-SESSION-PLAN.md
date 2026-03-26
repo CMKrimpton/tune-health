@@ -1,58 +1,39 @@
 # Next Session Plan
 
-> **Status**: v12.1.0 live. Hybrid pipeline fully optimized. Chain-dispatch via pg_net (no cron waits). 5-brief daily cap. 5-min safety-net cron. All 18 self-audit checks pass.
+> **Status**: v12.2.0 live. Scouts rewritten for 20-35 demographic. Dashboard has Clear All Briefs + dismiss buttons. Chain-dispatch via pg_net. 14 fresh topics in queue (Ozempic, PFAS, gut-cancer link).
 
 ---
 
-## Current Architecture (v12.1.0)
+## Current Architecture (v12.2.0)
 
-- **Signal detection**: 3x/day scouts (Gemini + Google Search) + 4x/hour pinger (Gemini Flash/Grok/PubMed RSS)
-- **Pre-submit**: SQL dispatch every 5 min processes queue → research → editor brief → PAUSE. Capped at 5 briefs/day.
-- **Human writes**: picks topic from dashboard, copies brief to Claude, Opus writes, pastes back
-- **Post-submit**: chain-dispatch via `chain_dispatch()` SQL → `pg_net.http_post()`. independence → QC → publish fires as a direct chain. No cron waits.
-- **Human-article protections**: QC skips voice rewrite, force-publishes on revise. `_writtenBy: "human-opus"` checked before all QC decision paths.
+- **Scouts (3x/day)**: rewritten for younger readers — TikTok/Reddit/Trends, shareability filter, "would a 25-year-old text this?"
+- **Pinger (4x/hour)**: Gemini Flash/Grok/PubMed RSS breaking news detection
+- **Pre-submit**: 5-min cron processes ≤5 queue items/day → research → editor brief → PAUSE
+- **Human writes**: Copy Brief for Claude → Opus writes → Submit Article
+- **Post-submit**: chain-dispatch via pg_net → independence → QC → publish (seconds, not minutes)
+- **Dashboard**: Clear All Briefs button, × dismiss per card, BREAKING badges, pinger activity panel
 
-## What Was Built This Session
-
-### Pipeline Hardening
-- `parseScore()`, fallback chains, DB error checking, error handlers on all stages
-
-### Cost Reduction ($0.94 → $0.13/article)
-- Gemini for research/scouts (was Sonnet web search at $0.40/call)
-- Flash for structured stages (editor brief, QC, independence revision)
-- Opus removed from voice rewrite chain
-- Writing: $0 via Max subscription
-
-### Hybrid Pipeline
-- Pipeline pauses at `editor_approved`, human writes with Opus
-- Copy Brief + Submit Article dashboard UI
-- HTML auto-stripping for full pages from Opus
-- Chain-dispatch via pg_net (not JS fetch — proven pattern)
-- 5-brief daily cap, 5-min cron safety net
-
-### Breaking News Pinger
-- 4x/hour rotating: Gemini Flash, PubMed RSS, Grok social
-- Three-gate filter with corroboration
-- ~$0.16/day
-
-### Dead Code Removed
-- 4,176 lines: daily-article-agent, pipeline-orchestrator
-- Two-model scout path, dead statuses, unused imports
+## What's Working
+- 14 queue topics from rewritten scouts (Ozempic psychiatric benefits, PFAS in bones, etc.)
+- Chain-dispatch eliminates cron waits after submit
+- Human-written articles skip voice rewrite and force-publish on revise
+- Pinger monitoring for breaking health news
 
 ## Priority for Next Session
 
-### 1. Test Full Hybrid Flow
-- 12 articles at editor_approved. Pick one, write with Opus, submit, watch it publish.
-- Verify: chain-dispatch fires immediately, Grok reviews, QC passes, publishes to GitHub, Vercel rebuilds.
-- Check the published .astro file has correct structure (assembleAstroFile format).
+### 1. Write Your First Hybrid Article End-to-End
+- Wait for pipeline to process queue topics into editor_approved briefs
+- Pick one, Copy Brief, write in Claude Mac with Opus, Submit
+- Watch it chain-dispatch through independence → QC → publish
+- Verify: published on Vercel, correct layout, hero image generated
 
-### 2. Monitor Over 24 Hours
-- Check pinger_signals after a day — are real signals being detected?
-- Check daily_article_log — are only 5 briefs/day being processed (not 60)?
-- Check cron.job_run_details — 5-min dispatch, 15-min pinger, both clean?
-- Check Anthropic API billing — should be dramatically lower
+### 2. Monitor Scout Quality
+- Are the new younger-reader topics better? Check the next scout run (6am UTC)
+- Is the dedup catching the obvious duplicates (multiple Ozempic angles)?
+- Are editor briefs generating shareable headlines (no medical jargon)?
 
-### 3. Consider Further
-- Reduce scouts from 3x/day to 1x/day (human writes 2-3/day, 60 topics is excessive)
-- On-demand research: let human pick from raw queue, THEN research+brief runs (instead of pre-processing)
-- Reader analytics: feed Vercel traffic data into scout prompts
+### 3. Consider
+- Reduce scouts from 3x/day to 1x/day (queue accumulates faster than human writes)
+- On-demand research: let human pick from raw queue THEN research runs (instead of auto)
+- Reader analytics: Vercel traffic data → inform scout prompts
+- Trim editor brief prompt (also very long, same attention dilution issue as writer prompt was)

@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.2.0] - 2026-03-26
+
+### Changed — Scout & Editor Rewrite for Younger Readers (20-35)
+- Scout prompts rewritten: "would a 25-year-old text this to a friend?" filter
+- Topics prioritize cultural relevance: Ozempic culture, seed oils, gut health, psychedelics, supplement fraud, protein obsession, wellness influencer debunks
+- Coverage gaps reframed for younger readers: cardiology → "your heart at 30", liver → "what alcohol is doing to your liver"
+- Three scout lenses updated: Gemini (TikTok/Reddit/Trends), Grok (health Twitter debates), editorial (belief-challenging)
+- Editor headline rules: TEXT TEST, ban medical jargon (PCSK9, MASLD), examples of shareable headlines
+
+### Added — Dashboard UX
+- **"Clear All Briefs" button** in pipeline status bar — one-click kills all stale editor_approved articles
+- **× dismiss button** on every pipeline card — visible without expanding, hover turns red
+- **Missing heroImage** added to fasting + HIIT article JSON metadata
+
+### Fixed — Scout Parser & Timeouts
+- Scout parser handles bold numbered items, `**Topic**:` labels, varied Gemini output formats
+- Scout Gemini timeout increased to 120s (was 75s default — caused "Signal timed out" failures)
+- Existing articles list capped at 50 in scout prompt (was 126 — contributed to timeouts)
+
 ## [12.1.0] - 2026-03-26
 
 ### Fixed — Chain-Dispatch via pg_net (Critical)

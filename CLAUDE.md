@@ -211,16 +211,17 @@ const articles = await getCollection('articles');
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix). Wrong token redirects to `/admin/login?error=1` with inline error display.
 - **Dashboard**: 4-column stat grid (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 3 tab panels with fade-in animation (Pipeline, Articles, AI Agents). Max-width 1400px. Multi-column layouts: Pipeline tab has 2-col grid (queue + published side-by-side), AI Agents tab has 2-col grid (6 sections split). Articles tab is single-column (rows need full width for inline editing)
 - **Pipeline tab** (React island: `PipelineMonitor`):
-  - 7-stage visual pipeline: Research → Editor (Gemini 3.1 Pro) → Write (Gemini 3.1 Pro) → Independence (Grok 3) → QC (Gemini 2.5 Pro) → Voice Polish (Opus → Sonnet → GPT-5.4) → Publish (GPT Image + GitHub)
-  - Write stage shows current primary model (Gemini 3.1 Pro while Sonnet spending-limited; revert after April 1, 2026)
+  - 7-stage visual pipeline: Research (Gemini 2.5 Pro + Search) → Editor (Flash → Sonnet) → **PAUSE for Opus writing** → Independence (Grok 3) → QC (Flash → Sonnet) → Voice Polish (Sonnet → Gemini, skipped for human articles) → Publish (GitHub + GPT Image)
+  - **Hybrid workflow UI**: editor_approved articles show purple highlight, "Copy Brief for Claude" button (client-side clipboard), "Submit Written Article" textarea + submit button
+  - **"Clear All Briefs" button**: one-click kills all stale editor_approved articles
+  - **× dismiss button**: on every pipeline card, visible without expanding, hover turns red
   - Real-time polling (15s), "in flight" counter, progress bar to 100 articles
-  - **Manual triggers**: individual scout buttons (Gemini / Sonnet / Grok / All 3) + "Produce Now" with full API response feedback
-  - **Topic Queue with full controls**: every queued item has Produce (expedite + trigger), Expedite toggle, Priority ↑↓, Delete. IN_PROGRESS items get Reset + Delete buttons. Manual topics default to P10 (high priority). Queue form shows success/error feedback.
-  - Published articles with model pen names, independence scores, Edit + View links
-  - Editor decisions with kill reasons, failed articles with Re-queue + Retry buttons
-  - Scout/produce results shown in colored banners (green success, red error)
+  - **Manual triggers**: individual scout buttons (Gemini / Sonnet / Grok / All 3) + "Produce Now"
+  - **Topic Queue with full controls**: Produce, Expedite, Priority ↑↓, Delete, Reset. BREAKING badge for pinger-promoted topics
+  - Published articles with model pen names, independence/editor scores, cost per article, Edit + View links
+  - Failed articles show actual error message
 - **Articles tab** (React island: `ArticlesManager`): search, filter (status/category), sort (newest/oldest/A-Z/read time/independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh button, independence & editor score display per row
-- **AI Agents tab** (React island: `AgentsPanel`): Reader Questions (mines alumi Health chat data for popular user questions, adds to queue with source: reader_request), Cron Schedule (5 active jobs), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
+- **AI Agents tab** (React island: `AgentsPanel`): Reader Questions (mines alumi Health chat data), **Breaking News Pinger** (recent signals with source color coding, PROMOTED badges, refresh button), Cron Schedule (6 active jobs), editorial QC, illustration agent, Database & Maintenance, editor decision log
 - **New Article Editor** (`/admin/new`): drag-and-drop upload, AI generation, chat refinement, live preview, one-click publish
 - **Edit page** (`/admin/edit/[slug]`): metadata/content/AI refine tabs, autosave with 2s debounce + indicator, Cmd+S keyboard shortcut, score badges (independence/editor), live preview auto-refresh, Publish + Delete from GitHub buttons, XSS-safe chat rendering
 
@@ -229,13 +230,13 @@ const articles = await getCollection('articles');
 AI handles discovery, research, editorial judgment, and quality control. Human writes with Opus via Max subscription. ~$0.13/article.
 
 **Job 1 — Scout** (3 crons/day → `pipeline-scout`, all Gemini + Google Search grounding):
-- `scout-gemini` 6am UTC: trending searches, viral studies, real-time signals
-- `scout-sonnet` 2pm UTC: editorial potential, counter-narratives, mechanism discoveries (uses Gemini, not Sonnet — Sonnet web search costs $0.40+/call due to 120K input token inflation)
-- `scout-grok` 10pm UTC: contrarian — industry fraud, regulatory capture, buried data
-Each finds 20 topics with "why now" rationale + search demand scoring. High-demand topics auto-prioritized. ~$0.12/day total.
+- `scout-gemini` 6am UTC: TikTok/Reddit/Google Trends health debates, viral studies, what 20-35 year olds are searching for
+- `scout-sonnet` 2pm UTC: "wait, really?" stories — belief-challenging science, supplement debunks, diet culture lies (uses Gemini, not Sonnet)
+- `scout-grok` 10pm UTC: contrarian — industry fraud, wellness influencer debunks, health Twitter debates, what young people are being lied to about
+Each finds 20 topics with "why now" + search demand + shareability filter ("would a 25-year-old text this to a friend?"). ~$0.12/day total.
 
-**Job 2 — Pipeline Dispatch** (cron: `* * * * *`, every minute → SQL function `dispatch_pipeline_stage()` → `pg_net.http_post()`):
-SQL function queries DB for highest-priority article, dispatches to appropriate `stage-*` edge function via fire-and-forget HTTP. One stage per invocation.
+**Job 2 — Pipeline Dispatch** (cron: `*/5 * * * *`, every 5 min → SQL function `dispatch_pipeline_stage()`):
+Safety-net cron. Chain-dispatch via `chain_dispatch()` SQL → `pg_net.http_post()` handles post-submit flow directly. Cron processes ≤5 queue items/day through research → editor brief → pause.
 
 **Hybrid pipeline** (AI stages + human writing):
   1. **Research** (~30-80s): Gemini 2.5 Pro + Google Search grounding → Sonnet fallback. Deep research for queue topics.
