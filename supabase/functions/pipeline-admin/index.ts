@@ -600,51 +600,47 @@ Deno.serve(async (req: Request) => {
       const editorBrief = (researchData._editorBrief as Record<string, unknown>) || {};
       const brief = (editorBrief.brief as Record<string, unknown>) || {};
 
-      // Format a clean brief that can be pasted directly into Claude
-      const claudePrompt = `You are a senior health journalist at alumi news, a premium editorial publication. Your slogan: "Evidence. Wherever it leads."
+      // Format a clean brief that can be pasted directly into Claude Opus
+      const claudePrompt = `You are writing for alumi news — "Evidence. Wherever it leads."
 
-Write a magazine-quality health article following this editorial brief precisely.
+Write in the style of exceptional, effortless long-form journalism — The Atlantic, Vanity Fair, The New York Times Magazine, The Wall Street Journal — with tonal enrichments from oratory greats like Bill Maher, Christopher Hitchens, and Sam Harris. The writing should feel like the best magazine feature you've ever read: authoritative without being academic, personal without being confessional, sharp without being cruel.
 
-## EDITORIAL BRIEF
+## YOUR ASSIGNMENT
 Headline: ${editorBrief.headline || logEntry.title}
-Slug: ${editorBrief.slug || logEntry.slug}
-Description: ${editorBrief.description || ""}
 Angle: ${editorBrief.angle || "Follow the research"}
-Category: ${editorBrief.categoryOverride || researchData.category || ""}
+${editorBrief.description ? `Description: ${editorBrief.description}` : ""}
+${editorBrief.archetype ? `Form: ${editorBrief.archetype}` : ""}
 
-### Article Form
-Archetype: ${editorBrief.archetype || "deep-investigation"}
-Tone preset: ${brief.tonePreset || "smart-casual"}
-Density: ${brief.density || "balanced"}
-Pacing: ${brief.pacing || "slow-build"}
+### Editorial Direction
+${brief.tone ? `Tone: ${brief.tone}` : ""}
+${brief.openWith ? `Open with: ${brief.openWith}` : ""}
+${((brief.emphasize as string[]) || []).length > 0 ? `Key points:\n${((brief.emphasize as string[]) || []).map((e: string) => `- ${e}`).join("\n")}` : ""}
+${((brief.avoid as string[]) || []).length > 0 ? `Avoid:\n${((brief.avoid as string[]) || []).map((a: string) => `- ${a}`).join("\n")}` : ""}
+${((brief.dogmaWarnings as string[]) || []).length > 0 ? `Dogma warnings:\n${((brief.dogmaWarnings as string[]) || []).map((w: string) => `- ${w}`).join("\n")}` : ""}
+${brief.closingDirection ? `Closing: ${brief.closingDirection}` : ""}
 
-### Writer's Direction
-Tone: ${brief.tone || "Standard editorial voice"}
-Open with: ${brief.openWith || "A compelling hook"}
-Emphasize: ${((brief.emphasize as string[]) || []).map((e: string) => `- ${e}`).join("\n") || "Key findings"}
-Avoid: ${((brief.avoid as string[]) || []).map((a: string) => `- ${a}`).join("\n") || "Clichés and filler"}
-${((brief.dogmaWarnings as string[]) || []).length > 0 ? `\nDogma Warnings:\n${((brief.dogmaWarnings as string[]) || []).map((w: string) => `- ${w}`).join("\n")}` : ""}
-Closing direction: ${brief.closingDirection || "End with honest unknowns"}
-Structural notes: ${brief.structuralNotes || "Use your judgment"}
-
-## RESEARCH DATA
+## RESEARCH
 Topic: ${researchData.topic || ""}
+
 Key findings:
 ${((researchData.keyFindings as string[]) || []).map((f: string, i: number) => `${i + 1}. ${f}`).join("\n")}
 
 Studies:
 ${((researchData.studies as Array<{ title: string; journal: string; year: string; finding: string }>) || []).map((s) => `- "${s.title}" (${s.journal}, ${s.year}): ${s.finding}`).join("\n")}
 
-Mechanism: ${researchData.mechanism || "Research and explain."}
+${researchData.mechanism ? `Mechanism: ${researchData.mechanism}` : ""}
 
-Counter-arguments:
-${((researchData.counterArguments as string[]) || []).map((c: string) => `- ${c}`).join("\n")}
+${((researchData.counterArguments as string[]) || []).length > 0 ? `Counter-arguments:\n${((researchData.counterArguments as string[]) || []).map((c: string) => `- ${c}`).join("\n")}` : ""}
 
-## OUTPUT FORMAT
-Return the article as clean HTML using these patterns:
+## PRINCIPLES
+- Follow the money. Name who profits.
+- Take positions. This is journalism, not Wikipedia.
+- Zero fabrication. Only cite studies from the research above.
+- When the evidence is clear, say so. When it's not, say that too.
 
+## HTML FORMAT
 <section id="introduction" class="reveal">
-  <p>First paragraph (no h2 — CSS drop cap applies).</p>
+  <p>Opening paragraph (no h2 — CSS drop cap applies automatically).</p>
 </section>
 
 <section id="section-slug" class="reveal">
@@ -655,16 +651,7 @@ Return the article as clean HTML using these patterns:
 Pull quotes: <aside class="pull-quote reveal"><p>"Quote text."</p></aside>
 
 End with a Sources section listing every study cited.
-End with a disclaimer div.
-
-## RULES
-- Max 3 sentences per paragraph. 2 is better.
-- Use "you" at least 6 times. Talk TO the reader.
-- At least 2 editorial opinions — actual verdicts, not hedges.
-- At least 2 everyday analogies (cars, kitchens, plumbing — not other science).
-- Follow the money: name who profits from the status quo.
-- Zero fabrication. Only cite studies from the research data above.
-- Brand voice: 60% journalism (The Atlantic), 20% Bill Maher, 15% Hitchens, 15% Sam Harris.`;
+End with: <div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal"><p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed"><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>`;
 
       return json({
         success: true,

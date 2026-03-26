@@ -72,12 +72,14 @@ export function auditVoiceQuality(html: string): VoiceAudit {
   if (foundBanned.length > 0) {
     failures.push(`BANNED PHRASES found: ${foundBanned.map(p => `"${p}"`).join(", ")}`);
   }
-  if (paragraphsOver3 > 0) {
-    failures.push(`${paragraphsOver3} paragraph(s) exceed 3-sentence max`);
+  // Only flag if many paragraphs are dense — occasional 4-5 sentence paragraphs
+  // are fine in quality journalism. The old strict 3-sentence max was for AI slop prevention.
+  const denseParaRatio = paragraphs.length > 0 ? paragraphsOver3 / paragraphs.length : 0;
+  if (denseParaRatio > 0.3) {
+    failures.push(`${paragraphsOver3} of ${paragraphs.length} paragraphs exceed 3 sentences — too dense`);
   }
-  if (youCount < 6) {
-    failures.push(`"you/your" count is ${youCount} — minimum is 6`);
-  }
+  // "you" count tracked but not enforced — Opus writes naturally engaging prose
+  // without being told to spam "you". The old minimum-6 rule produced forced, directive writing.
   const shortPer3 = paragraphs.length > 0 ? (shortSentences.length / paragraphs.length) * 3 : 0;
   if (shortPer3 < 1 && paragraphs.length >= 3) {
     failures.push(`Short sentences (< 8 words): ${shortSentences.length} total = ${shortPer3.toFixed(1)} per 3 paragraphs — need at least 1 per 3`);
