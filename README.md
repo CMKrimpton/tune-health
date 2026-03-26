@@ -127,25 +127,26 @@ src/
 - **Edit page**: metadata/content/AI refine tabs, 2s autosave + Cmd+S, score badges, live preview auto-refresh, Publish + Delete from GitHub, XSS-safe chat
 - **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish
 
-### Autonomous AI Newsroom
-Four AI companies, seven models, split-function architecture, full fallback on every stage:
+### Hybrid AI Newsroom (v12)
+Four AI companies, seven models, human-in-the-loop writing with Opus. AI handles discovery, research, editorial judgment, and quality control. Human writes with the best model. ~$0.13/article.
 
-Each pipeline stage is its own independent Supabase Edge Function — no monolith, no timeout pressure. A lightweight orchestrator dispatches one stage per invocation, and a 1-minute cron drives progression. Articles go from queue to published in ~7 minutes.
+Each pipeline stage is its own independent Supabase Edge Function. A SQL dispatch function (`dispatch_pipeline_stage()`) called every minute by pg_cron drives progression via `pg_net.http_post()` (fire-and-forget).
 
-- **Scout** (3 crons/day): **Gemini** (6am, Google Search), **Sonnet** (2pm, web search, falls back to Gemini), **Grok** (10pm, contrarian). Each finds 20 topics, Grok markdown stripped, deduped and inserted into topic_queue. ~$0.14/day total
-- **Produce** (cron: every minute via `pipeline-orchestrator`): picks highest-priority article, runs ONE stage, returns. 7-stage pipeline:
-  1. **Research** (`stage-research`) — Claude web search → Gemini fallback. Directed research for queue topics
-  2. **Editor Brief** (`stage-editor`) — Gemini 3.1 Pro → Sonnet → GPT-5.4 fallback. Assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION" preserving the admin's intended angle. Smart duplicate detection via AI editor
-  3. **Write** (`stage-write`) — Gemini 3.1 Pro primary, GPT-5.4 fallback. Brand voice formula (60% journalism, 20% Maher, 15% Hitchens, 15% Harris). Anti-wiki rules with measurable targets. Zero fabrication rule. Mandatory Sources section
-  4. **Grok Independence Review** (`stage-independence`) — Grok 3 adversarial review on plain text (HTML stripped), category-specific focus. Rewrites trigger for `major_issues` OR `minor_issues with score < 7`. PubMed verification in parallel
-  5. **QC** (`stage-qc`) — Gemini 2.5 Pro → Sonnet → GPT-5.4. Three decisions: `publish`, `rewrite_voice`, `revise`, `kill`. Mechanical voice audit feeds hard metrics
-  6. **Voice Rewrite** (`stage-voice-rewrite`, if QC triggers `rewrite_voice`) — Opus 4.6 → Sonnet → GPT-5.4 → Gemini 3.1 Pro → Grok. Rewrites prose for voice only — keeps all facts, citations, structure
-  7. **Publish** (`stage-publish`) — GitHub commit (.astro + .json), Vercel deploy hook, post-publish illustration generation (GPT Image), featured rotation
-- **Reader Questions**: mines alumi Health AI assistant chat data (same Supabase project) for questions asked by 2+ different users → adds to topic queue as `source: reader_request`
-- **Fallback chain**: every stage has provider fallback — pipeline survives any single provider outage or spending limit
-- **Cost tracking**: every API call logs token usage + USD cost. Backfill Costs button for pre-tracking articles
-- **Featured rotation**: every 6h via independent `pg_cron` job. Manual trigger available in admin
-- **Topic queue**: admin can add manually (P10 high priority), edit priority/expedite, produce specific topics on demand
+- **Scout** (3 crons/day, all Gemini + Google Search grounding): **Gemini** (6am, trending/search demand), **Editorial** (2pm, counter-narratives), **Grok** (10pm, contrarian/buried data). Each finds 20 topics with "why now" rationale + search demand scoring. High-demand topics auto-prioritized. ~$0.12/day total
+- **Pipeline** (cron: every minute via SQL dispatch):
+  1. **Research** (`stage-research`) — Gemini 2.5 Pro + Google Search grounding → Sonnet fallback. Deep research for queued topics
+  2. **Editor Brief** (`stage-editor`) — Flash → Sonnet fallback. Assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION"
+  3. **PAUSE** — Article waits at `editor_approved` for human writing
+  4. **Human writes with Opus** — Dashboard shows "Copy Brief for Claude" button. User pastes brief to Claude Mac/Code, Opus writes article (Max subscription, $0 marginal cost). User pastes HTML back via "Submit Article" form
+  5. **Grok Independence Review** (`stage-independence`) — Grok 3 adversarial review + PubMed verification. Flash applies corrections
+  6. **QC** (`stage-qc`) — Flash → Sonnet fallback. Publish/rewrite_voice/revise/kill. Mechanical voice audit
+  7. **Voice Rewrite** (`stage-voice-rewrite`, if QC triggers) — Sonnet → Gemini → GPT-5.4. Voice-only prose rewrite
+  8. **Publish** (`stage-publish`) — GitHub commit (.astro + .json), Vercel deploy hook, illustration (GPT Image), featured rotation
+- **Reader Questions**: mines alumi Health AI assistant chat data for popular user questions → topic queue
+- **Fallback chain**: every stage has provider fallback — pipeline survives any single provider outage
+- **Cost tracking**: every API call logs token usage + USD cost per article
+- **Featured rotation**: every 6h via independent `pg_cron` job
+- **Topic queue**: admin can add manually (P10 high priority), edit priority/expedite, produce on demand
 - **110+ articles published**, diverse categories actively rebalancing toward underserved subjects
 
 ### alumi Health Funnel

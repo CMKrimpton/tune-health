@@ -1053,7 +1053,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
     e.stopPropagation();
     setLoadingBrief(true);
     try {
-      const res = await fetch(apiBase, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get-brief', logId: log.id }),
@@ -1078,7 +1078,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
     setSubmitting(true);
     setSubmitResult(null);
     try {
-      const res = await fetch(apiBase, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'submit-article', logId: log.id, articleHtml: articleHtml.trim() }),

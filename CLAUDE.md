@@ -223,40 +223,42 @@ const articles = await getCollection('articles');
 - **New Article Editor** (`/admin/new`): drag-and-drop upload, AI generation, chat refinement, live preview, one-click publish
 - **Edit page** (`/admin/edit/[slug]`): metadata/content/AI refine tabs, autosave with 2s debounce + indicator, Cmd+S keyboard shortcut, score badges (independence/editor), live preview auto-refresh, Publish + Delete from GitHub buttons, XSS-safe chat rendering
 
-#### Autonomous AI Newsroom (Two-Job Architecture)
+#### Hybrid AI Newsroom (v12 — Human + AI)
 
-Two independent cron jobs power the newsroom:
+AI handles discovery, research, editorial judgment, and quality control. Human writes with Opus via Max subscription. ~$0.13/article.
 
-**Job 1 — Scout** (3 crons/day → `pipeline-scout`: `scout-gemini` 6am UTC, `scout-sonnet` 2pm, `scout-grok` 10pm):
-Three-model discovery — each finds 20 topics, all deduped and inserted directly into `topic_queue`. Gemini (Google Search, trending topics), Sonnet (web search, editorial potential), Grok (contrarian, independent perspective). No expensive structuring step — raw findings parsed directly. Per-scout dedup against all articles + queue + within-batch. Category balance prioritizes underserved areas (<10% threshold). Scout prompts include explicit subject-level gap guidance listing 12 uncovered subjects (cardiology, diabetes, immunology, kidney, liver, respiratory, musculoskeletal, addiction, prostate, pain, dermatology, pediatrics) — at least 8 of 20 topics must come from gaps. Each model's system prompt reinforced with gap awareness. ~$0.14/day total scout cost.
+**Job 1 — Scout** (3 crons/day → `pipeline-scout`, all Gemini + Google Search grounding):
+- `scout-gemini` 6am UTC: trending searches, viral studies, real-time signals
+- `scout-sonnet` 2pm UTC: editorial potential, counter-narratives, mechanism discoveries (uses Gemini, not Sonnet — Sonnet web search costs $0.40+/call due to 120K input token inflation)
+- `scout-grok` 10pm UTC: contrarian — industry fraud, regulatory capture, buried data
+Each finds 20 topics with "why now" rationale + search demand scoring. High-demand topics auto-prioritized. ~$0.12/day total.
 
-**Job 2 — Produce** (cron: `* * * * *`, every minute → `pipeline-orchestrator`):
-Orchestrator picks the highest-priority article from the pipeline, determines its next stage, and dispatches to the corresponding `stage-*` edge function via HTTP. One stage per invocation. 1-minute cron drives progression — each article goes from queue to published in ~7 minutes.
+**Job 2 — Pipeline Dispatch** (cron: `* * * * *`, every minute → SQL function `dispatch_pipeline_stage()` → `pg_net.http_post()`):
+SQL function queries DB for highest-priority article, dispatches to appropriate `stage-*` edge function via fire-and-forget HTTP. One stage per invocation.
 
-**7-stage pipeline** (each stage = 1 cron invocation):
-  1. **Research** (~30s): Claude web search → Gemini fallback. Directed research for queue topics.
-  2. **Editor Brief** (~30s): Gemini 3.1 Pro → Sonnet → GPT-5.4 fallback. Assigns archetype (7 types), tone preset (10 options), density, pacing. Category balance rules. Can flag `replacesSlug`.
-  3. **Write** (~90s, temp 0.5, 16K max tokens): Gemini 3.1 Pro primary (Sonnet spending-limited until April 1, 2026). GPT-5.4 fallback. Grok EXCLUDED from writing. Brand voice formula: 60% journalism, 20% Maher, 15% Hitchens, 15% Harris. Anti-wiki rules. Mandatory editorial directives.
-  4. **Grok Independence Review** (~30s): Grok 3 adversarial review. Pharma framing, institutional deference, AI voice tells. Rewrites for major_issues or minor_issues < 7. PubMed verification in parallel.
-  5. **QC** (~30s): Gemini 2.5 Pro → Sonnet → GPT-5.4. Three decisions: `publish` (good), `rewrite_voice` (solid content, bland voice), `revise` (content issues), `kill` (unsalvageable). Mechanical voice audit feeds hard metrics. Default-deny: missing decision = `rewrite_voice`.
-  6. **Voice Rewrite** (~60s, if QC triggers `rewrite_voice`): Opus 4.6 → Sonnet → GPT-5.4 → Gemini 3.1 Pro → Grok. Rewrites prose for voice ONLY — keeps all facts, citations, structure. Adds "you", breaks paragraphs, injects editorial positions, Bill Maher moments.
-  7. **Publish** (~30s): GitHub commit (.astro + .json) with 422 retry loop. Vercel deploy hook. Post-publish illustration generation (GPT Image). Featured rotation.
+**Hybrid pipeline** (AI stages + human writing):
+  1. **Research** (~30-80s): Gemini 2.5 Pro + Google Search grounding → Sonnet fallback. Deep research for queue topics.
+  2. **Editor Brief** (~30-60s): Flash → Sonnet fallback. Assigns archetype (7 types), tone preset (10 options), density, pacing.
+  3. **PAUSE at `editor_approved`** — Article waits for human writing. Dashboard shows purple-highlighted card with:
+     - "Copy Brief for Claude" button (fetches formatted prompt via `pipeline-admin` `get-brief` action)
+     - "Submit Written Article" form (accepts HTML, resumes pipeline via `submit-article` action)
+  4. **Human writes with Opus** — User pastes brief to Claude Mac/Code, Opus writes the article ($0 via Max subscription). User pastes HTML back into admin dashboard.
+  5. **Grok Independence Review** (~30-60s): Grok 3 adversarial review. Flash applies corrections. PubMed verification in parallel.
+  6. **QC** (~30s): Flash → Sonnet fallback. Publish/rewrite_voice/revise/kill. Mechanical voice audit.
+  7. **Voice Rewrite** (if QC triggers): Sonnet → Gemini → GPT-5.4 → Grok. Voice-only prose rewrite.
+  8. **Publish** (~30s): GitHub commit (.astro + .json) with 422 retry loop. Vercel deploy hook. GPT Image illustration. Featured rotation.
 
-**Architecture (split pipeline)**:
-Each stage is its own edge function (`stage-research`, `stage-editor`, `stage-write`, etc.) with shared utilities in `_shared/`. The `pipeline-orchestrator` is the only cron-triggered function — it reads DB state, picks the highest-priority article, determines its next stage, and dispatches via HTTP call to the appropriate `stage-*` function. Each stage function gets its own full edge function timeout (~150s), eliminating the timeout pressure of the old monolith. Shared code (`generateWithFallback()`, `safeStage()`, `assembleAstroFile()`, etc.) lives in `supabase/functions/_shared/` and is imported by all stage functions.
+**Architecture (split pipeline, SQL dispatch)**:
+Each stage is its own edge function with shared utilities in `_shared/`. The SQL function `dispatch_pipeline_stage()` (called by pg_cron) reads DB state, picks the highest-priority article, and dispatches via `pg_net.http_post()` (fire-and-forget — no shared timeout). `editor_approved` is EXCLUDED from auto-dispatch — articles pause there for human writing. Dead code deleted: `daily-article-agent/` (old monolith) and `pipeline-orchestrator/` (replaced by SQL dispatch).
 
-**Stage progression**: 1-minute cron calls `pipeline-orchestrator` → reads DB for highest-priority in-progress article → determines next stage → dispatches to `stage-*` function via HTTP → stage runs and updates DB → next cron tick picks up the article for its next stage. Stale detection (2-min threshold) runs BEFORE concurrency guard to unstick timed-out stages.
-**Error handling**: `safeStage()` wrapper catches all errors, fails hard (no rollback). Admin can retry/kill/re-queue via UI.
-**Model chains**: Every call uses `generateWithFallback()`. Writer: Gemini 3.1 Pro → Sonnet → GPT-5.4. QC: Gemini 2.5 Pro → Sonnet → GPT-5.4. Voice rewrite: Opus → Sonnet → GPT-5.4 → Gemini 3.1 Pro → Grok. Flash ONLY for scout discovery and fact-check.
-**API timeout**: 75s constant (`API_TIMEOUT`) — leaves margin within edge function timeout.
-**Mechanical voice audit**: `auditVoiceQuality()` code-based checks. 30+ banned phrases, "you" count (min 6), paragraph length (max 3 sentences). QC auto-triggers `rewrite_voice` on voice failures.
-**HTML sanitization**: `assembleAstroFile` escapes stray `<` characters to prevent Astro build breaks.
-**Vercel deploy hook**: `VERCEL_DEPLOY_HOOK` secret — POSTs after every publish to trigger rebuild.
-**Editorial independence**: Manually queued topics (`source: manual`) get "MANDATORY EDITORIAL DIRECTION" — editor must preserve the original angle. Writer prompt says "you are a journalist, not a PR department." Critical investigations must not be neutralized into balanced overviews.
-**Duplicate filter**: `isDuplicate()` — bidirectional 55% word overlap with 5+ matching subject words (near-exact only). Single queued topics always pass through to the AI editor for intelligent judgment. Mechanical filter only pre-screens multi-candidate scout batches. Scout topics have Grok markdown stripped before dedup.
-**Category sanitization**: validates against whitelist of 9 categories.
-**Article ordering**: `sortOrder` field (epoch ms) ensures newest articles always appear first.
-**Cost tracking**: every API call (Claude, Grok, Gemini) logs input/output tokens and USD cost to `daily_article_log.cost_usd` + `token_usage` (jsonb breakdown). Dashboard shows per-article and total spend.
+**Stage progression**: 1-min cron → SQL function → `pg_net.http_post()` → stage function → DB update → next cron tick. Stale detection (5-min threshold) runs BEFORE concurrency guard.
+**Error handling**: `safeStage()` wrapper + `parseScore()` for safe integer parsing. All stages log errors to DB on failure.
+**Model chains**: Writer (fallback path): Gemini 3.1 Pro → Sonnet → GPT-5.4. QC: Flash → Sonnet. Voice rewrite: Sonnet → Gemini → GPT-5.4 → Grok. Independence revision: Flash → Sonnet.
+**API timeout**: 75s constant (`API_TIMEOUT`).
+**Mechanical voice audit**: `auditVoiceQuality()` — 30+ banned phrases, "you" count (min 6), paragraph length (max 3 sentences).
+**Editorial independence**: Manually queued topics get "MANDATORY EDITORIAL DIRECTION".
+**Duplicate filter**: `isDuplicate()` — bidirectional 55% word overlap with 5+ matching subject words.
+**Cost tracking**: every API call logs tokens + USD to `daily_article_log.cost_usd` + `token_usage` (jsonb). ~$0.13/article with hybrid model.
 
 - **Smart featured rotation**: every 6h via independent `pg_cron` job (`featured-rotation`). Uses `updated_at` to track when article became featured (not publish date). Scores: editor quality (25%), recency (30%), independence score (15%), illustration (10%), read time (10%), category diversity (10%). Must have illustration and score >30 to qualify. Standalone `rotate-featured` action works even when pipeline crons are paused.
 - **Quality control**: `editorial-qc` reviews full article collection holistically → identifies issues → auto-fixes via `articles-api`

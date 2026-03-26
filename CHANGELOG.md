@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.0.0] - 2026-03-25
+
+### BREAKING — Hybrid Pipeline (Human + AI)
+- **Pipeline pauses at `editor_approved`** — articles no longer auto-dispatch to the write stage
+- SQL dispatch function `dispatch_pipeline_stage()` skips `editor_approved` status
+- User writes articles with Opus via Claude Max subscription ($0/article writing cost)
+- New admin actions: `get-brief` (formats editorial brief as Claude prompt), `submit-article` (accepts user's HTML, resumes pipeline at "written")
+- Dashboard shows purple-highlighted `editor_approved` cards with "Copy Brief for Claude" + "Submit Article" UI
+- Pipeline resumes automatically after submission: independence review → QC → publish
+
+### Changed — Cost Reduction ($0.94 → $0.13/article)
+- **Opus removed from voice rewrite chain** — was $0.87/call, now Sonnet primary ($0.17)
+- **Gemini 3.1 Pro primary writer** (fallback path) — $0.14 vs Sonnet's $0.18
+- **Flash for structured stages** — editor brief, QC, and independence revision now use Gemini 2.5 Flash ($0.003/call vs $0.03-0.08)
+- **Research switched to Gemini 2.5 Pro + Google Search grounding** — $0.04/call vs Sonnet web search $0.40+ (120K input token inflation from web page dumps)
+- **All scouts switched to Gemini search grounding** — daily scout cost $0.12 vs $1.30
+- Writing stage costs $0 with hybrid model (Max subscription)
+
+### Added — Scout Quality Upgrade
+- Scout prompts now require **"Why now"** (what happened this week), **search demand** (high/medium/low), and **"Our angle"**
+- High search-demand topics get automatic priority boost in queue (lower priority number)
+- Three distinct editorial lenses: Gemini (trending/search data), Grok (contrarian/buried data), editorial potential (counter-narratives)
+- Sonnet web search eliminated from scouts entirely — all use Gemini + Google Search grounding
+
+### Fixed — Pipeline Hardening (v11.2.0)
+- **`parseScore()` helper** — safely parses "8/10", "8", 8 → integer for all `editor_score` writes
+- **`stage-publish` "8/10" bug** — was passing raw string to integer column, causing `invalid input syntax` PostgreSQL errors
+- **`stage-editor` fallback chain** — was single `claude()` call with no fallback, now uses `generateWithFallback()`
+- **`stage-qc` error handler** — was reading consumed request body in catch block, now stores `parsedLogId` before try
+- **`stage-voice-rewrite` error handling** — had no DB error logging on failure, now writes failed status
+- **DB error checking** — added to `stage-research` and `stage-independence` final status updates
+- **Dashboard accuracy** — fixed hardcoded model names, fixed cron schedule (showed "every hour", actually every minute), failed articles now show actual error message
+
+### Removed — Dead Code
+- **`daily-article-agent/`** — 3,984-line monolith (replaced in v11.0.0)
+- **`pipeline-orchestrator/`** — 192-line edge function (replaced by SQL dispatch in v11.1.0)
+- **`pipeline-admin` produce action** — now calls `dispatch_pipeline_stage()` via SQL RPC instead of deleted orchestrator
+- Unused `API_TIMEOUT` import from `github.ts`
+- Unused `count` destructure from `stage-editor`
+
 ## [11.1.0] - 2026-03-25
 
 ### Fixed — Pipeline Concurrency & Reliability
