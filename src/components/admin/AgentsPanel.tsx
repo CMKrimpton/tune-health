@@ -1,30 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { getAdminToken, timeAgo, getScoreColor } from './types';
+import type { EditorBrief, QCResult } from './types';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
 interface Props {
   apiBase: string;
   initialArticleCount: number;
-}
-
-interface EditorBrief {
-  decision: 'approve' | 'kill';
-  topicScore: number;
-  headline: string;
-  slug: string;
-  description: string;
-  angle: string;
-  brief?: { tone?: string; openWith?: string; emphasize?: string[]; avoid?: string[]; closingDirection?: string };
-  killReason?: string | null;
-}
-
-interface QCResult {
-  decision: 'publish' | 'revise' | 'kill';
-  qualityScore: number;
-  headline: string;
-  description: string;
-  edits?: { headlineChanged?: boolean; descriptionChanged?: boolean; notes?: string };
-  killReason?: string | null;
 }
 
 interface LogEntry {
@@ -79,22 +61,6 @@ type Severity = 'high' | 'medium' | 'low';
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-function getAdminToken(): string {
-  const match = document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : '';
-}
-
-function timeAgo(d: string): string {
-  const ms = Date.now() - new Date(d).getTime();
-  const mins = Math.floor(ms / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
-
 function gradeColor(grade: string): string {
   if (grade.startsWith('A')) return '#4ade80';
   if (grade.startsWith('B')) return '#fbbf24';
@@ -124,12 +90,12 @@ function Section({ title, icon, defaultOpen = false, badge, children }: {
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+        <span className="agents-header-left">
           {icon}
           <span>{title}</span>
         </span>
         {badge}
-        <span style={{ fontSize: '1rem', transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s' }}>
+        <span className={`agents-chevron${open ? ' open' : ''}`}>
           &#9662;
         </span>
       </button>
@@ -205,13 +171,13 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
       title="Reader Questions"
       defaultOpen={true}
       icon={
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #7f1d1d, #dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="admin-section-icon-box admin-section-icon-red">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
       }
-      badge={questions.length > 0 ? <span style={{ fontSize: '0.6875rem', color: '#4ade80', fontWeight: 500 }}>{questions.length} found</span> : undefined}
+      badge={questions.length > 0 ? <span className="agents-badge-green">{questions.length} found</span> : undefined}
     >
-      <p style={{ fontSize: '0.6875rem', color: '#7d7871', marginBottom: '0.75rem' }}>
+      <p className="agents-hint">
         Finds health questions asked by 2+ different users in the alumi Health AI assistant. Real reader interest = real article ideas.
       </p>
       <button className="agents-btn agents-btn-primary" disabled={loading} onClick={fetchQuestions}>
@@ -219,32 +185,31 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
       </button>
 
       {message && (
-        <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: message.startsWith('Error') ? '#f87171' : '#a8a29e' }}>{message}</p>
+        <p className={`agents-result ${message.startsWith('Error') ? 'agents-result-error' : 'admin-color-secondary'}`}>{message}</p>
       )}
 
       {questions.length > 0 && (
-        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.375rem', maxHeight: 400, overflowY: 'auto' }}>
+        <div className="agents-question-list">
           {questions.map((q, i) => (
-            <div key={i} style={{ padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.375rem', borderLeft: `3px solid ${q.uniqueUsers >= 5 ? '#ef4444' : q.uniqueUsers >= 3 ? '#f59e0b' : 'rgba(255,255,255,0.08)'}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#eae8e4', marginBottom: '0.25rem' }}>
+            <div key={i} className="agents-question-card" style={{ borderLeft: `3px solid ${q.uniqueUsers >= 5 ? '#ef4444' : q.uniqueUsers >= 3 ? '#f59e0b' : 'rgba(255,255,255,0.08)'}` }}>
+              <div className="admin-flex-between-top admin-gap-md">
+                <div className="admin-flex-1">
+                  <div className="agents-question-topic">
                     {q.topic.slice(0, 120)}{q.topic.length > 120 ? '...' : ''}
                   </div>
-                  <div style={{ fontSize: '0.625rem', color: '#78716c', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div className="agents-question-meta">
                     <span style={{ color: q.uniqueUsers >= 5 ? '#f87171' : q.uniqueUsers >= 3 ? '#fbbf24' : '#a8a29e', fontWeight: 600 }}>{q.uniqueUsers} users</span>
                     <span>{q.totalAsks} times</span>
-                    <span style={{ color: '#5c5752' }}>{q.keywords.slice(0, 5).join(', ')}</span>
+                    <span className="agents-question-keywords">{q.keywords.slice(0, 5).join(', ')}</span>
                   </div>
                 </div>
                 {queued.has(i) ? (
-                  <span style={{ fontSize: '0.625rem', color: '#4ade80', fontWeight: 600, whiteSpace: 'nowrap' }}>Queued</span>
+                  <span className="agents-queued-badge">Queued</span>
                 ) : (
                   <button
-                    className="pipeline-retry-btn"
+                    className="pipeline-retry-btn admin-action-btn-green admin-nowrap"
                     onClick={() => addToQueue(i, q.topic)}
                     disabled={queueingIdx === i}
-                    style={{ fontSize: '0.6875rem', color: '#4ade80', borderColor: '#166534', whiteSpace: 'nowrap' }}
                   >
                     {queueingIdx === i ? 'Adding...' : '+ Queue'}
                   </button>
@@ -299,48 +264,38 @@ function PingerActivity({ apiBase }: { apiBase: string }) {
       title="Breaking News Pinger"
       defaultOpen={false}
       icon={
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #7f1d1d, #dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="admin-section-icon-box admin-section-icon-red">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
       }
       badge={
-        <span style={{ fontSize: '0.6875rem', color: promoted > 0 ? '#ef4444' : '#4ade80', fontWeight: 500 }}>
+        <span className={promoted > 0 ? 'agents-badge-red' : 'agents-badge-green'}>
           {promoted > 0 ? `${promoted} promoted (24h)` : 'monitoring'}
         </span>
       }
     >
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-        <button onClick={fetchPinger} disabled={loading} style={{
-          fontSize: '0.6875rem', padding: '0.25rem 0.625rem',
-          background: 'rgba(255,255,255,0.05)', color: '#b5b0a9', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-        }}>
+      <div className="agents-pinger-controls">
+        <button onClick={fetchPinger} disabled={loading} className="agents-pinger-refresh">
           {loading ? 'Loading...' : 'Refresh'}
         </button>
-        <span style={{ fontSize: '0.6875rem', color: '#5c5752', alignSelf: 'center' }}>
+        <span className="agents-pinger-hint">
           Checks: :00 Gemini, :15 PubMed, :30 Grok, :45 PubMed
         </span>
       </div>
 
       {signals.length === 0 ? (
-        <p style={{ fontSize: '0.75rem', color: '#5c5752' }}>No signals detected recently. The pinger runs every 15 minutes.</p>
+        <p className="agents-empty-muted">No signals detected recently. The pinger runs every 15 minutes.</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+        <div className="agents-signal-list">
           {signals.slice(0, 10).map(s => (
-            <div key={s.id} style={{
-              padding: '0.375rem 0.625rem',
-              background: s.promoted_to_queue ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)',
-              border: `1px solid ${s.promoted_to_queue ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)'}`,
-              borderLeft: `3px solid ${sourceColors[s.source] || '#5c5752'}`,
-              borderRadius: '8px',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.75rem', color: '#eae8e4', fontWeight: 500 }}>{s.topic}</span>
+            <div key={s.id} className={`agents-signal-card${s.promoted_to_queue ? ' promoted' : ''}`} style={{ borderLeft: `3px solid ${sourceColors[s.source] || '#5c5752'}` }}>
+              <div className="admin-flex-between admin-flex-center">
+                <span className="agents-signal-topic">{s.topic}</span>
                 {s.promoted_to_queue && (
-                  <span style={{ fontSize: '0.5625rem', color: '#ef4444', fontWeight: 700, padding: '0.0625rem 0.375rem', background: 'rgba(239,68,68,0.15)', borderRadius: '4px' }}>PROMOTED</span>
+                  <span className="admin-status-badge admin-status-breaking">PROMOTED</span>
                 )}
               </div>
-              <div style={{ fontSize: '0.625rem', color: '#7d7871', marginTop: '0.125rem' }}>
+              <div className="agents-signal-meta">
                 <span style={{ color: sourceColors[s.source] || '#5c5752' }}>{sourceLabels[s.source] || s.source}</span>
                 {' · '}
                 <span>{s.urgency}</span>
@@ -362,8 +317,8 @@ function CronSchedule() {
   const cronJobs = [
     { name: 'Scout (Gemini)', schedule: 'Daily 6:00 AM UTC (0 6 * * *)', model: 'Gemini + Google Search', color: '#fbbf24' },
     { name: 'Scout (Sonnet)', schedule: 'Daily 2:00 PM UTC (0 14 * * *)', model: 'Sonnet + web search', color: '#f97316' },
-    { name: 'Scout (Grok)', schedule: 'Daily 10:00 PM UTC (0 22 * * *)', model: 'Grok 3 (contrarian)', color: '#3b82f6' },
-    { name: 'Pipeline Dispatch', schedule: 'Every minute (* * * * *)', model: 'SQL → pg_net → stage functions', color: '#16a34a' },
+    { name: 'Scout (Grok)', schedule: 'Daily 10:00 PM UTC (0 22 * * *)', model: 'Grok 4 (contrarian)', color: '#3b82f6' },
+    { name: 'Pipeline Dispatch', schedule: 'Every minute (* * * * *)', model: 'SQL \u2192 pg_net \u2192 stage functions', color: '#16a34a' },
     { name: 'Featured Rotation', schedule: 'Every 6 hours (0 */6 * * *)', model: 'Score-weighted rotation', color: '#a78bfa' },
   ];
 
@@ -372,22 +327,22 @@ function CronSchedule() {
       title="Cron Schedule"
       defaultOpen={false}
       icon={
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #1e1b4b, #4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="admin-section-icon-box admin-section-icon-indigo">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
       }
-      badge={<span style={{ fontSize: '0.6875rem', color: '#4ade80', fontWeight: 500 }}>5 active</span>}
+      badge={<span className="agents-badge-green">5 active</span>}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+      <div className="agents-cron-grid">
         {cronJobs.map(job => (
-          <div key={job.name} style={{ padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: `3px solid ${job.color}`, borderRadius: '8px' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#eae8e4', marginBottom: '0.125rem' }}>{job.name}</div>
-            <div style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{job.schedule}</div>
-            <div style={{ fontSize: '0.625rem', color: job.color, marginTop: '0.125rem' }}>{job.model}</div>
+          <div key={job.name} className="agents-cron-card" style={{ borderLeft: `3px solid ${job.color}` }}>
+            <div className="agents-cron-name">{job.name}</div>
+            <div className="agents-cron-schedule">{job.schedule}</div>
+            <div className="agents-cron-model" style={{ color: job.color }}>{job.model}</div>
           </div>
         ))}
       </div>
-      <p style={{ fontSize: '0.6875rem', color: '#5c5752', marginTop: '0.75rem' }}>
+      <p className="agents-hint-bottom">
         Managed via pg_cron in Supabase. Use Scout Now / Produce Now in Pipeline tab for manual triggers.
       </p>
     </Section>
@@ -430,18 +385,18 @@ function DecisionLog({ apiBase }: { apiBase: string }) {
       title="Senior Editor Decision Log"
       defaultOpen={true}
       icon={
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #78350f, #b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="admin-section-icon-box admin-section-icon-amber">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         </div>
       }
     >
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '1.5rem' }}>
-          <div className="admin-spinner admin-spinner-lg" style={{ margin: '0 auto 0.75rem' }} />
-          <p style={{ fontSize: '0.8125rem', color: '#b5b0a9' }}>Loading decision log...</p>
+        <div className="agents-loading-center">
+          <div className="admin-spinner admin-spinner-lg agents-spinner-block" />
+          <p className="admin-text-md admin-color-secondary">Loading decision log...</p>
         </div>
       ) : decisionsLogs.length === 0 ? (
-        <p style={{ fontSize: '0.8125rem', color: '#78716c', textAlign: 'center', padding: '1.5rem' }}>
+        <p className="agents-empty">
           No editorial decisions yet. The daily pipeline will populate this log.
         </p>
       ) : (
@@ -464,44 +419,44 @@ function DecisionCard({ log }: { log: LogEntry }) {
 
   return (
     <div className="agents-decision-card">
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
-            {isPublished && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', borderRadius: '6px', fontWeight: 600 }}>Published</span>}
-            {isKilled && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: '6px', fontWeight: 600 }}>Killed</span>}
-            {isFailed && !isKilled && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: '6px', fontWeight: 600 }}>Failed</span>}
-            {!isPublished && !isFailed && brief?.decision === 'approve' && <span style={{ fontSize: '0.5625rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em', padding: '0.125rem 0.375rem', background: 'rgba(59, 130, 246, 0.12)', color: '#93c5fd', borderRadius: '6px', fontWeight: 600 }}>{log.status}</span>}
+      <div className="agents-decision-layout">
+        <div className="admin-flex-1">
+          <div className="agents-decision-badges">
+            {isPublished && <span className="admin-status-badge admin-status-published">Published</span>}
+            {isKilled && <span className="admin-status-badge admin-status-failed">Killed</span>}
+            {isFailed && !isKilled && <span className="admin-status-badge admin-status-failed">Failed</span>}
+            {!isPublished && !isFailed && brief?.decision === 'approve' && <span className="admin-status-badge admin-status-in-progress">{log.status}</span>}
             {brief?.topicScore != null && (
-              <span style={{ fontSize: '0.625rem', color: brief.topicScore >= 7 ? '#4ade80' : brief.topicScore >= 5 ? '#fbbf24' : '#f87171', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+              <span className="agents-score-badge" style={{ color: getScoreColor(brief.topicScore) }}>
                 {brief.topicScore}/10
               </span>
             )}
           </div>
-          <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', lineHeight: 1.3 }}>
+          <h4 className="agents-decision-title">
             {brief?.headline || log.title || log.topic || 'Untitled'}
           </h4>
           {brief?.angle && !isKilled && (
-            <p style={{ fontSize: '0.6875rem', color: '#b5b0a9', lineHeight: 1.5, marginBottom: '0.25rem' }}>{brief.angle}</p>
+            <p className="agents-decision-angle">{brief.angle}</p>
           )}
           {isKilled && brief?.killReason && (
-            <p style={{ fontSize: '0.6875rem', color: '#f87171', lineHeight: 1.5, marginBottom: '0.25rem' }}>
+            <p className="agents-decision-error">
               {brief.killReason}
             </p>
           )}
           {isFailed && !isKilled && log.error && (
-            <p style={{ fontSize: '0.6875rem', color: '#f87171', lineHeight: 1.5, marginBottom: '0.25rem' }}>
+            <p className="agents-decision-error">
               {log.error}
             </p>
           )}
           {isPublished && qc && (
-            <div style={{ fontSize: '0.6875rem', color: '#b5b0a9', lineHeight: 1.5 }}>
-              {qc.qualityScore != null && <span style={{ color: qc.qualityScore >= 7 ? '#4ade80' : '#fbbf24', fontWeight: 600 }}>QC {qc.qualityScore}/10</span>}
-              {qc.edits?.headlineChanged && <span style={{ marginLeft: '0.5rem' }}>Headline revised</span>}
-              {qc.edits?.notes && <p style={{ marginTop: '0.125rem', color: '#7d7871', fontStyle: 'italic' }}>{qc.edits.notes}</p>}
+            <div className="agents-decision-qc">
+              {qc.qualityScore != null && <span style={{ color: getScoreColor(qc.qualityScore), fontWeight: 600 }}>QC {qc.qualityScore}/10</span>}
+              {qc.edits?.headlineChanged && <span className="admin-ml-md">Headline revised</span>}
+              {qc.edits?.notes && <p className="admin-mt-xs admin-color-subtle admin-italic">{qc.edits.notes}</p>}
             </div>
           )}
         </div>
-        <span style={{ fontSize: '0.625rem', color: '#5c5752', whiteSpace: 'nowrap', flexShrink: 0 }}>
+        <span className="agents-decision-time">
           {timeAgo(log.completed_at || log.created_at)}
         </span>
       </div>
@@ -582,31 +537,25 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
     <Section
       title="Editorial QC Agent"
       icon={
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #312e81, #4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="admin-section-icon-box admin-section-icon-indigo">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
         </div>
       }
       badge={statusBadge ? (
-        <span style={{ padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.625rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', background: statusBadge.bg, color: statusBadge.color }}>
+        <span className="agents-qc-pill" style={{ background: statusBadge.bg, color: statusBadge.color }}>
           {statusBadge.text}
         </span>
       ) : undefined}
     >
       {/* Severity selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-        <label style={{ fontSize: '0.6875rem', color: '#7d7871', whiteSpace: 'nowrap' }}>Min severity:</label>
-        <div style={{ display: 'flex', gap: '0.375rem' }}>
+      <div className="agents-severity-row">
+        <label className="agents-severity-label">Min severity:</label>
+        <div className="admin-flex admin-gap-sm">
           {(['high', 'medium', 'low'] as Severity[]).map(s => (
             <button
               key={s}
               onClick={() => setSeverity(s)}
-              style={{
-                padding: '0.25rem 0.625rem', borderRadius: '1rem', fontSize: '0.6875rem', fontWeight: 500,
-                border: `1px solid ${severity === s ? '#4338ca' : '#44403c'}`,
-                background: severity === s ? '#312e81' : 'transparent',
-                color: severity === s ? '#a5b4fc' : '#a8a29e',
-                cursor: 'pointer', transition: 'all 0.15s',
-              }}
+              className={`agents-severity-btn${severity === s ? ' active' : ''}`}
             >
               {s === 'high' ? 'High only' : s === 'medium' ? 'Medium+' : 'All'}
             </button>
@@ -615,7 +564,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+      <div className="agents-action-row">
         <button className="agents-btn" disabled={loading} onClick={() => runQC('audit')}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           Audit Only
@@ -636,10 +585,10 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
 
       {/* Loading */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '1.5rem' }}>
-          <div className="admin-spinner admin-spinner-lg" style={{ margin: '0 auto 0.75rem' }} />
-          <p style={{ fontSize: '0.8125rem', color: '#b5b0a9' }}>{loadingText}</p>
-          <p style={{ fontSize: '0.6875rem', color: '#5c5752', marginTop: '0.25rem' }}>
+        <div className="agents-loading-center">
+          <div className="admin-spinner admin-spinner-lg agents-spinner-block" />
+          <p className="admin-text-md admin-color-secondary">{loadingText}</p>
+          <p className="admin-text-sm admin-color-muted admin-mt-xs">
             Claude is analyzing {articleCount} articles holistically (30-60s)
           </p>
         </div>
@@ -648,21 +597,21 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
       {/* Results */}
       {report && !loading && (
         <div className="agents-qc-results">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+          <div className="agents-qc-header">
             <span className="agents-grade" style={{ color: gradeColor(grade) }}>{grade}</span>
-            <div style={{ flex: 1, fontSize: '0.75rem', color: '#b5b0a9', lineHeight: 1.6 }}>
+            <div className="agents-qc-summary">
               <strong>{summary?.total_issues || 0} issues</strong> ({summary?.high || 0} high, {summary?.medium || 0} medium, {summary?.low || 0} low)
-              {dryRun && <><br /><span style={{ color: '#818cf8' }}>DRY RUN -- no changes applied. Use Auto-Fix to apply.</span></>}
+              {dryRun && <><br /><span className="agents-qc-dry-run">DRY RUN -- no changes applied. Use Auto-Fix to apply.</span></>}
               {applied != null && !dryRun && (
                 <>
-                  <br /><span style={{ color: '#4ade80' }}>Applied {applied} fixes</span>
-                  {skipped > 0 && <span style={{ color: '#7d7871' }}> / {skipped} skipped</span>}
-                  {errored > 0 && <span style={{ color: '#f87171' }}> / {errored} errors</span>}
+                  <br /><span className="agents-qc-applied">Applied {applied} fixes</span>
+                  {skipped > 0 && <span className="agents-qc-skipped"> / {skipped} skipped</span>}
+                  {errored > 0 && <span className="agents-qc-errored"> / {errored} errors</span>}
                 </>
               )}
-              {summary?.editorial_notes && <><br /><br /><em style={{ color: '#d6d3d1' }}>{summary.editorial_notes}</em></>}
+              {summary?.editorial_notes && <><br /><br /><em className="agents-qc-editorial">{summary.editorial_notes}</em></>}
             </div>
-            <button className="agents-btn" onClick={copyReport} style={{ flexShrink: 0 }}>
+            <button className="agents-btn admin-flex-shrink-0" onClick={copyReport}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               Copy
             </button>
@@ -670,10 +619,10 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
 
           {/* Pattern warnings */}
           {summary?.patterns && summary.patterns.length > 0 && (
-            <div style={{ marginBottom: '0.75rem' }}>
+            <div className="admin-mb-lg">
               {summary.patterns.map((p, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', padding: '0.375rem 0', fontSize: '0.6875rem', color: '#b5b0a9' }}>
-                  <span style={{ color: '#fbbf24', flexShrink: 0 }}>&#9888;</span>
+                <div key={i} className="agents-pattern-row">
+                  <span className="agents-pattern-icon">&#9888;</span>
                   <span>{p}</span>
                 </div>
               ))}
@@ -681,29 +630,29 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
           )}
 
           {/* Issues list */}
-          <div style={{ maxHeight: 300, overflowY: 'auto', fontSize: '0.75rem' }}>
+          <div className="agents-issues-list">
             {issues.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: '#4ade80' }}>No issues found. Collection looks great.</div>
+              <div className="agents-issues-empty">No issues found. Collection looks great.</div>
             ) : issues.map((issue, i) => {
               const color = issue.severity === 'high' ? '#f87171' : issue.severity === 'medium' ? '#fbbf24' : '#78716c';
               const fix = fixResults.find(r => r.slug === issue.slug && r.field === issue.field);
               return (
                 <div key={i} className="agents-issue">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color, fontWeight: 600, textTransform: 'uppercase', fontSize: '0.625rem' }}>
+                  <div className="agents-issue-header">
+                    <span className="agents-issue-severity" style={{ color }}>
                       {issue.severity}
-                      {fix && (fix.status === 'applied' ? <span style={{ color: '#4ade80' }}> &#10003;</span> : fix.status === 'skipped' ? <span style={{ color: '#7d7871' }}> &#9678;</span> : <span style={{ color: '#f87171' }}> &#10007;</span>)}
+                      {fix && (fix.status === 'applied' ? <span className="agents-qc-applied"> &#10003;</span> : fix.status === 'skipped' ? <span className="admin-color-subtle"> &#9678;</span> : <span className="agents-qc-errored"> &#10007;</span>)}
                     </span>
-                    <span style={{ color: '#b5b0a9', fontSize: '0.6875rem' }}>{issue.slug}</span>
-                    <span style={{ color: '#5c5752', fontSize: '0.625rem', marginLeft: 'auto' }}>{issue.field}</span>
+                    <span className="agents-issue-slug">{issue.slug}</span>
+                    <span className="agents-issue-field-label">{issue.field}</span>
                   </div>
                   {issue.suggested && issue.suggested !== issue.current && issue.suggested !== 'Keep as is' ? (
-                    <div style={{ marginTop: '0.25rem', color: '#5c5752', fontSize: '0.6875rem' }}>
-                      <span style={{ textDecoration: 'line-through' }}>{issue.current.length > 80 ? issue.current.slice(0, 80) + '...' : issue.current}</span>
-                      <br /><span style={{ color: '#eae8e4' }}>&rarr; {issue.suggested.length > 80 ? issue.suggested.slice(0, 80) + '...' : issue.suggested}</span>
+                    <div className="agents-issue-diff">
+                      <span className="agents-issue-strikethrough">{issue.current.length > 80 ? issue.current.slice(0, 80) + '...' : issue.current}</span>
+                      <br /><span className="agents-issue-replacement">&rarr; {issue.suggested.length > 80 ? issue.suggested.slice(0, 80) + '...' : issue.suggested}</span>
                     </div>
                   ) : (
-                    <div style={{ marginTop: '0.25rem', color: '#5c5752', fontSize: '0.6875rem' }}>
+                    <div className="agents-issue-diff">
                       {issue.reason.length > 100 ? issue.reason.slice(0, 100) + '...' : issue.reason}
                     </div>
                   )}
@@ -805,36 +754,36 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
     <Section
       title="Illustration Agent"
       icon={
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #064e3b, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="admin-section-icon-box admin-section-icon-emerald">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
       }
       badge={
-        <span style={{ fontSize: '0.6875rem', color: withoutIllustration.length > 0 ? '#f59e0b' : '#4ade80', fontWeight: 500 }}>
+        <span className={withoutIllustration.length > 0 ? 'agents-badge-yellow' : 'agents-badge-green'}>
           {withIllustration.length}/{articles.length} illustrated
         </span>
       }
     >
       {/* Single article selector */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', alignItems: 'center' }}>
-        <label style={{ fontSize: '0.6875rem', color: '#7d7871', whiteSpace: 'nowrap' }}>Single article:</label>
+      <div className="agents-illust-selector">
+        <label className="agents-illust-label">Single article:</label>
         <select
           value={selectedSlug}
           onChange={e => setSelectedSlug(e.target.value)}
-          style={{ flex: 1, background: '#292524', border: '1px solid #3f3f46', borderRadius: 4, padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#eae8e4', outline: 'none' }}
+          className="agents-illust-select"
         >
           <option value="">Select article...</option>
           {articles.map(a => (
             <option key={a.slug} value={a.slug}>{a.hero_image ? '\u25C9' : '\u25CB'} {a.title}</option>
           ))}
         </select>
-        <button className="agents-btn" disabled={loading || !selectedSlug} onClick={runSingle} style={{ whiteSpace: 'nowrap' }}>
+        <button className="agents-btn admin-nowrap" disabled={loading || !selectedSlug} onClick={runSingle}>
           Generate
         </button>
       </div>
 
       {/* Batch buttons */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+      <div className="agents-illust-batch">
         <button
           className="agents-btn agents-btn-primary"
           disabled={loading || withoutIllustration.length === 0}
@@ -853,18 +802,18 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
 
       {/* Loading */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '1rem' }}>
-          <div className="admin-spinner admin-spinner-lg" style={{ margin: '0 auto 0.75rem' }} />
-          <p style={{ fontSize: '0.75rem', color: '#b5b0a9' }}>{loadingText}</p>
+        <div className="agents-loading-single">
+          <div className="admin-spinner admin-spinner-lg agents-spinner-block" />
+          <p className="admin-text-base admin-color-secondary">{loadingText}</p>
         </div>
       )}
 
       {/* Results */}
       {result && !loading && (
         <div>
-          <p style={{ fontSize: '0.75rem', color: '#b5b0a9', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: result.startsWith('Batch') ? `<span style="color:#fbbf24">${result}</span>` : `<span style="color:#4ade80">&#10003; ${result}</span>` }} />
-          <div style={{ marginTop: '0.5rem', height: 4, background: '#292524', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', background: '#059669', width: `${progress}%`, transition: 'width 0.3s' }} />
+          <p className="admin-text-base agents-result-line-height admin-color-secondary" dangerouslySetInnerHTML={{ __html: result.startsWith('Batch') ? `<span style="color:#fbbf24">${result}</span>` : `<span style="color:#4ade80">&#10003; ${result}</span>` }} />
+          <div className="agents-progress-bar">
+            <div className="agents-progress-fill" style={{ width: `${progress}%` }} />
           </div>
         </div>
       )}
@@ -942,13 +891,13 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
     <Section
       title="Database & Maintenance"
       icon={
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #78350f, #b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="admin-section-icon-box admin-section-icon-amber">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
         </div>
       }
-      badge={<span style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{count} articles</span>}
+      badge={<span className="agents-badge-muted">{count} articles</span>}
     >
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+      <div className="agents-db-buttons">
         <button className="agents-btn agents-btn-primary" disabled={loading} onClick={refresh}>
           {loading ? 'Syncing...' : 'Refresh DB'}
         </button>
@@ -959,11 +908,11 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
           {rotating ? 'Rotating...' : 'Rotate Featured'}
         </button>
       </div>
-      <p style={{ fontSize: '0.6875rem', color: '#5c5752', marginBottom: '0.5rem' }}>
+      <p className="agents-db-help">
         Backfill Costs: estimate spend for articles logged before cost tracking. Rotate Featured: manually trigger featured article rotation.
       </p>
       {result && (
-        <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: result.includes('Failed') || result.includes('failed') ? '#f87171' : '#4ade80' }}>
+        <p className={`agents-result ${result.includes('Failed') || result.includes('failed') ? 'agents-result-error' : 'agents-result-success'}`}>
           {result.includes('Failed') || result.includes('failed') ? result : `\u2713 ${result}`}
         </p>
       )}

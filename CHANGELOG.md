@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.5.0] - 2026-03-26
+
+### Refactored — Admin Dashboard Code Quality
+- **Centralized all config into types.ts** — MODEL_PEN_NAMES, CATEGORY_GRADIENTS, PIPELINE_STAGE_CONFIG, VALID_CATEGORIES. Components import, never redefine
+- **Replaced 333+ inline styles with CSS classes** across 4 React components. Remaining: 32 (all truly dynamic — progress widths, per-item colors, conditional states)
+- **Fixed stale model labels** — "Grok 3" → "Grok 4", "Flash → Sonnet" → "Sonnet → Gemini 3.1 Pro" for editor, Write stage shows "Human (Opus)"
+- **Added ~100 CSS utility classes** to admin.css — layout, typography, toasts, badges, scores, buttons, pipeline/agent/article-specific
+- **Deleted duplicated code** — local getAdminToken(), timeAgo(), PEN_NAMES, CATEGORY_COLORS, GRADIENT_PRESETS, interfaces (EditorBrief, QCResult, PipelineLog) all consolidated into types.ts
+- **Total line reduction**: 4,054 → 3,756 lines (~7% smaller with more functionality)
+
 ## [12.4.0] - 2026-03-26
 
 ### Fixed — Research Crash (Critical)

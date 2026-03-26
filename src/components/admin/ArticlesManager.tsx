@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
-import { type ArticleRecord, getAdminToken } from './types';
+import { type ArticleRecord, getAdminToken, getCategoryColor, getGradientHex, getScoreColor } from './types';
 
 // Extended article with scores (returned by DB but not in base type)
 interface ArticleWithScores extends ArticleRecord {
@@ -20,40 +20,24 @@ interface Props {
 type SortMode = 'newest' | 'oldest' | 'az' | 'readtime' | 'score';
 type StatusFilter = 'all' | 'published' | 'draft' | 'coming_soon';
 
-const CATEGORY_COLORS: Record<string, string> = {
-  'Mental Health': '#a78bfa',
-  'Neuroscience': '#818cf8',
-  'Nutrition': '#4ade80',
-  'Longevity': '#c084fc',
-  'Fitness': '#f87171',
-  'Sleep Science': '#818cf8',
-  'Clinical Evidence': '#67e8f9',
-  'Research Summary': '#a8a29e',
-  'Environmental Health': '#fbbf24',
-  'Pharmacology': '#2dd4bf',
-};
-
-const DEFAULT_STRIPE_COLOR = '#dc2626';
-
 function stripeColor(article: ArticleRecord): string {
   if (article.gradient_from) {
-    // gradient_from is a Tailwind class like "rose-600" — map known presets to hex
-    const presetMap: Record<string, string> = {
-      'rose-600': '#e11d48', 'violet-600': '#7c3aed', 'emerald-500': '#10b981',
-      'emerald-600': '#059669', 'amber-500': '#f59e0b', 'sky-500': '#0ea5e9',
-      'indigo-500': '#6366f1', 'lime-500': '#84cc16', 'red-700': '#b91c1c',
-      'purple-700': '#7e22ce', 'teal-600': '#0d9488', 'teal-700': '#0f766e',
-      'orange-600': '#ea580c', 'blue-600': '#2563eb', 'purple-600': '#9333ea',
-      'green-600': '#16a34a',
-    };
-    return presetMap[article.gradient_from] || CATEGORY_COLORS[article.category] || DEFAULT_STRIPE_COLOR;
+    return getGradientHex(article.gradient_from) !== '#dc2626'
+      ? getGradientHex(article.gradient_from)
+      : getCategoryColor(article.category);
   }
-  return CATEGORY_COLORS[article.category] || DEFAULT_STRIPE_COLOR;
+  return getCategoryColor(article.category);
 }
 
 function formatDate(d: string): string {
   if (!d) return '-';
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function scoreClassName(score: number): string {
+  if (score >= 7) return 'admin-score-high';
+  if (score >= 5) return 'admin-score-mid';
+  return 'admin-score-low';
 }
 
 // ─── Component ──────────────────────────────────────────────────────
@@ -318,9 +302,9 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
   // ─── Status badge ────────────────────────────────────────────────
 
   function statusBadge(article: ArticleRecord) {
-    if (article.coming_soon) return <span className="articles-badge" style={{ background: 'rgba(255,255,255,0.06)', color: '#b5b0a9' }}>Coming Soon</span>;
-    if (article.draft || article.status === 'draft') return <span className="articles-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24' }}>Draft</span>;
-    return <span className="articles-badge" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80' }}>Published</span>;
+    if (article.coming_soon) return <span className="articles-badge admin-status-coming-soon">Coming Soon</span>;
+    if (article.draft || article.status === 'draft') return <span className="articles-badge admin-status-draft">Draft</span>;
+    return <span className="articles-badge admin-status-published">Published</span>;
   }
 
   // ─── Render ───────────────────────────────────────────────────────
@@ -369,8 +353,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
         <button
           onClick={refreshArticles}
           disabled={refreshing}
-          className="admin-action-btn"
-          style={{ color: '#a8a29e', borderColor: '#44403c', padding: '0.5rem 0.75rem', whiteSpace: 'nowrap' }}
+          className="admin-action-btn admin-action-btn-muted admin-nowrap"
         >
           {refreshing ? 'Refreshing\u2026' : 'Refresh'}
         </button>
@@ -380,22 +363,22 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
       <div className="articles-count">
         {filtered.length} article{filtered.length !== 1 ? 's' : ''}
         {debouncedSearch && ` matching "${debouncedSearch}"`}
-        {selected.size > 0 && <span style={{ marginLeft: '0.75rem', color: '#dc2626' }}>{selected.size} selected</span>}
+        {selected.size > 0 && <span className="articles-selected-count">{selected.size} selected</span>}
       </div>
 
       {/* ── Bulk bar ── */}
       {selected.size > 0 && (
         <div className="articles-bulk-bar">
-          <button onClick={selectAll} className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }}>
+          <button onClick={selectAll} className="admin-action-btn admin-action-btn-muted">
             Select all ({filtered.length})
           </button>
-          <button onClick={deselectAll} className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }}>
+          <button onClick={deselectAll} className="admin-action-btn admin-action-btn-muted">
             Deselect all
           </button>
-          <button onClick={() => bulkSetFeatured(true)} className="admin-action-btn" style={{ color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.3)' }}>
+          <button onClick={() => bulkSetFeatured(true)} className="admin-action-btn admin-action-btn-yellow">
             Feature selected
           </button>
-          <button onClick={() => bulkSetFeatured(false)} className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }}>
+          <button onClick={() => bulkSetFeatured(false)} className="admin-action-btn admin-action-btn-muted">
             Unfeature selected
           </button>
           <button onClick={() => setBulkDeleteConfirm(true)} className="admin-action-btn admin-action-delete">
@@ -425,63 +408,54 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                   checked={selected.has(article.slug)}
                   onChange={() => toggleSelect(article.slug)}
                   aria-label={`Select ${article.title}`}
-                  style={{ accentColor: '#dc2626', width: 16, height: 16, cursor: 'pointer', flexShrink: 0, marginTop: 2 }}
+                  className="articles-checkbox"
                 />
 
                 {/* Color stripe */}
-                <div style={{ width: 4, borderRadius: 2, background: stripeColor(article), flexShrink: 0, alignSelf: 'stretch' }} />
+                <div className="articles-stripe" style={{ background: stripeColor(article) }} />
 
                 {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="articles-content">
                   {/* Title row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 2 }}>
+                  <div className="admin-flex-center admin-gap-md admin-mb-sm">
                     {isEditing && editingField.field === 'title' ? (
                       <input
                         ref={editRef as React.RefObject<HTMLInputElement>}
-                        className="articles-inline-edit"
+                        className="articles-inline-edit articles-title-edit"
                         value={editValue}
                         onChange={e => setEditValue(e.target.value)}
                         onBlur={commitEdit}
                         onKeyDown={handleEditKey}
                         disabled={saving}
-                        style={{ flex: 1, fontSize: '0.9375rem', fontWeight: 600 }}
                       />
                     ) : (
                       <span
                         onClick={() => startEdit(article.slug, 'title', article.title)}
-                        style={{
-                          fontSize: '0.9375rem', fontWeight: 600, cursor: 'pointer',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
-                        }}
+                        className="articles-title"
                         title="Click to edit title"
                       >
                         {article.title}
                       </span>
                     )}
-                    {isSaved && <span style={{ fontSize: '0.625rem', color: '#4ade80', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saved</span>}
+                    {isSaved && <span className="articles-saved-indicator">Saved</span>}
                   </div>
 
                   {/* Description */}
                   {isEditing && editingField.field === 'description' ? (
                     <textarea
                       ref={editRef as React.RefObject<HTMLTextAreaElement>}
-                      className="articles-inline-edit"
+                      className="articles-inline-edit articles-description-edit"
                       value={editValue}
                       onChange={e => setEditValue(e.target.value)}
                       onBlur={commitEdit}
                       onKeyDown={handleEditKey}
                       disabled={saving}
                       rows={2}
-                      style={{ width: '100%', fontSize: '0.75rem', resize: 'vertical' }}
                     />
                   ) : (
                     <p
                       onClick={() => startEdit(article.slug, 'description', article.description)}
-                      style={{
-                        fontSize: '0.75rem', color: '#78716c', lineHeight: 1.4,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        maxWidth: 600, cursor: 'pointer', margin: '0.125rem 0 0.375rem',
-                      }}
+                      className="articles-description"
                       title="Click to edit description"
                     >
                       {article.description}
@@ -489,32 +463,32 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                   )}
 
                   {/* Meta row */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="articles-badge" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#d6d3d1' }}>
+                  <div className="admin-flex-center admin-flex-wrap admin-gap-md">
+                    <span className="articles-badge articles-badge-category">
                       {article.category}
                     </span>
                     {statusBadge(article)}
-                    <span style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{formatDate(article.publish_date)}</span>
-                    <span style={{ fontSize: '0.6875rem', color: '#7d7871' }}>{article.read_time || 0} min</span>
+                    <span className="admin-text-sm admin-color-subtle">{formatDate(article.publish_date)}</span>
+                    <span className="admin-text-sm admin-color-subtle">{article.read_time || 0} min</span>
                     {article.tags && article.tags.length > 0 && (
-                      <span style={{ fontSize: '0.6875rem', color: '#7d7871' }} title={article.tags.join(', ')}>
+                      <span className="admin-text-sm admin-color-subtle" title={article.tags.join(', ')}>
                         {article.tags.length} tag{article.tags.length !== 1 ? 's' : ''}
                       </span>
                     )}
                     {/* Scores */}
                     {(article as ArticleWithScores).independence_score != null && (
-                      <span style={{ fontSize: '0.6875rem', color: ((article as ArticleWithScores).independence_score || 0) >= 7 ? '#4ade80' : ((article as ArticleWithScores).independence_score || 0) >= 4 ? '#fbbf24' : '#f87171', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      <span className={`admin-text-sm admin-tabular-nums ${scoreClassName((article as ArticleWithScores).independence_score || 0)}`}>
                         Ind: {(article as ArticleWithScores).independence_score}/10
                       </span>
                     )}
                     {(article as ArticleWithScores).editor_score != null && (
-                      <span style={{ fontSize: '0.6875rem', color: '#b5b0a9', fontVariantNumeric: 'tabular-nums' }}>
+                      <span className="admin-text-sm admin-color-secondary admin-tabular-nums">
                         Ed: {(article as ArticleWithScores).editor_score}/10
                       </span>
                     )}
                     {/* Hero image indicator */}
                     <span
-                      style={{ fontSize: '0.6875rem', color: article.hero_image ? '#4ade80' : '#f87171' }}
+                      className={`articles-hero-indicator ${article.hero_image ? 'articles-hero-yes' : 'articles-hero-no'}`}
                       title={article.hero_image ? 'Has illustration' : 'Missing illustration'}
                     >
                       {article.hero_image ? '\u25C9' : '\u25CB'}
@@ -535,15 +509,14 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                 {/* Actions */}
                 <div className="articles-actions">
                   <button
-                    className="admin-action-btn"
+                    className="admin-action-btn admin-action-btn-purple"
                     onClick={() => improveArticle(article.slug)}
                     disabled={improvingSlug === article.slug}
                     aria-label={`Improve ${article.title}`}
                     title="AI review + auto-fix"
-                    style={{ color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.3)' }}
                   >
                     {improvingSlug === article.slug ? (
-                      <span style={{ fontSize: '0.625rem' }}>Improving\u2026</span>
+                      <span className="admin-text-xs">Improving\u2026</span>
                     ) : (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                     )}
@@ -573,9 +546,9 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                   </button>
                 </div>
                 {improveResult?.slug === article.slug && (
-                  <div style={{ gridColumn: '1 / -1', padding: '0.5rem 0.75rem', marginTop: '0.25rem', borderRadius: '8px', fontSize: '0.6875rem', background: improveResult.ok ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)', color: improveResult.ok ? '#86efac' : '#fca5a5', border: `1px solid ${improveResult.ok ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}` }}>
-                    {improveResult.message}
-                    <button onClick={() => setImproveResult(null)} style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '0.6875rem' }}>{'\u00d7'}</button>
+                  <div className={`admin-toast ${improveResult.ok ? 'admin-toast-success' : 'admin-toast-error'}`} style={{ gridColumn: '1 / -1', marginTop: '0.25rem' }}>
+                    <span>{improveResult.message}</span>
+                    <button onClick={() => setImproveResult(null)} className="admin-toast-dismiss">{'\u00d7'}</button>
                   </div>
                 )}
               </div>
@@ -594,7 +567,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
               Delete <strong>{deleteTarget.title}</strong>? This removes the article from the database and GitHub.
             </p>
             <div className="admin-modal-actions">
-              <button className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }} onClick={() => setDeleteTarget(null)}>
+              <button className="admin-action-btn admin-action-btn-muted" onClick={() => setDeleteTarget(null)}>
                 Cancel
               </button>
               <button className="admin-action-btn admin-action-delete" onClick={() => confirmDelete(deleteTarget.slug)}>
@@ -615,7 +588,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
               This will permanently remove {selected.size} article{selected.size !== 1 ? 's' : ''} from the database and GitHub. This cannot be undone.
             </p>
             <div className="admin-modal-actions">
-              <button className="admin-action-btn" style={{ color: '#b5b0a9', borderColor: 'rgba(255,255,255,0.1)' }} onClick={() => setBulkDeleteConfirm(false)}>
+              <button className="admin-action-btn admin-action-btn-muted" onClick={() => setBulkDeleteConfirm(false)}>
                 Cancel
               </button>
               <button className="admin-action-btn admin-action-delete" onClick={confirmBulkDelete}>

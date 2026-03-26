@@ -1,93 +1,11 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
+import {
+  type PipelineLog, type PipelineResearchData, type StageConfig,
+  PIPELINE_STAGE_CONFIG, ACTIVE_STATUSES, VALID_CATEGORIES,
+  getAdminToken, timeAgo, getStatusText, getPenName, getScoreColor,
+} from './types';
 
-// ─── Types ──────────────────────────────────────────────────────────
-
-interface ResearchData {
-  topic?: string;
-  headline_draft?: string;
-  category?: string;
-  why?: string;
-  keyFindings?: string[];
-  candidates?: Array<{
-    rank: number;
-    topic: string;
-    headline_draft: string;
-    why: string;
-    category: string;
-    keyFindings?: string[];
-  }>;
-  studies?: Array<{ title: string; journal: string; year: string; finding: string }>;
-  _editorBrief?: {
-    decision: string;
-    topicScore: number;
-    headline: string;
-    slug: string;
-    description: string;
-    angle: string;
-    killReason: string | null;
-    chosenCandidate?: number;
-    candidateScores?: Array<{ rank: number; score: number; verdict: string }>;
-    brief?: {
-      tone: string;
-      openWith: string;
-      emphasize: string[];
-      avoid: string[];
-      closingDirection: string;
-    };
-  };
-  _article?: {
-    metadata: Record<string, unknown>;
-    html: string;
-    readTime: number;
-  };
-  _independenceReview?: {
-    overallAssessment: string;
-    independenceScore: number | null;
-    score: number | null;
-    annotations: Array<{
-      type: string;
-      severity: string;
-      location: string;
-      observation: string;
-      suggestion: string;
-    }>;
-    strengths: string[];
-    summary: string;
-  };
-  _queueId?: string | null;
-}
-
-interface PipelineLog {
-  id: string;
-  run_date: string;
-  topic: string | null;
-  slug: string | null;
-  title: string | null;
-  status: string;
-  error: string | null;
-  search_queries: string[] | null;
-  research_snippets: Array<Record<string, string>> | null;
-  research_data: ResearchData | null;
-  created_at: string;
-  completed_at: string | null;
-  cost_usd: number | string | null;
-  model_used: string | null;
-  editor_score: number | null;
-  grok_score: number | null;
-  source: string | null;
-}
-
-const PEN_NAMES: Record<string, string> = {
-  "claude-opus-4-6": "Carl Lundin",
-  "claude-sonnet-4-6": "Max Quilici",
-  "claude-sonnet-4-20250514": "Max Quilici",
-  "claude-opus-4-20250514": "Carl Lundin",
-  "gpt-5.4": "Eli Vance",
-  "gemini-3.1-pro-preview": "Christine Wright",
-  "gemini-2.5-pro": "Christine Wright",
-  "grok-3": "Linda Carnes",
-  "gemini-2.5-flash": "Christine Wright",
-};
+// ─── Types ──────────────────────────────────────────────────────
 
 interface QueueItem {
   id: string;
@@ -103,17 +21,6 @@ interface QueueItem {
   editor_score: number | null;
 }
 
-type PipelineStage = 'research' | 'editor_brief' | 'write' | 'independence' | 'qc' | 'voice_rewrite' | 'publish';
-
-interface StageConfig {
-  key: PipelineStage;
-  icon: string;
-  label: string;
-  model: string;
-  modelColor: string;
-  statuses: string[];
-}
-
 interface Props {
   initialLogs: PipelineLog[];
   initialArticleCount: number;
@@ -121,55 +28,12 @@ interface Props {
   initialTotalCost?: number;
 }
 
-// ─── Constants ──────────────────────────────────────────────────────
+// ─── Constants ──────────────────────────────────────────────────
 
 const ARTICLE_GOAL = 100;
 const POLL_INTERVAL = 15_000;
 
-const STAGES: StageConfig[] = [
-  { key: 'research', icon: '🔍', label: 'Research', model: 'Gemini 2.5 Pro + Search', modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
-  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Flash → Sonnet', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
-  { key: 'write', icon: '✍️', label: 'Write', model: 'Gemini 3.1 Pro → Sonnet', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
-  { key: 'independence', icon: '⚖️', label: 'Independence', model: 'Grok 3', modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
-  { key: 'qc', icon: '✅', label: 'QC', model: 'Flash → Sonnet', modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
-  { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Sonnet → Gemini → GPT-5.4', modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
-  { key: 'publish', icon: '📡', label: 'Publish', model: 'GitHub + GPT Image', modelColor: '#10b981', statuses: ['publishing', 'published'] },
-];
-
-// Resolve actual writer model from log data (shows real model, not hardcoded guess)
-function getCurrentWriterModel(): { name: string; color: string } {
-  return { name: 'Sonnet', color: '#f97316' };
-}
-
-function getStatusText(status: string, log?: PipelineLog): string {
-  const modelName = log?.model_used ? (PEN_NAMES[log.model_used] || log.model_used.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())) : null;
-  const map: Record<string, string> = {
-    started: 'Initializing...',
-    searching: 'Gemini searching with Google grounding...',
-    research_done: 'Research complete — awaiting editor',
-    editor_reviewing: 'Editor scoring candidates...',
-    editor_approved: 'Approved — queued for writing',
-    writing: `${modelName || 'Writer'} generating article...`,
-    written: 'Written — awaiting Grok independence review',
-    independence_review: 'Grok 3 adversarial review + PubMed check...',
-    independence_done: 'Reviewed — awaiting QC',
-    editor_qc: 'QC check + headline polish...',
-    qc_approved: 'QC approved — queued for publish',
-    voice_rewrite_pending: 'Voice rewrite queued...',
-    rewriting_voice: 'Rewriting prose for voice quality...',
-    voice_rewrite_done: 'Voice polished — queued for publish',
-    publishing: 'GitHub commit + illustration + deploy...',
-    published: 'Published',
-    failed: log?.error ? `Failed: ${log.error.slice(0, 80)}` : 'Failed',
-  };
-  return map[status] || status;
-}
-
-const ACTIVE_STATUSES = new Set([
-  'started', 'searching', 'editor_reviewing', 'writing', 'independence_review', 'editor_qc', 'rewriting_voice', 'publishing',
-]);
-
-// ─── Helpers ────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────
 
 function getOverallStatus(logs: PipelineLog[]): 'running' | 'waiting' | 'failed' | 'idle' {
   const nonTerminal = logs.filter(l => l.status !== 'published' && l.status !== 'failed');
@@ -184,46 +48,28 @@ function isEditorKill(log: PipelineLog): boolean {
   return log.status === 'failed' && (log.error || '').includes('Senior Editor killed');
 }
 
-function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return '';
-  const ms = Date.now() - new Date(dateStr).getTime();
-  if (isNaN(ms) || ms < 0) return 'just now';
-  const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s ago`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
-
 function truncate(text: string, max: number): string {
   return text.length <= max ? text : text.slice(0, max - 1) + '\u2026';
 }
 
-function getStageForLog(log: PipelineLog): PipelineStage | null {
-  for (const stage of STAGES) {
+function getStageForLog(log: PipelineLog): StageConfig['key'] | null {
+  for (const stage of PIPELINE_STAGE_CONFIG) {
     if (stage.statuses.includes(log.status)) return stage.key;
   }
   return null;
 }
 
 function getEditorScore(log: PipelineLog): number | null {
-  return log.research_data?._editorBrief?.topicScore ?? null;
+  return (log.research_data as PipelineResearchData | null)?._editorBrief?.topicScore ?? null;
 }
 
 function getEditorAngle(log: PipelineLog): string | null {
-  return log.research_data?._editorBrief?.angle ?? null;
+  return (log.research_data as PipelineResearchData | null)?._editorBrief?.angle ?? null;
 }
 
 function getIndependenceScore(log: PipelineLog): number | null {
-  const r = log.research_data?._independenceReview;
-  return r?.independenceScore ?? r?.score ?? null;
-}
-
-function getAdminToken(): string {
-  const match = document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : '';
+  const r = (log.research_data as PipelineResearchData | null)?._independenceReview;
+  return (r as Record<string, unknown> | undefined)?.independenceScore as number ?? r?.score ?? null;
 }
 
 function formatCost(value: number | string | null | undefined): string {
@@ -233,7 +79,7 @@ function formatCost(value: number | string | null | undefined): string {
   return `$${n.toFixed(2)}`;
 }
 
-// ─── Component ──────────────────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────────────
 
 export default function PipelineMonitor({ initialLogs, initialArticleCount, apiBase, initialTotalCost }: Props) {
   const [logs, setLogs] = useState<PipelineLog[]>(initialLogs);
@@ -295,7 +141,6 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         body: JSON.stringify({ action: 'produce' }),
       });
       const data = await res.json();
-      // pipeline-admin wraps orchestrator response in data.result
       const result = data.result || data;
       if (data.skipped || result.skipped) {
         setProduceResult(`Skipped: ${result.message || data.message || 'Pipeline busy'}`);
@@ -416,7 +261,6 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     setTriggering(true);
     setProduceResult(null);
     try {
-      // Directly dispatch research for this specific topic (bypasses daily cap)
       const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -442,7 +286,6 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'update-queue', queueId, ...updates }),
       });
-      // Optimistic update for expedite/priority
       setQueue(prev => prev.map(q => q.id === queueId ? { ...q, ...updates } as QueueItem : q));
       setTimeout(fetchStatus, 1000);
     } catch { /* next poll */ }
@@ -494,7 +337,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const overallStatus = getOverallStatus(logs);
 
-  const stageLogsMap: Record<PipelineStage, PipelineLog[]> = {
+  type PipelineStageKey = StageConfig['key'];
+  const stageLogsMap: Record<PipelineStageKey, PipelineLog[]> = {
     research: [], editor_brief: [], write: [], independence: [], qc: [], voice_rewrite: [], publish: [],
   };
   const completedLogs: PipelineLog[] = [];
@@ -525,20 +369,20 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   // ─── Render ─────────────────────────────────────────────────────
 
   return (
-    <div style={{ padding: '0.5rem 0' }}>
+    <div className="pipeline-wrapper">
       {/* ── Top Status Bar ── */}
       <div className="pipeline-status-bar">
         <div className="pipeline-status-indicator">
           <span className={`pipeline-status-dot ${overallStatus}`} />
-          <span style={{ color: statusColors[overallStatus], fontWeight: 600 }}>
+          <span className="admin-weight-600" style={{ color: statusColors[overallStatus] }}>
             {overallStatus.charAt(0).toUpperCase() + overallStatus.slice(1)}
           </span>
           {inPipeline > 0 && (
-            <span style={{ color: '#a8a29e', fontSize: '0.7rem', marginLeft: '0.4rem' }}>
+            <span className="admin-text-xs admin-color-secondary admin-ml-sm">
               {inPipeline} in flight
             </span>
           )}
-          <span style={{ color: '#5c5752', fontSize: '0.7rem', marginLeft: '0.5rem' }}>
+          <span className="admin-text-xs admin-color-muted admin-ml-md">
             {timeAgo(lastPoll.toISOString())}
           </span>
         </div>
@@ -551,9 +395,9 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         </div>
 
         {totalCost > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <span style={{ fontSize: '0.6875rem', color: '#7d7871' }}>Total Spend</span>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: totalCost > 50 ? '#f87171' : totalCost > 20 ? '#f59e0b' : '#b5b0a9', fontVariantNumeric: 'tabular-nums' }}>
+          <div className="pipeline-spend-box">
+            <span className="admin-text-sm admin-color-subtle">Total Spend</span>
+            <span className="admin-text-lg admin-weight-600 admin-tabular-nums" style={{ color: totalCost > 50 ? '#f87171' : totalCost > 20 ? '#f59e0b' : '#b5b0a9' }}>
               ${totalCost.toFixed(2)}
             </span>
           </div>
@@ -562,20 +406,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         {logs.filter(l => l.status === 'editor_approved').length > 0 && (
           <button
             onClick={clearAllBriefs}
-            style={{
-              fontSize: '0.6875rem', padding: '0.3125rem 0.75rem',
-              background: 'rgba(239,68,68,0.1)', color: '#f87171',
-              border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px',
-              cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600,
-            }}
+            className="pipeline-retry-btn admin-action-btn-danger-subtle admin-weight-600"
           >
             Clear All Briefs ({logs.filter(l => l.status === 'editor_approved').length})
           </button>
         )}
 
         <div className="pipeline-quick-actions">
-          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.5625rem', color: '#5c5752', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginRight: '0.25rem', fontWeight: 600 }}>Scout</span>
+          <div className="admin-flex-center admin-gap-xs">
+            <span className="admin-text-micro admin-color-muted admin-uppercase admin-weight-600 admin-ml-xs">Scout</span>
             {[
               { id: 'gemini', label: 'Gemini', color: '#fbbf24' },
               { id: 'sonnet', label: 'Sonnet', color: '#f97316' },
@@ -583,19 +422,18 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             ].map(s => (
               <button
                 key={s.id}
-                className="pipeline-trigger-btn"
+                className="pipeline-trigger-btn pipeline-scout-btn"
                 onClick={() => triggerSingleScout(s.id)}
                 disabled={scouting !== null}
-                style={{ padding: '0.3125rem 0.625rem', fontSize: '0.6875rem', borderColor: scouting === s.id ? s.color : undefined, color: scouting === s.id ? s.color : undefined }}
+                style={scouting === s.id ? { borderColor: s.color, color: s.color } : undefined}
               >
                 {scouting === s.id ? '\u2026' : s.label}
               </button>
             ))}
             <button
-              className="pipeline-trigger-btn"
+              className="pipeline-trigger-btn pipeline-scout-btn"
               onClick={triggerScout}
               disabled={scouting !== null}
-              style={{ padding: '0.3125rem 0.625rem', fontSize: '0.6875rem' }}
             >
               {scouting ? `${scouting}\u2026` : 'All 3'}
             </button>
@@ -612,32 +450,29 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
       {/* ── Action Results ── */}
       {scoutResult && (
-        <div style={{ padding: '0.625rem 1rem', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '10px', marginBottom: '0.75rem', fontSize: '0.75rem', color: '#86efac', whiteSpace: 'pre-line', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="admin-toast admin-toast-success admin-pre-wrap">
           <span>{scoutResult}</span>
-          <button onClick={() => setScoutResult(null)} style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontSize: '0.8125rem', padding: '0.25rem 0.5rem' }}>{'\u00d7'}</button>
+          <button className="admin-toast-dismiss" onClick={() => setScoutResult(null)}>{'\u00d7'}</button>
         </div>
       )}
       {produceResult && (
-        <div style={{ padding: '0.625rem 1rem', background: produceResult.includes('Error') || produceResult.includes('Skipped') ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)', border: `1px solid ${produceResult.includes('Error') || produceResult.includes('Skipped') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`, borderRadius: '10px', marginBottom: '0.75rem', fontSize: '0.75rem', color: produceResult.includes('Error') || produceResult.includes('Skipped') ? '#fca5a5' : '#86efac', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className={`admin-toast ${produceResult.includes('Error') || produceResult.includes('Skipped') ? 'admin-toast-error' : 'admin-toast-success'}`}>
           <span>{produceResult}</span>
-          <button onClick={() => setProduceResult(null)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '0.8125rem', padding: '0.25rem 0.5rem', opacity: 0.7 }}>{'\u00d7'}</button>
+          <button className="admin-toast-dismiss" onClick={() => setProduceResult(null)}>{'\u00d7'}</button>
         </div>
       )}
 
       {/* ── 7-Stage Pipeline ── */}
       <div className="pipeline-container">
-        {STAGES.map((stage) => {
+        {PIPELINE_STAGE_CONFIG.map((stage) => {
           const items = stageLogsMap[stage.key];
-          const writerInfo = getCurrentWriterModel();
-          const displayModel = stage.key === 'write' ? `${writerInfo.name} (primary)` : stage.model;
-          const displayColor = stage.key === 'write' ? writerInfo.color : stage.modelColor;
           return (
             <div key={stage.key} className="pipeline-stage">
               <div className="pipeline-stage-header">
                 <span className="pipeline-stage-icon">{stage.icon}</span>
                 <span>{stage.label}</span>
-                <span style={{ fontSize: '0.5625rem', color: displayColor, fontWeight: 600, marginLeft: '0.25rem', opacity: 0.8 }}>
-                  {displayModel}
+                <span className="admin-text-micro admin-weight-600 admin-ml-xs" style={{ color: stage.modelColor, opacity: 0.8 }}>
+                  {stage.model}
                 </span>
                 <span className={`pipeline-stage-count${items.length > 0 ? ' has-items' : ''}`}>
                   {items.length}
@@ -670,55 +505,54 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       <div className="pipeline-lower-grid">
 
       {/* ── Topic Queue (left column) ── */}
-      <section style={{ marginTop: '0' }}>
+      <section>
         <h3 className="pipeline-section-title">
           Topic Queue {queue.filter(q => q.status === 'queued').length > 0 && (
-            <span style={{ color: '#16a34a', fontSize: '0.75rem', fontWeight: 400 }}>
+            <span className="admin-text-base admin-color-green">
               {' '}{queue.filter(q => q.status === 'queued').length} queued
             </span>
           )}
         </h3>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+        <div className="pipeline-queue-input-row">
           <input
             type="text"
             placeholder="Topic idea (e.g. 'Microbiome-sleep connection') — added with high priority"
             value={newTopic}
             onChange={e => setNewTopic(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') queueTopic(); }}
-            style={{ flex: 1, minWidth: '200px', padding: '0.5rem 0.75rem', background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#eae8e4', fontSize: '0.8125rem', outline: 'none' }}
+            className="pipeline-queue-input"
           />
           <select
             value={newCategory}
             onChange={e => setNewCategory(e.target.value)}
-            style={{ padding: '0.5rem', background: '#222120', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#b5b0a9', fontSize: '0.8125rem' }}
+            className="pipeline-queue-select"
           >
             <option value="">Category</option>
-            {['Neuroscience', 'Mental Health', 'Longevity', 'Clinical Evidence', 'Environmental Health', 'Nutrition', 'Fitness', 'Sleep Science', 'Pharmacology'].map(c => (
+            {VALID_CATEGORIES.map(c => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: '#b5b0a9', cursor: 'pointer' }}>
+          <label className="pipeline-expedite-label">
             <input
               type="checkbox"
               checked={newExpedite}
               onChange={e => setNewExpedite(e.target.checked)}
-              style={{ accentColor: '#ef4444' }}
+              className="pipeline-expedite-check"
             />
             Expedite
           </label>
           <button
             onClick={queueTopic}
             disabled={queueing || !newTopic.trim()}
-            className="pipeline-trigger-btn primary"
-            style={{ fontSize: '0.8125rem' }}
+            className="pipeline-trigger-btn primary admin-text-md"
           >
             {queueing ? 'Adding\u2026' : '+ Queue'}
           </button>
         </div>
 
         {queueResult && (
-          <div style={{ padding: '0.5rem 0.75rem', marginBottom: '0.5rem', borderRadius: '8px', fontSize: '0.75rem', background: queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)', color: queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? '#fca5a5' : '#86efac', border: `1px solid ${queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}` }}>
+          <div className={`admin-toast admin-mb-md ${queueResult.startsWith('Failed') || queueResult.startsWith('Error') ? 'admin-toast-error' : 'admin-toast-success'}`}>
             {queueResult}
           </div>
         )}
@@ -736,30 +570,29 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                   style={{ borderLeftColor: item.expedite ? '#ef4444' : isActive ? '#22c55e' : 'rgba(255,255,255,0.08)', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85, cursor: 'pointer' }}
                   onClick={() => setExpandedQueueId(expandedQueueId === item.id ? null : item.id)}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="pipeline-card-title" style={{ fontSize: '0.8125rem' }}>{cleanTopic}</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#7d7871', display: 'flex', gap: '0.5rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                  <div className="admin-flex-between-top admin-gap-md">
+                    <div className="admin-flex-1">
+                      <div className="pipeline-card-title admin-text-md">{cleanTopic}</div>
+                      <div className="admin-text-sm admin-color-subtle admin-flex admin-gap-md admin-flex-wrap admin-mt-sm">
                         {item.category && <span>{item.category}</span>}
-                        {item.expedite && <span style={{ color: '#ef4444', fontWeight: 600 }}>EXPEDITE</span>}
-                        {isActive && <span style={{ color: '#22c55e', fontWeight: 600 }}>{item.status.toUpperCase()}</span>}
-                        <span style={{ color: '#5c5752' }}>P{item.priority}</span>
+                        {item.expedite && <span className="admin-weight-600 admin-color-red">EXPEDITE</span>}
+                        {isActive && <span className="admin-weight-600 admin-color-green">{item.status.toUpperCase()}</span>}
+                        <span className="admin-color-muted">P{item.priority}</span>
                         {item.source === 'breaking' ? (
-                          <span style={{ color: '#ef4444', fontWeight: 700, fontSize: '0.625rem', padding: '0.0625rem 0.375rem', background: 'rgba(239,68,68,0.15)', borderRadius: '4px', border: '1px solid rgba(239,68,68,0.3)' }}>BREAKING</span>
+                          <span className="admin-status-badge admin-status-breaking">BREAKING</span>
                         ) : (
-                          <span style={{ color: '#5c5752' }}>{item.source}</span>
+                          <span className="admin-color-muted">{item.source}</span>
                         )}
-                        {item.editor_score && <span style={{ color: item.editor_score >= 7 ? '#22c55e' : '#f59e0b', fontWeight: 600 }}>Score: {item.editor_score}/10</span>}
+                        {item.editor_score && <span className="admin-weight-600" style={{ color: getScoreColor(item.editor_score) }}>Score: {item.editor_score}/10</span>}
                       </div>
                     </div>
                     {/* ── Queue Item Controls ── */}
                     {isQueued && (
-                      <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignItems: 'center' }}>
+                      <div className="admin-flex-center admin-gap-xs admin-flex-shrink-0">
                         <button
-                          className="pipeline-retry-btn"
+                          className="pipeline-retry-btn admin-action-btn-green admin-weight-600"
                           onClick={() => produceFromQueue(item.id, item.topic)}
                           disabled={triggering || overallStatus === 'running'}
-                          style={{ color: '#4ade80', borderColor: '#166534', fontWeight: 600, fontSize: '0.6875rem' }}
                           title="Produce this topic now"
                         >
                           {'\u25B6'} Produce
@@ -767,31 +600,28 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         <button
                           className="pipeline-retry-btn"
                           onClick={() => updateQueueItem(item.id, { expedite: !item.expedite })}
-                          style={{ color: item.expedite ? '#dc2626' : '#a8a29e', borderColor: item.expedite ? '#7f1d1d' : '#44403c', fontSize: '0.6875rem' }}
+                          style={{ color: item.expedite ? '#dc2626' : '#a8a29e', borderColor: item.expedite ? '#7f1d1d' : '#44403c' }}
                           title={item.expedite ? 'Remove expedite' : 'Expedite (jump to front)'}
                         >
                           {item.expedite ? '\u2B07 Normal' : '\u26A1 Expedite'}
                         </button>
                         <button
-                          className="pipeline-retry-btn"
+                          className="pipeline-retry-btn pipeline-priority-btn"
                           onClick={() => updateQueueItem(item.id, { priority: Math.max(1, item.priority - 10) })}
-                          style={{ fontSize: '0.6875rem', padding: '0.25rem 0.375rem' }}
                           title="Raise priority (lower number = higher priority)"
                         >
                           {'\u2191'}
                         </button>
                         <button
-                          className="pipeline-retry-btn"
+                          className="pipeline-retry-btn pipeline-priority-btn"
                           onClick={() => updateQueueItem(item.id, { priority: Math.min(100, item.priority + 10) })}
-                          style={{ fontSize: '0.6875rem', padding: '0.25rem 0.375rem' }}
                           title="Lower priority"
                         >
                           {'\u2193'}
                         </button>
                         <button
-                          className="pipeline-retry-btn"
+                          className="pipeline-retry-btn admin-action-btn-danger-subtle"
                           onClick={() => { if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
-                          style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.25)', fontSize: '0.6875rem' }}
                           title="Delete from queue"
                         >
                           {'\u2715'}
@@ -799,22 +629,20 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       </div>
                     )}
                     {isActive && (
-                      <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.625rem', color: '#22c55e', fontWeight: 600, padding: '0.25rem 0.5rem', background: 'rgba(34, 197, 94, 0.08)', borderRadius: '0.25rem', whiteSpace: 'nowrap' }}>
+                      <div className="admin-flex-center admin-gap-xs admin-flex-shrink-0">
+                        <span className="admin-status-badge admin-status-in-progress admin-nowrap">
                           {item.status === 'in_progress' ? 'Producing\u2026' : 'Assigned'}
                         </span>
                         <button
-                          className="pipeline-retry-btn"
+                          className="pipeline-retry-btn admin-action-btn-yellow"
                           onClick={() => updateQueueItem(item.id, { status: 'queued' })}
-                          style={{ fontSize: '0.6875rem', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.3)' }}
                           title="Reset to queued (if stuck)"
                         >
                           Reset
                         </button>
                         <button
-                          className="pipeline-retry-btn"
+                          className="pipeline-retry-btn admin-action-btn-danger-subtle"
                           onClick={() => { if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
-                          style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.25)', fontSize: '0.6875rem' }}
                           title="Delete from queue"
                         >
                           {'\u2715'}
@@ -825,20 +653,20 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
                   {/* Expanded detail view */}
                   {expandedQueueId === item.id && (
-                    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '0.75rem' }} onClick={(e) => e.stopPropagation()}>
+                    <div className="admin-expanded-section admin-text-base" onClick={(e) => e.stopPropagation()}>
                       {item.notes && (
-                        <div style={{ marginBottom: '0.5rem' }}>
-                          <span style={{ color: '#7d7871', fontWeight: 600 }}>Scout Notes: </span>
-                          <span style={{ color: '#b5b0a9' }}>{item.notes}</span>
+                        <div className="admin-mb-md">
+                          <span className="admin-detail-label">Scout Notes: </span>
+                          <span className="admin-color-secondary">{item.notes}</span>
                         </div>
                       )}
                       {item.research_summary && (
-                        <div style={{ marginBottom: '0.5rem' }}>
-                          <span style={{ color: '#7d7871', fontWeight: 600 }}>Why: </span>
-                          <span style={{ color: '#b5b0a9' }}>{item.research_summary}</span>
+                        <div className="admin-mb-md">
+                          <span className="admin-detail-label">Why: </span>
+                          <span className="admin-color-secondary">{item.research_summary}</span>
                         </div>
                       )}
-                      <div style={{ display: 'flex', gap: '1rem', color: '#5c5752', fontSize: '0.6875rem' }}>
+                      <div className="admin-flex admin-gap-xl admin-color-muted admin-text-sm">
                         <span>Added: {new Date(item.created_at).toLocaleString()}</span>
                         <span>Source: {item.source}</span>
                         <span>Priority: {item.priority}</span>
@@ -863,104 +691,105 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           <div className="pipeline-completed-list">
             {completedLogs.slice(0, 10).map(log => {
               const indScore = getIndependenceScore(log);
-              const penName = log.model_used ? PEN_NAMES[log.model_used] : null;
+              const penName = log.model_used ? getPenName(log.model_used) : null;
+              const showPenName = penName && penName !== 'alumi Editorial';
               const isExpanded = expandedId === log.id;
               const rd = log.research_data || {};
-              const brief = rd._editorBrief as Record<string, unknown> | undefined;
-              const indReview = rd._independenceReview as Record<string, unknown> | undefined;
-              const pubmed = rd._pubmedVerification as { verified?: number; failed?: number; total?: number; details?: Array<{ title: string; found: boolean }> } | undefined;
-              const qcResult = rd._qcResult as Record<string, unknown> | undefined;
+              const brief = (rd as PipelineResearchData)._editorBrief as Record<string, unknown> | undefined;
+              const indReview = (rd as PipelineResearchData)._independenceReview as Record<string, unknown> | undefined;
+              const pubmed = (rd as PipelineResearchData)._pubmedVerification as { verified?: number; failed?: number; total?: number; details?: Array<{ title: string; found: boolean }> } | undefined;
+              const qcResult = (rd as PipelineResearchData)._qcResult as Record<string, unknown> | undefined;
               const briefDetails = brief?.brief as Record<string, unknown> | undefined;
               const tokenUsage = log.token_usage as Array<{ model: string; stage: string; inputTokens: number; outputTokens: number; costUsd: number }> | null;
 
               return (
-                <div key={log.id} className="pipeline-card completed" style={{ cursor: 'pointer' }} onClick={() => setExpandedId(isExpanded ? null : log.id)}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="pipeline-card-title" style={{ marginBottom: '0.25rem' }}>
+                <div key={log.id} className="pipeline-card completed admin-pointer" onClick={() => setExpandedId(isExpanded ? null : log.id)}>
+                  <div className="admin-flex-between">
+                    <div className="admin-flex-1">
+                      <div className="pipeline-card-title admin-mb-sm">
                         {log.title || log.topic || 'Untitled'}
                       </div>
-                      <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6875rem', color: '#7d7871', flexWrap: 'wrap', alignItems: 'center' }}>
-                        {penName && <span style={{ color: '#a78bfa', fontWeight: 500 }}>{penName}</span>}
+                      <div className="admin-flex admin-gap-lg admin-text-sm admin-color-subtle admin-flex-wrap admin-flex-center">
+                        {showPenName && <span className="admin-weight-500 admin-color-purple">{penName}</span>}
                         {indScore !== null && (
-                          <span style={{ color: indScore >= 7 ? '#22c55e' : indScore >= 4 ? '#f59e0b' : '#ef4444' }}>
+                          <span style={{ color: getScoreColor(indScore) }}>
                             Independence: {indScore}/10
                           </span>
                         )}
                         {log.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
-                          <span style={{ color: '#b5b0a9', fontVariantNumeric: 'tabular-nums' }}>{formatCost(log.cost_usd)}</span>
+                          <span className="admin-color-secondary admin-tabular-nums">{formatCost(log.cost_usd)}</span>
                         )}
                         <span>{timeAgo(log.completed_at || log.created_at)}</span>
-                        <span style={{ color: '#5c5752', fontSize: '0.625rem' }}>{isExpanded ? '\u25B2' : '\u25BC'}</span>
+                        <span className="admin-color-muted admin-text-xs">{isExpanded ? '\u25B2' : '\u25BC'}</span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                      {log.slug && <a href={`/admin/edit/${log.slug}`} className="pipeline-retry-btn" style={{ textDecoration: 'none' }}>Edit</a>}
-                      {log.slug && <a href={`/articles/${log.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn" style={{ textDecoration: 'none' }}>{'\u2192'} View</a>}
+                    <div className="admin-flex admin-gap-sm admin-flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      {log.slug && <a href={`/admin/edit/${log.slug}`} className="pipeline-retry-btn admin-no-underline">Edit</a>}
+                      {log.slug && <a href={`/articles/${log.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn admin-no-underline">{'\u2192'} View</a>}
                     </div>
                   </div>
 
                   {isExpanded && (
-                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '0.75rem' }}>
+                    <div className="admin-expanded-section">
                       {/* ── Research ── */}
-                      <div style={{ marginBottom: '0.75rem' }}>
-                        <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>1. Research</div>
-                        {rd.topic && <div style={{ color: '#b5b0a9' }}>Topic: {rd.topic as string}</div>}
-                        {(rd.keyFindings as string[] | undefined)?.slice(0, 3).map((f: string, i: number) => (
-                          <div key={i} style={{ color: '#7d7871', paddingLeft: '0.5rem', borderLeft: '2px solid rgba(255,255,255,0.06)', marginTop: '0.25rem' }}>{f}</div>
+                      <div className="admin-expanded-block">
+                        <div className="admin-stage-label">1. Research</div>
+                        {(rd as PipelineResearchData).topic && <div className="admin-color-secondary">Topic: {(rd as PipelineResearchData).topic}</div>}
+                        {((rd as PipelineResearchData).keyFindings)?.slice(0, 3).map((f: string, i: number) => (
+                          <div key={i} className="admin-color-subtle pipeline-research-bar admin-mt-xs">{f}</div>
                         ))}
                       </div>
 
                       {/* ── Editor Brief ── */}
                       {brief && (
-                        <div style={{ marginBottom: '0.75rem' }}>
-                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>2. Editor Brief</div>
-                          <div style={{ color: '#b5b0a9' }}>Score: <span style={{ color: '#eae8e4', fontWeight: 600 }}>{brief.topicScore as number}/10</span> | Archetype: {brief.archetype as string || '?'}</div>
-                          {brief.angle && <div style={{ color: '#b5b0a9', fontStyle: 'italic', marginTop: '0.25rem' }}>Angle: {(brief.angle as string).slice(0, 150)}</div>}
-                          {briefDetails?.tonePreset && <div style={{ color: '#7d7871' }}>Tone: {briefDetails.tonePreset as string} | Density: {briefDetails.density as string || '?'} | Pacing: {briefDetails.pacing as string || '?'}</div>}
+                        <div className="admin-expanded-block">
+                          <div className="admin-stage-label">2. Editor Brief</div>
+                          <div className="admin-color-secondary">Score: <span className="admin-color-primary admin-weight-600">{brief.topicScore as number}/10</span> | Archetype: {brief.archetype as string || '?'}</div>
+                          {brief.angle && <div className="admin-color-secondary admin-italic admin-mt-sm">Angle: {(brief.angle as string).slice(0, 150)}</div>}
+                          {briefDetails?.tonePreset && <div className="admin-color-subtle">Tone: {briefDetails.tonePreset as string} | Density: {briefDetails.density as string || '?'} | Pacing: {briefDetails.pacing as string || '?'}</div>}
                           {(briefDetails?.dogmaWarnings as string[] | undefined)?.length ? (
-                            <div style={{ color: '#f59e0b', marginTop: '0.25rem' }}>Dogma warnings: {(briefDetails!.dogmaWarnings as string[]).join('; ')}</div>
+                            <div className="admin-color-yellow admin-mt-sm">Dogma warnings: {(briefDetails!.dogmaWarnings as string[]).join('; ')}</div>
                           ) : null}
                         </div>
                       )}
 
                       {/* ── Writer ── */}
-                      <div style={{ marginBottom: '0.75rem' }}>
-                        <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>3. Writer</div>
-                        <div style={{ color: '#b5b0a9' }}>Model: <span style={{ color: '#a78bfa', fontWeight: 500 }}>{log.model_used || '?'}</span>{penName ? ` (${penName})` : ''} | Revision: {log.revision_count || 0}</div>
+                      <div className="admin-expanded-block">
+                        <div className="admin-stage-label">3. Writer</div>
+                        <div className="admin-color-secondary">Model: <span className="admin-weight-500 admin-color-purple">{log.model_used || '?'}</span>{showPenName ? ` (${penName})` : ''} | Revision: {log.revision_count || 0}</div>
                       </div>
 
                       {/* ── Independence Review ── */}
                       {indReview && (
-                        <div style={{ marginBottom: '0.75rem', padding: '0.625rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>4. Grok Independence Review</div>
-                          <div style={{ color: '#b5b0a9' }}>
-                            Verdict: <span style={{ color: (indReview.verdict as string) === 'clean' ? '#4ade80' : (indReview.verdict as string) === 'minor_issues' ? '#fbbf24' : '#f87171', fontWeight: 600 }}>{indReview.verdict as string}</span>
+                        <div className="admin-expanded-block admin-expanded-highlight">
+                          <div className="admin-stage-label">4. Grok Independence Review</div>
+                          <div className="admin-color-secondary">
+                            Verdict: <span className="admin-weight-600" style={{ color: (indReview.verdict as string) === 'clean' ? '#4ade80' : (indReview.verdict as string) === 'minor_issues' ? '#fbbf24' : '#f87171' }}>{indReview.verdict as string}</span>
                             {' | '}Score: {(indReview.score as number) || '?'}/10
-                            {indReview._revisionApplied && <span style={{ color: '#a78bfa', marginLeft: '0.5rem' }}>Revisions applied</span>}
+                            {indReview._revisionApplied && <span className="admin-color-purple admin-ml-md">Revisions applied</span>}
                           </div>
                           {(indReview.flags as Array<{ type: string; quote: string; rewrite: string }> | undefined)?.map((f, i) => (
-                            <div key={i} style={{ marginTop: '0.375rem', paddingLeft: '0.5rem', borderLeft: `2px solid ${f.type === 'fabrication' ? '#f87171' : '#f59e0b'}` }}>
-                              <span style={{ color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase' as const, fontSize: '0.5625rem' }}>[{f.type}]</span>
-                              <div style={{ color: '#7d7871', fontSize: '0.6875rem' }}>{(f.quote || '').slice(0, 100)}</div>
-                              {f.rewrite && <div style={{ color: '#eae8e4', fontSize: '0.6875rem' }}>{'\u2192'} {(f.rewrite || '').slice(0, 100)}</div>}
+                            <div key={i} className="admin-mt-sm admin-pl-md" style={{ borderLeft: `2px solid ${f.type === 'fabrication' ? '#f87171' : '#f59e0b'}` }}>
+                              <span className="admin-text-micro admin-weight-600 admin-uppercase admin-color-yellow">[{f.type}]</span>
+                              <div className="admin-text-sm admin-color-subtle">{(f.quote || '').slice(0, 100)}</div>
+                              {f.rewrite && <div className="admin-text-sm admin-color-primary">{'\u2192'} {(f.rewrite || '').slice(0, 100)}</div>}
                             </div>
                           ))}
-                          {(indReview.summary as string) && <div style={{ color: '#7d7871', fontStyle: 'italic', marginTop: '0.375rem' }}>{(indReview.summary as string).slice(0, 200)}</div>}
+                          {(indReview.summary as string) && <div className="admin-color-subtle admin-italic admin-mt-sm">{(indReview.summary as string).slice(0, 200)}</div>}
                         </div>
                       )}
 
                       {/* ── PubMed Verification ── */}
                       {pubmed && pubmed.total && pubmed.total > 0 && (
-                        <div style={{ marginBottom: '0.75rem' }}>
-                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>5. PubMed Verification</div>
-                          <div style={{ color: '#b5b0a9' }}>
-                            <span style={{ color: '#4ade80' }}>{pubmed.verified} verified</span>
-                            {pubmed.failed ? <span style={{ color: '#f87171', marginLeft: '0.5rem' }}>{pubmed.failed} NOT FOUND</span> : null}
+                        <div className="admin-expanded-block">
+                          <div className="admin-stage-label">5. PubMed Verification</div>
+                          <div className="admin-color-secondary">
+                            <span className="admin-color-green">{pubmed.verified} verified</span>
+                            {pubmed.failed ? <span className="admin-color-red admin-ml-md">{pubmed.failed} NOT FOUND</span> : null}
                             {' / '}{pubmed.total} checked
                           </div>
                           {pubmed.details?.filter(d => !d.found).map((d, i) => (
-                            <div key={i} style={{ color: '#f87171', fontSize: '0.6875rem', paddingLeft: '0.5rem', borderLeft: '2px solid rgba(239, 68, 68, 0.2)', marginTop: '0.25rem' }}>
+                            <div key={i} className="admin-text-sm admin-mt-sm admin-color-red admin-pl-md pipeline-error-bar">
                               {'\u2717'} {d.title.slice(0, 80)}
                             </div>
                           ))}
@@ -969,16 +798,16 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
                       {/* ── QC Result ── */}
                       {qcResult && (
-                        <div style={{ marginBottom: '0.75rem' }}>
-                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>6. QC + Publish</div>
-                          <div style={{ color: '#b5b0a9' }}>
-                            Decision: <span style={{ color: '#4ade80', fontWeight: 600 }}>{qcResult.decision as string}</span>
+                        <div className="admin-expanded-block">
+                          <div className="admin-stage-label">6. QC + Publish</div>
+                          <div className="admin-color-secondary">
+                            Decision: <span className="admin-color-green admin-weight-600">{qcResult.decision as string}</span>
                             {' | '}Score: {qcResult.qualityScore as number || '?'}/10
-                            {(qcResult.edits as Record<string, unknown>)?.headlineChanged && <span style={{ marginLeft: '0.5rem', color: '#fbbf24' }}>Headline revised</span>}
-                            {(qcResult.edits as Record<string, unknown>)?.descriptionChanged && <span style={{ marginLeft: '0.5rem', color: '#fbbf24' }}>Description revised</span>}
+                            {(qcResult.edits as Record<string, unknown>)?.headlineChanged && <span className="admin-color-yellow admin-ml-md">Headline revised</span>}
+                            {(qcResult.edits as Record<string, unknown>)?.descriptionChanged && <span className="admin-color-yellow admin-ml-md">Description revised</span>}
                           </div>
                           {(qcResult.edits as Record<string, unknown>)?.notes && (
-                            <div style={{ color: '#7d7871', fontStyle: 'italic', marginTop: '0.25rem' }}>{((qcResult.edits as Record<string, unknown>).notes as string).slice(0, 150)}</div>
+                            <div className="admin-color-subtle admin-italic admin-mt-sm">{((qcResult.edits as Record<string, unknown>).notes as string).slice(0, 150)}</div>
                           )}
                         </div>
                       )}
@@ -986,23 +815,23 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       {/* ── Cost Breakdown ── */}
                       {tokenUsage && tokenUsage.length > 0 && (
                         <div>
-                          <div style={{ color: '#7d7871', fontWeight: 700, textTransform: 'uppercase' as const, fontSize: '0.5625rem', letterSpacing: '0.06em', marginBottom: '0.375rem' }}>Cost Breakdown</div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '0.125rem 0.75rem', fontSize: '0.625rem', color: '#7d7871' }}>
-                            <span style={{ fontWeight: 600 }}>Stage</span><span style={{ fontWeight: 600 }}>Model</span><span style={{ fontWeight: 600 }}>Tokens</span><span style={{ fontWeight: 600 }}>Cost</span>
+                          <div className="admin-stage-label">Cost Breakdown</div>
+                          <div className="pipeline-cost-grid">
+                            <span className="pipeline-cost-header">Stage</span><span className="pipeline-cost-header">Model</span><span className="pipeline-cost-header">Tokens</span><span className="pipeline-cost-header">Cost</span>
                             {tokenUsage.map((t, i) => (
                               <Fragment key={i}>
-                                <span style={{ color: '#b5b0a9' }}>{t.stage}</span>
+                                <span className="admin-color-secondary">{t.stage}</span>
                                 <span>{t.model?.split('-').slice(0, 2).join('-') || '?'}</span>
-                                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{(t.inputTokens + t.outputTokens).toLocaleString()}</span>
-                                <span style={{ fontVariantNumeric: 'tabular-nums', color: '#b5b0a9' }}>${t.costUsd?.toFixed(4) || '?'}</span>
+                                <span className="admin-tabular-nums">{(t.inputTokens + t.outputTokens).toLocaleString()}</span>
+                                <span className="admin-tabular-nums admin-color-secondary">${t.costUsd?.toFixed(4) || '?'}</span>
                               </Fragment>
                             ))}
                           </div>
-                          <div style={{ marginTop: '0.375rem', color: '#b5b0a9', fontWeight: 600, fontSize: '0.625rem' }}>Total: {formatCost(log.cost_usd)}</div>
+                          <div className="admin-mt-sm admin-color-secondary admin-weight-600 admin-text-xs">Total: {formatCost(log.cost_usd)}</div>
                         </div>
                       )}
 
-                      <div style={{ marginTop: '0.625rem', color: '#5c5752', fontSize: '0.625rem' }}>
+                      <div className="admin-mt-lg admin-color-muted admin-text-xs">
                         Source: {log.source || '?'} | Started: {log.created_at ? new Date(log.created_at).toLocaleString() : '?'} | Completed: {log.completed_at ? new Date(log.completed_at).toLocaleString() : '?'}
                       </div>
                     </div>
@@ -1024,14 +853,14 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             {editorKills.map(log => {
               const reason = (log.error || '').replace('Senior Editor killed: ', '');
               return (
-                <div key={log.id} className="pipeline-card" style={{ borderLeftColor: '#f59e0b', borderLeftWidth: '3px' }}>
-                  <div className="pipeline-card-title" style={{ color: '#b5b0a9' }}>
+                <div key={log.id} className="pipeline-card admin-border-left-yellow">
+                  <div className="pipeline-card-title admin-color-secondary">
                     {log.title || log.topic || 'Untitled'}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.375rem', fontStyle: 'italic' }}>
+                  <div className="admin-text-base admin-color-yellow admin-italic admin-mt-sm">
                     Killed: {truncate(reason, 200)}
                   </div>
-                  <div className="pipeline-card-time" style={{ marginTop: '0.25rem' }}>
+                  <div className="pipeline-card-time admin-mt-sm">
                     {timeAgo(log.completed_at || log.created_at)}
                   </div>
                 </div>
@@ -1044,7 +873,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       {/* ── Actual Failures ── */}
       {failedLogs.length > 0 && (
         <section>
-          <h3 className="pipeline-section-title" style={{ color: '#dc2626' }}>
+          <h3 className="pipeline-section-title admin-color-red">
             Errors {'\u2014'} {failedLogs.length}
           </h3>
           <div className="pipeline-failed-list">
@@ -1056,16 +885,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                 <div className="pipeline-card-error">
                   {log.error || 'Unknown error'}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', gap: '0.5rem' }}>
+                <div className="admin-flex-between admin-mt-md admin-gap-md">
                   <span className="pipeline-card-time">
                     {timeAgo(log.completed_at || log.created_at)}
                   </span>
-                  <div style={{ display: 'flex', gap: '0.375rem' }}>
+                  <div className="admin-flex admin-gap-sm">
                     {log.topic && (
                       <button
-                        className="pipeline-retry-btn"
+                        className="pipeline-retry-btn admin-action-btn-yellow"
                         onClick={() => requeueFromFailed(log.id, log.topic!)}
-                        style={{ color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.3)' }}
                       >
                         Re-queue
                       </button>
@@ -1103,13 +931,14 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
   const isActive = ACTIVE_STATUSES.has(log.status);
   const isAwaitingWrite = log.status === 'editor_approved';
   const displayTitle = log.title || log.topic || 'Pending topic\u2026';
-  const statusText = isAwaitingWrite ? 'Ready for you to write with Opus' : getStatusText(log.status, log);
+  const modelName = log.model_used ? getPenName(log.model_used) : undefined;
+  const statusText = isAwaitingWrite ? 'Ready for you to write with Opus' : getStatusText(log.status, modelName);
 
   // Build the Claude prompt client-side from already-loaded research_data (no fetch = no clipboard permission issue)
   const copyBriefForClaude = (e: React.MouseEvent) => {
     e.stopPropagation();
     const rd = log.research_data || {};
-    const eb = rd._editorBrief || {};
+    const eb = (rd as PipelineResearchData)._editorBrief || {};
     const brief = (eb as Record<string, unknown>).brief as Record<string, unknown> || {};
 
     const prompt = `Write this article for alumi news. "Evidence. Wherever it leads."
@@ -1131,14 +960,14 @@ ${brief.closingDirection ? `Close with: ${brief.closingDirection}` : ''}
 ${brief.structuralNotes ? `Structure: ${brief.structuralNotes}` : ''}
 
 ## RESEARCH
-${((rd.keyFindings as string[]) || []).map((f, i) => (i + 1) + '. ' + f).join('\n')}
+${((rd as PipelineResearchData).keyFindings || []).map((f, i) => (i + 1) + '. ' + f).join('\n')}
 
 Studies:
-${((rd.studies as Array<{title:string;journal:string;year:string;finding:string}>) || []).map(s => '- "' + s.title + '" (' + s.journal + ', ' + s.year + '): ' + s.finding).join('\n')}
+${(((rd as PipelineResearchData).studies) || []).map(s => '- "' + s.title + '" (' + s.journal + ', ' + s.year + '): ' + s.finding).join('\n')}
 
-${rd.mechanism ? `Mechanism: ${rd.mechanism}` : ''}
+${(rd as PipelineResearchData).mechanism ? `Mechanism: ${(rd as PipelineResearchData).mechanism}` : ''}
 
-${((rd.counterArguments as string[]) || []).length > 0 ? `Counter-arguments:\n${((rd.counterArguments as string[]) || []).map(c => '- ' + c).join('\n')}` : ''}
+${((rd as PipelineResearchData).counterArguments || []).length > 0 ? `Counter-arguments:\n${((rd as PipelineResearchData).counterArguments || []).map(c => '- ' + c).join('\n')}` : ''}
 
 ## VOICE
 Think The Atlantic meets Bill Maher. Evidence-first, direct, occasionally irreverent. Skeptical of all institutions equally — pharma, government, alternative health. Follow the money. Take positions. Say the thing a hospital pamphlet never would.
@@ -1164,7 +993,7 @@ End with:
 <div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal"><p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed"><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>
 
 Slug for this article: ${eb.slug || log.slug || 'auto-generate'}
-Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || 'Clinical Evidence'}`;
+Category: ${(eb as Record<string, unknown>).categoryOverride || (rd as PipelineResearchData).category || 'Clinical Evidence'}`;
 
     navigator.clipboard.writeText(prompt).then(() => {
       setBriefCopied(true);
@@ -1206,48 +1035,40 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
   const score = getEditorScore(log);
   const angle = getEditorAngle(log);
   const indScore = getIndependenceScore(log);
-  const indReview = log.research_data?._independenceReview;
-  const candidates = log.research_data?.candidates;
-  const candidateScores = log.research_data?._editorBrief?.candidateScores;
-  const penName = log.model_used ? PEN_NAMES[log.model_used] : null;
+  const indReview = (log.research_data as PipelineResearchData | null)?._independenceReview;
+  const candidates = (log.research_data as PipelineResearchData | null)?.candidates;
+  const candidateScores = (log.research_data as PipelineResearchData | null)?._editorBrief?.candidateScores;
+  const penName = log.model_used ? getPenName(log.model_used) : null;
+  const showPenName = penName && penName !== 'alumi Editorial';
   const modelShort = log.model_used ? log.model_used.replace('claude-', '').replace('-20250514', '') : null;
 
   return (
     <div
-      className={`pipeline-card${isActive ? ' active' : ''}`}
-      style={isAwaitingWrite ? { borderLeftColor: '#c084fc', borderLeftWidth: '3px', background: 'rgba(168, 85, 247, 0.04)' } : undefined}
+      className={`pipeline-card${isActive ? ' active' : ''}${isAwaitingWrite ? ' pipeline-hybrid-card' : ''}`}
       onClick={onToggle}
       role="button"
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-        <div className="pipeline-card-title" style={{ flex: 1 }}>{truncate(displayTitle, 60)}</div>
+      <div className="admin-flex-between-top admin-gap-md">
+        <div className="pipeline-card-title admin-flex-1">{truncate(displayTitle, 60)}</div>
         <button
+          className="pipeline-card-dismiss"
           onClick={(e) => { e.stopPropagation(); onKill(); }}
           disabled={killing}
           title="Dismiss this article"
-          style={{
-            flexShrink: 0, width: '20px', height: '20px', padding: 0,
-            background: 'transparent', color: '#5c5752', border: 'none',
-            borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem',
-            lineHeight: '20px', textAlign: 'center' as const,
-            transition: 'color 0.15s',
-          }}
-          onMouseEnter={(e) => { (e.target as HTMLElement).style.color = '#f87171'; }}
-          onMouseLeave={(e) => { (e.target as HTMLElement).style.color = '#5c5752'; }}
         >
           ×
         </button>
       </div>
       <div className="pipeline-card-status">
         {statusText}
-        {penName && <span style={{ marginLeft: '0.375rem', color: '#a78bfa', fontWeight: 500 }}>by {penName}</span>}
+        {showPenName && <span className="admin-weight-500 admin-color-purple admin-ml-sm">by {penName}</span>}
       </div>
       <div className="pipeline-card-time">
         {timeAgo(log.created_at)}
-        {modelShort && <span style={{ marginLeft: '0.375rem', color: '#5c5752' }}>{modelShort}</span>}
-        {log.source && <span style={{ marginLeft: '0.375rem', color: '#5c5752' }}>{log.source}</span>}
+        {modelShort && <span className="admin-color-muted admin-ml-sm">{modelShort}</span>}
+        {log.source && <span className="admin-color-muted admin-ml-sm">{log.source}</span>}
       </div>
 
       {(score !== null || indScore !== null || (log.cost_usd && parseFloat(String(log.cost_usd)) > 0)) && (
@@ -1258,12 +1079,12 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
             </span>
           )}
           {indScore !== null && (
-            <span className={`pipeline-card-score ${indScore >= 7 ? 'high' : indScore >= 4 ? 'mid' : 'low'}`} style={{ marginLeft: '0.5rem' }}>
+            <span className={`pipeline-card-score admin-ml-md ${indScore >= 7 ? 'high' : indScore >= 4 ? 'mid' : 'low'}`}>
               Independence: {indScore}/10
             </span>
           )}
           {log.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
-            <span style={{ marginLeft: '0.5rem', color: '#a8a29e', fontSize: '0.6875rem', fontVariantNumeric: 'tabular-nums' }}>
+            <span className="admin-text-sm admin-color-secondary admin-tabular-nums admin-ml-md">
               {formatCost(log.cost_usd)}
             </span>
           )}
@@ -1271,19 +1092,19 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
       )}
 
       {expanded && (
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '0.75rem' }}>
+        <div className="admin-expanded-section">
           {/* Candidates from research */}
           {candidates && candidates.length > 1 && (
-            <div style={{ marginBottom: '0.75rem' }}>
-              <span style={{ color: '#7d7871', fontWeight: 600 }}>Research Candidates:</span>
+            <div className="admin-mb-lg">
+              <span className="admin-detail-label">Research Candidates:</span>
               {candidates.map((c, i) => {
-                const cScore = candidateScores?.find(cs => cs.rank === c.rank);
+                const cScore = candidateScores?.find(cs => cs.rank === (c as Record<string, unknown>).rank);
                 return (
-                  <div key={i} style={{ marginTop: '0.25rem', paddingLeft: '0.5rem', borderLeft: '2px solid rgba(255,255,255,0.06)' }}>
-                    <span style={{ color: cScore ? (cScore.score >= 7 ? '#22c55e' : '#f59e0b') : '#b5b0a9' }}>
-                      #{c.rank}: {c.headline_draft || c.topic}
+                  <div key={i} className="admin-mt-sm pipeline-research-bar">
+                    <span style={{ color: cScore ? (Number(cScore.score) >= 7 ? '#22c55e' : '#f59e0b') : '#b5b0a9' }}>
+                      #{(c as Record<string, unknown>).rank}: {(c as Record<string, unknown>).headline_draft as string || (c as Record<string, unknown>).topic as string}
                     </span>
-                    {cScore && <span style={{ color: '#7d7871', marginLeft: '0.5rem' }}>({cScore.score}/10) {cScore.verdict}</span>}
+                    {cScore && <span className="admin-color-subtle admin-ml-md">({cScore.score}/10) {cScore.note}</span>}
                   </div>
                 );
               })}
@@ -1291,34 +1112,34 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
           )}
 
           {angle && (
-            <div style={{ marginBottom: '0.5rem' }}>
-              <span style={{ color: '#7d7871', fontWeight: 600 }}>Angle: </span>
-              <span style={{ color: '#b5b0a9', fontStyle: 'italic' }}>{angle}</span>
+            <div className="admin-mb-md">
+              <span className="admin-detail-label">Angle: </span>
+              <span className="admin-color-secondary admin-italic">{angle}</span>
             </div>
           )}
 
           {/* Independence Review */}
-          {indReview && indReview.overallAssessment !== 'skipped' && (
-            <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ color: '#7d7871', fontWeight: 600 }}>Grok Independence: </span>
+          {indReview && (indReview as Record<string, unknown>).overallAssessment !== 'skipped' && (
+            <div className="admin-expanded-highlight admin-mb-md">
+              <span className="admin-detail-label">Grok Independence: </span>
               <span style={{
-                color: indReview.overallAssessment === 'independent' ? '#16a34a'
-                  : indReview.overallAssessment === 'minor_concerns' ? '#f59e0b'
+                color: (indReview as Record<string, unknown>).overallAssessment === 'independent' ? '#16a34a'
+                  : (indReview as Record<string, unknown>).overallAssessment === 'minor_concerns' ? '#f59e0b'
                   : '#dc2626'
               }}>
-                {indReview.overallAssessment} {(indReview.independenceScore || indReview.score) ? `(${indReview.independenceScore || indReview.score}/10)` : ''}
+                {(indReview as Record<string, unknown>).overallAssessment as string} {((indReview as Record<string, unknown>).independenceScore || indReview.score) ? `(${(indReview as Record<string, unknown>).independenceScore || indReview.score}/10)` : ''}
               </span>
-              {indReview.annotations && indReview.annotations.length > 0 && (
-                <div style={{ marginTop: '0.375rem' }}>
-                  {indReview.annotations.slice(0, 3).map((a, i) => (
-                    <div key={i} style={{ color: a.severity === 'high' ? '#dc2626' : '#f59e0b', fontSize: '0.6875rem', marginTop: '0.125rem' }}>
+              {(indReview as Record<string, unknown>).annotations && ((indReview as Record<string, unknown>).annotations as Array<{ type: string; severity: string; observation: string }>).length > 0 && (
+                <div className="admin-mt-sm">
+                  {((indReview as Record<string, unknown>).annotations as Array<{ type: string; severity: string; observation: string }>).slice(0, 3).map((a, i) => (
+                    <div key={i} className="admin-text-sm" style={{ color: a.severity === 'high' ? '#dc2626' : '#f59e0b', marginTop: '0.125rem' }}>
                       [{a.type}] {a.observation}
                     </div>
                   ))}
                 </div>
               )}
               {indReview.summary && (
-                <div style={{ color: '#78716c', fontSize: '0.6875rem', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                <div className="admin-text-sm admin-italic admin-mt-sm admin-color-subtle">
                   {indReview.summary}
                 </div>
               )}
@@ -1326,63 +1147,53 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
           )}
 
           {log.slug && (
-            <div style={{ marginBottom: '0.25rem' }}>
-              <span style={{ color: '#7d7871' }}>Slug: </span>
-              <code style={{ color: '#5c5752', fontSize: '0.6875rem' }}>{log.slug}</code>
+            <div className="admin-detail-row">
+              <span className="admin-color-subtle">Slug: </span>
+              <code className="admin-color-muted admin-text-sm">{log.slug}</code>
             </div>
           )}
-          <div style={{ marginBottom: '0.25rem' }}>
-            <span style={{ color: '#7d7871' }}>Status: </span>
-            <span style={{ color: '#b5b0a9' }}>{log.status}</span>
+          <div className="admin-detail-row">
+            <span className="admin-color-subtle">Status: </span>
+            <span className="admin-color-secondary">{log.status}</span>
           </div>
           <div>
-            <span style={{ color: '#7d7871' }}>Started: </span>
-            <span style={{ color: '#b5b0a9' }}>{new Date(log.created_at).toLocaleTimeString()}</span>
+            <span className="admin-color-subtle">Started: </span>
+            <span className="admin-color-secondary">{new Date(log.created_at).toLocaleTimeString()}</span>
           </div>
-          {log.research_data?.category && (
-            <div style={{ marginTop: '0.25rem' }}>
-              <span style={{ color: '#7d7871' }}>Category: </span>
-              <span style={{ color: '#b5b0a9' }}>{log.research_data.category}</span>
+          {(log.research_data as PipelineResearchData | null)?.category && (
+            <div className="admin-mt-sm">
+              <span className="admin-color-subtle">Category: </span>
+              <span className="admin-color-secondary">{(log.research_data as PipelineResearchData).category}</span>
             </div>
           )}
-          {log.research_data?._queueId && (
-            <div style={{ marginTop: '0.25rem' }}>
-              <span style={{ color: '#f59e0b', fontSize: '0.6875rem' }}>From topic queue</span>
+          {(log.research_data as PipelineResearchData | null)?._queueId && (
+            <div className="admin-mt-sm">
+              <span className="admin-color-yellow admin-text-sm">From topic queue</span>
             </div>
           )}
 
           {/* Hybrid workflow: Copy Brief + Submit Article for editor_approved articles */}
           {isAwaitingWrite && (
-            <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#c084fc', marginBottom: '0.375rem' }}>Write with Opus</div>
-                <div style={{ fontSize: '0.6875rem', color: '#a8a29e', marginBottom: '0.5rem' }}>
+            <div className="admin-mt-lg pipeline-separator">
+              <div className="pipeline-opus-box">
+                <div className="admin-text-base admin-weight-600 admin-color-purple admin-mb-sm">Write with Opus</div>
+                <div className="admin-text-sm admin-mb-md admin-color-secondary">
                   1. Copy the brief below, paste into Claude. 2. Opus writes the article. 3. Paste the HTML back here.
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div className="admin-flex admin-gap-md admin-flex-wrap">
                   <button
                     onClick={copyBriefForClaude}
                     disabled={loadingBrief}
+                    className={`pipeline-retry-btn pipeline-btn-padded admin-weight-600 ${briefCopied ? 'admin-action-btn-green' : 'admin-action-btn-purple'}`}
                     style={{
-                      fontSize: '0.6875rem', padding: '0.375rem 0.875rem',
                       background: briefCopied ? 'rgba(34, 197, 94, 0.15)' : 'rgba(168, 85, 247, 0.15)',
-                      color: briefCopied ? '#22c55e' : '#c084fc',
-                      border: `1px solid ${briefCopied ? 'rgba(34, 197, 94, 0.3)' : 'rgba(168, 85, 247, 0.3)'}`,
-                      borderRadius: '6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                      fontWeight: 600, transition: 'all 0.15s',
                     }}
                   >
                     {loadingBrief ? 'Loading...' : briefCopied ? 'Copied!' : 'Copy Brief for Claude'}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowSubmitForm(!showSubmitForm); }}
-                    style={{
-                      fontSize: '0.6875rem', padding: '0.375rem 0.875rem',
-                      background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa',
-                      border: '1px solid rgba(59, 130, 246, 0.3)',
-                      borderRadius: '6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                      fontWeight: 600, transition: 'all 0.15s',
-                    }}
+                    className="pipeline-retry-btn pipeline-btn-padded admin-weight-600 admin-action-btn-blue"
                   >
                     {showSubmitForm ? 'Cancel' : 'Submit Written Article'}
                   </button>
@@ -1390,7 +1201,7 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
               </div>
 
               {showSubmitForm && (
-                <div style={{ marginTop: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
+                <div className="admin-mt-md" onClick={(e) => e.stopPropagation()}>
                   <textarea
                     value={articleHtml}
                     onChange={(e) => setArticleHtml(e.target.value)}
@@ -1405,13 +1216,10 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
                   <button
                     onClick={submitArticle}
                     disabled={submitting || !articleHtml.trim()}
+                    className={`pipeline-retry-btn pipeline-btn-padded admin-weight-600 admin-mt-sm ${submitting ? 'admin-action-btn-muted' : 'admin-action-btn-green'}`}
                     style={{
-                      marginTop: '0.375rem', fontSize: '0.6875rem', padding: '0.375rem 0.875rem',
                       background: submitting ? 'rgba(255,255,255,0.05)' : 'rgba(34, 197, 94, 0.15)',
-                      color: submitting ? '#7d7871' : '#22c55e',
-                      border: `1px solid ${submitting ? 'rgba(255,255,255,0.1)' : 'rgba(34, 197, 94, 0.3)'}`,
-                      borderRadius: '6px', cursor: submitting ? 'not-allowed' : 'pointer',
-                      fontFamily: 'Inter, sans-serif', fontWeight: 600,
+                      cursor: submitting ? 'not-allowed' : 'pointer',
                     }}
                   >
                     {submitting ? 'Submitting...' : 'Submit & Resume Pipeline'}
@@ -1420,28 +1228,18 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
               )}
 
               {submitResult && (
-                <div style={{
-                  marginTop: '0.375rem', padding: '0.375rem 0.625rem', borderRadius: '6px', fontSize: '0.6875rem',
-                  background: submitResult.startsWith('Error') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-                  color: submitResult.startsWith('Error') ? '#f87171' : '#22c55e',
-                  border: `1px solid ${submitResult.startsWith('Error') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`,
-                }}>
+                <div className={`admin-toast admin-mt-sm admin-text-sm ${submitResult.startsWith('Error') ? 'admin-toast-error' : 'admin-toast-success'}`}>
                   {submitResult}
                 </div>
               )}
             </div>
           )}
 
-          <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="admin-mt-lg pipeline-separator">
             <button
               onClick={(e) => { e.stopPropagation(); onKill(); }}
               disabled={killing}
-              style={{
-                fontSize: '0.6875rem', padding: '0.3125rem 0.75rem',
-                background: 'transparent', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.25)',
-                borderRadius: '6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                transition: 'all 0.15s',
-              }}
+              className="pipeline-retry-btn admin-action-btn-danger-subtle"
             >
               {killing ? 'Killing\u2026' : 'Kill Article'}
             </button>

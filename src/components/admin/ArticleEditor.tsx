@@ -1,7 +1,13 @@
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import type { DragEvent, ChangeEvent } from 'react';
+import {
+  getAdminToken,
+  getApiBase,
+  VALID_CATEGORIES,
+  GRADIENT_PRESETS,
+} from './types';
 
-// ─── Types ──────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────
 
 interface ArticleMetadata {
   title: string;
@@ -40,30 +46,9 @@ interface ArticleSnapshot {
 
 type EditorState = 'upload' | 'processing' | 'preview' | 'publishing' | 'done';
 
-// ─── Constants ──────────────────────────────────────────────────────
-
-const EDGE_FUNCTION_BASE = import.meta.env.PUBLIC_SUPABASE_URL
-  ? `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`
-  : '';
+// ─── Constants ──────────────────────────────────────────────────
 
 const STORAGE_KEY = 'alumi_admin_draft';
-
-const CATEGORY_OPTIONS = [
-  'Mental Health', 'Neuroscience', 'Nutrition', 'Longevity',
-  'Fitness', 'Sleep Science', 'Clinical Evidence', 'Research Summary',
-  'Environmental Health', 'Pharmacology',
-];
-
-const GRADIENT_PRESETS: Array<{ from: string; to: string; label: string; colors: [string, string] }> = [
-  { from: 'rose-600', to: 'red-700', label: 'Rose', colors: ['#e11d48', '#b91c1c'] },
-  { from: 'violet-600', to: 'purple-700', label: 'Violet', colors: ['#7c3aed', '#7e22ce'] },
-  { from: 'emerald-500', to: 'teal-600', label: 'Emerald', colors: ['#10b981', '#0d9488'] },
-  { from: 'emerald-600', to: 'teal-700', label: 'Deep Emerald', colors: ['#059669', '#0f766e'] },
-  { from: 'amber-500', to: 'orange-600', label: 'Amber', colors: ['#f59e0b', '#ea580c'] },
-  { from: 'sky-500', to: 'blue-600', label: 'Sky', colors: ['#0ea5e9', '#2563eb'] },
-  { from: 'indigo-500', to: 'purple-600', label: 'Indigo', colors: ['#6366f1', '#9333ea'] },
-  { from: 'lime-500', to: 'green-600', label: 'Lime', colors: ['#84cc16', '#16a34a'] },
-];
 
 const REFINE_TEMPLATES = [
   { label: 'Punchier intro', prompt: 'Make the introduction more compelling and punchy. Lead with the strongest hook.' },
@@ -74,12 +59,7 @@ const REFINE_TEMPLATES = [
   { label: 'Simplify language', prompt: 'Simplify the language throughout. Shorter sentences, fewer jargon terms.' },
 ];
 
-// ─── Helpers ────────────────────────────────────────────────────────
-
-function getAdminToken(): string {
-  const match = document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : '';
-}
+// ─── Helpers ────────────────────────────────────────────────────
 
 function slugify(text: string): string {
   return text
@@ -127,9 +107,11 @@ function clearDraft() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-// ─── Component ──────────────────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────────────
 
 export default function ArticleEditor() {
+  const API_BASE = getApiBase();
+
   // Core state
   const [state, setState] = useState<EditorState>('upload');
   const [sourceText, setSourceText] = useState('');
@@ -265,7 +247,7 @@ export default function ArticleEditor() {
     ];
 
     try {
-      const res = await fetch(`${EDGE_FUNCTION_BASE}/process-article`, {
+      const res = await fetch(`${API_BASE}/process-article`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
         signal: controller.signal,
@@ -298,7 +280,7 @@ export default function ArticleEditor() {
 
       // Save to database
       try {
-        await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
+        await fetch(`${API_BASE}/articles-api`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
@@ -330,7 +312,7 @@ export default function ArticleEditor() {
       // Auto-generate editorial illustration
       try {
         setStatusMessage('Generating editorial illustration...');
-        const illustrationRes = await fetch(`${EDGE_FUNCTION_BASE}/generate-illustration`, {
+        const illustrationRes = await fetch(`${API_BASE}/generate-illustration`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -383,7 +365,7 @@ export default function ArticleEditor() {
     } finally {
       abortRef.current = null;
     }
-  }, [sourceText, sourceFormat]);
+  }, [sourceText, sourceFormat, API_BASE]);
 
   // ─── Refine Article ─────────────────────────────────────────────
 
@@ -406,7 +388,7 @@ export default function ArticleEditor() {
     }
 
     try {
-      const res = await fetch(`${EDGE_FUNCTION_BASE}/refine-article`, {
+      const res = await fetch(`${API_BASE}/refine-article`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
@@ -430,7 +412,7 @@ export default function ArticleEditor() {
       try {
         const m = data.metadata || metadata;
         if (m) {
-          await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
+          await fetch(`${API_BASE}/articles-api`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
             body: JSON.stringify({
@@ -457,7 +439,7 @@ export default function ArticleEditor() {
     } finally {
       setIsRefining(false);
     }
-  }, [chatInput, article, metadata, chatMessages, isRefining]);
+  }, [chatInput, article, metadata, chatMessages, isRefining, API_BASE]);
 
   // ─── Version History ────────────────────────────────────────────
 
@@ -506,7 +488,7 @@ export default function ArticleEditor() {
     try {
       const astroContent = assembleAstroFile(article, metadata);
 
-      const res = await fetch(`${EDGE_FUNCTION_BASE}/publish-article`, {
+      const res = await fetch(`${API_BASE}/publish-article`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
@@ -538,7 +520,7 @@ export default function ArticleEditor() {
 
       // Update database status to published
       try {
-        await fetch(`${EDGE_FUNCTION_BASE}/articles-api`, {
+        await fetch(`${API_BASE}/articles-api`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
@@ -569,7 +551,7 @@ export default function ArticleEditor() {
     } finally {
       setIsPublishing(false);
     }
-  }, [article, metadata, validateMetadata]);
+  }, [article, metadata, validateMetadata, API_BASE]);
 
   // ─── Metadata helpers ───────────────────────────────────────────
 
@@ -658,7 +640,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
 
         {/* UPLOAD STATE */}
         {state === 'upload' && (
-          <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem' }}>
+          <div className="admin-editor-upload-panel">
             <div
               className={`admin-upload-zone${dragOver ? ' dragover' : ''}`}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -675,7 +657,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
               </div>
               <div className="admin-upload-title">Drop a source document</div>
               <div className="admin-upload-subtitle">.md, .docx, or .txt (max 10MB)</div>
-              <input ref={fileInputRef} type="file" accept=".md,.txt,.docx" style={{ display: 'none' }} onChange={handleFileSelect}/>
+              <input ref={fileInputRef} type="file" accept=".md,.txt,.docx" className="admin-hidden" onChange={handleFileSelect}/>
             </div>
 
             <div className="admin-divider">or paste text below</div>
@@ -741,19 +723,19 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                   </div>
                   <div className="admin-field admin-field-full">
                     <label>Slug</label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <span style={{ color: '#78716c', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>/articles/</span>
-                      <input value={metadata.slug} onChange={(e) => updateMetadata('slug', e.target.value)} style={{ flex: 1 }}/>
+                    <div className="admin-flex-center admin-gap-md">
+                      <span className="admin-slug-prefix">/articles/</span>
+                      <input value={metadata.slug} onChange={(e) => updateMetadata('slug', e.target.value)} className="admin-flex-1"/>
                     </div>
                   </div>
                   <div className="admin-field admin-field-full">
-                    <label>Description <span style={{ color: '#78716c', fontWeight: 400 }}>({metadata.description.length}/300)</span></label>
+                    <label>Description <span className="admin-color-subtle admin-weight-400">({metadata.description.length}/300)</span></label>
                     <textarea value={metadata.description} onChange={(e) => updateMetadata('description', e.target.value)} rows={3}/>
                   </div>
                   <div className="admin-field">
                     <label>Category</label>
                     <select value={metadata.category} onChange={(e) => updateMetadata('category', e.target.value)}>
-                      {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                      {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div className="admin-field">
@@ -785,12 +767,12 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                       placeholder="https://images.unsplash.com/photo-..."
                     />
                   </div>
-                  <div className="admin-field admin-field-full" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="admin-field admin-field-full admin-flex-between">
                     <label className="admin-checkbox-label">
                       <input type="checkbox" checked={metadata.featured} onChange={(e) => updateMetadata('featured', e.target.checked)}/>
                       Featured Article
                     </label>
-                    <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>{metadata.readTime} min read &middot; {wordCount(article?.html || '')} words</span>
+                    <span className="admin-text-sm admin-color-subtle">{metadata.readTime} min read &middot; {wordCount(article?.html || '')} words</span>
                   </div>
                 </div>
               )}
@@ -872,11 +854,11 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
             )}
 
             {/* Error */}
-            {error && <div className="admin-error" style={{ margin: '0 1rem 1rem' }}>{error}</div>}
+            {error && <div className="admin-error admin-error-inset">{error}</div>}
 
             {/* Publish Bar */}
             <div className="admin-publish-bar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="admin-flex-center admin-gap-lg">
                 <div className="admin-status">
                   <span className={`admin-status-dot ${
                     state === 'done' ? 'admin-status-dot-ready' :
@@ -897,21 +879,21 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                 </button>
               </div>
               {state === 'done' ? (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <a href={`/articles/${metadata?.slug}`} target="_blank" className="admin-publish-btn" style={{ background: '#16a34a', textDecoration: 'none', color: 'white' }}>
+                <div className="admin-flex admin-gap-md">
+                  <a href={`/articles/${metadata?.slug}`} target="_blank" className="admin-publish-btn admin-publish-btn-view">
                     View Article
                   </a>
-                  <button onClick={startOver} className="admin-publish-btn" style={{ background: '#292524' }}>
+                  <button onClick={startOver} className="admin-publish-btn admin-publish-btn-dark">
                     New Article
                   </button>
                 </div>
               ) : showPublishConfirm ? (
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#a8a29e' }}>Publish to production?</span>
+                <div className="admin-flex-center admin-gap-md">
+                  <span className="admin-text-base admin-color-secondary">Publish to production?</span>
                   <button className="admin-publish-btn" onClick={publishArticle} disabled={isPublishing}>
                     {isPublishing ? 'Publishing...' : 'Confirm'}
                   </button>
-                  <button className="admin-cancel-btn" onClick={() => setShowPublishConfirm(false)} style={{ padding: '0.5rem 1rem' }}>
+                  <button className="admin-cancel-btn admin-cancel-btn-compact" onClick={() => setShowPublishConfirm(false)}>
                     Cancel
                   </button>
                 </div>
@@ -933,7 +915,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
       <div className="admin-editor-right">
         {state === 'upload' && (
           <div className="admin-preview-empty">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ marginBottom: '1rem', opacity: 0.3 }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="admin-preview-icon">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
             </svg>
             Upload a source document to preview
@@ -941,7 +923,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
         )}
         {state === 'processing' && (
           <div className="admin-preview-empty">
-            <div className="admin-spinner" style={{ marginBottom: '1rem' }}/>
+            <div className="admin-spinner admin-preview-spinner"/>
             Generating article...
           </div>
         )}

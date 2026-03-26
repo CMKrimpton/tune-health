@@ -1,10 +1,91 @@
-// ─── Shared Admin Portal Types ──────────────────────────────────────────────
-// Central type definitions for the admin CMS, pipeline monitor, and editor UI.
-// Matches Supabase table schemas and Edge Function contracts.
-// ────────────────────────────────────────────────────────────────────────────
+// ─── Shared Admin Portal Types & Config ─────────────────────────────────────
+// SINGLE SOURCE OF TRUTH for the admin dashboard.
+// All React components import from here — never redefine constants locally.
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ─── ArticleRecord ─────────────────────────────────────────────────────────
-// Matches the `articles` table in Supabase (see migrations/20260315_create_articles.sql)
+// ═══════════════════════════════════════════════════════════════════════════════
+// SYNCED FROM supabase/functions/_shared/constants.ts
+// Last synced: 2026-03-26. If you update these, update the backend too.
+// Backend is the source of truth for: VALID_CATEGORIES, CATEGORY_GRADIENTS,
+// MODEL_PEN_NAMES (MODEL_BYLINES in backend).
+//
+// CLAUDE / AI ASSISTANTS: NEVER change model IDs or model labels based on
+// your training data. Do a web search first to verify current model IDs.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── Valid Categories ────────────────────────────────────────────────────────
+
+export const VALID_CATEGORIES = [
+  'Neuroscience', 'Mental Health', 'Longevity', 'Clinical Evidence',
+  'Environmental Health', 'Nutrition', 'Fitness', 'Sleep Science', 'Pharmacology',
+] as const;
+
+// ─── Category Gradients ──────────────────────────────────────────────────────
+// Synced from backend CATEGORY_GRADIENTS. Used for article stripe colors,
+// gradient pickers, and category badges.
+
+export const CATEGORY_GRADIENTS: Record<string, { from: string; to: string; hex: string }> = {
+  "Neuroscience":          { from: "violet-600",  to: "purple-700",  hex: "#7c3aed" },
+  "Mental Health":         { from: "sky-500",     to: "blue-600",    hex: "#0ea5e9" },
+  "Longevity":             { from: "emerald-500", to: "teal-600",    hex: "#10b981" },
+  "Clinical Evidence":     { from: "amber-500",   to: "orange-600",  hex: "#f59e0b" },
+  "Environmental Health":  { from: "lime-500",    to: "green-600",   hex: "#84cc16" },
+  "Nutrition":             { from: "emerald-600", to: "teal-700",    hex: "#059669" },
+  "Fitness":               { from: "rose-600",    to: "red-700",     hex: "#e11d48" },
+  "Sleep Science":         { from: "indigo-500",  to: "purple-600",  hex: "#6366f1" },
+  "Pharmacology":          { from: "amber-500",   to: "orange-600",  hex: "#f59e0b" },
+};
+
+/** Resolve a Tailwind gradient class to a hex color for inline rendering. */
+const GRADIENT_HEX_MAP: Record<string, string> = {
+  "rose-600": "#e11d48", "violet-600": "#7c3aed", "emerald-500": "#10b981",
+  "emerald-600": "#059669", "amber-500": "#f59e0b", "sky-500": "#0ea5e9",
+  "indigo-500": "#6366f1", "lime-500": "#84cc16", "red-700": "#b91c1c",
+  "purple-700": "#7e22ce", "teal-600": "#0d9488", "teal-700": "#0f766e",
+  "orange-600": "#ea580c", "blue-600": "#2563eb", "purple-600": "#9333ea",
+  "green-600": "#16a34a",
+};
+
+/** Get the hex color for an article's category stripe. */
+export function getCategoryColor(category: string): string {
+  return CATEGORY_GRADIENTS[category]?.hex ?? '#dc2626';
+}
+
+/** Get the hex color for a Tailwind gradient class name. */
+export function getGradientHex(gradientClass: string): string {
+  return GRADIENT_HEX_MAP[gradientClass] ?? '#dc2626';
+}
+
+/** Gradient presets for the article editor color picker. */
+export const GRADIENT_PRESETS = Object.entries(CATEGORY_GRADIENTS).map(([label, g]) => ({
+  from: g.from,
+  to: g.to,
+  label,
+  colors: [getGradientHex(g.from), getGradientHex(g.to)] as [string, string],
+}));
+
+// ─── Model Pen Names ─────────────────────────────────────────────────────────
+// Synced from backend MODEL_BYLINES. Human bylines for AI model attribution.
+
+export const MODEL_PEN_NAMES: Record<string, { name: string; role: string }> = {
+  "human-opus":               { name: "Carl Lundin",       role: "Editor-at-Large" },
+  "claude-opus-4-6":          { name: "Carl Lundin",       role: "Editor-at-Large" },
+  "claude-sonnet-4-6":        { name: "Max Quilici",       role: "Senior Health Correspondent" },
+  "gpt-5.4":                  { name: "Eli Vance",         role: "Health & Science Editor" },
+  "gpt-5":                    { name: "Eli Vance",         role: "Health & Science Editor" },
+  "gemini-3.1-pro-preview":   { name: "Christine Wright",  role: "Science & Evidence Desk" },
+  "gemini-2.5-pro":           { name: "Christine Wright",  role: "Science & Evidence Desk" },
+  "grok-4":                   { name: "Linda Carnes",      role: "Investigative Health Reporter" },
+  "grok-3":                   { name: "Linda Carnes",      role: "Investigative Health Reporter" },
+  "gemini-2.5-flash":         { name: "Christine Wright",  role: "Science & Evidence Desk" },
+};
+
+export function getPenName(model: string | null | undefined): string {
+  if (!model) return "alumi Editorial";
+  return MODEL_PEN_NAMES[model]?.name ?? "alumi Editorial";
+}
+
+// ─── ArticleRecord ───────────────────────────────────────────────────────────
 
 export type ArticleStatus = 'draft' | 'published' | 'archived';
 
@@ -27,7 +108,7 @@ export interface ArticleRecord {
   hero_image: string | null;
   hero_image_alt: string | null;
   article_html: string;
-  article_svg: string | null;  // deprecated — no longer generated, kept for DB compat
+  article_svg: string | null;
   toc: TocEntry[];
   source_text: string | null;
   status: ArticleStatus;
@@ -44,9 +125,7 @@ export interface TocEntry {
   title: string;
 }
 
-// ─── PipelineLog ───────────────────────────────────────────────────────────
-// Matches the `daily_article_log` table (see migrations/20260322_daily_article_agent.sql)
-// with the nested research_data JSONB structure used by the pipeline stages.
+// ─── Pipeline Types ──────────────────────────────────────────────────────────
 
 export type PipelineStatus =
   | 'started'
@@ -56,7 +135,13 @@ export type PipelineStatus =
   | 'editor_approved'
   | 'writing'
   | 'written'
+  | 'independence_review'
+  | 'independence_done'
   | 'editor_qc'
+  | 'qc_approved'
+  | 'voice_rewrite_pending'
+  | 'rewriting_voice'
+  | 'voice_rewrite_done'
   | 'publishing'
   | 'published'
   | 'failed';
@@ -77,17 +162,42 @@ export interface PipelineResearchData {
   mechanism?: string;
   expertQuotes?: string[];
   statistics?: string[];
-  /** Populated after stage 2 (Senior Editor brief) */
+  candidates?: Array<Record<string, unknown>>;
+  searchSummary?: string;
+  tags?: string[];
+  keywords?: string[];
+  _fromQueue?: boolean;
+  _queueId?: string;
+  _queueSource?: string;
+  _writtenBy?: string;
   _editorBrief?: EditorBrief;
-  /** Populated after stage 3 (article writing) */
   _article?: {
     metadata: Record<string, unknown>;
     html: string;
     toc: TocEntry[];
     readTime: number;
   };
-  /** Populated when Senior Editor QC requests revisions */
+  _independenceReview?: {
+    verdict?: string;
+    score?: number;
+    summary?: string;
+    flags?: Array<{ type: string; quote: string; rewrite: string; reason: string }>;
+    strengths?: string[];
+    improvements?: string[];
+    skipped?: boolean;
+    reason?: string;
+    _revisionApplied?: boolean;
+  };
+  _pubmedVerification?: {
+    verified?: number;
+    total?: number;
+    details?: Array<{ title: string; found: boolean; pmid?: string }>;
+  };
+  _qcResult?: QCResult;
   _reviseInstructions?: string | null;
+  _voiceRewriteRequested?: boolean;
+  _voiceRewriteCompleted?: boolean;
+  _voiceRewriteCount?: number;
 }
 
 export interface PipelineLog {
@@ -96,7 +206,7 @@ export interface PipelineLog {
   topic: string | null;
   slug: string | null;
   title: string | null;
-  status: PipelineStatus;
+  status: string;
   error: string | null;
   search_queries: unknown[];
   research_snippets: unknown[];
@@ -108,65 +218,104 @@ export interface PipelineLog {
   revision_count: number | null;
   source: string | null;
   stage_started_at: string | null;
-  token_usage: unknown[] | null;
+  token_usage: Array<{
+    model: string;
+    stage: string;
+    inputTokens: number;
+    outputTokens: number;
+    costUsd: number;
+  }> | null;
   created_at: string;
   completed_at: string | null;
 }
 
-// ─── Pipeline Stages ───────────────────────────────────────────────────────
-// Maps individual statuses into the 4 high-level pipeline stages.
+// ─── Pipeline Stages ─────────────────────────────────────────────────────────
 
-export type PipelineStage = 'research' | 'editor_brief' | 'write' | 'publish';
+export type PipelineStage = 'research' | 'editor_brief' | 'write' | 'independence' | 'qc' | 'voice_rewrite' | 'publish';
 
-export const PIPELINE_STAGES: Record<PipelineStage, PipelineStatus[]> = {
-  research: ['started', 'searching', 'research_done'],
-  editor_brief: ['editor_reviewing', 'editor_approved'],
-  write: ['writing', 'written'],
-  publish: ['editor_qc', 'publishing', 'published'],
-} as const;
+export const PIPELINE_STAGES: Record<PipelineStage, string[]> = {
+  research:       ['started', 'searching', 'research_done'],
+  editor_brief:   ['editor_reviewing', 'editor_approved'],
+  write:          ['writing', 'written'],
+  independence:   ['independence_review', 'independence_done'],
+  qc:             ['editor_qc', 'qc_approved'],
+  voice_rewrite:  ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'],
+  publish:        ['publishing', 'published'],
+};
+
+/** Pipeline stage configuration for the dashboard UI.
+ *  Model labels here must match the backend MODELS config in constants.ts.
+ *  NEVER update model labels based on AI training data — web search first. */
+export interface StageConfig {
+  key: PipelineStage;
+  icon: string;
+  label: string;
+  model: string;
+  modelColor: string;
+  statuses: string[];
+}
+
+export const PIPELINE_STAGE_CONFIG: StageConfig[] = [
+  { key: 'research',      icon: '🔍', label: 'Research',     model: 'Gemini 2.5 Pro + Search',    modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
+  { key: 'editor_brief',  icon: '📋', label: 'Editor',       model: 'Sonnet → Gemini 3.1 Pro',    modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
+  { key: 'write',         icon: '✍️', label: 'Write',        model: 'Human (Opus)',                modelColor: '#a78bfa', statuses: ['writing', 'written'] },
+  { key: 'independence',  icon: '⚖️', label: 'Independence', model: 'Grok 4',                     modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
+  { key: 'qc',            icon: '✅', label: 'QC',           model: 'Flash → Sonnet',              modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
+  { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Sonnet → Gemini → GPT-5.4',  modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
+  { key: 'publish',       icon: '📡', label: 'Publish',      model: 'GitHub + GPT Image',          modelColor: '#10b981', statuses: ['publishing', 'published'] },
+];
 
 /** Terminal statuses that indicate the pipeline run is complete. */
-const TERMINAL_STATUSES = new Set<PipelineStatus>([
-  'published',
-  'failed',
-]);
+const TERMINAL_STATUSES = new Set(['published', 'failed']);
 
 /** Active (in-flight) statuses where a stage is currently processing. */
-const ACTIVE_PROCESSING_STATUSES = new Set<PipelineStatus>([
-  'started',
-  'searching',
-  'editor_reviewing',
-  'writing',
-  'editor_qc',
-  'publishing',
+const ACTIVE_PROCESSING_STATUSES = new Set([
+  'started', 'searching', 'editor_reviewing', 'writing',
+  'independence_review', 'editor_qc', 'rewriting_voice', 'publishing',
 ]);
 
-// ─── EditorBrief ───────────────────────────────────────────────────────────
-// The Senior Editor's creative brief, returned by stage 2 (editor_brief).
-// Stored in research_data._editorBrief.
+/** Statuses considered "in-flight" by the pipeline monitor. */
+export const ACTIVE_STATUSES = new Set([
+  'started', 'searching', 'research_done', 'editor_reviewing', 'editor_approved',
+  'writing', 'written', 'independence_review', 'independence_done',
+  'editor_qc', 'qc_approved', 'voice_rewrite_pending', 'rewriting_voice',
+  'voice_rewrite_done', 'publishing',
+]);
+
+// ─── EditorBrief ─────────────────────────────────────────────────────────────
 
 export interface EditorBriefDirections {
   tone: string;
+  tonePreset?: string;
+  density?: string;
+  pacing?: string;
   openWith: string;
   emphasize: string[];
   avoid: string[];
+  dogmaWarnings?: string[];
   closingDirection: string;
+  structuralNotes?: string;
 }
 
 export interface EditorBrief {
   decision: 'approve' | 'kill';
+  candidateScores?: Array<{ rank: number; topic: string; score: string; note: string; overlapsExisting: string | null }>;
+  chosenCandidate?: number;
   topicScore: number;
   headline: string;
   slug: string;
   description: string;
   angle: string;
+  archetype?: string;
   brief: EditorBriefDirections;
   categoryOverride: string | null;
   killReason: string | null;
+  replacesSlug?: string | null;
+  seriesCandidate?: boolean;
+  seriesNotes?: string | null;
 }
 
-// ─── QCResult ──────────────────────────────────────────────────────────────
-// The Senior Editor's quality-control result, returned by stage 4 (editor_qc).
+// ─── QCResult ────────────────────────────────────────────────────────────────
 
 export interface QCEdits {
   headlineChanged: boolean;
@@ -175,140 +324,111 @@ export interface QCEdits {
 }
 
 export interface QCResult {
-  decision: 'publish' | 'revise' | 'kill';
+  decision: 'publish' | 'rewrite_voice' | 'revise' | 'kill';
   qualityScore: number;
   headline: string;
   description: string;
+  voiceCheck?: {
+    billMaherTest: boolean;
+    followsTheMoney: boolean;
+    hasEditorialOpinion: boolean;
+    pullQuotesStrong: boolean;
+    overallVoicePass: boolean;
+  };
   edits: QCEdits;
   killReason: string | null;
   reviseInstructions: string | null;
 }
 
-// ─── Helper Functions ──────────────────────────────────────────────────────
+// ─── Helper Functions ────────────────────────────────────────────────────────
 
-/**
- * Extract the admin_token value from document cookies.
- * Returns an empty string if the cookie is not set.
- */
 export function getAdminToken(): string {
   if (typeof document === 'undefined') return '';
   const match = document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : '';
 }
 
-/**
- * Return the Supabase Edge Function base URL (e.g. `https://<ref>.supabase.co/functions/v1`).
- * Works in both Astro server context (`import.meta.env`) and client-side builds.
- */
 export function getApiBase(): string {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const meta = import.meta as any;
-  const url = (
-    typeof process !== 'undefined' && process.env?.PUBLIC_SUPABASE_URL
-      ? process.env.PUBLIC_SUPABASE_URL
-      : meta.env?.PUBLIC_SUPABASE_URL ?? ''
-  ).trim();
+  const meta = import.meta as Record<string, Record<string, string>>;
+  const url = (meta.env?.PUBLIC_SUPABASE_URL ?? '').trim();
   return url ? `${url}/functions/v1` : '';
 }
 
-/**
- * Map any pipeline status string to its high-level stage.
- * Returns `null` for terminal/unknown statuses like `"failed"`.
- */
 export function getStageForStatus(status: string): PipelineStage | null {
   for (const [stage, statuses] of Object.entries(PIPELINE_STAGES)) {
-    if ((statuses as string[]).includes(status)) {
-      return stage as PipelineStage;
-    }
+    if (statuses.includes(status)) return stage as PipelineStage;
   }
   return null;
 }
 
-/** Human-readable labels for each pipeline stage. */
-const STAGE_LABELS: Record<PipelineStage | 'failed', string> = {
+const STAGE_LABELS: Record<string, string> = {
   research: 'Research',
   editor_brief: 'Editor Review',
   write: 'Writing',
-  publish: 'QC & Publish',
+  independence: 'Independence Review',
+  qc: 'QC & Publish',
+  voice_rewrite: 'Voice Polish',
+  publish: 'Publishing',
   failed: 'Failed',
 };
 
-/**
- * Get a human-readable label for a pipeline stage.
- * Falls back to title-casing the input if the stage is unrecognized.
- */
 export function getStageLabel(stage: string): string {
-  return (
-    STAGE_LABELS[stage as keyof typeof STAGE_LABELS] ??
-    stage.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-  );
+  return STAGE_LABELS[stage] ?? stage.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-/**
- * Format a timestamp string as a relative time display.
- * Examples: "just now", "2m ago", "3h ago", "5d ago"
- */
 export function timeAgo(date: string): string {
   if (!date) return '';
   const ms = Date.now() - new Date(date).getTime();
   if (ms < 0) return 'just now';
-
   const seconds = Math.floor(ms / 1000);
   if (seconds < 60) return 'just now';
-
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
-
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
-
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
-
   const months = Math.floor(days / 30);
   if (months < 12) return `${months}mo ago`;
-
-  const years = Math.floor(months / 12);
-  return `${years}y ago`;
+  return `${Math.floor(months / 12)}y ago`;
 }
 
-/**
- * Whether a status represents an active (non-terminal) pipeline stage.
- * Returns `true` for any status that is still in progress or waiting to advance.
- * Returns `false` for `"published"` and `"failed"`.
- */
 export function isActiveStatus(status: string): boolean {
-  return !TERMINAL_STATUSES.has(status as PipelineStatus);
+  return !TERMINAL_STATUSES.has(status);
 }
 
-/**
- * Whether a status represents a stage that is currently processing
- * (as opposed to waiting at a checkpoint like `research_done` or `written`).
- */
 export function isProcessingStatus(status: string): boolean {
-  return ACTIVE_PROCESSING_STATUSES.has(status as PipelineStatus);
+  return ACTIVE_PROCESSING_STATUSES.has(status);
 }
 
-// ─── Valid Categories ────────────────────────────────────────────────────────
-// Whitelist of allowed article categories matching the database constraint.
+/** Human-readable status description for the pipeline monitor. */
+export function getStatusText(status: string, modelName?: string): string {
+  const map: Record<string, string> = {
+    started: 'Initializing...',
+    searching: 'Research agent searching with Google grounding...',
+    research_done: 'Research complete — awaiting editor',
+    editor_reviewing: 'Senior Editor reviewing...',
+    editor_approved: 'Editor approved — awaiting writer',
+    writing: `${modelName || 'Writer'} generating article...`,
+    written: 'Written — awaiting independence review',
+    independence_review: 'Grok adversarial review + PubMed check...',
+    independence_done: 'Independence review complete',
+    editor_qc: 'Senior Editor QC review...',
+    qc_approved: 'QC approved — publishing...',
+    voice_rewrite_pending: 'Voice rewrite queued',
+    rewriting_voice: 'Voice polish in progress...',
+    voice_rewrite_done: 'Voice polish complete',
+    publishing: 'Publishing to GitHub...',
+    published: 'Published',
+    failed: 'Failed',
+  };
+  return map[status] ?? status.replace(/_/g, ' ');
+}
 
-export const VALID_CATEGORIES = [
-  'Neuroscience', 'Mental Health', 'Longevity', 'Clinical Evidence',
-  'Environmental Health', 'Nutrition', 'Fitness', 'Sleep Science', 'Pharmacology',
-] as const;
-
-// ─── Model Pen Names ─────────────────────────────────────────────────────────
-// Human bylines for each AI model, used in article attribution and admin UI.
-
-export const MODEL_PEN_NAMES: Record<string, { name: string; role: string }> = {
-  "claude-sonnet-4-6":        { name: "Max Quilici",      role: "Senior Health Correspondent" },
-  "claude-sonnet-4-20250514": { name: "Max Quilici",      role: "Senior Health Correspondent" },
-  "claude-opus-4-20250514":   { name: "Carl Lundin",      role: "Editor-at-Large" },
-  "grok-3":                   { name: "Linda Carnes",     role: "Investigative Health Reporter" },
-  "gemini-2.5-flash":         { name: "Christine Wright",  role: "Science & Evidence Desk" },
-};
-
-export function getPenName(model: string | null | undefined): string {
-  if (!model) return "alumi Editorial";
-  return MODEL_PEN_NAMES[model]?.name || "alumi Editorial";
+/** Score color helper — green for 7+, yellow for 5-6, red for <5. */
+export function getScoreColor(score: number | null | undefined): string {
+  if (score == null) return '#7d7871';
+  if (score >= 7) return '#4ade80';
+  if (score >= 5) return '#fbbf24';
+  return '#f87171';
 }
