@@ -235,8 +235,8 @@ export type PipelineStage = 'research' | 'editor_brief' | 'write' | 'independenc
 
 export const PIPELINE_STAGES: Record<PipelineStage, string[]> = {
   research:       ['started', 'searching', 'research_done'],
-  editor_brief:   ['editor_reviewing', 'editor_approved'],
-  write:          ['writing', 'written'],
+  editor_brief:   ['editor_reviewing'],
+  write:          ['editor_approved', 'writing', 'written'],
   independence:   ['independence_review', 'independence_done'],
   qc:             ['editor_qc', 'qc_approved'],
   voice_rewrite:  ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'],
@@ -257,8 +257,8 @@ export interface StageConfig {
 
 export const PIPELINE_STAGE_CONFIG: StageConfig[] = [
   { key: 'research',      icon: '🔍', label: 'Research',     model: 'Gemini 2.5 Pro + Search',    modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
-  { key: 'editor_brief',  icon: '📋', label: 'Editor',       model: 'Sonnet → Gemini 3.1 Pro',    modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
-  { key: 'write',         icon: '✍️', label: 'Write',        model: 'Human (Opus)',                modelColor: '#a78bfa', statuses: ['writing', 'written'] },
+  { key: 'editor_brief',  icon: '📋', label: 'Editor',       model: 'Sonnet → Gemini 3.1 Pro',    modelColor: '#f97316', statuses: ['editor_reviewing'] },
+  { key: 'write',         icon: '✍️', label: 'Write',        model: 'Human (Opus)',                modelColor: '#a78bfa', statuses: ['editor_approved', 'writing', 'written'] },
   { key: 'independence',  icon: '⚖️', label: 'Independence', model: 'Grok 4',                     modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
   { key: 'qc',            icon: '✅', label: 'QC',           model: 'Flash → Sonnet',              modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
   { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Sonnet → Gemini → GPT-5.4',  modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
