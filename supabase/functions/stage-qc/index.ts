@@ -253,6 +253,12 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
     }
 
     // If voice needs rewriting, send to voice rewrite stage (max 1 voice rewrite)
+    // EXCEPTION: human-written articles (Opus via Max) skip voice rewrite — never degrade Opus prose with a lesser model
+    const isHumanWritten = researchData._writtenBy === "human-opus";
+    if (qcResult.decision === "rewrite_voice" && isHumanWritten) {
+      console.log(`[QC] Voice rewrite requested but article was human-written with Opus — skipping, publishing directly`);
+      qcResult.decision = "publish";
+    }
     if (qcResult.decision === "rewrite_voice") {
       const currentLog = (await db.from("daily_article_log").select("research_data, revision_count").eq("id", logId).single()).data as { research_data: Record<string, unknown>; revision_count: number | null } | null;
       const currentData = (currentLog?.research_data as Record<string, unknown>) || {};
