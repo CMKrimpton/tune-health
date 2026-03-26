@@ -715,7 +715,11 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         {item.expedite && <span style={{ color: '#ef4444', fontWeight: 600 }}>EXPEDITE</span>}
                         {isActive && <span style={{ color: '#22c55e', fontWeight: 600 }}>{item.status.toUpperCase()}</span>}
                         <span style={{ color: '#5c5752' }}>P{item.priority}</span>
-                        <span style={{ color: '#5c5752' }}>{item.source}</span>
+                        {item.source === 'breaking' ? (
+                          <span style={{ color: '#ef4444', fontWeight: 700, fontSize: '0.625rem', padding: '0.0625rem 0.375rem', background: 'rgba(239,68,68,0.15)', borderRadius: '4px', border: '1px solid rgba(239,68,68,0.3)' }}>BREAKING</span>
+                        ) : (
+                          <span style={{ color: '#5c5752' }}>{item.source}</span>
+                        )}
                       </div>
                     </div>
                     {/* ── Queue Item Controls ── */}

@@ -3,6 +3,7 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, getExistingArticles } from "../_shared/db.ts";
 import { VALID_CATEGORIES, classifyCategory } from "../_shared/constants.ts";
 import { gemini, grok } from "../_shared/api-clients.ts";
+import { extractFingerprint, isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
 Deno.serve(async (req: Request) => {
@@ -23,40 +24,8 @@ Deno.serve(async (req: Request) => {
     const scoutModel = (body.scoutModel as string) || "gemini";
     const { titles, categoryCounts } = await getExistingArticles(db);
 
-    // Get existing queue + articles for dedup
-    const { data: existingArticles } = await db.from("articles").select("title, slug, keywords, tags, description, category").eq("status", "published");
-    const { data: queuedItems } = await db.from("topic_queue").select("topic").in("status", ["queued", "assigned", "in_progress"]);
-
-    // Build dedup fingerprints (same logic as editor stage)
-    const STOP_WORDS_SCOUT = new Set([
-      "that", "this", "with", "from", "have", "been", "your", "what", "when", "just",
-      "more", "most", "than", "also", "about", "into", "does", "will", "could", "would",
-      "should", "every", "their", "these", "those", "some", "other", "only", "first",
-      "health", "study", "research", "evidence", "science", "brain", "body", "human",
-      "people", "patients", "treatment", "medical", "clinical", "risk", "effect",
-      "effects", "years", "shows", "found", "actually", "problem", "really", "new",
-    ]);
-    function scoutExtract(text: string): Set<string> {
-      return new Set(text.toLowerCase().split(/[\s\-:,\u2014\u2013.'"?!()]+/).filter(w => w.length > 3 && !STOP_WORDS_SCOUT.has(w)));
-    }
-    const fingerprints: Set<string>[] = [];
-    for (const a of (existingArticles || []) as Array<{ title: string; slug: string; keywords: string[] | null; tags: string[] | null; description: string | null }>) {
-      fingerprints.push(scoutExtract([a.title, (a.slug || "").replace(/-/g, " "), ...(a.keywords || []), ...(a.tags || []), a.description || ""].join(" ")));
-    }
-    for (const q of (queuedItems || []) as Array<{ topic: string }>) {
-      fingerprints.push(scoutExtract(q.topic));
-    }
-    function isScoutDupe(topic: string): boolean {
-      const words = scoutExtract(topic);
-      if (words.size === 0) return false;
-      for (const fp of fingerprints) {
-        if (fp.size === 0) continue;
-        const overlap = [...words].filter(w => fp.has(w)).length;
-        const reverse = [...fp].filter(w => words.has(w)).length;
-        if (Math.max(overlap / words.size, reverse / fp.size) >= 0.30 && overlap >= 2) return true;
-      }
-      return false;
-    }
+    // Build dedup fingerprints from existing articles + queue
+    const fingerprints = await buildFingerprints(db);
 
     const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / (titles.length || 1) < 0.10).map(([cat]) => cat);
     const missing = VALID_CATEGORIES.filter(c => !categoryCounts[c]);
@@ -149,7 +118,7 @@ Number them 1-20. Plain text, no JSON.`;
     let added = 0;
     let dupes = 0;
     for (const t of topics) {
-      if (isScoutDupe(t.topic)) { dupes++; continue; }
+      if (isDuplicate(t.topic, fingerprints)) { dupes++; continue; }
       // Classify category: explicit label → keyword classifier → null
       const cat = t.category
         || classifyCategory(t.topic + " " + (t.why || ""))
@@ -166,7 +135,7 @@ Number them 1-20. Plain text, no JSON.`;
         research_summary: t.whyNow || t.why || null,
       });
       // Add to fingerprints so subsequent topics in same batch don't dupe each other
-      fingerprints.push(scoutExtract(t.topic));
+      fingerprints.push(extractFingerprint(t.topic));
       added++;
     }
 
