@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.4.0] - 2026-03-26
+
+### Fixed — Research Crash (Critical)
+- **`stage-research` crashed with "Cannot read properties of undefined (reading 'topic')"** on every queued article. `chain_dispatch()` only sends `{logId}` but the function expected `topic` in the request body. Now reads topic from `daily_article_log` table when not in the request
+- **Queue items stuck at "producing" after pipeline failure.** `produce-topic` sets queue to `in_progress` but nothing reset it on failure. Added reset in `stage-research` (on failure) and defensive cleanup in `status` action housekeeping
+
+### Fixed — Pinger Zero Signals
+- **pg_net 5-second default timeout** killed every Gemini Search tick before it could complete. Updated pinger cron to `timeout_milliseconds := 90000`
+- **Breaking news bar was unreachably high**: "last 2 hours" → "last 24 hours", "thousands of posts" → "hundreds+", 5 journals → 10 (added JAMA Network Open, Cell, Science, Nature, PNAS). Gemini prompt now includes TikTok trends, influencer claims, mainstream media coverage. Grok prompt includes influencer controversies
+
+### Fixed — Featured Rotation Not Updating Site
+- **`rotateFeatured()` only updated the database** — the Astro homepage reads from GitHub JSON files, so rotation had zero effect on what users see. Now updates GitHub JSON files and triggers Vercel rebuild
+- **15 stale `featured: true` JSON files** accumulated over time. Cleaned up — only the DB-chosen winner gets `featured: true`
+- **12-hour freshness guard** was longer than the 6-hour cron interval, blocking most rotations. Reduced to 5 hours
+- Added detailed logging at every rotation decision point
+
 ## [12.3.1] - 2026-03-26
 
 ### Changed — VS Code & Dev Tooling Optimization

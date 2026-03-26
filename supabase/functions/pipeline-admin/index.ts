@@ -54,6 +54,23 @@ Deno.serve(async (req: Request) => {
         }
       }
 
+      // Housekeeping: reset queue items stuck at in_progress whose pipeline entries failed
+      const { data: stuckQueue } = await db.from("topic_queue").select("id, topic").eq("status", "in_progress");
+      if (stuckQueue) {
+        for (const sq of stuckQueue as Array<{ id: string; topic: string }>) {
+          const { data: matchingLog } = await db
+            .from("daily_article_log")
+            .select("status")
+            .ilike("topic", `%${sq.topic.slice(0, 40)}%`)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (matchingLog?.status === "failed") {
+            await db.from("topic_queue").update({ status: "queued" }).eq("id", sq.id);
+          }
+        }
+      }
+
       // Fetch recent activity (all statuses) + ensure published articles aren't lost
       const { data: recentLogs } = await db
         .from("daily_article_log")

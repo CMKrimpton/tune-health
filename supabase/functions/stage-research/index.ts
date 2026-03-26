@@ -104,10 +104,30 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { logId, topic, source, queueId } = await req.json();
+    const body = await req.json();
+    const logId = body.logId as string;
     if (!logId) return json({ error: "logId is required" }, 400);
 
     const db = supabase();
+
+    // chain_dispatch() only sends {logId} — read topic/source/queueId from the log entry
+    // when not provided in the request body (produce-topic saves these to the DB before dispatching)
+    let topic = body.topic as string | undefined;
+    let source = body.source as string | undefined;
+    let queueId = body.queueId as string | undefined;
+
+    if (!topic) {
+      const { data: logMeta } = await db
+        .from("daily_article_log")
+        .select("topic, source")
+        .eq("id", logId)
+        .maybeSingle();
+      if (logMeta?.topic) {
+        topic = logMeta.topic;
+        source = source || logMeta.source || undefined;
+        console.log(`[Research] Read topic from DB: "${topic}" (source: ${source})`);
+      }
+    }
 
     // Atomic CAS: claim this article. Only ONE instance can transition started → searching.
     const { data: claimed } = await db
@@ -229,6 +249,14 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
     });
 
     if (!stageResult.ok) {
+      // Reset queue item back to 'queued' so it can be retried
+      if (topic) {
+        await db.from("topic_queue")
+          .update({ status: "queued" })
+          .eq("status", "in_progress")
+          .ilike("topic", `%${topic.slice(0, 40)}%`);
+        console.log(`[Research] Failed — reset queue item for "${topic}" back to queued`);
+      }
       return json({ error: stageResult.error, logId }, 500);
     }
 

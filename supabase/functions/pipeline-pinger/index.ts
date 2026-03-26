@@ -31,20 +31,23 @@ async function hashSignal(text: string): Promise<string> {
 // ---------------------------------------------------------------------------
 async function checkGeminiSearch(): Promise<Signal[]> {
   const { text } = await gemini({
-    system: `Health news spike detector. ONLY report genuinely BREAKING health news from the last 2 hours. Not evergreen topics.`,
-    user: `Is there any BREAKING health news right now? Only report if:
-1. Major study published TODAY in a top journal (NEJM, Lancet, JAMA, Nature Medicine, BMJ)
-2. FDA/EMA drug approval, warning, or recall in the last 24h
-3. Health crisis, outbreak, or policy change in the last 4h
-4. A health study going VIRAL on social media right now
+    system: `Health news detector for a 20-35 reader health magazine. Find health stories that are trending or newsworthy in the last 24 hours. Not evergreen topics — something must have HAPPENED.`,
+    user: `Search for noteworthy health news from the last 24 hours. Report if ANY of these apply:
+1. Study published in a major journal (NEJM, Lancet, JAMA, Nature Medicine, BMJ, Cell, Science, PNAS, Nature) in the last 48h
+2. FDA/EMA drug approval, warning, or recall
+3. Health crisis, outbreak, or policy change
+4. Health study getting mainstream media coverage or going viral
+5. Supplement, diet, or wellness claim debunked or validated by new evidence
+6. Health controversy trending on social media (TikTok health trends, influencer claims challenged)
 
-If NOTHING is genuinely breaking: {"breaking": false}
-If something IS breaking: {"breaking": true, "signals": [{"topic": "specific angle for our readers", "why_breaking": "what happened", "urgency": "high or medium"}]}
-Max 3 signals. Extremely selective.`,
+If NOTHING qualifies: {"breaking": false}
+If something does: {"breaking": true, "signals": [{"topic": "specific angle for 25-year-old readers", "why_breaking": "what happened and why it matters", "urgency": "high or medium"}]}
+Max 3 signals. Focus on stories a 25-year-old would text to a friend.`,
     model: "gemini-2.5-flash",
     maxTokens: 500,
     temperature: 0.3,
     webSearch: true,
+    timeout: 60000,
   }, "pinger-gemini");
 
   try {
@@ -66,16 +69,16 @@ Max 3 signals. Extremely selective.`,
 // ---------------------------------------------------------------------------
 async function checkGrokSocial(): Promise<Signal[]> {
   const { text } = await grok({
-    system: `Health news spike detector with X/Twitter access. ONLY report if a health topic has significant trending volume RIGHT NOW.`,
-    user: `Is any health/medical topic trending on X/Twitter right now? Only report if:
-1. Significant volume (thousands of posts, not dozens)
-2. About health, medicine, drugs, disease, or public health policy
-3. Not a recurring daily topic
-4. Not celebrity gossip (unless a real medical condition went viral)
+    system: `Health news detector with X/Twitter access. Report health topics getting notable social media attention.`,
+    user: `What health or medical topics are getting attention on X/Twitter right now? Report if:
+1. Notable discussion volume (hundreds+ posts, not single tweets)
+2. About health, medicine, drugs, supplements, diet trends, fitness claims, disease, or public health
+3. Not a recurring daily topic (e.g. "drink water" doesn't count)
+4. Includes: health influencer claims being challenged, viral health misinformation, supplement/diet debates, new study reactions, pharma controversies
 
-If nothing trending: {"breaking": false}
-If something is: {"breaking": true, "signals": [{"topic": "specific angle", "why_trending": "what's driving the conversation", "urgency": "high or medium"}]}
-Max 2 signals. Extremely selective.`,
+If nothing notable: {"breaking": false}
+If something is: {"breaking": true, "signals": [{"topic": "specific angle for 25-year-old readers", "why_trending": "what's driving the conversation", "urgency": "high or medium"}]}
+Max 3 signals.`,
     maxTokens: 500,
     temperature: 0.3,
   }, "pinger-grok");
@@ -104,6 +107,11 @@ async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<Signal[]
     '"JAMA"[Journal]',
     '"Nat Med"[Journal]',
     '"BMJ"[Journal]',
+    '"JAMA Netw Open"[Journal]',
+    '"Cell"[Journal]',
+    '"Science"[Journal]',
+    '"Nature"[Journal]',
+    '"PNAS"[Journal]',
   ];
   const query = `(${journals.join(" OR ")}) AND "last 1 days"[PDAT]`;
 

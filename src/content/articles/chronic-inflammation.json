@@ -8,7 +8,7 @@
     "role": "Medical Review Board"
   },
   "readTime": 10,
-  "featured": true,
+  "featured": false,
   "draft": false,
   "tags": [
     "Inflammation",
