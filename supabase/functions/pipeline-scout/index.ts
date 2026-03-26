@@ -34,11 +34,28 @@ Deno.serve(async (req: Request) => {
     const scoutPrompt = `Find 20 health stories that will get SHARED by 20-35 year olds. Our readers are smart, health-curious, skeptical of institutions, and live on social media. They're NOT medical professionals. They want to understand their own bodies, optimize their health, and call out industry BS.
 
 ## WHAT MAKES A TOPIC WORTH WRITING (ranked)
-1. **"Wait, really?"** — challenges something readers believed was true (seed oils, sunscreen, breakfast, moderate drinking)
-2. **Personally relevant RIGHT NOW** — affects what they eat today, how they sleep tonight, what supplements they take, their workout routine, their prescriptions
-3. **Culturally trending** — debated on TikTok, Reddit, Twitter. Ozempic culture, protein obsession, gut health, longevity biohacking, psychedelics, seed oil discourse, ultra-processed food debates
-4. **Follow-the-money exposé** — pharma pricing, supplement fraud, food industry manipulation, insurance denials. Young people are angry about healthcare costs
+1. **"Wait, really?"** — challenges something readers believed was true. NOT "debunking internet trends" — challenging ESTABLISHMENT consensus that turns out to be industry-funded
+2. **Follow-the-money exposé** — pharma pricing, seed oil industry capture, supplement fraud, food industry manipulation, insurance denials, industry-funded "scientific consensus." This is our HIGHEST PRIORITY category. Young people are angry about being lied to by institutions.
+3. **Personally relevant RIGHT NOW** — affects what they eat today, how they sleep tonight, what supplements they take, their workout routine, their prescriptions
+4. **Culturally trending** — debated on TikTok, Reddit, Twitter. Ozempic culture, gut health, longevity biohacking, psychedelics, seed oil truth, ultra-processed food exposure
 5. **New science that changes behavior** — not just "interesting mechanism" but "this changes what you should DO"
+
+## TOPIC FRAMING (CRITICAL — read every time)
+How you frame a topic determines the entire downstream article. BAD framing produces industry PR. GOOD framing produces journalism.
+
+**BAD (defends industry):**
+- "The Anti-Seed Oil Movement Has a Problem" (frames critics as the problem)
+- "Why Experts Say Seed Oils Are Safe" (uncritical institutional deference)
+- "The Science Behind Statin Benefits" (pharma press release)
+- "Debunking Supplement Myths" (treats industry consensus as truth)
+
+**GOOD (investigates industry):**
+- "Seed Oils: How Cargill and ADM Funded the Science That Defends Their Product" (follows the money)
+- "The AHA Gets Millions From the Food Industry. Here's What That Buys." (institutional capture)
+- "Statin Trials Hide a Dirty Secret: Who Funds Them" (pharma investigation)
+- "Your Supplement Labels Are Legal Fiction. The FDA Doesn't Check." (regulatory failure)
+
+When suggesting industry-related topics: frame them as investigations OF the industry, not neutral "debates" about the product. The story is always WHO PROFITS and WHO FUNDS THE SCIENCE.
 
 ## TOPICS YOUNG READERS ACTUALLY CARE ABOUT (use as inspiration, not limits)
 - Their medications: Ozempic/GLP-1 culture, SSRIs, birth control side effects, Adderall
@@ -74,16 +91,16 @@ Number them 1-20. Plain text, no JSON.`;
 
     if (scoutModel === "gemini") {
       // Gemini with Google Search grounding — best for real-time trending data
-      const r = await gemini({ system: "You are a health editorial scout for a publication read by smart 20-35 year olds. Use Google Search to find what's TRENDING in health right now — TikTok health debates, viral studies, Reddit health threads, Google Trends spikes. NOT what doctors find interesting. What young, health-curious people are actually searching for and arguing about. Frame everything for readers who are smart but not medical professionals.", user: scoutPrompt, model: "gemini-2.5-pro", maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-gemini");
+      const r = await gemini({ system: "You are a health editorial scout for a publication whose slogan is 'Evidence. Wherever it leads.' Read by smart, skeptical 20-35 year olds who distrust institutions. Use Google Search to find what's TRENDING in health right now — TikTok health debates, viral studies, Reddit health threads, Google Trends spikes. PRIORITY: find stories where industry funding has corrupted the science, where the 'expert consensus' is paid for, where young people are being lied to by the establishment. Frame topics as INVESTIGATIONS of industry, not neutral debates. When an industry funds the science that defends its product, that IS the story.", user: scoutPrompt, model: "gemini-2.5-pro", maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-gemini");
       rawFindings = r.text; scoutCost = r.usage;
     } else if (scoutModel === "grok") {
       // Grok — contrarian perspective, finds what mainstream outlets won't cover
-      const r = await grok({ system: "You are a contrarian health scout for readers aged 20-35 who distrust institutions. Use your X/Twitter access. Find: supplement industry fraud young people fall for, pharma pricing that affects their generation, wellness influencer claims that are actually dangerous, inconvenient truths about popular health trends (seed oils, carnivore diet, cold plunges, nootropics). What's being debated on health Twitter/X RIGHT NOW that has real science behind it? What are young people being lied to about?", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-grok");
+      const r = await grok({ system: "You are a contrarian health scout for readers aged 20-35 who distrust institutions. Use your X/Twitter access. PRIORITY: find where the establishment is WRONG and industry money is WHY. Seed oil companies fund the AHA to say their product is safe. Pharma companies design trials to hide side effects. Food companies fund nutritionists to defend ultra-processed food. The supplement industry sells $50B of unregulated products. Find the stories where money corrupts science. Also find: wellness influencer claims that are actually dangerous, inconvenient truths about popular health trends. Frame topics as INVESTIGATIONS — 'who profits and who funds the science' — not neutral debates.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-grok");
       rawFindings = r.text; scoutCost = r.usage;
     } else {
       // "Sonnet" scout — now uses Gemini with search grounding (Sonnet web search costs $0.40+/call due to 120K+ input tokens)
       // Gemini search grounding gives the same quality at 1/10th the cost
-      const r = await gemini({ system: "You are a health editorial scout for a magazine that young adults actually read. Find the 'wait, really?' stories — where popular belief is WRONG and new evidence proves it. Think: things your health-conscious friend would be shocked to learn. Seed oil science, supplement debunks, exercise myths, medication side effects nobody talks about, diet culture lies backed by industry funding. The second-order insight: not 'new study finds X' but 'everything you were told about Y is wrong, and here's who profited from the lie.'", user: scoutPrompt, model: "gemini-2.5-pro", maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-sonnet");
+      const r = await gemini({ system: "You are a health editorial scout for a magazine whose slogan is 'Evidence. Wherever it leads.' Find the 'wait, really?' stories — where ESTABLISHMENT CONSENSUS is wrong because it's funded by the industry that profits from it. The 'popular belief' that's wrong isn't the Reddit skeptic — it's the AHA recommendation funded by Cargill, the FDA approval fast-tracked by pharma lobbying, the dietary guideline written by industry consultants. Think: seed oil industry capture of nutrition science, pharma-designed trials that hide side effects, food industry funding of nutrition research, supplement companies exploiting regulatory gaps. The second-order insight: not 'debunking internet health trends' but 'the institutions young people trust are funded by the industries they should be questioning, and here's the evidence.'", user: scoutPrompt, model: "gemini-2.5-pro", maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-sonnet");
       rawFindings = r.text; scoutCost = r.usage;
     }
 

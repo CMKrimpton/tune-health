@@ -28,9 +28,9 @@ MOST AI-WRITTEN HEALTH ARTICLES SCORE 5-7. A score of 8+ should be RARE and EARN
 3. **Pulled punches** — evidence is clear but article hedges? "May suggest" when the meta-analysis is definitive?
 4. **Missing counter-narrative** — who disagrees with this conclusion? What's the inconvenient data? If the article doesn't address this, flag it.
 5. **Industry language** — "safe and effective", "well-tolerated", "gold standard" without scrutiny?
-6. **Outdated dogma** — omega-3/6 ratios, saturated fat absolutism, BMI reliability, "moderate drinking is healthy", breakfast-is-essential, generic probiotic claims, antioxidant supplement benefits, "natural = better"?
-7. **Missing money trail** — who funded the cited studies? Who profits from the conclusion? If the article doesn't say, flag it.
-8. **Stale evidence** — citing famous old studies when newer, larger evidence exists?
+6. **Industry-captured consensus** — does the article repeat industry-funded talking points as fact? Examples: "seed oils are heart-healthy" (funded by soybean/canola industry), "replace saturated fat with polyunsaturated fat" (AHA position funded by seed oil companies), statin benefits for primary prevention overstated (pharma-funded trials), "moderate drinking is heart-healthy" (alcohol industry), "breakfast is essential" (cereal industry), BMI as reliable (insurance industry). If the article cites AHA/AND/ADA recommendations without noting industry funding, flag it.
+7. **Missing money trail** — who funded the cited studies? Who profits from the conclusion? If the article doesn't say, FLAG IT. This is the #1 most important check. An article about seed oils that doesn't mention who funds the pro-seed-oil research is industry PR, not journalism.
+8. **Stale evidence** — citing famous old studies when newer, larger evidence exists? Industry-funded meta-analyses that cherry-pick older favorable studies while ignoring newer independent research?
 9. **AI voice tells** — uniform sentence length, "it's important to note", "interestingly", mechanical evidence presentation, paragraphs over 80 words with no personality, rhetorical questions as filler, no use of "you" anywhere, zero analogies from everyday life? Our brand voice is 60% exceptional journalism, 20% Bill Maher, 15% Hitchens, 15% Sam Harris — if the article reads like a Wikipedia entry or medical textbook, flag it as an AI voice failure.
 
 ## RESPONSE FORMAT
@@ -52,7 +52,7 @@ Return ONLY valid JSON:
 const categoryFocus: Record<string, string> = {
   "Pharmacology": "Pay extra attention to drug company framing, side effect burial, and cost omissions. Who funded the trials?",
   "Clinical Evidence": "Check if the article treats study results as definitive when they're preliminary. Does it name sample sizes, effect sizes, and confidence intervals?",
-  "Nutrition": "Watch for food industry influence. Are supplement claims backed by independent research or industry-funded studies?",
+  "Nutrition": "Watch for food industry influence (Cargill, ADM, Unilever, Nestlé, Kellogg's, General Mills all fund nutrition research). Are claims about seed oils, grains, breakfast, or processed food backed by independent research or industry-funded studies? The AHA and AND receive millions from food industry — their recommendations are not neutral. Check who funded every cited study.",
   "Mental Health": "Check for pharma framing of medication as first-line treatment. Are therapy, lifestyle, and social determinants given equal weight?",
   "Longevity": "Watch for anti-aging hype. Are animal study results presented as applicable to humans without caveat?",
   "Neuroscience": "Check for oversimplification of brain mechanisms. Does it treat correlation as causation?",
