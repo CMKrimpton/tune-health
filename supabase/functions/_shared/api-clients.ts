@@ -188,7 +188,7 @@ export async function openai(opts: { system: string; user: string; model?: strin
 export async function grok(opts: { system: string; user: string; maxTokens?: number; temperature?: number; timeout?: number }, stage = "independence"): Promise<ApiResult> {
   const key = (Deno.env.get("XAI_API_KEY") || "").trim();
   if (!key) throw new Error("XAI_API_KEY not set");
-  const model = "grok-3";
+  const model = "grok-4";
   const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },

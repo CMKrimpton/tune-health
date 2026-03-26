@@ -369,11 +369,12 @@ If a candidate covers any of the above, give it a +2 score bonus in your assessm
 
 ${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
-      // Editor brief is a structured rubric-based decision — Flash handles this well at 25x cheaper
+      // Editor brief is the most important editorial decision — determines topic, angle, headline.
+      // Sonnet primary for editorial judgment. Gemini 3.1 Pro fallback (strong reasoning).
       const { text: editorRaw, usage: editorUsage } = await generateWithFallback({
         system: SENIOR_EDITOR_BRIEF_PROMPT,
         user: editorPrompt,
-        models: ["gemini-2.5-flash", "claude-sonnet-4-6"], // Flash primary ($0.003), Sonnet fallback ($0.08)
+        models: ["claude-sonnet-4-6", "gemini-3.1-pro-preview"], // Sonnet primary ($0.08), Gemini 3.1 Pro fallback ($0.04)
         maxTokens: 4000,
         temperature: 0.4,
         stage: "editor-brief",
