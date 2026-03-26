@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, addCostToLog } from "../_shared/db.ts";
+import { supabase, addCostToLog, parseScore } from "../_shared/db.ts";
 import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { auditVoiceQuality } from "../_shared/voice-audit.ts";
 
@@ -85,8 +85,10 @@ Return ONLY valid JSON:
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  let parsedLogId: string | null = null;
   try {
     const { logId } = await req.json();
+    parsedLogId = logId;
     if (!logId) return json({ error: "logId is required" }, 400);
 
     const db = supabase();
@@ -223,7 +225,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
         if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
         await db.from("daily_article_log").update({
           status: "qc_approved",
-          editor_score: parseInt(String(qcResult.qualityScore || ""), 10) || null,
+          editor_score: parseScore(qcResult.qualityScore),
           research_data: {
             ...currentData,
             _article: articleData,
@@ -264,7 +266,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
         if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
         await db.from("daily_article_log").update({
           status: "qc_approved",
-          editor_score: parseInt(String(qcResult.qualityScore || ""), 10) || null,
+          editor_score: parseScore(qcResult.qualityScore),
           research_data: {
             ...currentData,
             _article: articleData,
@@ -298,7 +300,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
 
     const { error: publishErr } = await db.from("daily_article_log").update({
       status: "qc_approved",
-      editor_score: parseInt(String(qcResult.qualityScore || ""), 10) || null,
+      editor_score: parseScore(qcResult.qualityScore),
       research_data: {
         ...researchData,
         _article: articleData,
@@ -312,16 +314,18 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
 
     return json({ success: true, logId, qcResult, decision: "publish" });
   } catch (err: unknown) {
-    // Reset status to independence_done so orchestrator can retry on next tick
+    // Mark as failed so stale detection doesn't loop on it
     try {
       const db = supabase();
       const msg = err instanceof Error ? err.message : "Unknown error";
       console.error(`[stage-qc] Error: ${msg}`);
-      await db.from("daily_article_log").update({
-        status: "failed",
-        error: `QC stage error: ${msg}`,
-        completed_at: new Date().toISOString(),
-      }).eq("id", (await req.clone().json().catch(() => ({}))).logId || "");
+      if (parsedLogId) {
+        await db.from("daily_article_log").update({
+          status: "failed",
+          error: `QC stage error: ${msg}`,
+          completed_at: new Date().toISOString(),
+        }).eq("id", parsedLogId);
+      }
     } catch { /* best effort */ }
     return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }

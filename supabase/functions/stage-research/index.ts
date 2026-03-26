@@ -147,7 +147,8 @@ Deno.serve(async (req: Request) => {
       let research: Record<string, unknown>;
 
       if (topic) {
-        // Directed research for a queued topic — try Claude (web search), fall back to Gemini (Google Search)
+        // Directed research — Gemini primary (Google Search grounding is 10x cheaper than Claude web search)
+        // Claude web search inflates input to ~120K tokens ($0.40/call). Gemini Search grounding: ~$0.03/call.
         const researchPrompt = `Today's date: ${today}
 
 ## ASSIGNED TOPIC
@@ -162,32 +163,31 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
         let researchUsage: ApiUsage;
 
         try {
+          const gemResult = await gemini({
+            system: DIRECTED_RESEARCH_PROMPT + `\n\nCRITICAL: You MUST return ONLY a valid JSON object. No markdown, no explanation, no preamble. Just the JSON object starting with { and ending with }.`,
+            user: researchPrompt + `\n\nReturn ONLY valid JSON with this structure: {"topic":"...","headline_draft":"...","why":"...","category":"...","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","expertQuotes":["..."],"statistics":["..."]}`,
+            model: "gemini-2.5-pro",
+            maxTokens: 4000,
+            temperature: 0.35,
+            webSearch: true,
+            timeout: RESEARCH_TIMEOUT,
+          }, "research-gemini");
+          researchRaw = gemResult.text;
+          researchUsage = gemResult.usage;
+        } catch (geminiErr: unknown) {
+          // Fallback to Claude web search if Gemini fails
+          console.log(`[Research fallback] Gemini failed (${geminiErr instanceof Error ? geminiErr.message.slice(0, 50) : "unknown"}), falling back to Claude...`);
           const result = await claude({
             system: DIRECTED_RESEARCH_PROMPT,
             user: researchPrompt,
             model: "claude-sonnet-4-6",
             maxTokens: 4000,
             webSearch: true,
-            maxSearches: 5,
+            maxSearches: 3,
             timeout: RESEARCH_TIMEOUT,
           });
           researchRaw = result.text;
           researchUsage = result.usage;
-        } catch (claudeErr: unknown) {
-          const errMsg = claudeErr instanceof Error ? claudeErr.message : "";
-          if (errMsg.includes("SPENDING_LIMIT") || errMsg.includes("usage limits") || errMsg.includes("rate_limit")) {
-            console.log("[Research fallback] Claude spending limit hit, falling back to Gemini...");
-            const gemResult = await gemini({
-              system: DIRECTED_RESEARCH_PROMPT + `\n\nCRITICAL: You MUST return ONLY a valid JSON object. No markdown, no explanation, no preamble. Just the JSON object starting with { and ending with }.`,
-              user: researchPrompt + `\n\nReturn ONLY valid JSON with this structure: {"topic":"...","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."]}`,
-              maxTokens: 4000,
-              temperature: 0.35,
-            }, "research-fallback-gemini");
-            researchRaw = gemResult.text;
-            researchUsage = gemResult.usage;
-          } else {
-            throw claudeErr;
-          }
         }
 
         // Parse research JSON — with fallback to plain text extraction if Gemini didn't return valid JSON
@@ -271,7 +271,7 @@ ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 7).m
         ? candidates.map((c, i) => `${i + 1}. ${c.topic}`).join(" | ")
         : (research.topic as string);
 
-      await db
+      const { error: updateErr } = await db
         .from("daily_article_log")
         .update({
           topic: topicSummary,
@@ -285,6 +285,7 @@ ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 7).m
           research_data: research,
         })
         .eq("id", logId);
+      if (updateErr) throw new Error(`DB update to research_done failed: ${updateErr.message}`);
     });
 
     if (!stageResult.ok) {

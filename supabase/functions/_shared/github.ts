@@ -1,5 +1,3 @@
-import { API_TIMEOUT } from "./constants.ts";
-
 export async function publishToGitHub(
   slug: string,
   astroContent: string,

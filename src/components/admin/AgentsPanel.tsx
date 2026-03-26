@@ -261,11 +261,11 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
 
 function CronSchedule() {
   const cronJobs = [
-    { name: 'Scout (Gemini)', schedule: 'Daily 6:00 AM UTC', model: 'gemini-2.5-flash', color: '#fbbf24' },
-    { name: 'Scout (Sonnet)', schedule: 'Daily 2:00 PM UTC', model: 'claude-sonnet-4-6', color: '#f97316' },
-    { name: 'Scout (Grok)', schedule: 'Daily 10:00 PM UTC', model: 'grok-3', color: '#3b82f6' },
-    { name: 'Article Produce', schedule: 'Every hour (0 * * * *)', model: 'Multi-model', color: '#16a34a' },
-    { name: 'Featured Rotation', schedule: 'Every 6 hours (0 */6 * * *)', model: 'DB-only', color: '#a78bfa' },
+    { name: 'Scout (Gemini)', schedule: 'Daily 6:00 AM UTC (0 6 * * *)', model: 'Gemini + Google Search', color: '#fbbf24' },
+    { name: 'Scout (Sonnet)', schedule: 'Daily 2:00 PM UTC (0 14 * * *)', model: 'Sonnet + web search', color: '#f97316' },
+    { name: 'Scout (Grok)', schedule: 'Daily 10:00 PM UTC (0 22 * * *)', model: 'Grok 3 (contrarian)', color: '#3b82f6' },
+    { name: 'Pipeline Dispatch', schedule: 'Every minute (* * * * *)', model: 'SQL → pg_net → stage functions', color: '#16a34a' },
+    { name: 'Featured Rotation', schedule: 'Every 6 hours (0 */6 * * *)', model: 'Score-weighted rotation', color: '#a78bfa' },
   ];
 
   return (

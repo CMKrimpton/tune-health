@@ -10,6 +10,15 @@ export function supabase() {
   );
 }
 
+/** Safely parse AI score output like "8/10", "8", 8, "7.5/10" → integer or null */
+export function parseScore(raw: unknown): number | null {
+  if (raw == null) return null;
+  if (typeof raw === "number") return Math.round(raw);
+  const str = String(raw).trim();
+  const n = parseInt(str, 10);
+  return isNaN(n) ? null : n;
+}
+
 export function calcCost(model: string, inputTokens: number, outputTokens: number): number {
   const p = PRICING[model] || PRICING["claude-sonnet-4-6"];
   return (inputTokens * p.input + outputTokens * p.output) / 1_000_000;

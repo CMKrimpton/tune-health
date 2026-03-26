@@ -268,7 +268,7 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
         ? { ...existingResearch._article as Record<string, unknown>, html: revisedHtml }
         : existingResearch._article;
 
-      await db
+      const { error: updateErr } = await db
         .from("daily_article_log")
         .update({
           status: "independence_done",
@@ -284,6 +284,7 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
           },
         })
         .eq("id", logId);
+      if (updateErr) throw new Error(`DB update to independence_done failed: ${updateErr.message}`);
     });
 
     if (!stageResult.ok) {

@@ -1,8 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, addCostToLog, getExistingArticles, safeStage } from "../_shared/db.ts";
-import { claude, parseClaudeJSON } from "../_shared/api-clients.ts";
-import { VALID_CATEGORIES } from "../_shared/constants.ts";
+import { supabase, addCostToLog, getExistingArticles, safeStage, parseScore } from "../_shared/db.ts";
+import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
+import { VALID_CATEGORIES, WRITER_FALLBACK_CHAIN } from "../_shared/constants.ts";
 
 // ---------------------------------------------------------------------------
 // Senior Editor — editorial oversight, creative briefs, quality control
@@ -162,7 +162,7 @@ Deno.serve(async (req: Request) => {
 
     // Atomic concurrency guard: claim this article by CAS (compare-and-swap).
     // Only ONE instance can transition research_done → editor_reviewing.
-    const { data: claimed, count } = await db
+    const { data: claimed } = await db
       .from("daily_article_log")
       .update({ status: "editor_reviewing", stage_started_at: new Date().toISOString() })
       .eq("id", logId)
@@ -369,14 +369,16 @@ If a candidate covers any of the above, give it a +2 score bonus in your assessm
 
 ${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
-      // Single model call — each stage gets its own 150s timeout, no fallback needed
-      const { text: editorRaw, usage: editorUsage } = await claude({
+      // Editor uses fallback chain — if Sonnet is spending-limited, falls back to Gemini/GPT
+      const { text: editorRaw, usage: editorUsage } = await generateWithFallback({
         system: SENIOR_EDITOR_BRIEF_PROMPT,
         user: editorPrompt,
-        model: "claude-sonnet-4-6",
+        models: WRITER_FALLBACK_CHAIN.slice(0, 2), // 2 models max — 3 × 75s > 150s timeout
         maxTokens: 4000,
         temperature: 0.4,
-      }, "editor-brief");
+        stage: "editor-brief",
+        webSearch: false,
+      });
       await addCostToLog(db, logId, editorUsage);
 
       const editorBrief = parseClaudeJSON(editorRaw) as Record<string, unknown>;
@@ -445,7 +447,7 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
               notes: `Auto-saved from research cycle. Editor scored: ${cs?.score || "?"}/10. ${cs?.verdict || ""}`,
               priority: 50,
               source: "trending",
-              editor_score: cs?.score || null,
+              editor_score: parseScore(cs?.score),
               research_summary: (c.why as string) || ((c.keyFindings as string[]) || []).slice(0, 2).join("; ") || null,
             };
           });
@@ -470,7 +472,7 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
           title: editorBrief.headline as string,
           slug: editorBrief.slug as string,
           status: "editor_approved",
-          editor_score: parseInt(String(editorBrief.topicScore || ""), 10) || null,
+          editor_score: parseScore(editorBrief.topicScore),
           source: researchData._queueId || researchData._fromQueue ? "queue" : "trending",
           research_data: {
             ...chosenResearch,

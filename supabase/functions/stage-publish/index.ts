@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase } from "../_shared/db.ts";
+import { supabase, parseScore } from "../_shared/db.ts";
 import { publishToGitHub } from "../_shared/github.ts";
 import { assembleAstroFile, todayISO } from "../_shared/astro.ts";
 import { getByline, API_TIMEOUT } from "../_shared/constants.ts";
@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
       .from("daily_article_log")
       .update({
         title: finalTitle,
-        editor_score: (qcResult.qualityScore as number) || logScores?.editor_score || null,
+        editor_score: parseScore(qcResult.qualityScore) ?? logScores?.editor_score ?? null,
       })
       .eq("id", logId);
 

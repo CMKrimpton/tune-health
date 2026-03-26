@@ -125,42 +125,40 @@ const ARTICLE_GOAL = 100;
 const POLL_INTERVAL = 15_000;
 
 const STAGES: StageConfig[] = [
-  { key: 'research', icon: '🔍', label: 'Research', model: 'Gemini + Sonnet', modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
-  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Gemini 3.1 Pro', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
-  { key: 'write', icon: '✍️', label: 'Write', model: 'Gemini 3.1 Pro', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
+  { key: 'research', icon: '🔍', label: 'Research', model: 'Gemini 2.5 Pro → Sonnet', modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
+  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Sonnet → Gemini', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
+  { key: 'write', icon: '✍️', label: 'Write', model: 'Sonnet → Gemini', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
   { key: 'independence', icon: '⚖️', label: 'Independence', model: 'Grok 3', modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
-  { key: 'qc', icon: '✅', label: 'QC', model: 'Gemini 2.5 Pro', modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
+  { key: 'qc', icon: '✅', label: 'QC', model: 'Gemini 2.5 Pro → Sonnet', modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
   { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Opus → Sonnet → GPT-5.4', modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
-  { key: 'publish', icon: '📡', label: 'Publish', model: 'GPT Image + GitHub', modelColor: '#10b981', statuses: ['publishing', 'published'] },
+  { key: 'publish', icon: '📡', label: 'Publish', model: 'GitHub + GPT Image', modelColor: '#10b981', statuses: ['publishing', 'published'] },
 ];
 
-// Current primary writer model (matches backend pickWriterModel)
+// Resolve actual writer model from log data (shows real model, not hardcoded guess)
 function getCurrentWriterModel(): { name: string; color: string } {
-  // Gemini 3.1 Pro primary while Sonnet spending-limited (until April 1, 2026)
-  return { name: 'Gemini 3.1 Pro', color: '#22c55e' };
+  return { name: 'Sonnet', color: '#f97316' };
 }
 
 function getStatusText(status: string, log?: PipelineLog): string {
-  const modelName = log?.model_used ? (PEN_NAMES[log.model_used] || log.model_used.split('-')[0]) : null;
-  const writerModel = getCurrentWriterModel();
+  const modelName = log?.model_used ? (PEN_NAMES[log.model_used] || log.model_used.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())) : null;
   const map: Record<string, string> = {
     started: 'Initializing...',
-    searching: 'Gemini searching + Sonnet structuring...',
+    searching: 'Gemini searching with Google grounding...',
     research_done: 'Research complete — awaiting editor',
-    editor_reviewing: 'Senior Editor scoring candidates...',
+    editor_reviewing: 'Editor scoring candidates...',
     editor_approved: 'Approved — queued for writing',
-    writing: `${modelName || writerModel.name} writing article...`,
-    written: 'Written — awaiting Grok review',
-    independence_review: 'Grok 3 reviewing independence...',
+    writing: `${modelName || 'Writer'} generating article...`,
+    written: 'Written — awaiting Grok independence review',
+    independence_review: 'Grok 3 adversarial review + PubMed check...',
     independence_done: 'Reviewed — awaiting QC',
-    editor_qc: 'Gemini 2.5 Pro QC + headline polish...',
+    editor_qc: 'QC check + headline polish...',
     qc_approved: 'QC approved — queued for publish',
-    voice_rewrite_pending: 'Voice rewrite queued — Opus/Sonnet...',
-    rewriting_voice: 'Opus rewriting for voice quality...',
-    voice_rewrite_done: 'Voice polished — publishing...',
-    publishing: 'GPT Image illustrating + GitHub commit...',
+    voice_rewrite_pending: 'Voice rewrite queued...',
+    rewriting_voice: 'Rewriting prose for voice quality...',
+    voice_rewrite_done: 'Voice polished — queued for publish',
+    publishing: 'GitHub commit + illustration + deploy...',
     published: 'Published',
-    failed: 'Failed',
+    failed: log?.error ? `Failed: ${log.error.slice(0, 80)}` : 'Failed',
   };
   return map[status] || status;
 }

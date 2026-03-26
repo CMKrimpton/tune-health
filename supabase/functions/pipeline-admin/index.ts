@@ -425,25 +425,15 @@ Deno.serve(async (req: Request) => {
       return json({ logs: cronLogs });
     }
 
-    // ------ PRODUCE — manual trigger → calls pipeline-orchestrator via HTTP ------
+    // ------ PRODUCE — manual trigger → calls dispatch_pipeline_stage() via SQL ------
     if (action === "produce") {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      console.log("[Admin] Manual produce trigger — calling dispatch_pipeline_stage()");
 
-      const url = `${supabaseUrl}/functions/v1/pipeline-orchestrator`;
-      console.log("[Admin] Manual produce trigger — calling pipeline-orchestrator");
-
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${serviceKey}`,
-        },
-        body: JSON.stringify({}),
-      });
-
-      const result = await res.json();
-      return json({ success: true, action: "produce", result });
+      const { error: dispatchErr } = await db.rpc("dispatch_pipeline_stage");
+      if (dispatchErr) {
+        return json({ error: `dispatch_pipeline_stage failed: ${dispatchErr.message}` }, 500);
+      }
+      return json({ success: true, action: "produce", message: "dispatch_pipeline_stage() called — next stage dispatched via pg_net" });
     }
 
     // ------ SCOUT — manual trigger → calls pipeline-scout via HTTP ------

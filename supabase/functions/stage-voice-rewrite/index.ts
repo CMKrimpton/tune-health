@@ -8,8 +8,10 @@ import { VOICE_REWRITE_CHAIN } from "../_shared/constants.ts";
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  let parsedLogId: string | null = null;
   try {
     const { logId } = await req.json();
+    parsedLogId = logId;
     if (!logId) return json({ error: "logId is required" }, 400);
 
     const db = supabase();
@@ -130,6 +132,19 @@ Return ONLY the rewritten HTML. No JSON wrapper, no explanation, no markdown fen
       after: { youCount: afterAudit.youCount, bannedPhrases: afterAudit.bannedPhrases.length, passed: afterAudit.passed },
     });
   } catch (err: unknown) {
+    // Log failure to DB so stale detection doesn't loop on it
+    try {
+      const db = supabase();
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[stage-voice-rewrite] Error: ${msg}`);
+      if (parsedLogId) {
+        await db.from("daily_article_log").update({
+          status: "failed",
+          error: `Voice rewrite error: ${msg}`,
+          completed_at: new Date().toISOString(),
+        }).eq("id", parsedLogId);
+      }
+    } catch { /* best effort */ }
     return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
 });
