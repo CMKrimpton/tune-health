@@ -10,7 +10,11 @@
   "readTime": 17,
   "featured": false,
   "draft": false,
-  "tags": [],
-  "keywords": [],
+  "tags": ["intermittent fasting", "metabolic switch", "autophagy", "calorie restriction", "nutrition science"],
+  "gradient": {
+    "from": "emerald-600",
+    "to": "teal-700"
+  },
+  "keywords": ["intermittent fasting", "metabolic switch", "autophagy", "ketosis", "calorie restriction"],
   "sortOrder": 1774507920828
 }

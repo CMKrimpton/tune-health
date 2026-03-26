@@ -1061,6 +1061,8 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
 
     const prompt = `Write this article for alumi news. "Evidence. Wherever it leads."
 
+CRITICAL OUTPUT RULE: Return ONLY the article body content — the <section> tags. Do NOT return a full HTML page. No <!DOCTYPE>, no <html>, no <head>, no <body>, no <style>, no CSS, no fonts, no layout wrappers, no custom classes. JUST the <section> elements with class="reveal" as shown in the format below. Your output gets inserted into an existing Astro template that already handles all layout, typography, and styling.
+
 ## THE ASSIGNMENT
 **${eb.headline || log.title || log.topic}**
 ${eb.description || ''}

@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, calcCost } from "../_shared/db.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
+import { getCategoryGradient } from "../_shared/constants.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
 Deno.serve(async (req: Request) => {
@@ -428,9 +429,26 @@ Deno.serve(async (req: Request) => {
     // ------ SUBMIT-ARTICLE — user wrote article with Opus, resume pipeline from "written" ------
     if (action === "submit-article") {
       const logId = body.logId as string;
-      const articleHtml = body.articleHtml as string;
+      let articleHtml = body.articleHtml as string;
       if (!logId || !articleHtml) {
         return json({ error: "logId and articleHtml are required" }, 400);
+      }
+
+      // Safety net: if Opus returned a full HTML page, extract just the article body
+      if (articleHtml.includes("<!DOCTYPE") || articleHtml.includes("<html")) {
+        console.log("[Admin] submit-article: stripping full HTML page wrapper — extracting body sections");
+        const sectionStart = articleHtml.indexOf("<section");
+        if (sectionStart > 0) {
+          // Find the last </section> or </div> that's part of the article (before </body>)
+          const bodyEnd = articleHtml.indexOf("</body>");
+          const contentEnd = bodyEnd > 0 ? bodyEnd : articleHtml.length;
+          let extracted = articleHtml.slice(sectionStart, contentEnd).trim();
+          // Strip any trailing wrapper divs
+          extracted = extracted.replace(/\s*<\/div>\s*(<\/div>\s*)*$/g, "").trim();
+          if (extracted.length > 500) {
+            articleHtml = extracted;
+          }
+        }
       }
 
       // Fetch the log entry to get editorial brief data
@@ -462,13 +480,16 @@ Deno.serve(async (req: Request) => {
       const readTime = Math.ceil(wordCount / 220);
 
       // Build article metadata from editor brief
+      const category = (editorBrief.categoryOverride as string) || (researchData.category as string) || "Clinical Evidence";
+      const gradient = getCategoryGradient(category);
       const metadata = {
         title,
         slug,
         description: editorBrief.description as string || "",
-        category: (editorBrief.categoryOverride as string) || (researchData.category as string) || "Clinical Evidence",
+        category,
         tags: (researchData.tags as string[]) || [],
         keywords: (researchData.keywords as string[]) || [],
+        gradient,
       };
 
       // Save article to articles table as draft
@@ -479,6 +500,8 @@ Deno.serve(async (req: Request) => {
         category: metadata.category,
         tags: metadata.tags,
         keywords: metadata.keywords,
+        gradient_from: gradient.from,
+        gradient_to: gradient.to,
         featured: false,
         draft: true,
         coming_soon: false,
