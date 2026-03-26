@@ -631,6 +631,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)}
                       onKill={() => killArticle(log.id)}
                       killing={killingId === log.id}
+                      apiBase={apiBase}
+                      onRefresh={fetchStatus}
                     />
                   ))
                 )}
@@ -1033,10 +1035,69 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
 // ─── Pipeline Card ──────────────────────────────────────────────────
 
-function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: PipelineLog; expanded: boolean; onToggle: () => void; onKill: () => void; killing: boolean }) {
+function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRefresh }: { log: PipelineLog; expanded: boolean; onToggle: () => void; onKill: () => void; killing: boolean; apiBase: string; onRefresh: () => void }) {
+  const [briefCopied, setBriefCopied] = useState(false);
+  const [loadingBrief, setLoadingBrief] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [articleHtml, setArticleHtml] = useState('');
+  const [submitResult, setSubmitResult] = useState<string | null>(null);
+
   const isActive = ACTIVE_STATUSES.has(log.status);
+  const isAwaitingWrite = log.status === 'editor_approved';
   const displayTitle = log.title || log.topic || 'Pending topic\u2026';
-  const statusText = getStatusText(log.status, log);
+  const statusText = isAwaitingWrite ? 'Ready for you to write with Opus' : getStatusText(log.status, log);
+
+  // Copy the editorial brief formatted for Claude
+  const copyBriefForClaude = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLoadingBrief(true);
+    try {
+      const res = await fetch(apiBase, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get-brief', logId: log.id }),
+      });
+      const data = await res.json();
+      if (data.claudePrompt) {
+        await navigator.clipboard.writeText(data.claudePrompt);
+        setBriefCopied(true);
+        setTimeout(() => setBriefCopied(false), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to copy brief:', err);
+    } finally {
+      setLoadingBrief(false);
+    }
+  };
+
+  // Submit the user's Opus-written article
+  const submitArticle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!articleHtml.trim()) return;
+    setSubmitting(true);
+    setSubmitResult(null);
+    try {
+      const res = await fetch(apiBase, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'submit-article', logId: log.id, articleHtml: articleHtml.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitResult('Article submitted! Pipeline resuming with Grok independence review.');
+        setShowSubmitForm(false);
+        setArticleHtml('');
+        setTimeout(() => { setSubmitResult(null); onRefresh(); }, 2000);
+      } else {
+        setSubmitResult(`Error: ${data.error}`);
+      }
+    } catch (err) {
+      setSubmitResult(`Error: ${err instanceof Error ? err.message : 'Unknown'}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
   const score = getEditorScore(log);
   const angle = getEditorAngle(log);
   const indScore = getIndependenceScore(log);
@@ -1049,6 +1110,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
   return (
     <div
       className={`pipeline-card${isActive ? ' active' : ''}`}
+      style={isAwaitingWrite ? { borderLeftColor: '#c084fc', borderLeftWidth: '3px', background: 'rgba(168, 85, 247, 0.04)' } : undefined}
       onClick={onToggle}
       role="button"
       tabIndex={0}
@@ -1163,6 +1225,87 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing }: { log: Pipel
           {log.research_data?._queueId && (
             <div style={{ marginTop: '0.25rem' }}>
               <span style={{ color: '#f59e0b', fontSize: '0.6875rem' }}>From topic queue</span>
+            </div>
+          )}
+
+          {/* Hybrid workflow: Copy Brief + Submit Article for editor_approved articles */}
+          {isAwaitingWrite && (
+            <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#c084fc', marginBottom: '0.375rem' }}>Write with Opus</div>
+                <div style={{ fontSize: '0.6875rem', color: '#a8a29e', marginBottom: '0.5rem' }}>
+                  1. Copy the brief below, paste into Claude. 2. Opus writes the article. 3. Paste the HTML back here.
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={copyBriefForClaude}
+                    disabled={loadingBrief}
+                    style={{
+                      fontSize: '0.6875rem', padding: '0.375rem 0.875rem',
+                      background: briefCopied ? 'rgba(34, 197, 94, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                      color: briefCopied ? '#22c55e' : '#c084fc',
+                      border: `1px solid ${briefCopied ? 'rgba(34, 197, 94, 0.3)' : 'rgba(168, 85, 247, 0.3)'}`,
+                      borderRadius: '6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                      fontWeight: 600, transition: 'all 0.15s',
+                    }}
+                  >
+                    {loadingBrief ? 'Loading...' : briefCopied ? 'Copied!' : 'Copy Brief for Claude'}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowSubmitForm(!showSubmitForm); }}
+                    style={{
+                      fontSize: '0.6875rem', padding: '0.375rem 0.875rem',
+                      background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      borderRadius: '6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                      fontWeight: 600, transition: 'all 0.15s',
+                    }}
+                  >
+                    {showSubmitForm ? 'Cancel' : 'Submit Written Article'}
+                  </button>
+                </div>
+              </div>
+
+              {showSubmitForm && (
+                <div style={{ marginTop: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
+                  <textarea
+                    value={articleHtml}
+                    onChange={(e) => setArticleHtml(e.target.value)}
+                    placeholder="Paste the article HTML from Claude here..."
+                    style={{
+                      width: '100%', minHeight: '120px', padding: '0.5rem',
+                      background: 'rgba(255,255,255,0.03)', color: '#eae8e4',
+                      border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
+                      fontFamily: 'monospace', fontSize: '0.6875rem', resize: 'vertical',
+                    }}
+                  />
+                  <button
+                    onClick={submitArticle}
+                    disabled={submitting || !articleHtml.trim()}
+                    style={{
+                      marginTop: '0.375rem', fontSize: '0.6875rem', padding: '0.375rem 0.875rem',
+                      background: submitting ? 'rgba(255,255,255,0.05)' : 'rgba(34, 197, 94, 0.15)',
+                      color: submitting ? '#7d7871' : '#22c55e',
+                      border: `1px solid ${submitting ? 'rgba(255,255,255,0.1)' : 'rgba(34, 197, 94, 0.3)'}`,
+                      borderRadius: '6px', cursor: submitting ? 'not-allowed' : 'pointer',
+                      fontFamily: 'Inter, sans-serif', fontWeight: 600,
+                    }}
+                  >
+                    {submitting ? 'Submitting...' : 'Submit & Resume Pipeline'}
+                  </button>
+                </div>
+              )}
+
+              {submitResult && (
+                <div style={{
+                  marginTop: '0.375rem', padding: '0.375rem 0.625rem', borderRadius: '6px', fontSize: '0.6875rem',
+                  background: submitResult.startsWith('Error') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                  color: submitResult.startsWith('Error') ? '#f87171' : '#22c55e',
+                  border: `1px solid ${submitResult.startsWith('Error') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`,
+                }}>
+                  {submitResult}
+                </div>
+              )}
             </div>
           )}
 

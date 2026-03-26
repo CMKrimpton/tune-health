@@ -425,6 +425,200 @@ Deno.serve(async (req: Request) => {
       return json({ logs: cronLogs });
     }
 
+    // ------ SUBMIT-ARTICLE — user wrote article with Opus, resume pipeline from "written" ------
+    if (action === "submit-article") {
+      const logId = body.logId as string;
+      const articleHtml = body.articleHtml as string;
+      if (!logId || !articleHtml) {
+        return json({ error: "logId and articleHtml are required" }, 400);
+      }
+
+      // Fetch the log entry to get editorial brief data
+      const { data: logEntry } = await db
+        .from("daily_article_log")
+        .select("slug, title, research_data, status")
+        .eq("id", logId)
+        .maybeSingle();
+
+      if (!logEntry) return json({ error: "Log entry not found" }, 404);
+      if (logEntry.status !== "editor_approved") {
+        return json({ error: `Article is in status "${logEntry.status}", expected "editor_approved"` }, 400);
+      }
+
+      const researchData = (logEntry.research_data as Record<string, unknown>) || {};
+      const editorBrief = (researchData._editorBrief as Record<string, unknown>) || {};
+      const slug = logEntry.slug || (editorBrief.slug as string);
+      const title = logEntry.title || (editorBrief.headline as string);
+
+      if (!slug) return json({ error: "No slug found in log entry" }, 400);
+
+      // Parse TOC from the HTML (extract h2 sections)
+      const tocMatches = [...articleHtml.matchAll(/<section[^>]*id="([^"]+)"[^>]*>[\s\S]*?<h2[^>]*>([^<]+)<\/h2>/gi)];
+      const toc = tocMatches.map(m => ({ id: m[1], title: m[2].trim() }));
+
+      // Estimate read time from word count
+      const plainText = articleHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      const wordCount = plainText.split(/\s+/).length;
+      const readTime = Math.ceil(wordCount / 220);
+
+      // Build article metadata from editor brief
+      const metadata = {
+        title,
+        slug,
+        description: editorBrief.description as string || "",
+        category: (editorBrief.categoryOverride as string) || (researchData.category as string) || "Clinical Evidence",
+        tags: (researchData.tags as string[]) || [],
+        keywords: (researchData.keywords as string[]) || [],
+      };
+
+      // Save article to articles table as draft
+      const { error: upsertErr } = await db.from("articles").upsert({
+        slug,
+        title: metadata.title,
+        description: metadata.description,
+        category: metadata.category,
+        tags: metadata.tags,
+        keywords: metadata.keywords,
+        featured: false,
+        draft: true,
+        coming_soon: false,
+        read_time: readTime,
+        publish_date: new Date().toISOString().split("T")[0],
+        article_html: articleHtml,
+        toc,
+        source_text: `[Human + Opus — ${new Date().toISOString().split("T")[0]}]`,
+        status: "draft",
+      }, { onConflict: "slug" });
+
+      if (upsertErr) return json({ error: `Failed to save article: ${upsertErr.message}` }, 500);
+
+      // Update pipeline log: set status to "written" with the article data
+      // This resumes the pipeline — next cron tick will dispatch independence review
+      const { error: logErr } = await db.from("daily_article_log").update({
+        slug,
+        title: metadata.title,
+        status: "written",
+        model_used: "claude-opus-4-6",
+        stage_started_at: new Date().toISOString(),
+        research_data: {
+          ...researchData,
+          _article: {
+            metadata,
+            html: articleHtml,
+            toc,
+            readTime,
+          },
+          _writtenBy: "human-opus",
+        },
+      }).eq("id", logId);
+
+      if (logErr) return json({ error: `Failed to update log: ${logErr.message}` }, 500);
+
+      console.log(`[Admin] Article submitted for "${slug}" — pipeline will resume at independence review`);
+      return json({ success: true, slug, status: "written", message: "Article saved. Pipeline will resume with Grok independence review on next cron tick." });
+    }
+
+    // ------ GET-BRIEF — fetch formatted editorial brief for Claude ------
+    if (action === "get-brief") {
+      const logId = body.logId as string;
+      if (!logId) return json({ error: "logId is required" }, 400);
+
+      const { data: logEntry } = await db
+        .from("daily_article_log")
+        .select("slug, title, research_data, status")
+        .eq("id", logId)
+        .maybeSingle();
+
+      if (!logEntry) return json({ error: "Log entry not found" }, 404);
+
+      const researchData = (logEntry.research_data as Record<string, unknown>) || {};
+      const editorBrief = (researchData._editorBrief as Record<string, unknown>) || {};
+      const brief = (editorBrief.brief as Record<string, unknown>) || {};
+
+      // Format a clean brief that can be pasted directly into Claude
+      const claudePrompt = `You are a senior health journalist at alumi news, a premium editorial publication. Your slogan: "Evidence. Wherever it leads."
+
+Write a magazine-quality health article following this editorial brief precisely.
+
+## EDITORIAL BRIEF
+Headline: ${editorBrief.headline || logEntry.title}
+Slug: ${editorBrief.slug || logEntry.slug}
+Description: ${editorBrief.description || ""}
+Angle: ${editorBrief.angle || "Follow the research"}
+Category: ${editorBrief.categoryOverride || researchData.category || ""}
+
+### Article Form
+Archetype: ${editorBrief.archetype || "deep-investigation"}
+Tone preset: ${brief.tonePreset || "smart-casual"}
+Density: ${brief.density || "balanced"}
+Pacing: ${brief.pacing || "slow-build"}
+
+### Writer's Direction
+Tone: ${brief.tone || "Standard editorial voice"}
+Open with: ${brief.openWith || "A compelling hook"}
+Emphasize: ${((brief.emphasize as string[]) || []).map((e: string) => `- ${e}`).join("\n") || "Key findings"}
+Avoid: ${((brief.avoid as string[]) || []).map((a: string) => `- ${a}`).join("\n") || "Clichés and filler"}
+${((brief.dogmaWarnings as string[]) || []).length > 0 ? `\nDogma Warnings:\n${((brief.dogmaWarnings as string[]) || []).map((w: string) => `- ${w}`).join("\n")}` : ""}
+Closing direction: ${brief.closingDirection || "End with honest unknowns"}
+Structural notes: ${brief.structuralNotes || "Use your judgment"}
+
+## RESEARCH DATA
+Topic: ${researchData.topic || ""}
+Key findings:
+${((researchData.keyFindings as string[]) || []).map((f: string, i: number) => `${i + 1}. ${f}`).join("\n")}
+
+Studies:
+${((researchData.studies as Array<{ title: string; journal: string; year: string; finding: string }>) || []).map((s) => `- "${s.title}" (${s.journal}, ${s.year}): ${s.finding}`).join("\n")}
+
+Mechanism: ${researchData.mechanism || "Research and explain."}
+
+Counter-arguments:
+${((researchData.counterArguments as string[]) || []).map((c: string) => `- ${c}`).join("\n")}
+
+## OUTPUT FORMAT
+Return the article as clean HTML using these patterns:
+
+<section id="introduction" class="reveal">
+  <p>First paragraph (no h2 — CSS drop cap applies).</p>
+</section>
+
+<section id="section-slug" class="reveal">
+  <h2>Section Title</h2>
+  <p>Content...</p>
+</section>
+
+Pull quotes: <aside class="pull-quote reveal"><p>"Quote text."</p></aside>
+
+End with a Sources section listing every study cited.
+End with a disclaimer div.
+
+## RULES
+- Max 3 sentences per paragraph. 2 is better.
+- Use "you" at least 6 times. Talk TO the reader.
+- At least 2 editorial opinions — actual verdicts, not hedges.
+- At least 2 everyday analogies (cars, kitchens, plumbing — not other science).
+- Follow the money: name who profits from the status quo.
+- Zero fabrication. Only cite studies from the research data above.
+- Brand voice: 60% journalism (The Atlantic), 20% Bill Maher, 15% Hitchens, 15% Sam Harris.`;
+
+      return json({
+        success: true,
+        logId,
+        status: logEntry.status,
+        headline: editorBrief.headline || logEntry.title,
+        slug: editorBrief.slug || logEntry.slug,
+        claudePrompt,
+        editorBrief,
+        researchData: {
+          topic: researchData.topic,
+          keyFindings: researchData.keyFindings,
+          studies: researchData.studies,
+          counterArguments: researchData.counterArguments,
+          mechanism: researchData.mechanism,
+        },
+      });
+    }
+
     // ------ PRODUCE — manual trigger → calls dispatch_pipeline_stage() via SQL ------
     if (action === "produce") {
       console.log("[Admin] Manual produce trigger — calling dispatch_pipeline_stage()");
