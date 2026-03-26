@@ -211,6 +211,9 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
       return json({ success: true, logId, qcResult, decision: "kill" });
     }
 
+    // Detect human-written articles (must be before revise AND voice_rewrite checks)
+    const isHumanWritten = researchData._writtenBy === "human-opus";
+
     // If editor requests revisions, send back to write stage (max 1 revision to avoid loops)
     if (qcResult.decision === "revise") {
       // In hybrid mode, human wrote with Opus. Flash QC requesting a revise should not
@@ -261,7 +264,6 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
 
     // If voice needs rewriting, send to voice rewrite stage (max 1 voice rewrite)
     // EXCEPTION: human-written articles (Opus via Max) skip voice rewrite — never degrade Opus prose with a lesser model
-    const isHumanWritten = researchData._writtenBy === "human-opus";
     if (qcResult.decision === "rewrite_voice" && isHumanWritten) {
       console.log(`[QC] Voice rewrite requested but article was human-written with Opus — skipping, publishing directly`);
       qcResult.decision = "publish";
