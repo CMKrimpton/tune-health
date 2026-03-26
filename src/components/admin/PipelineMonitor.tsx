@@ -99,6 +99,8 @@ interface QueueItem {
   source: string;
   status: string;
   created_at: string;
+  research_summary: string | null;
+  editor_score: number | null;
 }
 
 type PipelineStage = 'research' | 'editor_brief' | 'write' | 'independence' | 'qc' | 'voice_rewrite' | 'publish';
@@ -240,6 +242,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [triggering, setTriggering] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedQueueId, setExpandedQueueId] = useState<string | null>(null);
   const [lastPoll, setLastPoll] = useState<Date>(new Date());
   const [newTopic, setNewTopic] = useState('');
   const [newCategory, setNewCategory] = useState('');
@@ -737,7 +740,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               const isQueued = item.status === 'queued';
               const cleanTopic = item.topic.replace(/\*\*/g, '').replace(/^[\s\-]*Topic\s*Description\s*:?\s*/i, '').trim();
               return (
-                <div key={item.id} className="pipeline-card" style={{ borderLeftColor: item.expedite ? '#ef4444' : isActive ? '#22c55e' : 'rgba(255,255,255,0.08)', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85 }}>
+                <div
+                  key={item.id}
+                  className="pipeline-card"
+                  style={{ borderLeftColor: item.expedite ? '#ef4444' : isActive ? '#22c55e' : 'rgba(255,255,255,0.08)', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85, cursor: 'pointer' }}
+                  onClick={() => setExpandedQueueId(expandedQueueId === item.id ? null : item.id)}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="pipeline-card-title" style={{ fontSize: '0.8125rem' }}>{cleanTopic}</div>
@@ -751,6 +759,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         ) : (
                           <span style={{ color: '#5c5752' }}>{item.source}</span>
                         )}
+                        {item.editor_score && <span style={{ color: item.editor_score >= 7 ? '#22c55e' : '#f59e0b', fontWeight: 600 }}>Score: {item.editor_score}/10</span>}
                       </div>
                     </div>
                     {/* ── Queue Item Controls ── */}
@@ -823,6 +832,29 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       </div>
                     )}
                   </div>
+
+                  {/* Expanded detail view */}
+                  {expandedQueueId === item.id && (
+                    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '0.75rem' }} onClick={(e) => e.stopPropagation()}>
+                      {item.notes && (
+                        <div style={{ marginBottom: '0.5rem' }}>
+                          <span style={{ color: '#7d7871', fontWeight: 600 }}>Scout Notes: </span>
+                          <span style={{ color: '#b5b0a9' }}>{item.notes}</span>
+                        </div>
+                      )}
+                      {item.research_summary && (
+                        <div style={{ marginBottom: '0.5rem' }}>
+                          <span style={{ color: '#7d7871', fontWeight: 600 }}>Why: </span>
+                          <span style={{ color: '#b5b0a9' }}>{item.research_summary}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '1rem', color: '#5c5752', fontSize: '0.6875rem' }}>
+                        <span>Added: {new Date(item.created_at).toLocaleString()}</span>
+                        <span>Source: {item.source}</span>
+                        <span>Priority: {item.priority}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
