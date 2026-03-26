@@ -1048,27 +1048,86 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
   const displayTitle = log.title || log.topic || 'Pending topic\u2026';
   const statusText = isAwaitingWrite ? 'Ready for you to write with Opus' : getStatusText(log.status, log);
 
-  // Copy the editorial brief formatted for Claude
-  const copyBriefForClaude = async (e: React.MouseEvent) => {
+  // Build the Claude prompt client-side from already-loaded research_data (no fetch = no clipboard permission issue)
+  const copyBriefForClaude = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLoadingBrief(true);
-    try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get-brief', logId: log.id }),
-      });
-      const data = await res.json();
-      if (data.claudePrompt) {
-        await navigator.clipboard.writeText(data.claudePrompt);
-        setBriefCopied(true);
-        setTimeout(() => setBriefCopied(false), 3000);
-      }
-    } catch (err) {
-      console.error('Failed to copy brief:', err);
-    } finally {
-      setLoadingBrief(false);
-    }
+    const rd = log.research_data || {};
+    const eb = rd._editorBrief || {};
+    const brief = (eb as Record<string, unknown>).brief as Record<string, unknown> || {};
+
+    const prompt = `You are a senior health journalist at alumi news, a premium editorial publication. Your slogan: "Evidence. Wherever it leads."
+
+Write a magazine-quality health article following this editorial brief precisely.
+
+## EDITORIAL BRIEF
+Headline: ${eb.headline || log.title || log.topic}
+Slug: ${eb.slug || log.slug || 'auto-generate'}
+Description: ${eb.description || ''}
+Angle: ${eb.angle || 'Follow the research'}
+Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || ''}
+
+### Article Form
+Archetype: ${eb.archetype || 'deep-investigation'}
+Tone preset: ${brief.tonePreset || 'smart-casual'}
+Density: ${brief.density || 'balanced'}
+Pacing: ${brief.pacing || 'slow-build'}
+
+### Writer's Direction
+Tone: ${brief.tone || 'Standard editorial voice'}
+Open with: ${brief.openWith || 'A compelling hook'}
+Emphasize: ${((brief.emphasize as string[]) || []).map(e => '- ' + e).join('\n') || 'Key findings'}
+Avoid: ${((brief.avoid as string[]) || []).map(a => '- ' + a).join('\n') || 'Clichés and filler'}
+${((brief.dogmaWarnings as string[]) || []).length > 0 ? '\nDogma Warnings:\n' + ((brief.dogmaWarnings as string[]) || []).map(w => '- ' + w).join('\n') : ''}
+Closing direction: ${brief.closingDirection || 'End with honest unknowns'}
+Structural notes: ${brief.structuralNotes || 'Use your judgment'}
+
+## RESEARCH DATA
+Topic: ${rd.topic || ''}
+Key findings:
+${((rd.keyFindings as string[]) || []).map((f, i) => (i + 1) + '. ' + f).join('\n')}
+
+Studies:
+${((rd.studies as Array<{title:string;journal:string;year:string;finding:string}>) || []).map(s => '- "' + s.title + '" (' + s.journal + ', ' + s.year + '): ' + s.finding).join('\n')}
+
+Mechanism: ${rd.mechanism || 'Research and explain.'}
+
+Counter-arguments:
+${((rd.counterArguments as string[]) || []).map(c => '- ' + c).join('\n')}
+
+## OUTPUT FORMAT
+Return the article as clean HTML using these patterns:
+
+<section id="introduction" class="reveal">
+  <p>First paragraph (no h2 — CSS drop cap applies).</p>
+</section>
+
+<section id="section-slug" class="reveal">
+  <h2>Section Title</h2>
+  <p>Content...</p>
+</section>
+
+Pull quotes: <aside class="pull-quote reveal"><p>"Quote text."</p></aside>
+
+End with a Sources section listing every study cited.
+End with a disclaimer div.
+
+## RULES
+- Max 3 sentences per paragraph. 2 is better.
+- Use "you" at least 6 times. Talk TO the reader.
+- At least 2 editorial opinions — actual verdicts, not hedges.
+- At least 2 everyday analogies (cars, kitchens, plumbing — not other science).
+- Follow the money: name who profits from the status quo.
+- Zero fabrication. Only cite studies from the research data above.
+- Brand voice: 60% journalism (The Atlantic), 20% Bill Maher, 15% Hitchens, 15% Sam Harris.`;
+
+    navigator.clipboard.writeText(prompt).then(() => {
+      setBriefCopied(true);
+      setTimeout(() => setBriefCopied(false), 3000);
+    }).catch(() => {
+      // Fallback: open in a new window for manual copy
+      const w = window.open('', '_blank');
+      if (w) { w.document.write('<pre>' + prompt.replace(/</g, '&lt;') + '</pre>'); }
+    });
   };
 
   // Submit the user's Opus-written article
