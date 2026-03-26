@@ -121,33 +121,23 @@ Deno.serve(async (req: Request) => {
         const logId = (entries[0] as { id: string }).id;
         const functionName = STAGE_MAP[status];
 
-        // Dispatch stage function via HTTP with a SHORT timeout (5s).
-        // The stage is a SEPARATE Supabase Edge Function invocation — it continues
-        // running even after the orchestrator disconnects. We just need the HTTP
-        // request to be sent and acknowledged. The 5s timeout is enough for the stage
-        // to receive the request and start processing. Its actual work (API calls etc.)
-        // happens on the stage's own ~150s invocation timeout.
-        // Deno kills fire-and-forget fetches on handler exit, so we MUST await.
+        // Dispatch stage function via direct fetch — orchestrator WAITS for stage to complete.
+        // This means orchestrator + stage share the ~150s timeout. With single-model calls
+        // (no fallback chains), each stage completes in 30-90s. The orchestrator processes
+        // ONE stage per invocation, driven by the 1-min cron.
         const url = `${supabaseUrl}/functions/v1/${functionName}`;
-        console.log(`[Orchestrator] Dispatching ${functionName} for log ${logId} (status: ${status})`);
+        console.log(`[Orchestrator] Running ${functionName} for log ${logId} (status: ${status})`);
 
-        try {
-          const stageRes = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${serviceKey}`,
-            },
-            body: JSON.stringify({ logId }),
-            signal: AbortSignal.timeout(5000), // 5s — just enough to send the request
-          });
-          // If stage responds within 5s (unlikely for API-heavy stages), capture result
-          const stageResult = await stageRes.json().catch(() => null);
-          return json({ dispatched: functionName, logId, status, stageResult });
-        } catch {
-          // Timeout is expected — the stage is running on its own invocation
-          return json({ dispatched: functionName, logId, status, note: "Stage dispatched (running independently)" });
-        }
+        const stageRes = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ logId }),
+        });
+        const stageResult = await stageRes.json().catch(() => null);
+        return json({ dispatched: functionName, logId, status, stageResult });
       }
     }
 
@@ -178,28 +168,21 @@ Deno.serve(async (req: Request) => {
 
     if (!logEntry) throw new Error("Failed to create log entry");
 
-    // Dispatch stage-research with short timeout.
-    // Stage-research is a separate invocation — continues running after disconnect.
-    // Next cron tick: orchestrator sees research_done → dispatches stage-editor.
-    // If editor kills, stage-editor re-queues the topic itself.
+    // Run stage-research directly — orchestrator waits for completion.
     const researchUrl = `${supabaseUrl}/functions/v1/stage-research`;
-    console.log(`[Orchestrator] Starting new topic: "${topic.topic}" — dispatching stage-research for log ${logEntry.id}`);
+    console.log(`[Orchestrator] Starting new topic: "${topic.topic}" — running stage-research for log ${logEntry.id}`);
 
-    try {
-      await fetch(researchUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${serviceKey}`,
-        },
-        body: JSON.stringify({ logId: logEntry.id, topic: topic.topic, source: topic.source, queueId: topic.id }),
-        signal: AbortSignal.timeout(5000),
-      });
-    } catch {
-      // Timeout expected — stage-research continues on its own invocation
-    }
+    const researchRes = await fetch(researchUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({ logId: logEntry.id, topic: topic.topic, source: topic.source, queueId: topic.id }),
+    });
+    const researchResult = await researchRes.json().catch(() => null);
 
-    return json({ dispatched: "stage-research", logId: logEntry.id, topic: topic.topic });
+    return json({ dispatched: "stage-research", logId: logEntry.id, topic: topic.topic, researchResult });
   } catch (err: unknown) {
     return json({
       error: "An internal error occurred",
