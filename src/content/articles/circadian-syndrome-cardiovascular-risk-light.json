@@ -1,0 +1,32 @@
+{
+  "title": "How Nighttime Light Became a Cardiovascular Risk Factor",
+  "description": "For decades, cardiology treated heart disease as a plumbing problem — statins for the sludge, stents for the pipes. A landmark 2025 American Heart Association statement now formally names a different culprit: the systematic desynchronization of the body's internal clocks by artificial light, shift work, and the 24/7 economy. The implications reach far beyond sleep hygiene.",
+  "category": "Sleep Science",
+  "publishDate": "2026-03-26",
+  "author": {
+    "name": "Christine Wright",
+    "role": "Science & Evidence Desk"
+  },
+  "readTime": 8,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Circadian Rhythm",
+    "Cardiovascular Health",
+    "Metabolic Syndrome",
+    "Shift Work",
+    "Chronobiology"
+  ],
+  "gradient": {
+    "to": "purple-600",
+    "from": "indigo-500"
+  },
+  "keywords": [
+    "Circadian Syndrome",
+    "American Heart Association",
+    "nighttime light exposure",
+    "shift work health risks",
+    "time-restricted eating"
+  ],
+  "sortOrder": 1774504200644
+}
