@@ -240,7 +240,10 @@ Deno.serve(async (req: Request) => {
                   const existingContent = JSON.parse(atob(fileData.content.replace(/\n/g, "")));
                   existingContent.heroImage = heroImage;
                   existingContent.heroImageAlt = heroImageAlt;
-                  const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(existingContent, null, 2) + "\n")));
+                  // UTF-8-safe base64 (btoa+unescape double-encodes non-ASCII in Deno)
+                  const _bytes = new TextEncoder().encode(JSON.stringify(existingContent, null, 2) + "\n");
+                  let _bin = ""; for (const b of _bytes) _bin += String.fromCharCode(b);
+                  const updatedContent = btoa(_bin);
                   const updateRes = await fetch(`${apiBase}/contents/${jsonPath}`, {
                     method: "PUT",
                     headers: ghHeaders,

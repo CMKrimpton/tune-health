@@ -18,12 +18,16 @@ export async function publishToGitHub(
   };
 
   async function createBlob(content: string): Promise<string> {
+    // Use utf-8 encoding — the GitHub API handles it natively.
+    // The old btoa(unescape(encodeURIComponent())) pattern double-encoded
+    // non-ASCII characters (em dashes, smart quotes, accented letters)
+    // in Deno's runtime, producing mojibake like â€" instead of —.
     const res = await fetch(`${apiBase}/git/blobs`, {
       method: "POST",
       headers,
       body: JSON.stringify({
-        content: btoa(unescape(encodeURIComponent(content))),
-        encoding: "base64",
+        content,
+        encoding: "utf-8",
       }),
     });
     if (!res.ok) throw new Error(`Failed to create blob: ${res.status}`);

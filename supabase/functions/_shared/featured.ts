@@ -1,5 +1,14 @@
 import { supabase } from "./db.ts";
 
+/** UTF-8-safe base64 encoding. The standard btoa(unescape(encodeURIComponent()))
+ *  pattern double-encodes non-ASCII chars in Deno, producing mojibake. */
+function utf8ToBase64(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary);
+}
+
 /**
  * Update the `featured` flag in a GitHub JSON file for an article.
  * Returns true on success, false on failure (non-fatal — DB is source of truth).
@@ -29,7 +38,7 @@ async function updateGitHubFeatured(slug: string, featured: boolean): Promise<bo
     const fileData = await fileRes.json();
     const existingContent = JSON.parse(atob(fileData.content.replace(/\n/g, "")));
     existingContent.featured = featured;
-    const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(existingContent, null, 2) + "\n")));
+    const updatedContent = utf8ToBase64(JSON.stringify(existingContent, null, 2) + "\n");
 
     const updateRes = await fetch(`${apiBase}/contents/${jsonPath}`, {
       method: "PUT",

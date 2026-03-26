@@ -145,12 +145,13 @@ Deno.serve(async (req: Request) => {
 });
 
 async function createBlob(apiBase: string, headers: Record<string, string>, content: string): Promise<string> {
+  // Use utf-8 encoding — btoa+unescape double-encodes non-ASCII chars in Deno
   const res = await fetch(`${apiBase}/git/blobs`, {
     method: "POST",
     headers,
     body: JSON.stringify({
-      content: btoa(unescape(encodeURIComponent(content))),
-      encoding: "base64",
+      content,
+      encoding: "utf-8",
     }),
   });
   if (!res.ok) throw new Error(`Failed to create blob: ${res.status}`);
