@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, addCostToLog, parseScore } from "../_shared/db.ts";
+import { supabase, addCostToLog, parseScore, dispatchStage } from "../_shared/db.ts";
 import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { auditVoiceQuality } from "../_shared/voice-audit.ts";
 
@@ -234,6 +234,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
             _qcResult: qcResult,
           },
         }).eq("id", logId);
+        dispatchStage("stage-publish", logId);
         return json({ success: true, logId, qcResult, decision: "publish_forced_max_revisions" });
       } else {
         await db
@@ -281,6 +282,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
             _qcResult: qcResult,
           },
         }).eq("id", logId);
+        dispatchStage("stage-publish", logId);
         return json({ success: true, logId, qcResult, decision: "publish_forced_already_rewritten" });
       } else {
         const { error: updateErr } = await db.from("daily_article_log").update({
@@ -320,6 +322,8 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
       return json({ error: `DB update failed: ${publishErr.message}`, logId }, 500);
     }
 
+    // Chain-dispatch: fire publish immediately (no cron wait)
+    dispatchStage("stage-publish", logId);
     return json({ success: true, logId, qcResult, decision: "publish" });
   } catch (err: unknown) {
     // Mark as failed so stale detection doesn't loop on it

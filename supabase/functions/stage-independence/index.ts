@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, addCostToLog, safeStage } from "../_shared/db.ts";
+import { supabase, addCostToLog, safeStage, dispatchStage } from "../_shared/db.ts";
 import { grok, generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { WRITER_FALLBACK_CHAIN } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
@@ -292,6 +292,8 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
       return json({ error: stageResult.error, logId }, 500);
     }
 
+    // Chain-dispatch: fire QC immediately (no cron wait)
+    dispatchStage("stage-qc", logId);
     return json({ success: true, logId, status: "independence_done" });
   } catch (err: unknown) {
     return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);

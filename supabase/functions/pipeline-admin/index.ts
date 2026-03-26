@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, calcCost } from "../_shared/db.ts";
+import { supabase, calcCost, dispatchStage } from "../_shared/db.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
 import { getCategoryGradient } from "../_shared/constants.ts";
 import type { ApiUsage } from "../_shared/types.ts";
@@ -537,8 +537,10 @@ Deno.serve(async (req: Request) => {
 
       if (logErr) return json({ error: `Failed to update log: ${logErr.message}` }, 500);
 
-      console.log(`[Admin] Article submitted for "${slug}" — pipeline will resume at independence review`);
-      return json({ success: true, slug, status: "written", message: "Article saved. Pipeline will resume with Grok independence review on next cron tick." });
+      // Chain-dispatch: fire independence review immediately (no cron wait)
+      dispatchStage("stage-independence", logId);
+      console.log(`[Admin] Article submitted for "${slug}" — dispatched stage-independence directly`);
+      return json({ success: true, slug, status: "written", message: "Article saved. Independence review dispatched immediately." });
     }
 
     // ------ GET-BRIEF — fetch formatted editorial brief for Claude ------

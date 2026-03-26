@@ -60,6 +60,18 @@ export async function getExistingArticles(
   return { titles, categoryCounts };
 }
 
+/** Fire-and-forget dispatch to a stage function. Used for chain-dispatching (stage A completes → directly calls stage B). */
+export function dispatchStage(functionName: string, logId: string): void {
+  const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/${functionName}`;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  // Fire-and-forget: don't await, don't block the current response
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({ logId }),
+  }).catch(err => console.error(`[dispatchStage] Failed to dispatch ${functionName}: ${err}`));
+}
+
 export async function safeStage(
   db: ReturnType<typeof supabase>,
   logId: string,
