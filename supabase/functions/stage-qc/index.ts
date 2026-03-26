@@ -174,10 +174,12 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
     // Gemini primary for QC — fast, cheap, good at headline/description polish.
     // Falls back to Sonnet if Gemini fails. Never Grok — already reviewed.
     // webSearch: false — QC analyzes the article text, doesn't need web search
+    // QC is a structured pass/fail decision — mechanical voice audit does most of the work,
+    // QC just reads the metrics and makes the call. Flash handles this well at 15x cheaper.
     const { text: qcRaw, usage: qcUsage } = await generateWithFallback({
       system: SENIOR_EDITOR_QC_PROMPT + `\n\nCRITICAL: Return ONLY valid JSON. No markdown, no explanation — just the JSON object.`,
       user: qcPrompt,
-      models: ["gemini-2.5-pro", "claude-sonnet-4-6"], // 2 models max — 3 × 75s > 150s edge timeout
+      models: ["gemini-2.5-flash", "claude-sonnet-4-6"], // Flash primary ($0.002), Sonnet fallback ($0.03)
       maxTokens: 2000,
       temperature: 0.3,
       stage: "qc",

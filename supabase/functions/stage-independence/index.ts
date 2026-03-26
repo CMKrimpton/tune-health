@@ -188,10 +188,11 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
               .map((f, i) => `${i + 1}. [${f.type}] Find: "${f.quote}" → Replace with: "${f.rewrite}" (Reason: ${f.reason})`)
               .join("\n");
 
+            // Independence revision is mechanical find-and-replace with context — Flash handles this at 70x cheaper
             const { text: revisedRaw, usage: revisionUsage } = await generateWithFallback({
               system: `You are applying editorial corrections flagged by an independent reviewer. Apply each suggested rewrite where it genuinely improves the article's independence and honesty. Preserve the editorial voice and HTML structure. If a suggestion would weaken the article or is wrong, skip it. Return ONLY the corrected HTML — no JSON wrapper, no explanation.`,
               user: `## CORRECTIONS TO APPLY\n${rewritePrompt}\n\n## CURRENT ARTICLE HTML\n${articleHtml}`,
-              models: WRITER_FALLBACK_CHAIN,
+              models: ["gemini-2.5-flash", "claude-sonnet-4-6"],
               maxTokens: 8192,
               temperature: 0.2,
               stage: "independence-revision",

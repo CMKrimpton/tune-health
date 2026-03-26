@@ -369,11 +369,11 @@ If a candidate covers any of the above, give it a +2 score bonus in your assessm
 
 ${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
-      // Editor uses fallback chain — if Sonnet is spending-limited, falls back to Gemini/GPT
+      // Editor brief is a structured rubric-based decision — Flash handles this well at 25x cheaper
       const { text: editorRaw, usage: editorUsage } = await generateWithFallback({
         system: SENIOR_EDITOR_BRIEF_PROMPT,
         user: editorPrompt,
-        models: WRITER_FALLBACK_CHAIN.slice(0, 2), // 2 models max — 3 × 75s > 150s timeout
+        models: ["gemini-2.5-flash", "claude-sonnet-4-6"], // Flash primary ($0.003), Sonnet fallback ($0.08)
         maxTokens: 4000,
         temperature: 0.4,
         stage: "editor-brief",

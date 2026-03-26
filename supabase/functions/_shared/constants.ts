@@ -51,9 +51,10 @@ export const MODEL_PROVIDERS: Record<string, ModelProvider> = {
   "gemini-2.5-flash": "google",
 };
 
-// Quality fallback chains — Sonnet primary (spending limit raised)
-export const WRITER_FALLBACK_CHAIN = ["claude-sonnet-4-6", "gemini-3.1-pro-preview", "gpt-5.4"];
-export const VOICE_REWRITE_CHAIN = ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5.4", "gemini-3.1-pro-preview", "grok-3"];
+// Quality fallback chains — Gemini 3.1 Pro primary (best cost/quality ratio)
+export const WRITER_FALLBACK_CHAIN = ["gemini-3.1-pro-preview", "claude-sonnet-4-6", "gpt-5.4"];
+// Voice rewrite: Opus removed ($0.87/call). Sonnet/Gemini write well enough with explicit voice instructions.
+export const VOICE_REWRITE_CHAIN = ["claude-sonnet-4-6", "gemini-3.1-pro-preview", "gpt-5.4", "grok-3"];
 
 export const MODEL_BYLINES: Record<string, { name: string; role: string }> = {
   "claude-opus-4-6":          { name: "Carl Lundin",       role: "Editor-at-Large" },
@@ -72,7 +73,7 @@ export function getByline(model: string): { name: string; role: string } {
 }
 
 export function pickWriterModel(): string[] {
-  return ["claude-sonnet-4-6", "gemini-3.1-pro-preview", "gpt-5.4"];
+  return ["gemini-3.1-pro-preview", "claude-sonnet-4-6", "gpt-5.4"];
 }
 
 // Category keyword classifier for scouts

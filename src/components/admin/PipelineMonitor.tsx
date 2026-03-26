@@ -125,12 +125,12 @@ const ARTICLE_GOAL = 100;
 const POLL_INTERVAL = 15_000;
 
 const STAGES: StageConfig[] = [
-  { key: 'research', icon: '🔍', label: 'Research', model: 'Gemini 2.5 Pro → Sonnet', modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
-  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Sonnet → Gemini', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
-  { key: 'write', icon: '✍️', label: 'Write', model: 'Sonnet → Gemini', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
+  { key: 'research', icon: '🔍', label: 'Research', model: 'Gemini 2.5 Pro + Search', modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
+  { key: 'editor_brief', icon: '📋', label: 'Editor', model: 'Flash → Sonnet', modelColor: '#f97316', statuses: ['editor_reviewing', 'editor_approved'] },
+  { key: 'write', icon: '✍️', label: 'Write', model: 'Gemini 3.1 Pro → Sonnet', modelColor: '#a78bfa', statuses: ['writing', 'written'] },
   { key: 'independence', icon: '⚖️', label: 'Independence', model: 'Grok 3', modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
-  { key: 'qc', icon: '✅', label: 'QC', model: 'Gemini 2.5 Pro → Sonnet', modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
-  { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Opus → Sonnet → GPT-5.4', modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
+  { key: 'qc', icon: '✅', label: 'QC', model: 'Flash → Sonnet', modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
+  { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Sonnet → Gemini → GPT-5.4', modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
   { key: 'publish', icon: '📡', label: 'Publish', model: 'GitHub + GPT Image', modelColor: '#10b981', statuses: ['publishing', 'published'] },
 ];
 
