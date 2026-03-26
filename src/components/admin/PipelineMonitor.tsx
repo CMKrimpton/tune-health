@@ -1055,50 +1055,42 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
     const eb = rd._editorBrief || {};
     const brief = (eb as Record<string, unknown>).brief as Record<string, unknown> || {};
 
-    const prompt = `You are a senior health journalist at alumi news, a premium editorial publication. Your slogan: "Evidence. Wherever it leads."
+    const prompt = `Write this article for alumi news. "Evidence. Wherever it leads."
 
-Write a magazine-quality health article following this editorial brief precisely.
+## THE ASSIGNMENT
+**${eb.headline || log.title || log.topic}**
+${eb.description || ''}
 
-## EDITORIAL BRIEF
-Headline: ${eb.headline || log.title || log.topic}
-Slug: ${eb.slug || log.slug || 'auto-generate'}
-Description: ${eb.description || ''}
 Angle: ${eb.angle || 'Follow the research'}
-Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || ''}
+Archetype: ${eb.archetype || 'deep-investigation'} | Tone: ${brief.tonePreset || 'smart-casual'} | ${brief.density || 'balanced'} density | ${brief.pacing || 'slow-build'} pacing
+${brief.tone ? `Voice note: ${brief.tone}` : ''}
+${brief.openWith ? `Open with: ${brief.openWith}` : ''}
+${((brief.emphasize as string[]) || []).length > 0 ? `Emphasize: ${((brief.emphasize as string[]) || []).join('; ')}` : ''}
+${((brief.avoid as string[]) || []).length > 0 ? `Avoid: ${((brief.avoid as string[]) || []).join('; ')}` : ''}
+${((brief.dogmaWarnings as string[]) || []).length > 0 ? `Dogma warnings: ${((brief.dogmaWarnings as string[]) || []).join('; ')}` : ''}
+${brief.closingDirection ? `Close with: ${brief.closingDirection}` : ''}
+${brief.structuralNotes ? `Structure: ${brief.structuralNotes}` : ''}
 
-### Article Form
-Archetype: ${eb.archetype || 'deep-investigation'}
-Tone preset: ${brief.tonePreset || 'smart-casual'}
-Density: ${brief.density || 'balanced'}
-Pacing: ${brief.pacing || 'slow-build'}
-
-### Writer's Direction
-Tone: ${brief.tone || 'Standard editorial voice'}
-Open with: ${brief.openWith || 'A compelling hook'}
-Emphasize: ${((brief.emphasize as string[]) || []).map(e => '- ' + e).join('\n') || 'Key findings'}
-Avoid: ${((brief.avoid as string[]) || []).map(a => '- ' + a).join('\n') || 'Clichés and filler'}
-${((brief.dogmaWarnings as string[]) || []).length > 0 ? '\nDogma Warnings:\n' + ((brief.dogmaWarnings as string[]) || []).map(w => '- ' + w).join('\n') : ''}
-Closing direction: ${brief.closingDirection || 'End with honest unknowns'}
-Structural notes: ${brief.structuralNotes || 'Use your judgment'}
-
-## RESEARCH DATA
-Topic: ${rd.topic || ''}
-Key findings:
+## RESEARCH
 ${((rd.keyFindings as string[]) || []).map((f, i) => (i + 1) + '. ' + f).join('\n')}
 
 Studies:
 ${((rd.studies as Array<{title:string;journal:string;year:string;finding:string}>) || []).map(s => '- "' + s.title + '" (' + s.journal + ', ' + s.year + '): ' + s.finding).join('\n')}
 
-Mechanism: ${rd.mechanism || 'Research and explain.'}
+${rd.mechanism ? `Mechanism: ${rd.mechanism}` : ''}
 
-Counter-arguments:
-${((rd.counterArguments as string[]) || []).map(c => '- ' + c).join('\n')}
+${((rd.counterArguments as string[]) || []).length > 0 ? `Counter-arguments:\n${((rd.counterArguments as string[]) || []).map(c => '- ' + c).join('\n')}` : ''}
 
-## OUTPUT FORMAT
-Return the article as clean HTML using these patterns:
+## VOICE
+Think The Atlantic meets Bill Maher. Evidence-first, direct, occasionally irreverent. Skeptical of all institutions equally — pharma, government, alternative health. Follow the money. Take positions. Say the thing a hospital pamphlet never would.
+
+Only cite studies from the research above — never fabricate. End with a Sources section.
+
+## HTML FORMAT
+Use this structure:
 
 <section id="introduction" class="reveal">
-  <p>First paragraph (no h2 — CSS drop cap applies).</p>
+  <p>Opening paragraph (no h2 — CSS applies drop cap).</p>
 </section>
 
 <section id="section-slug" class="reveal">
@@ -1106,19 +1098,14 @@ Return the article as clean HTML using these patterns:
   <p>Content...</p>
 </section>
 
-Pull quotes: <aside class="pull-quote reveal"><p>"Quote text."</p></aside>
+Optional: <aside class="pull-quote reveal"><p>"Striking quote."</p></aside>
 
-End with a Sources section listing every study cited.
-End with a disclaimer div.
+End with:
+<section id="sources"><h2>Sources</h2><ul><li>Citations...</li></ul></section>
+<div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal"><p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed"><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>
 
-## RULES
-- Max 3 sentences per paragraph. 2 is better.
-- Use "you" at least 6 times. Talk TO the reader.
-- At least 2 editorial opinions — actual verdicts, not hedges.
-- At least 2 everyday analogies (cars, kitchens, plumbing — not other science).
-- Follow the money: name who profits from the status quo.
-- Zero fabrication. Only cite studies from the research data above.
-- Brand voice: 60% journalism (The Atlantic), 20% Bill Maher, 15% Hitchens, 15% Sam Harris.`;
+Slug for this article: ${eb.slug || log.slug || 'auto-generate'}
+Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || 'Clinical Evidence'}`;
 
     navigator.clipboard.writeText(prompt).then(() => {
       setBriefCopied(true);
