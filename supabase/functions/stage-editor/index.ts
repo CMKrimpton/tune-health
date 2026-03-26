@@ -463,14 +463,14 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
       }
 
       // Editor approved — store the brief alongside research data
-      await db
+      const { error: approveErr } = await db
         .from("daily_article_log")
         .update({
           topic: (editorBrief.headline as string) || (chosenResearch.topic as string),
           title: editorBrief.headline as string,
           slug: editorBrief.slug as string,
           status: "editor_approved",
-          editor_score: (editorBrief.topicScore as number) || null,
+          editor_score: parseInt(String(editorBrief.topicScore || ""), 10) || null,
           source: researchData._queueId || researchData._fromQueue ? "queue" : "trending",
           research_data: {
             ...chosenResearch,
@@ -478,6 +478,9 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
           },
         })
         .eq("id", logId);
+      if (approveErr) {
+        throw new Error(`DB update to editor_approved failed: ${approveErr.message}`);
+      }
 
       // Mark queue topic as completed (editor approved)
       const queueId = researchData._queueId as string | undefined;

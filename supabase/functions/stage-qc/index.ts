@@ -223,7 +223,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
         if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
         await db.from("daily_article_log").update({
           status: "qc_approved",
-          editor_score: (qcResult.qualityScore as number) || null,
+          editor_score: parseInt(String(qcResult.qualityScore || ""), 10) || null,
           research_data: {
             ...currentData,
             _article: articleData,
@@ -264,7 +264,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
         if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
         await db.from("daily_article_log").update({
           status: "qc_approved",
-          editor_score: (qcResult.qualityScore as number) || null,
+          editor_score: parseInt(String(qcResult.qualityScore || ""), 10) || null,
           research_data: {
             ...currentData,
             _article: articleData,
@@ -298,7 +298,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
 
     const { error: publishErr } = await db.from("daily_article_log").update({
       status: "qc_approved",
-      editor_score: (qcResult.qualityScore as number) || null,
+      editor_score: parseInt(String(qcResult.qualityScore || ""), 10) || null,
       research_data: {
         ...researchData,
         _article: articleData,
