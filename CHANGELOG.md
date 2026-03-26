@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [11.1.0] - 2026-03-25
+
+### Fixed — Pipeline Concurrency & Reliability
+- **Atomic CAS (compare-and-swap) on ALL status transitions** — prevents duplicate dispatch when cron and stale detection race. Each stage atomically claims its article via `UPDATE...WHERE status = expected`
+- **Stale detection also uses CAS** — won't overwrite a stage that already completed successfully. Previously the orchestrator blindly reset articles even after a stage had already advanced them
+- **DB CHECK constraint updated** — added `voice_rewrite_pending`, `rewriting_voice`, `voice_rewrite_done`, `qc_approved` to the `daily_article_log.status` constraint. Status updates were silently rejected by PostgreSQL
+
+### Fixed — Timeout Architecture
+- **API_TIMEOUT reduced to 75s** with separate `RESEARCH_TIMEOUT` (120s) for web search — prevents `generateWithFallback` chains from exceeding the ~150s edge function timeout
+- **Editor stage uses direct `claude()` call** instead of fallback chain — single model gets the full timeout budget
+- **Write and QC limited to 2-model fallback** — 3 models × 75s = 225s > 150s edge timeout
+- **Optional `timeout` parameter on all API clients** — stages can override per-call
+
+### Changed — Model Chain
+- **Sonnet now primary writer** — spending limit raised, reverted from Gemini 3.1 Pro primary
+- **Writer chain**: `["claude-sonnet-4-6", "gemini-3.1-pro-preview", "gpt-5.4"]`
+- **OpenAI GPT-5.4**: `max_tokens` → `max_completion_tokens` (API change)
+
+### Fixed — UI & Admin
+- **Produce button feedback** — shows actual topic name and dispatched stage instead of generic "Started: produce"
+- **Orchestrator fire-and-return** — 5s dispatch timeout prevents orchestrator from blocking on slow stage calls
+
 ## [11.0.0] - 2026-03-25
 
 ### BREAKING — Pipeline Split (Monolith → Microservices)
