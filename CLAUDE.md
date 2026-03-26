@@ -103,23 +103,24 @@ supabase/
     │   ├── astro.ts                      # assembleAstroFile(), todayISO(), escapeAttr()
     │   ├── constants.ts                  # PRICING, MODEL_PROVIDERS, MODEL_BYLINES, chains
     │   ├── cors.ts                       # CORS headers, json() helper
-    │   ├── db.ts                         # supabase(), addCostToLog(), safeStage()
+    │   ├── db.ts                         # supabase(), addCostToLog(), safeStage(), parseScore()
+    │   ├── dedup.ts                     # extractFingerprint(), isDuplicate(), buildFingerprints()
     │   ├── featured.ts                   # rotateFeatured()
     │   ├── github.ts                     # publishToGitHub() with retry
     │   ├── pubmed.ts                     # verifyPubMedCitations()
     │   ├── types.ts                      # ApiResult, ApiUsage, VoiceAudit interfaces
     │   └── voice-audit.ts               # auditVoiceQuality()
     │
-    ├── pipeline-orchestrator/            # 1-min cron — checks DB, dispatches stages via HTTP
-    ├── stage-research/                   # Stage 1: web search + structure findings
-    ├── stage-editor/                     # Stage 2: editor brief — pick topic, assign archetype/tone
-    ├── stage-write/                      # Stage 3: write article from brief
-    ├── stage-independence/               # Stage 4: Grok adversarial review + PubMed check
-    ├── stage-qc/                         # Stage 5: QC check — publish/rewrite_voice/revise/kill
-    ├── stage-voice-rewrite/              # Stage 6: voice-only rewrite by premium models
-    ├── stage-publish/                    # Stage 7: GitHub commit + Vercel hook + illustration
-    ├── pipeline-scout/                   # Scout — discovers topics (called by 3 daily crons)
-    ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, rotate featured
+    ├── stage-research/                   # Stage 1: Gemini 2.5 Pro + Google Search → Sonnet fallback
+    ├── stage-editor/                     # Stage 2: Flash → Sonnet. Editor brief — archetype/tone
+    ├── stage-write/                      # Stage 3: Gemini 3.1 Pro → Sonnet (fallback path only — hybrid model pauses here)
+    ├── stage-independence/               # Stage 4: Grok 3 adversarial review + Flash corrections + PubMed
+    ├── stage-qc/                         # Stage 5: Flash → Sonnet. QC — publish/rewrite_voice/revise/kill
+    ├── stage-voice-rewrite/              # Stage 6: Sonnet → Gemini → GPT-5.4 (skipped for human-written articles)
+    ├── stage-publish/                    # Stage 7: GitHub commit + Vercel hook + GPT Image illustration
+    ├── pipeline-scout/                   # Scout — 3x/day topic discovery (all Gemini + Google Search)
+    ├── pipeline-pinger/                  # Pinger — 4x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
+    ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article
     │
     ├── articles-api/                     # (existing) CRUD for articles table
     ├── process-article/                  # (existing) manual article generation
@@ -297,16 +298,16 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 
 | Function | Purpose | Auth |
 |---|---|---|
-| `pipeline-orchestrator` | 1-min cron entry point — reads DB state, dispatches next stage via HTTP call to the appropriate `stage-*` function | None (called by pg_cron) |
-| `stage-research` | Stage 1: Claude web search → Gemini fallback. Directed research for queue topics | None (called by orchestrator) |
-| `stage-editor` | Stage 2: Gemini 3.1 Pro → Sonnet → GPT-5.4. Editor brief — archetype, tone, density, pacing | None (called by orchestrator) |
-| `stage-write` | Stage 3: Gemini 3.1 Pro → GPT-5.4. Full article generation (16K max tokens) | None (called by orchestrator) |
-| `stage-independence` | Stage 4: Grok 3 adversarial review + PubMed citation verification | None (called by orchestrator) |
-| `stage-qc` | Stage 5: Gemini 2.5 Pro → Sonnet → GPT-5.4. Quality check — publish/rewrite_voice/revise/kill | None (called by orchestrator) |
-| `stage-voice-rewrite` | Stage 6: Opus → Sonnet → GPT-5.4 → Gemini → Grok. Voice-only prose rewrite | None (called by orchestrator) |
-| `stage-publish` | Stage 7: GitHub commit + Vercel deploy hook + illustration generation + featured rotation | None (called by orchestrator) |
-| `pipeline-scout` | Three-model topic discovery (Gemini/Sonnet/Grok). Called by 3 daily crons | None (called by pg_cron) |
-| `pipeline-admin` | Admin API: `status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured` | None (rate-limited internally) |
+| `stage-research` | Stage 1: Gemini 2.5 Pro + Google Search grounding → Sonnet fallback | None (called by SQL dispatch) |
+| `stage-editor` | Stage 2: Flash → Sonnet. Editor brief — archetype, tone, density, pacing | None (called by SQL dispatch) |
+| `stage-write` | Stage 3: Gemini 3.1 Pro → Sonnet → GPT-5.4. Full article (fallback path only — hybrid pauses at editor_approved) | None (called by SQL dispatch) |
+| `stage-independence` | Stage 4: Grok 3 adversarial review + Flash corrections + PubMed verification | None (called by SQL dispatch) |
+| `stage-qc` | Stage 5: Flash → Sonnet. QC — publish/rewrite_voice/revise/kill. Skips voice rewrite for human-written articles | None (called by SQL dispatch) |
+| `stage-voice-rewrite` | Stage 6: Sonnet → Gemini → GPT-5.4 → Grok. Voice-only prose rewrite (skipped for Opus/human articles) | None (called by SQL dispatch) |
+| `stage-publish` | Stage 7: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
+| `pipeline-scout` | 3x/day topic discovery — all Gemini + Google Search grounding. Trending signals, search demand, "why now" | None (called by pg_cron) |
+| `pipeline-pinger` | 4x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
+| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `produce`, `scout` | None (rate-limited internally) |
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |
@@ -321,28 +322,30 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 supabase functions deploy <function-name> --no-verify-jwt
 
 # Deploy all pipeline functions at once
-for fn in pipeline-orchestrator stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-publish pipeline-scout pipeline-admin; do
+for fn in stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-publish pipeline-scout pipeline-pinger pipeline-admin; do
   supabase functions deploy $fn --no-verify-jwt
 done
 ```
 
 **Required secrets** (set via `supabase secrets set`):
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
-- `XAI_API_KEY` (Grok 3 for independence review), `GOOGLE_API_KEY` (future use)
+- `XAI_API_KEY` (Grok 3 for independence review + pinger social trending), `GOOGLE_API_KEY` (Gemini for research, scouts, pinger)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
 
 **Database tables:**
 - `articles` — main content table. Key columns: `slug`, `title`, `description`, `category`, `tags[]`, `keywords[]`, `article_html`, `hero_image`, `status`, `independence_score`, `editor_score`, `pipeline_log_id` (FK to daily_article_log)
 - `daily_article_log` — tracks pipeline stages. Key columns: `topic`, `slug`, `title`, `status`, `error`, `research_data` (jsonb), `editor_score`, `grok_score`, `model_used`, `revision_count`, `source` (trending/queue), `stage_started_at`, `cost_usd` (numeric, cumulative per article), `token_usage` (jsonb, per-call breakdown)
-- `topic_queue` — editorial topic backlog. Key columns: `topic`, `notes`, `category`, `priority`, `expedite`, `source` (manual/trending), `status` (queued/assigned/in_progress/completed/skipped), `editor_score`, `research_summary`
+- `topic_queue` — editorial topic backlog. Key columns: `topic`, `notes`, `category`, `priority`, `expedite`, `source` (manual/trending/breaking), `status` (queued/assigned/in_progress/completed/skipped), `editor_score`, `research_summary`
+- `pinger_signals` — breaking news signal tracking. Key columns: `signal_hash`, `topic`, `source` (gemini_search/grok_social/pubmed_rss), `urgency`, `why_breaking`, `promoted_to_queue`, `queue_id`, `expires_at` (48h auto-cleanup)
 - `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source)
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
-- `scout-gemini`: daily 6am UTC → `pipeline-scout` — Gemini discovers 20 topics via Google Search
-- `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Sonnet discovers 20 topics via web search
-- `scout-grok`: daily 10pm UTC → `pipeline-scout` — Grok discovers 20 topics (contrarian perspective)
-- `article-produce`: every 1 min (`* * * * *`) → `pipeline-orchestrator` — checks DB, dispatches next stage via HTTP to the appropriate `stage-*` function
-- `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation (runs even when production crons are paused)
+- `scout-gemini`: daily 6am UTC → `pipeline-scout` — Gemini + Google Search discovers 20 trending topics
+- `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Gemini + Google Search (editorial lens) discovers 20 topics
+- `scout-grok`: daily 10pm UTC → `pipeline-scout` — Grok discovers 20 contrarian topics
+- `article-produce`: every 1 min (`* * * * *`) → SQL function `dispatch_pipeline_stage()` → `pg_net.http_post()` to stage functions. Skips `editor_approved` (pauses for human writing)
+- `pinger`: every 15 min (`*/15 * * * *`) → `pipeline-pinger` — rotating breaking news detector (Gemini Flash/:00, PubMed RSS/:15, Grok/:30, PubMed RSS/:45)
+- `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
 - View schedule: `SELECT * FROM cron.job;`
 - View run history: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`

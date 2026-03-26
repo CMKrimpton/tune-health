@@ -1,47 +1,69 @@
 # Next Session Plan
 
-> **Status**: v11.2.0 deployed. All 8 stage functions hardened and deployed. Dead code removed. Pipeline confirmed running autonomously (research → editor → write → independence → QC all 200 OK).
+> **Status**: v12.0.0 live. Hybrid pipeline (AI discovers, human writes with Opus). Pinger detecting breaking news 4x/hour. Pipeline hardened. Cost: ~$0.13/article + ~$0.28/day signal detection.
 
 ---
 
-## Current Architecture (v11.2.0)
+## Current Architecture (v12.0.0)
 
-- **Cron** (`* * * * *`) calls SQL function `dispatch_pipeline_stage()` directly
-- SQL function queries DB for next article, dispatches the appropriate `stage-*` edge function via `pg_net.http_post()` (fire-and-forget)
-- Each stage has its own 150s timeout, atomic CAS status transitions, and independent error handling
-- Dead code deleted: `daily-article-agent/` and `pipeline-orchestrator/`
-- `pipeline-admin` "produce" action now calls SQL function via RPC
-- Sonnet is primary writer, Gemini 3.1 Pro fallback
+- **Signal detection**: 3x/day scouts (Gemini + Google Search) + 4x/hour pinger (rotating Gemini Flash/Grok/PubMed RSS)
+- **Pipeline**: SQL dispatch `dispatch_pipeline_stage()` via pg_cron every minute → pg_net fire-and-forget
+- **Hybrid flow**: research → editor brief → **PAUSE** → human writes with Opus (Max subscription) → submit → independence → QC → publish
+- **Human-written articles skip voice rewrite** — QC detects `_writtenBy: "human-opus"` and overrides rewrite_voice → publish
+- **submit-article auto-strips full HTML pages** — if Opus generates `<!DOCTYPE>`, extracts body sections automatically
+- Dead code removed: `daily-article-agent/`, `pipeline-orchestrator/`
 
-## What Was Fixed (v11.2.0)
+## What Was Built This Session
 
-1. **`parseScore()` helper** — safely parses AI scores like "8/10", "8", 8 → integer. Used everywhere that writes `editor_score`.
-2. **`stage-publish` "8/10" bug** — was passing raw string to integer column, causing PostgreSQL `invalid input syntax` errors.
-3. **`stage-editor` no fallback** — was single `claude()` call with no fallback. Now uses `generateWithFallback()` with 2-model chain.
-4. **`stage-qc` error handler** — was trying to read consumed request body in catch block. Fixed with `parsedLogId`.
-5. **`stage-voice-rewrite` error handling** — had no DB error logging on failure. Now writes failed status + error message.
-6. **DB error checking** — added to `stage-research` and `stage-independence` final status updates.
-7. **Dead code cleanup** — deleted `daily-article-agent/` (3984-line monolith) and `pipeline-orchestrator/` (replaced by SQL dispatch).
-8. **`pipeline-admin` produce** — now calls `dispatch_pipeline_stage()` via SQL RPC instead of deleted orchestrator.
+### Pipeline Hardening
+- `parseScore()` — safely handles "8/10" AI output for integer columns
+- Fallback chain added to stage-editor (was single point of failure)
+- Error handlers fixed in stage-qc and stage-voice-rewrite
+- DB error checking on all critical status updates
+
+### Cost Reduction ($0.94 → $0.13/article)
+- Research: Gemini 2.5 Pro + Google Search ($0.04) — was Sonnet web search ($0.40)
+- Editor/QC/Independence revision: Flash ($0.003) — was Sonnet/Gemini Pro ($0.03-0.08)
+- Writer: Gemini 3.1 Pro primary ($0.14) — was Sonnet ($0.24)
+- Voice rewrite: Opus removed ($0.87/call eliminated)
+- Writing: $0 via Max subscription (Opus)
+- Scouts: all Gemini Search ($0.12/day) — was Sonnet web search ($1.30/day)
+
+### Hybrid Pipeline
+- Pipeline pauses at `editor_approved` (SQL dispatch skips this status)
+- Dashboard: "Copy Brief for Claude" button (client-side, no fetch)
+- Dashboard: "Submit Written Article" form → resumes pipeline at "written"
+- Human-written articles skip voice rewrite
+- submit-article auto-strips full HTML pages from Opus
+- Gradient + tags included in metadata for Astro schema validation
+
+### Breaking News Pinger
+- `pipeline-pinger` edge function, `*/15 * * * *` cron
+- Rotating: Gemini Flash Search (:00), PubMed RSS (:15), Grok social (:30), PubMed RSS (:45)
+- Three-gate filter: self-dedup → article/queue dedup → corroboration
+- `pinger_signals` table with 48h auto-cleanup
+- Breaking topics insert at P1 with expedite=true, source="breaking"
+- ~$0.16/day
+
+### Scout Upgrade
+- "Why now" + search demand + "Our angle" required for each topic
+- High-demand topics auto-prioritized
+- All scouts use Gemini + Google Search (killed Sonnet web search entirely)
 
 ## Priority for Next Session
 
-### 1. Verify End-to-End Article Publication
-- Check if the article that was in QC when fixes were deployed actually published
-- Check edge function logs: `stage-publish` should have run after QC approved
-- Check GitHub repo for new `.astro` + `.json` files
-- Check Vercel for successful rebuild
+### 1. Test the Full Hybrid Flow End-to-End
+- Queue has 12 topics. Pipeline should research → editor brief → pause
+- Pick one, Copy Brief, write in Claude, submit, watch it publish
+- Verify: Grok review runs, QC passes (no voice rewrite), publishes to GitHub, Vercel rebuilds
 
-### 2. Monitor stage-write Timeout Risk
-- `stage-write` took 143s out of 150s edge function limit
-- If longer articles timeout, consider: reducing `maxTokens` from 16384, or splitting write into outline + body stages
-- Check `daily_article_log.error` for timeout-related failures
+### 2. Monitor Pinger
+- Check `pinger_signals` table after 24h — is it detecting real signals?
+- Check if corroboration gate is working (medium signals need 2 sources)
+- Check false positive rate — are junk topics getting promoted?
 
-### 3. Cost Tracking
-- Pipeline API calls cost real money (~$20 was charged during this session from research → QC)
-- Most expensive stages: write (16K output tokens), voice-rewrite (16K output tokens), independence (Grok 3)
-- `daily_article_log.cost_usd` tracks per-article spend
-
-### 4. Known Non-Critical Issues
-- `WARN: failed to read file: open supabase/layouts/ArticleLayout.astro` during deploy — harmless, template reference in astro.ts
-- Supabase CLI v2.75.0 is installed, v2.84.2 is available — update when convenient
+### 3. Possible Improvements
+- **Prompt trimming**: the stage-write system prompt is 5,400 tokens — could be 2,500 (attention dilution)
+- **Reader analytics integration**: which existing articles get the most traffic? Inform scouts
+- **Admin dashboard**: show pinger activity, add "Daily Briefing" view of top editor_approved articles
+- **Cost monitoring dashboard**: per-day spend chart, per-stage breakdown
