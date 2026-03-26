@@ -1,8 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, getExistingArticles, safeStage } from "../_shared/db.ts";
-import { claude, gemini, generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
-import { WRITER_FALLBACK_CHAIN, RESEARCH_TIMEOUT } from "../_shared/constants.ts";
+import { gemini, claude, parseClaudeJSON } from "../_shared/api-clients.ts";
+import { RESEARCH_TIMEOUT } from "../_shared/constants.ts";
 import { todayISO } from "../_shared/astro.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
@@ -210,78 +210,18 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
         research._queueSource = source || "manual";
         if (queueId) research._queueId = queueId;
         await addCostToLog(db, logId, researchUsage);
-      } else {
-        // TWO-MODEL SCOUT: Gemini discovers via Google Search, Sonnet structures into candidates
-
-        // Step 1: Gemini searches the web for trending health topics
-        const { text: geminiFindings, usage: geminiUsage } = await gemini({
-          system: "You are a health science researcher. Find the most compelling, evidence-based health stories. Every topic must be backed by real studies. No celebrity health, no supplement hype.",
-          user: `Find 10 compelling health stories we should cover. Mix of recent (last 30 days) and landmark (last 5 years).
-
-FOCUS on these underserved categories: ${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 7).map(([cat, count]) => `${cat} (only ${count} articles)`).join(", ") || "Nutrition, Fitness, Sleep Science, Pharmacology, Longevity"}
-
-CRITICAL SUBJECT GAPS (zero coverage — highest priority):
-Cardiology/heart disease, diabetes/metabolic syndrome, immunology, kidney disease, liver disease (NAFLD), respiratory/pulmonary, musculoskeletal/arthritis, addiction biology, prostate health, pain science, dermatology.
-At least 3 of your 10 topics MUST address these gaps. Do NOT default to neuroscience — we have 23 of those.
-
-Every topic must be COMPLETELY DIFFERENT from these subjects we already covered (${titles.length} articles):
-${titles.map((t) => `- ${t.split(" (")[0]}`).join("\n")}
-
-For each: headline, key finding, source, why it matters. Plain text, numbered 1-10.`,
-          maxTokens: 4000,
-          temperature: 0.4,
-        }, "scout-gemini");
-        await addCostToLog(db, logId, geminiUsage);
-
-        // Step 2: Structure raw findings into candidate JSON — with fallback
-        const structureSystem = `You structure raw research findings into JSON. For each candidate, also suggest how the article should be treated — is it a deep investigation, a quick explainer, a provocative opinion piece, a case study about one key paper, or a roundup of recent findings? This affects the entire downstream pipeline. Return ONLY valid JSON, no explanation.`;
-        const structureUser = `From these research findings, pick the 5 BEST topics that are NOT in the off-limits list. Prioritize: diversity across categories, scientific substance, counter-narrative potential. For each topic, suggest a treatment — how should this article be shaped?
-
-Return ONLY this JSON (5 candidates max):
-
-{"candidates":[{"rank":1,"topic":"...","headline_draft":"...","why":"...","category":"Neuroscience|Mental Health|Longevity|Clinical Evidence|Environmental Health|Nutrition|Fitness|Sleep Science|Pharmacology","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","statistics":["..."],"suggestedTreatment":"deep-investigation|the-explainer|provocation|case-study|profile|the-roundup|myth-autopsy","treatmentReason":"Why this treatment suits this topic"}]}
-
-## RAW FINDINGS:
-${geminiFindings}
-
-## OFF-LIMITS (do not include topics in same subject area):
-${titles.map((t) => `- ${t}`).join("\n")}
-
-## PRIORITY CATEGORIES (need more articles):
-${Object.entries(categoryCounts).filter(([, count]) => (count as number) <= 7).map(([cat]) => `- ${cat}`).join("\n") || "All categories well-covered"}
-
-## CRITICAL: Prefer candidates covering these zero-coverage subjects: cardiology, diabetes, immunology, kidney disease, liver disease, respiratory, musculoskeletal, addiction, prostate health, pain science, dermatology.`;
-
-        const { text: researchRaw, usage: structureUsage, modelUsed: _structModel } = await generateWithFallback({
-          system: structureSystem,
-          user: structureUser,
-          models: WRITER_FALLBACK_CHAIN,
-          maxTokens: 4000,
-          stage: "scout-structure",
-          webSearch: false, // Structuring existing data — no search needed
-        });
-        await addCostToLog(db, logId, structureUsage);
-
-        research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
       }
 
       // Build topic summary for log
-      const candidates = research.candidates as Array<Record<string, unknown>> | undefined;
-      const topicSummary = candidates
-        ? candidates.map((c, i) => `${i + 1}. ${c.topic}`).join(" | ")
-        : (research.topic as string);
+      const topicSummary = (research.topic as string) || topic;
 
       const { error: updateErr } = await db
         .from("daily_article_log")
         .update({
           topic: topicSummary,
           status: "research_done",
-          search_queries: candidates
-            ? candidates.map((c) => c.headline_draft as string).slice(0, 10)
-            : ((research.keyFindings as string[]) || []).slice(0, 10),
-          research_snippets: candidates
-            ? candidates.flatMap((c) => (c.studies as unknown[]) || []).slice(0, 10)
-            : (research.studies as unknown[]) || [],
+          search_queries: ((research.keyFindings as string[]) || []).slice(0, 10),
+          research_snippets: (research.studies as unknown[]) || [],
           research_data: research,
         })
         .eq("id", logId);

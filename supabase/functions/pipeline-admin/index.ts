@@ -521,7 +521,7 @@ Deno.serve(async (req: Request) => {
         slug,
         title: metadata.title,
         status: "written",
-        model_used: "claude-opus-4-6",
+        model_used: "human-opus",
         stage_started_at: new Date().toISOString(),
         research_data: {
           ...researchData,
@@ -536,6 +536,15 @@ Deno.serve(async (req: Request) => {
       }).eq("id", logId);
 
       if (logErr) return json({ error: `Failed to update log: ${logErr.message}` }, 500);
+
+      // Log $0 cost for human write stage (makes token_usage timeline complete)
+      await db.from("daily_article_log").update({
+        cost_usd: (await db.from("daily_article_log").select("cost_usd").eq("id", logId).maybeSingle()).data?.cost_usd || 0,
+        token_usage: [
+          ...((await db.from("daily_article_log").select("token_usage").eq("id", logId).maybeSingle()).data?.token_usage as Array<unknown> || []),
+          { model: "human-opus", stage: "write", inputTokens: 0, outputTokens: 0, costUsd: 0 },
+        ],
+      }).eq("id", logId);
 
       // Chain-dispatch: fire independence review immediately (no cron wait)
       dispatchStage("stage-independence", logId);

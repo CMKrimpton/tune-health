@@ -2,8 +2,10 @@ export const MAX_CONCURRENT = 1;
 export const STALE_MS = 5 * 60 * 1000; // 5 min — must be longer than any single stage API call (75s timeout + overhead)
 export const API_TIMEOUT = 75_000; // 75s per model — allows 2 fallback attempts within ~150s edge function timeout
 export const RESEARCH_TIMEOUT = 120_000; // 120s — research web search needs more time (single model, no fallback chain)
-export const ACTIVE = ["started","searching","writing","publishing","editor_reviewing","editor_qc","independence_review","researching","topic_selected","rewriting_voice"];
-export const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","voice_rewrite_pending","voice_rewrite_done","qc_approved","saved"];
+// Active statuses = currently processing (used by stale detection + concurrency guard)
+export const ACTIVE = ["started","searching","publishing","editor_reviewing","editor_qc","independence_review"];
+// All pipeline statuses (active + waiting + terminal)
+export const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","qc_approved"];
 
 // Pricing per million tokens (USD)
 export const PRICING: Record<string, { input: number; output: number }> = {
@@ -57,6 +59,7 @@ export const WRITER_FALLBACK_CHAIN = ["gemini-3.1-pro-preview", "claude-sonnet-4
 export const VOICE_REWRITE_CHAIN = ["claude-sonnet-4-6", "gemini-3.1-pro-preview", "gpt-5.4", "grok-3"];
 
 export const MODEL_BYLINES: Record<string, { name: string; role: string }> = {
+  "human-opus":               { name: "Carl Lundin",       role: "Editor-at-Large" },  // Human-written via Opus Max
   "claude-opus-4-6":          { name: "Carl Lundin",       role: "Editor-at-Large" },
   "claude-sonnet-4-6":        { name: "Max Quilici",       role: "Senior Health Correspondent" },
   "claude-sonnet-4-20250514": { name: "Max Quilici",       role: "Senior Health Correspondent" },

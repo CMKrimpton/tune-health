@@ -213,14 +213,31 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
 
     // If editor requests revisions, send back to write stage (max 1 revision to avoid loops)
     if (qcResult.decision === "revise") {
+      // In hybrid mode, human wrote with Opus. Flash QC requesting a revise should not
+      // silently park the article at editor_approved (dead end). Force-publish with
+      // QC's headline/description improvements applied. The human's prose is the product.
+      if (isHumanWritten) {
+        console.log(`[QC] Revise requested but article was human-written — force publishing with QC improvements`);
+        const finalTitle = (qcResult.headline as string) || (metadata.title as string);
+        const finalDescription = (qcResult.description as string) || (metadata.description as string);
+        if (finalTitle) (metadata as Record<string, unknown>).title = finalTitle;
+        if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
+        const { error: forceErr } = await db.from("daily_article_log").update({
+          status: "qc_approved",
+          editor_score: parseScore(qcResult.qualityScore),
+          research_data: { ...researchData, _article: articleData, _qcResult: qcResult },
+        }).eq("id", logId);
+        if (!forceErr) dispatchStage("stage-publish", logId);
+        return json({ success: true, logId, qcResult, decision: "publish_forced_human_written" });
+      }
+
+      // Non-human articles: standard revise logic (back to editor_approved for rewrite)
       const currentLog = (await db.from("daily_article_log").select("research_data, revision_count").eq("id", logId).single()).data as { research_data: Record<string, unknown>; revision_count: number | null } | null;
       const currentData = (currentLog?.research_data as Record<string, unknown>) || {};
       const revisionCount = ((currentLog?.revision_count as number) || 0) + 1;
 
       if (revisionCount > 1) {
-        // Max revisions reached — force publish with editor's improvements applied
         console.log(`[QC] Max revisions (${revisionCount}) reached for ${slug} — force publishing`);
-        // Apply headline/description improvements and set to qc_approved
         const finalTitle = (qcResult.headline as string) || (metadata.title as string);
         const finalDescription = (qcResult.description as string) || (metadata.description as string);
         if (finalTitle) (metadata as Record<string, unknown>).title = finalTitle;
@@ -228,27 +245,16 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
         await db.from("daily_article_log").update({
           status: "qc_approved",
           editor_score: parseScore(qcResult.qualityScore),
-          research_data: {
-            ...currentData,
-            _article: articleData,
-            _qcResult: qcResult,
-          },
+          research_data: { ...currentData, _article: articleData, _qcResult: qcResult },
         }).eq("id", logId);
         dispatchStage("stage-publish", logId);
         return json({ success: true, logId, qcResult, decision: "publish_forced_max_revisions" });
       } else {
-        await db
-          .from("daily_article_log")
-          .update({
-            status: "editor_approved", // Back to write queue
-            revision_count: revisionCount,
-            research_data: {
-              ...currentData,
-              _reviseInstructions: qcResult.reviseInstructions,
-            },
-          })
-          .eq("id", logId);
-        // Produce handler loop will pick up editor_approved → write again
+        await db.from("daily_article_log").update({
+          status: "editor_approved",
+          revision_count: revisionCount,
+          research_data: { ...currentData, _reviseInstructions: qcResult.reviseInstructions },
+        }).eq("id", logId);
         return json({ success: true, logId, qcResult, decision: "revise" });
       }
     }
