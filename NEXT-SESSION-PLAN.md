@@ -1,10 +1,10 @@
 # Next Session Plan
 
-> **Status**: v12.3.0 live. Full chain-dispatch everywhere (produce → research → editor, submit → independence → QC → publish). Manual Produce bypasses daily cap. Queue items expandable.
+> **Status**: v12.3.1 live. VS Code 1.113 optimized (session forking, nested subagents, Tailwind Astro intellisense). Full chain-dispatch everywhere. Hybrid pipeline operational.
 
 ---
 
-## Current Architecture (v12.3.0)
+## Current Architecture (v12.3.1)
 
 - **Manual Produce**: `produce-topic` action → pg_net → research → chain-dispatch → editor → pause. Bypasses 5-brief daily cap.
 - **Auto-produce**: 5-min cron processes ≤5 queue items/day. Research chain-dispatches editor.
@@ -18,6 +18,7 @@
 - Produce button dispatches immediately (no cap block)
 - Chain-dispatch eliminates cron waits on all user-triggered flows
 - Human-written articles skip voice rewrite and force-publish on revise
+- VS Code 1.113: session forking, nested subagents, browser tab management, Tailwind intellisense in .astro files
 
 ## Priority for Next Session
 

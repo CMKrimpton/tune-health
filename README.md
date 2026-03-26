@@ -123,24 +123,25 @@ src/
 - **Dashboard**: 8 compact stat cards with gradient overlays, 3 tab panels with fade-in transitions (Pipeline, Articles, AI Agents)
 - **Pipeline Monitor**: 7-stage visual pipeline with live model labels, hover-reveal gradient lines, active card glow animations. Manual triggers: individual scout buttons (Gemini/Sonnet/Grok/All 3) + Produce Now with API response feedback. Topic queue with full controls per item (Produce, Expedite, Priority ↑↓, Delete, Reset stuck items). Published articles show model pen names + independence scores. Failed articles have Re-queue + Retry buttons.
 - **Articles Manager**: search, filter, sort (including by independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh from DB. Semitransparent status badges
-- **AI Agents**: Reader Questions (mines alumi Health chat data for popular user questions), Cron Schedule (5 active jobs), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
+- **AI Agents**: Reader Questions (mines alumi Health chat data for popular user questions), **Breaking News Pinger** (recent signals with source color coding, PROMOTED badges, refresh button), Cron Schedule (6 active jobs), editorial QC, illustration agent, Database & Maintenance (Refresh DB, Backfill Costs, Rotate Featured), editor decision log
 - **Edit page**: metadata/content/AI refine tabs, 2s autosave + Cmd+S, score badges, live preview auto-refresh, Publish + Delete from GitHub, XSS-safe chat
 - **New Article** (`/admin/new`): upload source docs or paste text → AI generates article → chat refinement → publish
 
 ### Hybrid AI Newsroom (v12)
 Four AI companies, seven models, human-in-the-loop writing with Opus. AI handles discovery, research, editorial judgment, and quality control. Human writes with the best model. ~$0.13/article.
 
-Each pipeline stage is its own independent Supabase Edge Function. A SQL dispatch function (`dispatch_pipeline_stage()`) called every minute by pg_cron drives progression via `pg_net.http_post()` (fire-and-forget).
+Each pipeline stage is its own independent Supabase Edge Function. A SQL dispatch function (`dispatch_pipeline_stage()`) called every 5 minutes by pg_cron is the safety-net. Primary dispatch is chain-dispatch: user-triggered flows (Produce, Submit) call the next stage directly via `chain_dispatch()` SQL → `pg_net.http_post()` (fire-and-forget).
 
 - **Scout** (3 crons/day, all Gemini + Google Search grounding): **Gemini** (6am, trending/search demand), **Editorial** (2pm, counter-narratives), **Grok** (10pm, contrarian/buried data). Each finds 20 topics with "why now" rationale + search demand scoring. High-demand topics auto-prioritized. ~$0.12/day total
-- **Pipeline** (cron: every minute via SQL dispatch):
+- **Pinger** (4x/hour, rotating): Gemini Flash (:00), PubMed RSS (:15), Grok (:30), PubMed RSS (:45). Corroboration gate promotes to queue with BREAKING badge
+- **Pipeline** (5-min safety-net cron + chain-dispatch, caps at 5 briefs/day):
   1. **Research** (`stage-research`) — Gemini 2.5 Pro + Google Search grounding → Sonnet fallback. Deep research for queued topics
   2. **Editor Brief** (`stage-editor`) — Flash → Sonnet fallback. Assigns archetype (7 types) + tone preset (10 options) + density + pacing. Manually queued topics get "MANDATORY EDITORIAL DIRECTION"
   3. **PAUSE** — Article waits at `editor_approved` for human writing
   4. **Human writes with Opus** — Dashboard shows "Copy Brief for Claude" button. User pastes brief to Claude Mac/Code, Opus writes article (Max subscription, $0 marginal cost). User pastes HTML back via "Submit Article" form
   5. **Grok Independence Review** (`stage-independence`) — Grok 3 adversarial review + PubMed verification. Flash applies corrections
   6. **QC** (`stage-qc`) — Flash → Sonnet fallback. Publish/rewrite_voice/revise/kill. Mechanical voice audit
-  7. **Voice Rewrite** (`stage-voice-rewrite`, if QC triggers) — Sonnet → Gemini → GPT-5.4. Voice-only prose rewrite
+  7. **Voice Rewrite** (`stage-voice-rewrite`, if QC triggers, skipped for human-written articles) — Sonnet → Gemini → GPT-5.4 → Grok. Voice-only prose rewrite
   8. **Publish** (`stage-publish`) — GitHub commit (.astro + .json), Vercel deploy hook, illustration (GPT Image), featured rotation
 - **Reader Questions**: mines alumi Health AI assistant chat data for popular user questions → topic queue
 - **Fallback chain**: every stage has provider fallback — pipeline survives any single provider outage
@@ -241,19 +242,19 @@ The site is deployed on Vercel with automatic deployments:
   - `fetch-article` — GitHub file fetching
   - `generate-illustration` — AI illustration generation (OpenAI GPT Image 1.5) with batch support
   - `editorial-qc` — Autonomous editorial quality control (Claude audits full collection, auto-fixes headlines/descriptions/illustrations)
-  - `pipeline-orchestrator` — lightweight dispatcher (1-min cron), checks DB for in-progress articles and dispatches the appropriate stage function
-  - `stage-research` — directed research via Claude web search, Gemini fallback
-  - `stage-editor` — AI editor brief (archetype, tone, density, pacing, duplicate detection)
-  - `stage-write` — full article generation with brand voice formula and anti-wiki rules
-  - `stage-independence` — Grok 3 adversarial independence review + PubMed verification
-  - `stage-qc` — quality control with mechanical voice audit (publish/rewrite/revise/kill)
-  - `stage-voice-rewrite` — Opus-led voice polish (facts preserved, prose rewritten)
-  - `stage-publish` — GitHub commit, Vercel deploy hook, illustration generation, featured rotation
-  - `pipeline-scout` — multi-model topic discovery (Gemini, Sonnet, Grok — 3 daily crons)
-  - `pipeline-admin` — admin actions (status, queue CRUD, retry, kill, rotate featured, backfill costs)
-  - `_shared/` — 10 shared utility modules (api-clients, constants, db, dedup, html, models, prompts, research, voice-audit, types)
+  - `stage-research` — Gemini 2.5 Pro + Google Search grounding → Sonnet fallback
+  - `stage-editor` — Flash → Sonnet. Editor brief (archetype, tone, density, pacing)
+  - `stage-write` — Gemini 3.1 Pro → Sonnet (fallback path only — hybrid model pauses at editor_approved)
+  - `stage-independence` — Grok 3 adversarial review + Flash corrections + PubMed verification
+  - `stage-qc` — Flash → Sonnet. Publish/rewrite_voice/revise/kill + mechanical voice audit
+  - `stage-voice-rewrite` — Sonnet → Gemini → GPT-5.4 → Grok (skipped for human-written articles)
+  - `stage-publish` — GitHub commit, Vercel deploy hook, GPT Image illustration, featured rotation
+  - `pipeline-scout` — 3x/day topic discovery (all Gemini + Google Search grounding)
+  - `pipeline-pinger` — 4x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
+  - `pipeline-admin` — admin actions (status, queue CRUD, produce-topic, get-brief, submit-article, retry, kill, rotate featured, backfill costs)
+  - `_shared/` — shared utility modules (api-clients, astro, constants, cors, db, dedup, featured, github, pubmed, types, voice-audit)
 - **Storage**: `article-illustrations` bucket for AI-generated editorial art
-- **Cron**: `pg_cron` + `pg_net` — scout-gemini (6am, calls `pipeline-scout`), scout-sonnet (2pm, calls `pipeline-scout`), scout-grok (10pm, calls `pipeline-scout`), article-produce (every minute, calls `pipeline-orchestrator`), featured-rotation (every 6h, calls `pipeline-admin`)
+- **Cron**: `pg_cron` + `pg_net` — scout-gemini (6am), scout-sonnet (2pm), scout-grok (10pm), article-produce (every 5 min, SQL dispatch with 5-brief daily cap), pinger (every 15 min, rotating sources), featured-rotation (every 6h)
 
 ## Documentation
 

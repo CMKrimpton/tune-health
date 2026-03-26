@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.3.1] - 2026-03-26
+
+### Changed — VS Code & Dev Tooling Optimization
+- Added VS Code 1.113 settings: session forking for Claude agents, nested subagents, browser tab management
+- Fixed Tailwind intellisense in `.astro` files — added `astro: "html"` to `tailwindCSS.includeLanguages`
+- Added `*.astro` file association for proper language detection
+- Updated README.md: corrected pipeline architecture (SQL dispatch, 5-min cron, pinger, hybrid model)
+- Updated README.md: removed dead `pipeline-orchestrator` reference, fixed model attributions
+
 ## [12.3.0] - 2026-03-26
 
 ### Fixed — Produce Button Bypasses Daily Cap
