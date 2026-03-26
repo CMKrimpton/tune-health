@@ -252,10 +252,13 @@ SQL function queries DB for highest-priority article, dispatches to appropriate 
 **Architecture (split pipeline, SQL dispatch)**:
 Each stage is its own edge function with shared utilities in `_shared/`. The SQL function `dispatch_pipeline_stage()` (called by pg_cron) reads DB state, picks the highest-priority article, and dispatches via `pg_net.http_post()` (fire-and-forget — no shared timeout). `editor_approved` is EXCLUDED from auto-dispatch — articles pause there for human writing. Dead code deleted: `daily-article-agent/` (old monolith) and `pipeline-orchestrator/` (replaced by SQL dispatch).
 
-**Stage progression**: 1-min cron → SQL function → `pg_net.http_post()` → stage function → DB update → next cron tick. Stale detection (5-min threshold) runs BEFORE concurrency guard.
+**Chain-dispatch (post-submit)**: submit-article → `chain_dispatch()` SQL → `pg_net.http_post()` → stage-independence → chain-dispatches stage-qc → chain-dispatches stage-publish. Each stage fires the next directly via pg_net. No cron waits. Articles publish seconds after the last stage completes.
+**Safety-net cron**: `dispatch_pipeline_stage()` runs every 5 min (`*/5 * * * *`) to catch stuck articles and process up to 5 queue items/day. NOT the primary dispatch mechanism — chain-dispatch handles post-submit flow.
+**5-brief daily cap**: dispatch function counts today's non-failed log entries and stops auto-processing queue after 5. Prevents wasting API on 57 unused briefs/day.
 **Error handling**: `safeStage()` wrapper + `parseScore()` for safe integer parsing. All stages log errors to DB on failure.
 **Model chains**: Writer (fallback path): Gemini 3.1 Pro → Sonnet → GPT-5.4. QC: Flash → Sonnet. Voice rewrite: Sonnet → Gemini → GPT-5.4 → Grok. Independence revision: Flash → Sonnet.
 **API timeout**: 75s constant (`API_TIMEOUT`).
+**Human-article protections**: QC detects `_writtenBy: "human-opus"` → skips voice rewrite, force-publishes on revise. Never degrades Opus prose.
 **Mechanical voice audit**: `auditVoiceQuality()` — 30+ banned phrases, "you" count (min 6), paragraph length (max 3 sentences).
 **Editorial independence**: Manually queued topics get "MANDATORY EDITORIAL DIRECTION".
 **Duplicate filter**: `isDuplicate()` — bidirectional 55% word overlap with 5+ matching subject words.
@@ -343,7 +346,7 @@ done
 - `scout-gemini`: daily 6am UTC → `pipeline-scout` — Gemini + Google Search discovers 20 trending topics
 - `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Gemini + Google Search (editorial lens) discovers 20 topics
 - `scout-grok`: daily 10pm UTC → `pipeline-scout` — Grok discovers 20 contrarian topics
-- `article-produce`: every 1 min (`* * * * *`) → SQL function `dispatch_pipeline_stage()` → `pg_net.http_post()` to stage functions. Skips `editor_approved` (pauses for human writing)
+- `article-produce`: every 5 min (`*/5 * * * *`) → SQL function `dispatch_pipeline_stage()`. Safety net only — chain-dispatch handles post-submit flow. Caps at 5 briefs/day. Skips `editor_approved`
 - `pinger`: every 15 min (`*/15 * * * *`) → `pipeline-pinger` — rotating breaking news detector (Gemini Flash/:00, PubMed RSS/:15, Grok/:30, PubMed RSS/:45)
 - `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions

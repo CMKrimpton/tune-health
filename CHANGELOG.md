@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.1.0] - 2026-03-26
+
+### Fixed — Chain-Dispatch via pg_net (Critical)
+- **dispatchStage() was using JS fetch()** — the exact bug from the March 25 postmortem. Edge functions kill background fetches on return. Replaced with SQL function `chain_dispatch()` using `pg_net.http_post()` which persists at the DB level
+- **isHumanWritten used before declaration** — ReferenceError would crash on any human article where QC said "revise". Moved declaration before both revise and voice_rewrite checks
+
+### Changed — Hybrid Architecture Optimizations
+- **Chain-dispatch**: submit → independence → QC → publish fires as a direct chain via pg_net. No cron waits between stages
+- **5-brief daily cap**: dispatch function stops auto-processing queue after 5 briefs/day. Saves ~$2-5/day on unused research+editor API calls
+- **5-minute cron** (was 1-minute): 1,440 → 288 SQL calls/day. Cron is now a safety net, not the primary dispatch
+- **QC revise on human articles**: force-publishes instead of silently parking at editor_approved (dead end)
+- **model_used: "human-opus"**: explicit byline entry instead of coincidental Opus mapping
+
+### Removed — Dead Code Cleanup
+- Two-model scout path from stage-research (53 lines, never fires)
+- Dead statuses from ACTIVE/IN_PIPELINE: writing, rewriting_voice, researching, topic_selected, voice_rewrite_pending/done, saved
+- Unused WRITER_FALLBACK_CHAIN import from stage-research
+
+### Added
+- `chain_dispatch(function_name, log_id)` SQL function for pg_net dispatch
+- `$0 cost entry` for human write stage in token_usage timeline
+- `"human-opus"` entry in MODEL_BYLINES for consistent author attribution
+
 ## [12.0.0] - 2026-03-25
 
 ### BREAKING — Hybrid Pipeline (Human + AI)

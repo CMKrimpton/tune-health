@@ -1,69 +1,58 @@
 # Next Session Plan
 
-> **Status**: v12.0.0 live. Hybrid pipeline (AI discovers, human writes with Opus). Pinger detecting breaking news 4x/hour. Pipeline hardened. Cost: ~$0.13/article + ~$0.28/day signal detection.
+> **Status**: v12.1.0 live. Hybrid pipeline fully optimized. Chain-dispatch via pg_net (no cron waits). 5-brief daily cap. 5-min safety-net cron. All 18 self-audit checks pass.
 
 ---
 
-## Current Architecture (v12.0.0)
+## Current Architecture (v12.1.0)
 
-- **Signal detection**: 3x/day scouts (Gemini + Google Search) + 4x/hour pinger (rotating Gemini Flash/Grok/PubMed RSS)
-- **Pipeline**: SQL dispatch `dispatch_pipeline_stage()` via pg_cron every minute → pg_net fire-and-forget
-- **Hybrid flow**: research → editor brief → **PAUSE** → human writes with Opus (Max subscription) → submit → independence → QC → publish
-- **Human-written articles skip voice rewrite** — QC detects `_writtenBy: "human-opus"` and overrides rewrite_voice → publish
-- **submit-article auto-strips full HTML pages** — if Opus generates `<!DOCTYPE>`, extracts body sections automatically
-- Dead code removed: `daily-article-agent/`, `pipeline-orchestrator/`
+- **Signal detection**: 3x/day scouts (Gemini + Google Search) + 4x/hour pinger (Gemini Flash/Grok/PubMed RSS)
+- **Pre-submit**: SQL dispatch every 5 min processes queue → research → editor brief → PAUSE. Capped at 5 briefs/day.
+- **Human writes**: picks topic from dashboard, copies brief to Claude, Opus writes, pastes back
+- **Post-submit**: chain-dispatch via `chain_dispatch()` SQL → `pg_net.http_post()`. independence → QC → publish fires as a direct chain. No cron waits.
+- **Human-article protections**: QC skips voice rewrite, force-publishes on revise. `_writtenBy: "human-opus"` checked before all QC decision paths.
 
 ## What Was Built This Session
 
 ### Pipeline Hardening
-- `parseScore()` — safely handles "8/10" AI output for integer columns
-- Fallback chain added to stage-editor (was single point of failure)
-- Error handlers fixed in stage-qc and stage-voice-rewrite
-- DB error checking on all critical status updates
+- `parseScore()`, fallback chains, DB error checking, error handlers on all stages
 
 ### Cost Reduction ($0.94 → $0.13/article)
-- Research: Gemini 2.5 Pro + Google Search ($0.04) — was Sonnet web search ($0.40)
-- Editor/QC/Independence revision: Flash ($0.003) — was Sonnet/Gemini Pro ($0.03-0.08)
-- Writer: Gemini 3.1 Pro primary ($0.14) — was Sonnet ($0.24)
-- Voice rewrite: Opus removed ($0.87/call eliminated)
-- Writing: $0 via Max subscription (Opus)
-- Scouts: all Gemini Search ($0.12/day) — was Sonnet web search ($1.30/day)
+- Gemini for research/scouts (was Sonnet web search at $0.40/call)
+- Flash for structured stages (editor brief, QC, independence revision)
+- Opus removed from voice rewrite chain
+- Writing: $0 via Max subscription
 
 ### Hybrid Pipeline
-- Pipeline pauses at `editor_approved` (SQL dispatch skips this status)
-- Dashboard: "Copy Brief for Claude" button (client-side, no fetch)
-- Dashboard: "Submit Written Article" form → resumes pipeline at "written"
-- Human-written articles skip voice rewrite
-- submit-article auto-strips full HTML pages from Opus
-- Gradient + tags included in metadata for Astro schema validation
+- Pipeline pauses at `editor_approved`, human writes with Opus
+- Copy Brief + Submit Article dashboard UI
+- HTML auto-stripping for full pages from Opus
+- Chain-dispatch via pg_net (not JS fetch — proven pattern)
+- 5-brief daily cap, 5-min cron safety net
 
 ### Breaking News Pinger
-- `pipeline-pinger` edge function, `*/15 * * * *` cron
-- Rotating: Gemini Flash Search (:00), PubMed RSS (:15), Grok social (:30), PubMed RSS (:45)
-- Three-gate filter: self-dedup → article/queue dedup → corroboration
-- `pinger_signals` table with 48h auto-cleanup
-- Breaking topics insert at P1 with expedite=true, source="breaking"
+- 4x/hour rotating: Gemini Flash, PubMed RSS, Grok social
+- Three-gate filter with corroboration
 - ~$0.16/day
 
-### Scout Upgrade
-- "Why now" + search demand + "Our angle" required for each topic
-- High-demand topics auto-prioritized
-- All scouts use Gemini + Google Search (killed Sonnet web search entirely)
+### Dead Code Removed
+- 4,176 lines: daily-article-agent, pipeline-orchestrator
+- Two-model scout path, dead statuses, unused imports
 
 ## Priority for Next Session
 
-### 1. Test the Full Hybrid Flow End-to-End
-- Queue has 12 topics. Pipeline should research → editor brief → pause
-- Pick one, Copy Brief, write in Claude, submit, watch it publish
-- Verify: Grok review runs, QC passes (no voice rewrite), publishes to GitHub, Vercel rebuilds
+### 1. Test Full Hybrid Flow
+- 12 articles at editor_approved. Pick one, write with Opus, submit, watch it publish.
+- Verify: chain-dispatch fires immediately, Grok reviews, QC passes, publishes to GitHub, Vercel rebuilds.
+- Check the published .astro file has correct structure (assembleAstroFile format).
 
-### 2. Monitor Pinger
-- Check `pinger_signals` table after 24h — is it detecting real signals?
-- Check if corroboration gate is working (medium signals need 2 sources)
-- Check false positive rate — are junk topics getting promoted?
+### 2. Monitor Over 24 Hours
+- Check pinger_signals after a day — are real signals being detected?
+- Check daily_article_log — are only 5 briefs/day being processed (not 60)?
+- Check cron.job_run_details — 5-min dispatch, 15-min pinger, both clean?
+- Check Anthropic API billing — should be dramatically lower
 
-### 3. Possible Improvements
-- **Prompt trimming**: the stage-write system prompt is 5,400 tokens — could be 2,500 (attention dilution)
-- **Reader analytics integration**: which existing articles get the most traffic? Inform scouts
-- **Admin dashboard**: show pinger activity, add "Daily Briefing" view of top editor_approved articles
-- **Cost monitoring dashboard**: per-day spend chart, per-stage breakdown
+### 3. Consider Further
+- Reduce scouts from 3x/day to 1x/day (human writes 2-3/day, 60 topics is excessive)
+- On-demand research: let human pick from raw queue, THEN research+brief runs (instead of pre-processing)
+- Reader analytics: feed Vercel traffic data into scout prompts
