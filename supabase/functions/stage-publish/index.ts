@@ -16,8 +16,21 @@ Deno.serve(async (req: Request) => {
     const db = supabase();
     const today = todayISO();
 
-    // Fetch log entry with article data
-    const { data: logEntry } = await db.from("daily_article_log").select("slug, research_data, status").eq("id", logId).maybeSingle();
+    // Atomic CAS: claim this article. Two valid input statuses — try each.
+    let claimed = (await db.from("daily_article_log")
+      .update({ status: "publishing", stage_started_at: new Date().toISOString() })
+      .eq("id", logId).eq("status", "qc_approved").select("id").maybeSingle()).data;
+    if (!claimed) {
+      claimed = (await db.from("daily_article_log")
+        .update({ status: "publishing", stage_started_at: new Date().toISOString() })
+        .eq("id", logId).eq("status", "voice_rewrite_done").select("id").maybeSingle()).data;
+    }
+    if (!claimed) {
+      return json({ skipped: true, logId, message: "Another instance already claimed this article" });
+    }
+
+    // Fetch log entry with article data (CAS already claimed it)
+    const { data: logEntry } = await db.from("daily_article_log").select("slug, research_data").eq("id", logId).maybeSingle();
     if (!logEntry) return json({ error: "Log entry not found" }, 404);
 
     const researchData = (logEntry.research_data as Record<string, unknown>) || {};
@@ -95,12 +108,11 @@ Deno.serve(async (req: Request) => {
     metadata.title = finalTitle;
     metadata.description = finalDescription;
 
+    // CAS already set status to "publishing" — just update title and editor_score
     await db
       .from("daily_article_log")
       .update({
         title: finalTitle,
-        status: "publishing",
-        stage_started_at: new Date().toISOString(),
         editor_score: (qcResult.qualityScore as number) || logScores?.editor_score || null,
       })
       .eq("id", logId);

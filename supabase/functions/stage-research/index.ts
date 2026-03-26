@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, getExistingArticles, safeStage } from "../_shared/db.ts";
 import { claude, gemini, generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
-import { WRITER_FALLBACK_CHAIN } from "../_shared/constants.ts";
+import { WRITER_FALLBACK_CHAIN, RESEARCH_TIMEOUT } from "../_shared/constants.ts";
 import { todayISO } from "../_shared/astro.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
@@ -109,6 +109,19 @@ Deno.serve(async (req: Request) => {
 
     const db = supabase();
 
+    // Atomic CAS: claim this article. Only ONE instance can transition started → searching.
+    const { data: claimed } = await db
+      .from("daily_article_log")
+      .update({ status: "searching", stage_started_at: new Date().toISOString() })
+      .eq("id", logId)
+      .eq("status", "started")
+      .select("id")
+      .maybeSingle();
+
+    if (!claimed) {
+      return json({ skipped: true, logId, message: "Another instance already claimed this article" });
+    }
+
     const stageResult = await safeStage(db, logId, "research", async () => {
       const today = todayISO();
       const { titles, categoryCounts } = await getExistingArticles(db);
@@ -130,11 +143,6 @@ Deno.serve(async (req: Request) => {
         .in("status", ["queued", "assigned", "in_progress"])
         .limit(50);
       const queueTopics = (queueItems || []).map((q: { topic: string }) => q.topic);
-
-      await db
-        .from("daily_article_log")
-        .update({ status: "searching", stage_started_at: new Date().toISOString() })
-        .eq("id", logId);
 
       let research: Record<string, unknown>;
 
@@ -161,6 +169,7 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
             maxTokens: 4000,
             webSearch: true,
             maxSearches: 5,
+            timeout: RESEARCH_TIMEOUT,
           });
           researchRaw = result.text;
           researchUsage = result.usage;

@@ -1,6 +1,7 @@
 export const MAX_CONCURRENT = 1;
 export const STALE_MS = 5 * 60 * 1000; // 5 min — must be longer than any single stage API call (75s timeout + overhead)
-export const API_TIMEOUT = 120_000; // 120s — web search and premium model calls need time. Edge function timeout is ~150s.
+export const API_TIMEOUT = 75_000; // 75s per model — allows 2 fallback attempts within ~150s edge function timeout
+export const RESEARCH_TIMEOUT = 120_000; // 120s — research web search needs more time (single model, no fallback chain)
 export const ACTIVE = ["started","searching","writing","publishing","editor_reviewing","editor_qc","independence_review","researching","topic_selected","rewriting_voice"];
 export const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","voice_rewrite_pending","voice_rewrite_done","qc_approved","saved"];
 

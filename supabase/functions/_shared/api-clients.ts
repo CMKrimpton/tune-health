@@ -14,7 +14,9 @@ export async function claude(opts: ClaudeOptions, stage = "unknown"): Promise<Ap
     temperature = 0.35,
     webSearch = false,
     maxSearches = 5,
+    timeout,
   } = opts;
+  const timeoutMs = timeout || API_TIMEOUT;
 
   const tools: unknown[] = [];
   if (webSearch) {
@@ -45,7 +47,7 @@ export async function claude(opts: ClaudeOptions, stage = "unknown"): Promise<Ap
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(API_TIMEOUT),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   if (!res.ok) {
@@ -146,7 +148,7 @@ export function parseClaudeJSON(text: string): unknown {
   throw new Error("Failed to parse response as JSON (tried 3 strategies)");
 }
 
-export async function openai(opts: { system: string; user: string; model?: string; maxTokens?: number; temperature?: number }, stage = "unknown"): Promise<ApiResult> {
+export async function openai(opts: { system: string; user: string; model?: string; maxTokens?: number; temperature?: number; timeout?: number }, stage = "unknown"): Promise<ApiResult> {
   const key = (Deno.env.get("OPENAI_API_KEY") || "").trim();
   if (!key) throw new Error("OPENAI_API_KEY not set");
   const model = opts.model || "gpt-5.4";
@@ -159,7 +161,7 @@ export async function openai(opts: { system: string; user: string; model?: strin
       max_completion_tokens: opts.maxTokens || 4000,
       temperature: opts.temperature || 0.4,
     }),
-    signal: AbortSignal.timeout(API_TIMEOUT),
+    signal: AbortSignal.timeout(opts.timeout || API_TIMEOUT),
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
@@ -183,7 +185,7 @@ export async function openai(opts: { system: string; user: string; model?: strin
   };
 }
 
-export async function grok(opts: { system: string; user: string; maxTokens?: number; temperature?: number }, stage = "independence"): Promise<ApiResult> {
+export async function grok(opts: { system: string; user: string; maxTokens?: number; temperature?: number; timeout?: number }, stage = "independence"): Promise<ApiResult> {
   const key = (Deno.env.get("XAI_API_KEY") || "").trim();
   if (!key) throw new Error("XAI_API_KEY not set");
   const model = "grok-3";
@@ -196,6 +198,7 @@ export async function grok(opts: { system: string; user: string; maxTokens?: num
       max_tokens: opts.maxTokens || 2000,
       temperature: opts.temperature || 0.4,
     }),
+    signal: AbortSignal.timeout(opts.timeout || API_TIMEOUT),
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
@@ -216,7 +219,7 @@ export async function grok(opts: { system: string; user: string; maxTokens?: num
   };
 }
 
-export async function gemini(opts: { system: string; user: string; model?: string; maxTokens?: number; temperature?: number; webSearch?: boolean }, stage = "research"): Promise<ApiResult> {
+export async function gemini(opts: { system: string; user: string; model?: string; maxTokens?: number; temperature?: number; webSearch?: boolean; timeout?: number }, stage = "research"): Promise<ApiResult> {
   const key = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
   if (!key) throw new Error("GOOGLE_API_KEY not set");
   const model = opts.model || "gemini-2.5-flash";
@@ -238,7 +241,7 @@ export async function gemini(opts: { system: string; user: string; model?: strin
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(API_TIMEOUT),
+      signal: AbortSignal.timeout(opts.timeout || API_TIMEOUT),
     },
   );
   if (!res.ok) {
@@ -259,7 +262,7 @@ export async function gemini(opts: { system: string; user: string; model?: strin
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(retryBody),
-        signal: AbortSignal.timeout(API_TIMEOUT),
+        signal: AbortSignal.timeout(opts.timeout || API_TIMEOUT),
       },
     );
     if (retry.ok) {
@@ -279,22 +282,22 @@ export async function gemini(opts: { system: string; user: string; model?: strin
   };
 }
 
-export async function generate(opts: { system: string; user: string; model: string; maxTokens?: number; temperature?: number; stage?: string; webSearch?: boolean }): Promise<ApiResult> {
+export async function generate(opts: { system: string; user: string; model: string; maxTokens?: number; temperature?: number; stage?: string; webSearch?: boolean; timeout?: number }): Promise<ApiResult> {
   const provider = MODEL_PROVIDERS[opts.model];
   if (provider === "anthropic") {
-    return claude({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
+    return claude({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature, timeout: opts.timeout }, opts.stage || "unknown");
   } else if (provider === "openai") {
-    return openai({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
+    return openai({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature, timeout: opts.timeout }, opts.stage || "unknown");
   } else if (provider === "xai") {
-    return grok({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature }, opts.stage || "unknown");
+    return grok({ system: opts.system, user: opts.user, maxTokens: opts.maxTokens, temperature: opts.temperature, timeout: opts.timeout }, opts.stage || "unknown");
   } else if (provider === "google") {
-    return gemini({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature, webSearch: opts.webSearch }, opts.stage || "unknown");
+    return gemini({ system: opts.system, user: opts.user, model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature, webSearch: opts.webSearch, timeout: opts.timeout }, opts.stage || "unknown");
   }
   throw new Error(`Unknown model: ${opts.model}`);
 }
 
 // Try models in order, falling back on failure (especially spending limits)
-export async function generateWithFallback(opts: { system: string; user: string; models: string[]; maxTokens?: number; temperature?: number; stage?: string; webSearch?: boolean }): Promise<ApiResult & { modelUsed: string }> {
+export async function generateWithFallback(opts: { system: string; user: string; models: string[]; maxTokens?: number; temperature?: number; stage?: string; webSearch?: boolean; timeout?: number }): Promise<ApiResult & { modelUsed: string }> {
   let lastError = "";
   for (const model of opts.models) {
     try {

@@ -91,14 +91,22 @@ Deno.serve(async (req: Request) => {
 
     const db = supabase();
 
-    // Fetch log entry with article data and current status
-    const { data: logEntry } = await db.from("daily_article_log").select("slug, status, research_data").eq("id", logId).maybeSingle();
-    if (!logEntry) return json({ error: "Log entry not found" }, 404);
+    // Atomic CAS: claim this article. Only ONE instance can transition independence_done → editor_qc.
+    const { data: claimed } = await db
+      .from("daily_article_log")
+      .update({ status: "editor_qc", stage_started_at: new Date().toISOString() })
+      .eq("id", logId)
+      .eq("status", "independence_done")
+      .select("id")
+      .maybeSingle();
 
-    // Concurrency guard: if QC is already running or past QC, skip
-    if (logEntry.status === "editor_qc" || logEntry.status === "qc_approved" || logEntry.status === "voice_rewrite_pending" || logEntry.status === "voice_rewrite_done") {
-      return json({ skipped: true, logId, message: `Already at ${logEntry.status} — another instance is handling this` });
+    if (!claimed) {
+      return json({ skipped: true, logId, message: "Another instance already claimed this article" });
     }
+
+    // Fetch log entry with article data (CAS already claimed it)
+    const { data: logEntry } = await db.from("daily_article_log").select("slug, research_data").eq("id", logId).maybeSingle();
+    if (!logEntry) return json({ error: "Log entry not found" }, 404);
 
     const researchData = (logEntry.research_data as Record<string, unknown>) || {};
     const articleData = (researchData._article as Record<string, unknown>) || {};
@@ -107,12 +115,6 @@ Deno.serve(async (req: Request) => {
     const independenceReview = (researchData._independenceReview as Record<string, unknown>) || null;
 
     if (!slug) return json({ error: "No slug found in log entry" }, 400);
-
-    // Update status to editor_qc (marks "QC is running")
-    await db.from("daily_article_log").update({
-      status: "editor_qc",
-      stage_started_at: new Date().toISOString(),
-    }).eq("id", logId);
 
     // Build independence review section for QC prompt
     let independenceSection = "";
@@ -173,7 +175,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
     const { text: qcRaw, usage: qcUsage } = await generateWithFallback({
       system: SENIOR_EDITOR_QC_PROMPT + `\n\nCRITICAL: Return ONLY valid JSON. No markdown, no explanation — just the JSON object.`,
       user: qcPrompt,
-      models: ["gemini-2.5-pro", "claude-sonnet-4-6", "gpt-5.4"],
+      models: ["gemini-2.5-pro", "claude-sonnet-4-6"], // 2 models max — 3 × 75s > 150s edge timeout
       maxTokens: 2000,
       temperature: 0.3,
       stage: "qc",

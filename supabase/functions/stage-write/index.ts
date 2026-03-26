@@ -310,6 +310,19 @@ Deno.serve(async (req: Request) => {
 
     const db = supabase();
 
+    // Atomic CAS: claim this article. Only ONE instance can transition editor_approved → writing.
+    const { data: claimed } = await db
+      .from("daily_article_log")
+      .update({ status: "writing", stage_started_at: new Date().toISOString() })
+      .eq("id", logId)
+      .eq("status", "editor_approved")
+      .select("id")
+      .maybeSingle();
+
+    if (!claimed) {
+      return json({ skipped: true, logId, message: "Another instance already claimed this article" });
+    }
+
     const stageResult = await safeStage(db, logId, "write", async () => {
       // Read research data from DB
       const { data: logEntry } = await db
@@ -328,10 +341,8 @@ Deno.serve(async (req: Request) => {
       const brief = editorBrief?.brief as Record<string, unknown> | undefined;
       const models = pickWriterModel();
 
-      await db
-        .from("daily_article_log")
-        .update({ status: "writing", stage_started_at: new Date().toISOString(), model_used: models[0] })
-        .eq("id", logId);
+      // Track initial model choice (CAS already set status to "writing")
+      await db.from("daily_article_log").update({ model_used: models[0] }).eq("id", logId);
 
       const archetype = (editorBrief?.archetype as string) || "deep-investigation";
       const wordCount = editorBrief?.wordCount as { min?: number; max?: number } | undefined;
@@ -397,10 +408,11 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
 
 **DESCRIPTION MUST BE COMPLETE**: The description field must be 2-3 complete, compelling sentences. Never truncate mid-sentence. This appears in search results and social cards — a cut-off description looks broken and unprofessional.`;
 
+      // Limit to 2 models — 3 × 75s = 225s > 150s edge function timeout
       const { text: articleRaw, usage: writeUsage, modelUsed } = await generateWithFallback({
         system: ARTICLE_WRITING_PROMPT,
         user: articleUserPrompt,
-        models,
+        models: models.slice(0, 2),
         maxTokens: 16384,
         temperature: 0.5,
         stage: "write",

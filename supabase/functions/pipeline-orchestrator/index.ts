@@ -63,22 +63,30 @@ Deno.serve(async (req: Request) => {
         }
 
         if (resumeStatus) {
-          // Timeout with salvageable data — reset to checkpoint instead of failing
-          await db
+          // Atomic reset: only reset if status is STILL the stale active status.
+          // The stage function may have already completed and set a new status.
+          const staleStatus = (stale as { status: string }).status;
+          const { data: resetResult } = await db
             .from("daily_article_log")
             .update({
               status: resumeStatus,
               error: null,
               stage_started_at: new Date().toISOString(),
             })
-            .eq("id", staleId);
-          console.log(`[Orchestrator] Reset stale ${(stale as { status: string }).status} → ${resumeStatus} for log ${staleId}`);
+            .eq("id", staleId)
+            .eq("status", staleStatus) // CAS: only reset if still at the stale status
+            .select("id")
+            .maybeSingle();
+          if (resetResult) {
+            console.log(`[Orchestrator] Reset stale ${staleStatus} → ${resumeStatus} for log ${staleId}`);
+          }
         } else {
-          // No salvageable data — mark as failed
+          // No salvageable data — mark as failed (also CAS)
           await db
             .from("daily_article_log")
             .update({ status: "failed", error: "Timed out (stale run — no checkpoint data)", completed_at: new Date().toISOString() })
-            .eq("id", staleId);
+            .eq("id", staleId)
+            .eq("status", (stale as { status: string }).status);
         }
       }
     }

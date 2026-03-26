@@ -73,6 +73,19 @@ Deno.serve(async (req: Request) => {
 
     const db = supabase();
 
+    // Atomic CAS: claim this article. Only ONE instance can transition written → independence_review.
+    const { data: claimed } = await db
+      .from("daily_article_log")
+      .update({ status: "independence_review", stage_started_at: new Date().toISOString() })
+      .eq("id", logId)
+      .eq("status", "written")
+      .select("id")
+      .maybeSingle();
+
+    if (!claimed) {
+      return json({ skipped: true, logId, message: "Another instance already claimed this article" });
+    }
+
     const stageResult = await safeStage(db, logId, "independence-review", async () => {
       // Read article data from research_data._article in daily_article_log
       const { data: logEntry } = await db
@@ -91,11 +104,6 @@ Deno.serve(async (req: Request) => {
       if (!articleData) {
         throw new Error("No article data found in research_data._article");
       }
-
-      await db
-        .from("daily_article_log")
-        .update({ status: "independence_review", stage_started_at: new Date().toISOString() })
-        .eq("id", logId);
 
       const metadata = articleData.metadata as Record<string, unknown>;
       const articleHtml = (articleData.html as string) || "";

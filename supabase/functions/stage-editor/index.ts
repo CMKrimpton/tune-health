@@ -1,8 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, getExistingArticles, safeStage } from "../_shared/db.ts";
-import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
-import { WRITER_FALLBACK_CHAIN, VALID_CATEGORIES } from "../_shared/constants.ts";
+import { claude, parseClaudeJSON } from "../_shared/api-clients.ts";
+import { VALID_CATEGORIES } from "../_shared/constants.ts";
 
 // ---------------------------------------------------------------------------
 // Senior Editor — editorial oversight, creative briefs, quality control
@@ -160,6 +160,20 @@ Deno.serve(async (req: Request) => {
 
     const db = supabase();
 
+    // Atomic concurrency guard: claim this article by CAS (compare-and-swap).
+    // Only ONE instance can transition research_done → editor_reviewing.
+    const { data: claimed, count } = await db
+      .from("daily_article_log")
+      .update({ status: "editor_reviewing", stage_started_at: new Date().toISOString() })
+      .eq("id", logId)
+      .eq("status", "research_done")
+      .select("id")
+      .maybeSingle();
+
+    if (!claimed) {
+      return json({ skipped: true, logId, message: "Another instance already claimed this article" });
+    }
+
     const stageResult = await safeStage(db, logId, "editor-brief", async () => {
       // Read research data from DB
       const { data: logEntry } = await db
@@ -173,11 +187,6 @@ Deno.serve(async (req: Request) => {
       }
 
       const researchData = logEntry.research_data as Record<string, unknown>;
-
-      await db
-        .from("daily_article_log")
-        .update({ status: "editor_reviewing", stage_started_at: new Date().toISOString() })
-        .eq("id", logId);
 
       const { titles, categoryCounts } = await getExistingArticles(db);
 
@@ -360,15 +369,14 @@ If a candidate covers any of the above, give it a +2 score bonus in your assessm
 
 ${candidates ? "Score ALL candidates, pick the best one considering collection balance, then write the brief for that topic." : "Make your editorial call. Approve with a killer brief, or kill it with a reason."}`;
 
-      const { text: editorRaw, usage: editorUsage } = await generateWithFallback({
+      // Single model call — each stage gets its own 150s timeout, no fallback needed
+      const { text: editorRaw, usage: editorUsage } = await claude({
         system: SENIOR_EDITOR_BRIEF_PROMPT,
         user: editorPrompt,
-        models: WRITER_FALLBACK_CHAIN,
+        model: "claude-sonnet-4-6",
         maxTokens: 4000,
         temperature: 0.4,
-        stage: "editor-brief",
-        webSearch: false, // Editorial decision on existing data — no search needed
-      });
+      }, "editor-brief");
       await addCostToLog(db, logId, editorUsage);
 
       const editorBrief = parseClaudeJSON(editorRaw) as Record<string, unknown>;

@@ -14,11 +14,18 @@ Deno.serve(async (req: Request) => {
 
     const db = supabase();
 
-    // Update status to rewriting_voice
-    await db.from("daily_article_log").update({
-      status: "rewriting_voice",
-      stage_started_at: new Date().toISOString(),
-    }).eq("id", logId);
+    // Atomic CAS: claim this article. Only ONE instance can transition voice_rewrite_pending → rewriting_voice.
+    const { data: claimed } = await db
+      .from("daily_article_log")
+      .update({ status: "rewriting_voice", stage_started_at: new Date().toISOString() })
+      .eq("id", logId)
+      .eq("status", "voice_rewrite_pending")
+      .select("id")
+      .maybeSingle();
+
+    if (!claimed) {
+      return json({ skipped: true, logId, message: "Another instance already claimed this article" });
+    }
 
     // Fetch log entry with article data
     const { data: logEntry } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();

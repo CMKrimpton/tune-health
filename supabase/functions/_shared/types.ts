@@ -33,4 +33,5 @@ export interface ClaudeOptions {
   temperature?: number;
   webSearch?: boolean;
   maxSearches?: number;
+  timeout?: number;
 }
