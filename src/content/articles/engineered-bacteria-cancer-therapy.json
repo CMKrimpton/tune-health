@@ -1,0 +1,20 @@
+{
+  "title": "Engineered Bacteria: The Living Medicine Fighting Cancer From Within",
+  "description": "A new frontier in oncology is emerging: bacteria reprogrammed with synthetic biology to infiltrate tumors, activate immune responses, and deliver therapeutics directly at the cancer site. This article explores how these 'living drugs' aim to overcome the limitations of conventional cancer treatments by turning immunologically 'cold' tumors 'hot' and minimizing systemic toxicity.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-26",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 11,
+  "featured": false,
+  "draft": false,
+  "tags": [],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [],
+  "sortOrder": 1774519216682
+}
