@@ -54,7 +54,7 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Housekeeping: reset queue items stuck at in_progress whose pipeline entries failed
+      // Housekeeping: fix queue items stuck at in_progress
       const { data: stuckQueue } = await db.from("topic_queue").select("id, topic").eq("status", "in_progress");
       if (stuckQueue) {
         for (const sq of stuckQueue as Array<{ id: string; topic: string }>) {
@@ -67,6 +67,8 @@ Deno.serve(async (req: Request) => {
             .maybeSingle();
           if (matchingLog?.status === "failed") {
             await db.from("topic_queue").update({ status: "queued" }).eq("id", sq.id);
+          } else if (matchingLog?.status === "published") {
+            await db.from("topic_queue").update({ status: "completed" }).eq("id", sq.id);
           }
         }
       }
@@ -681,13 +683,15 @@ End with a disclaimer div.
       // Mark queue item as in_progress
       await db.from("topic_queue").update({ status: "in_progress" }).eq("id", queueId);
 
-      // Create log entry
+      // Create log entry — store queueId in research_data so it flows through the entire pipeline
+      // (stage-editor uses _queueId to mark queue item as completed on approval)
       const { data: logEntry } = await db.from("daily_article_log").insert({
         run_date: new Date().toISOString().split("T")[0],
         status: "started",
         topic: topic.topic,
         source: "queue",
         stage_started_at: new Date().toISOString(),
+        research_data: { _queueId: queueId, _fromQueue: true, _queueSource: topic.source || "manual" },
       }).select("id").single();
 
       if (!logEntry) return json({ error: "Failed to create log entry" }, 500);
