@@ -1,3 +1,7 @@
+---
+description: Check pipeline state — queue, stuck articles, cron jobs, errors
+---
+
 Check the current state of the article pipeline.
 
 1. Query the `daily_article_log` table for recent entries (last 48 hours), ordered by most recent:
