@@ -480,6 +480,23 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     finally { setKillingId(null); }
   };
 
+  const clearAllBriefs = async () => {
+    const briefCount = logs.filter(l => l.status === 'editor_approved').length;
+    if (briefCount === 0) return;
+    if (!confirm(`Clear all ${briefCount} editor-approved briefs? They will be marked as failed.`)) return;
+    try {
+      const briefLogs = logs.filter(l => l.status === 'editor_approved');
+      for (const log of briefLogs) {
+        await fetch(`${apiBase}/pipeline-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'kill-article', logId: log.id, reason: 'Cleared by admin — stale brief' }),
+        });
+      }
+      setTimeout(fetchStatus, 1000);
+    } catch { /* ignore */ }
+  };
+
   // ─── Derived ────────────────────────────────────────────────────
 
   const overallStatus = getOverallStatus(logs);
@@ -547,6 +564,20 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               ${totalCost.toFixed(2)}
             </span>
           </div>
+        )}
+
+        {logs.filter(l => l.status === 'editor_approved').length > 0 && (
+          <button
+            onClick={clearAllBriefs}
+            style={{
+              fontSize: '0.6875rem', padding: '0.3125rem 0.75rem',
+              background: 'rgba(239,68,68,0.1)', color: '#f87171',
+              border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px',
+              cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600,
+            }}
+          >
+            Clear All Briefs ({logs.filter(l => l.status === 'editor_approved').length})
+          </button>
         )}
 
         <div className="pipeline-quick-actions">
@@ -1168,7 +1199,25 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || rd.category || '
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
     >
-      <div className="pipeline-card-title">{truncate(displayTitle, 60)}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+        <div className="pipeline-card-title" style={{ flex: 1 }}>{truncate(displayTitle, 60)}</div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onKill(); }}
+          disabled={killing}
+          title="Dismiss this article"
+          style={{
+            flexShrink: 0, width: '20px', height: '20px', padding: 0,
+            background: 'transparent', color: '#5c5752', border: 'none',
+            borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem',
+            lineHeight: '20px', textAlign: 'center' as const,
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={(e) => { (e.target as HTMLElement).style.color = '#f87171'; }}
+          onMouseLeave={(e) => { (e.target as HTMLElement).style.color = '#5c5752'; }}
+        >
+          ×
+        </button>
+      </div>
       <div className="pipeline-card-status">
         {statusText}
         {penName && <span style={{ marginLeft: '0.375rem', color: '#a78bfa', fontWeight: 500 }}>by {penName}</span>}
