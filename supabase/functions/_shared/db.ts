@@ -60,16 +60,19 @@ export async function getExistingArticles(
   return { titles, categoryCounts };
 }
 
-/** Fire-and-forget dispatch to a stage function. Used for chain-dispatching (stage A completes → directly calls stage B). */
-export function dispatchStage(functionName: string, logId: string): void {
-  const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/${functionName}`;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  // Fire-and-forget: don't await, don't block the current response
-  fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ logId }),
-  }).catch(err => console.error(`[dispatchStage] Failed to dispatch ${functionName}: ${err}`));
+/** Fire-and-forget dispatch via pg_net (survives edge function termination).
+ *  Uses SQL function chain_dispatch() which calls pg_net.http_post() —
+ *  the HTTP request persists at the database level even after the calling
+ *  edge function's connection closes. JS fetch() gets killed. */
+export async function dispatchStage(functionName: string, logId: string): Promise<void> {
+  const db = supabase();
+  const { error } = await db.rpc("chain_dispatch", {
+    p_function_name: functionName,
+    p_log_id: logId,
+  });
+  if (error) {
+    console.error(`[dispatchStage] Failed to dispatch ${functionName} for ${logId}: ${error.message}`);
+  }
 }
 
 export async function safeStage(

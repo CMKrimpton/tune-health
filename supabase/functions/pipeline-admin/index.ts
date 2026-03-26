@@ -547,7 +547,7 @@ Deno.serve(async (req: Request) => {
       }).eq("id", logId);
 
       // Chain-dispatch: fire independence review immediately (no cron wait)
-      dispatchStage("stage-independence", logId);
+      await dispatchStage("stage-independence", logId);
       console.log(`[Admin] Article submitted for "${slug}" — dispatched stage-independence directly`);
       return json({ success: true, slug, status: "written", message: "Article saved. Independence review dispatched immediately." });
     }

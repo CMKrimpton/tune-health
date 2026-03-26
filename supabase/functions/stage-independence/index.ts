@@ -293,7 +293,7 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
     }
 
     // Chain-dispatch: fire QC immediately (no cron wait)
-    dispatchStage("stage-qc", logId);
+    await dispatchStage("stage-qc", logId);
     return json({ success: true, logId, status: "independence_done" });
   } catch (err: unknown) {
     return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);

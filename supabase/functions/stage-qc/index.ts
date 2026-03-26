@@ -227,7 +227,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
           editor_score: parseScore(qcResult.qualityScore),
           research_data: { ...researchData, _article: articleData, _qcResult: qcResult },
         }).eq("id", logId);
-        if (!forceErr) dispatchStage("stage-publish", logId);
+        if (!forceErr) await dispatchStage("stage-publish", logId);
         return json({ success: true, logId, qcResult, decision: "publish_forced_human_written" });
       }
 
@@ -247,7 +247,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
           editor_score: parseScore(qcResult.qualityScore),
           research_data: { ...currentData, _article: articleData, _qcResult: qcResult },
         }).eq("id", logId);
-        dispatchStage("stage-publish", logId);
+        await dispatchStage("stage-publish", logId);
         return json({ success: true, logId, qcResult, decision: "publish_forced_max_revisions" });
       } else {
         await db.from("daily_article_log").update({
@@ -288,7 +288,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
             _qcResult: qcResult,
           },
         }).eq("id", logId);
-        dispatchStage("stage-publish", logId);
+        await dispatchStage("stage-publish", logId);
         return json({ success: true, logId, qcResult, decision: "publish_forced_already_rewritten" });
       } else {
         const { error: updateErr } = await db.from("daily_article_log").update({
@@ -329,7 +329,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
     }
 
     // Chain-dispatch: fire publish immediately (no cron wait)
-    dispatchStage("stage-publish", logId);
+    await dispatchStage("stage-publish", logId);
     return json({ success: true, logId, qcResult, decision: "publish" });
   } catch (err: unknown) {
     // Mark as failed so stale detection doesn't loop on it
