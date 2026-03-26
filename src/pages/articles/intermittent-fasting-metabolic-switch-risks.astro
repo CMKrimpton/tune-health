@@ -9,18 +9,24 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
   readTime="17 min read"
   publishDate="March 2026"
 >
-  <nav slot="toc">
-    <a href="#introduction">The Switch: What Actually Happens in Your Cells</a>
-    <a href="#evidence">The Evidence: What Human Trials Actually Show</a>
-    <a href="#calories-vs-timing">The Uncomfortable Trial: Calories vs. Timing</a>
-    <a href="#aha-controversy">The 91% Headline: What the AHA Study Got Right, and Wrong</a>
-    <a href="#variability-risks">Individual Variability, Muscle Loss, and Hormonal Health</a>
-    <a href="#path-forward">The Path Forward: What Research Actually Needs to Do</a>
-    <a href="#conclusion">The Switch Is Real. The Manual Is Still Being Written.</a>
-    <a href="#sources">Sources</a>
-  </nav>
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#introduction" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Switch: What Actually Happens in Your Cells</a>
+      <a href="#evidence" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Evidence: What Human Trials Actually Show</a>
+      <a href="#calories-vs-timing" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Uncomfortable Trial: Calories vs. Timing</a>
+      <a href="#aha-controversy" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The 91% Headline: What the AHA Study Got Right, and Wrong</a>
+      <a href="#variability-risks" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Individual Variability, Muscle Loss, and Hormonal Health</a>
+      <a href="#path-forward" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Path Forward: What Research Actually Needs to Do</a>
+      <a href="#conclusion" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Switch Is Real. The Manual Is Still Being Written.</a>
+      <a href="#sources" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Sources</a>
+    </nav>
+  </div>
 
-<section id="introduction" class="reveal">
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="introduction" class="reveal">
       <p>Somewhere between eight and twelve hours after your last meal, something ancient and elegant happens inside you. Your liver, having burned through its glycogen reserves, pivots to a different fuel source entirely — fatty acids begin flooding the bloodstream, and your cells start producing ketone bodies, primarily beta-hydroxybutyrate and acetoacetate. You have, in the language of metabolic science, flipped the switch. This is not a diet trick. This is a fundamental biological gear that your ancestors engaged every time food ran scarce — and one that most people in the modern industrialized world never engage at all.</p>
       <p>The concept of "metabolic switching" is the load-bearing pillar beneath virtually every serious scientific claim made on behalf of intermittent fasting (IF). Strip away the wellness-industry noise, the "biohacker" mythology, and the parade of before-and-after testimonials, and you are left with this one genuinely fascinating question: what happens to human physiology when you deliberately, periodically deprive it of glucose? The answer, it turns out, is more interesting — and considerably more complicated — than any influencer will tell you.</p>
     </section>
@@ -167,5 +173,10 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
 
     <div class="disclaimer">
       <p><strong>Medical Disclaimer:</strong> This article is produced for informational and educational purposes only. It does not constitute medical advice, diagnosis, or treatment recommendations. Individual metabolic responses to fasting protocols vary significantly. Consult a qualified healthcare professional before making changes to your diet or eating patterns, particularly if you have an existing medical condition, are pregnant or breastfeeding, or are taking medication. Alumi News — <em>Evidence. Wherever it leads.</em></p>
+  </div>
 
+  <!-- Tags -->
+  <Fragment slot="tags">
+
+  </Fragment>
 </ArticleLayout>
