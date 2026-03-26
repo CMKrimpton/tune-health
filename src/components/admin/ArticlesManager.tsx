@@ -118,6 +118,26 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
     finally { setRefreshing(false); }
   }, [apiBase]);
 
+  // Auto-refresh when the Articles tab becomes visible — handles both:
+  // 1. Browser tab switches (visibilitychange)
+  // 2. Dashboard tab switches (IntersectionObserver on the component root)
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshArticles(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) refreshArticles(); },
+      { threshold: 0.1 },
+    );
+    if (rootRef.current) observer.observe(rootRef.current);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      observer.disconnect();
+    };
+  }, [refreshArticles]);
+
   // ─── API helpers ──────────────────────────────────────────────────
 
   const apiCall = useCallback(async (endpoint: string, body: Record<string, unknown>) => {
@@ -310,7 +330,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
   // ─── Render ───────────────────────────────────────────────────────
 
   return (
-    <div>
+    <div ref={rootRef}>
       {/* ── Toolbar ── */}
       <div className="articles-toolbar">
         <input
