@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, getExistingArticles, safeStage, dispatchStage } from "../_shared/db.ts";
 import { gemini, claude, parseClaudeJSON } from "../_shared/api-clients.ts";
-import { RESEARCH_TIMEOUT } from "../_shared/constants.ts";
+import { RESEARCH_TIMEOUT, MODELS } from "../_shared/constants.ts";
 import { todayISO } from "../_shared/astro.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
@@ -210,7 +210,7 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
           const gemResult = await gemini({
             system: DIRECTED_RESEARCH_PROMPT + `\n\nCRITICAL: You MUST return ONLY a valid JSON object. No markdown, no explanation, no preamble. Just the JSON object starting with { and ending with }.`,
             user: researchPrompt + `\n\nReturn ONLY valid JSON with this structure: {"topic":"...","headline_draft":"...","why":"...","category":"...","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","expertQuotes":["..."],"statistics":["..."]}`,
-            model: "gemini-2.5-pro",
+            model: MODELS.RESEARCH_PRIMARY,
             maxTokens: 4000,
             temperature: 0.35,
             webSearch: true,
@@ -224,7 +224,7 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
           const result = await claude({
             system: DIRECTED_RESEARCH_PROMPT,
             user: researchPrompt,
-            model: "claude-sonnet-4-6",
+            model: MODELS.RESEARCH_FALLBACK,
             maxTokens: 4000,
             webSearch: true,
             maxSearches: 3,

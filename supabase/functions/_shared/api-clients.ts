@@ -1,4 +1,4 @@
-import { API_TIMEOUT, MODEL_PROVIDERS } from "./constants.ts";
+import { API_TIMEOUT, MODEL_PROVIDERS, MODELS } from "./constants.ts";
 import { calcCost } from "./db.ts";
 import type { ApiResult, ApiUsage, ClaudeOptions } from "./types.ts";
 
@@ -9,7 +9,7 @@ export async function claude(opts: ClaudeOptions, stage = "unknown"): Promise<Ap
   const {
     system,
     user,
-    model = "claude-sonnet-4-6",
+    model = MODELS.DEFAULT_CLAUDE,
     maxTokens = 4096,
     temperature = 0.35,
     webSearch = false,
@@ -151,7 +151,7 @@ export function parseClaudeJSON(text: string): unknown {
 export async function openai(opts: { system: string; user: string; model?: string; maxTokens?: number; temperature?: number; timeout?: number }, stage = "unknown"): Promise<ApiResult> {
   const key = (Deno.env.get("OPENAI_API_KEY") || "").trim();
   if (!key) throw new Error("OPENAI_API_KEY not set");
-  const model = opts.model || "gpt-5.4";
+  const model = opts.model || MODELS.DEFAULT_OPENAI;
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
@@ -188,7 +188,7 @@ export async function openai(opts: { system: string; user: string; model?: strin
 export async function grok(opts: { system: string; user: string; maxTokens?: number; temperature?: number; timeout?: number }, stage = "independence"): Promise<ApiResult> {
   const key = (Deno.env.get("XAI_API_KEY") || "").trim();
   if (!key) throw new Error("XAI_API_KEY not set");
-  const model = "grok-4";
+  const model = MODELS.INDEPENDENCE;
   const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
@@ -222,7 +222,7 @@ export async function grok(opts: { system: string; user: string; maxTokens?: num
 export async function gemini(opts: { system: string; user: string; model?: string; maxTokens?: number; temperature?: number; webSearch?: boolean; timeout?: number }, stage = "research"): Promise<ApiResult> {
   const key = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
   if (!key) throw new Error("GOOGLE_API_KEY not set");
-  const model = opts.model || "gemini-2.5-flash";
+  const model = opts.model || MODELS.DEFAULT_GEMINI;
   const useSearch = opts.webSearch !== false; // default true, explicitly disable with false
   const requestBody: Record<string, unknown> = {
     system_instruction: { parts: [{ text: opts.system }] },

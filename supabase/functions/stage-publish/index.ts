@@ -3,7 +3,7 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, parseScore } from "../_shared/db.ts";
 import { publishToGitHub } from "../_shared/github.ts";
 import { assembleAstroFile, todayISO } from "../_shared/astro.ts";
-import { getByline, API_TIMEOUT } from "../_shared/constants.ts";
+import { getByline, API_TIMEOUT, MODELS } from "../_shared/constants.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
 
 Deno.serve(async (req: Request) => {
@@ -156,7 +156,7 @@ Deno.serve(async (req: Request) => {
       description: finalDescription,
       category: metadata.category,
       publishDate: today,
-      author: getByline(logScores?.model_used || "claude-sonnet-4-6"),
+      author: getByline(logScores?.model_used || MODELS.DEFAULT_CLAUDE),
       readTime,
       featured: false,
       draft: false,

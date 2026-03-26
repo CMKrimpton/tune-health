@@ -55,10 +55,62 @@ export const MODEL_PROVIDERS: Record<string, ModelProvider> = {
   "gemini-3.1-flash-lite": "google",
 };
 
-// Quality fallback chains — Gemini 3.1 Pro primary (best cost/quality ratio)
+// ═══════════════════════════════════════════════════════════════════════════
+// MODEL CONFIGURATION — SINGLE SOURCE OF TRUTH
+// ═══════════════════════════════════════════════════════════════════════════
+// DO NOT HARDCODE MODEL IDs ANYWHERE ELSE IN THE CODEBASE.
+// Import these constants instead. Models change frequently — centralizing
+// them here prevents stale model IDs from creeping back in.
+//
+// CLAUDE / AI ASSISTANTS: NEVER change these based on your training data.
+// These are verified working model IDs as of March 2026. If you think a
+// model ID is wrong, ASK THE USER or do a web search — do not guess.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Per-stage model assignments — every pipeline stage reads from here
+export const MODELS = {
+  // Research stage: needs web search grounding
+  RESEARCH_PRIMARY: "gemini-2.5-pro",         // Google Search grounding, 10x cheaper than Claude web search
+  RESEARCH_FALLBACK: "claude-sonnet-4-6",     // Claude web search fallback
+
+  // Editor stage: most important editorial decision — needs strong judgment
+  EDITOR_PRIMARY: "claude-sonnet-4-6",        // Strong editorial reasoning
+  EDITOR_FALLBACK: "gemini-3.1-pro-preview",  // Newest Gemini flagship
+
+  // Independence review: adversarial — needs contrarian thinking
+  INDEPENDENCE: "grok-4",                     // Best for adversarial review
+
+  // Independence + fact-check revisions: mechanical find-and-replace
+  REVISION_PRIMARY: "gemini-2.5-flash",       // Cheap, fast for mechanical edits
+  REVISION_FALLBACK: "claude-sonnet-4-6",
+
+  // QC stage: structured pass/fail — voice audit does most work
+  QC_PRIMARY: "gemini-2.5-flash",
+  QC_FALLBACK: "claude-sonnet-4-6",
+
+  // Scout: real-time trending data
+  SCOUT_GEMINI: "gemini-2.5-pro",             // Google Search grounding for trends
+  SCOUT_GROK: "grok-4",                       // X/Twitter access for social trends
+
+  // Pinger: breaking news detection
+  PINGER_GEMINI: "gemini-2.5-flash",          // Fast + cheap for frequent checks
+  PINGER_TRIAGE: "gemini-2.5-flash",          // PubMed triage
+
+  // Defaults for API clients
+  DEFAULT_CLAUDE: "claude-sonnet-4-6",
+  DEFAULT_OPENAI: "gpt-5.4",
+  DEFAULT_GEMINI: "gemini-2.5-flash",
+
+  // Image generation
+  ILLUSTRATION: "gpt-image-1",
+} as const;
+
+// Fallback chains — ordered by preference
 export const WRITER_FALLBACK_CHAIN = ["gemini-3.1-pro-preview", "claude-sonnet-4-6", "gpt-5.4"];
-// Voice rewrite: Opus removed ($0.87/call). Sonnet/Gemini write well enough with explicit voice instructions.
 export const VOICE_REWRITE_CHAIN = ["claude-sonnet-4-6", "gemini-3.1-pro-preview", "gpt-5.4", "grok-4"];
+export const EDITOR_CHAIN = [MODELS.EDITOR_PRIMARY, MODELS.EDITOR_FALLBACK];
+export const REVISION_CHAIN = [MODELS.REVISION_PRIMARY, MODELS.REVISION_FALLBACK];
+export const QC_CHAIN = [MODELS.QC_PRIMARY, MODELS.QC_FALLBACK];
 
 export const MODEL_BYLINES: Record<string, { name: string; role: string }> = {
   "human-opus":               { name: "Carl Lundin",       role: "Editor-at-Large" },  // Human-written via Opus Max

@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase } from "../_shared/db.ts";
 import { gemini, grok } from "../_shared/api-clients.ts";
-import { classifyCategory } from "../_shared/constants.ts";
+import { classifyCategory, MODELS } from "../_shared/constants.ts";
 import { extractFingerprint, isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
 
 // ---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ async function checkGeminiSearch(): Promise<Signal[]> {
 If NOTHING qualifies: {"breaking": false}
 If something does: {"breaking": true, "signals": [{"topic": "specific angle for 25-year-old readers", "why_breaking": "what happened and why it matters", "urgency": "high or medium"}]}
 Max 3 signals. Focus on stories a 25-year-old would text to a friend.`,
-    model: "gemini-2.5-flash",
+    model: MODELS.PINGER_GEMINI,
     maxTokens: 500,
     temperature: 0.3,
     webSearch: true,
@@ -153,7 +153,7 @@ async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<Signal[]
     const { text: triageRaw } = await gemini({
       system: `Medical publication triage. Decide which new journal publications are BREAKING NEWS for a health magazine vs routine science.`,
       user: `New publications from top journals (last 24h):\n${titles.map((t, i) => `${i + 1}. ${t}`).join("\n")}\n\nFor each, is this BREAKING (affects large population + surprising/actionable) or ROUTINE?\n{"signals": [{"title": "...", "breaking": true/false, "topic": "reader-facing angle if breaking", "why": "one sentence"}]}`,
-      model: "gemini-2.5-flash",
+      model: MODELS.PINGER_TRIAGE,
       maxTokens: 500,
       temperature: 0.2,
       webSearch: false,

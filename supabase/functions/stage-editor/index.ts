@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, getExistingArticles, safeStage, parseScore } from "../_shared/db.ts";
 import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
-import { VALID_CATEGORIES, WRITER_FALLBACK_CHAIN } from "../_shared/constants.ts";
+import { VALID_CATEGORIES, WRITER_FALLBACK_CHAIN, EDITOR_CHAIN } from "../_shared/constants.ts";
 
 // ---------------------------------------------------------------------------
 // Senior Editor — editorial oversight, creative briefs, quality control
@@ -374,7 +374,7 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
       const { text: editorRaw, usage: editorUsage } = await generateWithFallback({
         system: SENIOR_EDITOR_BRIEF_PROMPT,
         user: editorPrompt,
-        models: ["claude-sonnet-4-6", "gemini-3.1-pro-preview"], // Sonnet primary ($0.08), Gemini 3.1 Pro fallback ($0.04)
+        models: EDITOR_CHAIN,
         maxTokens: 4000,
         temperature: 0.4,
         stage: "editor-brief",

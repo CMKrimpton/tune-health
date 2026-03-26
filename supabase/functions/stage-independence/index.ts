@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, safeStage, dispatchStage } from "../_shared/db.ts";
 import { grok, generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
-import { WRITER_FALLBACK_CHAIN } from "../_shared/constants.ts";
+import { REVISION_CHAIN } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
 
 // ---------------------------------------------------------------------------
@@ -192,7 +192,7 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
             const { text: revisedRaw, usage: revisionUsage } = await generateWithFallback({
               system: `You are applying editorial corrections flagged by an independent reviewer. Apply each suggested rewrite where it genuinely improves the article's independence and honesty. Preserve the editorial voice and HTML structure. If a suggestion would weaken the article or is wrong, skip it. Return ONLY the corrected HTML — no JSON wrapper, no explanation.`,
               user: `## CORRECTIONS TO APPLY\n${rewritePrompt}\n\n## CURRENT ARTICLE HTML\n${articleHtml}`,
-              models: ["gemini-2.5-flash", "claude-sonnet-4-6"],
+              models: REVISION_CHAIN,
               maxTokens: 8192,
               temperature: 0.2,
               stage: "independence-revision",
@@ -239,7 +239,7 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
             const { text: factCheckedRaw, usage: factCheckUsage } = await generateWithFallback({
               system: `You are a fact-checker. The following studies cited in an article could NOT be verified on PubMed. For each unverified study: if the article makes a specific claim citing this study, either (a) remove the specific citation and reword the claim as a general observation with "evidence suggests" hedging, or (b) add "(citation unverified)" after the claim. Do NOT remove the underlying point if it's supported by other evidence in the article — just fix the attribution. Preserve all HTML structure. Return ONLY the corrected HTML.`,
               user: `## UNVERIFIED STUDIES (not found on PubMed)\n${unverifiedList}\n\n## ARTICLE HTML\n${revisedHtml}`,
-              models: ["gemini-2.5-flash", "claude-sonnet-4-6"],
+              models: REVISION_CHAIN,
               maxTokens: 8192,
               temperature: 0.15,
               stage: "fact-check",

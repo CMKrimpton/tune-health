@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, calcCost, dispatchStage } from "../_shared/db.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
-import { getCategoryGradient } from "../_shared/constants.ts";
+import { getCategoryGradient, MODELS } from "../_shared/constants.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
 Deno.serve(async (req: Request) => {
@@ -267,12 +267,12 @@ Deno.serve(async (req: Request) => {
       // Estimated token counts per stage (based on pipeline prompts + typical responses)
       // Format: [inputTokens, outputTokens, model]
       const STAGE_ESTIMATES: Record<string, [number, number, string]> = {
-        "scout-gemini":    [1200, 3000, "gemini-2.5-flash"],
-        "scout-structure": [5000, 2500, "claude-sonnet-4-6"],
-        "editor-brief":    [6000, 1800, "claude-sonnet-4-6"],
-        "write":           [8000, 6500, "claude-sonnet-4-6"],
-        "independence":    [5500, 1200, "grok-3"],
-        "qc":              [4500, 1000, "claude-sonnet-4-6"],
+        "scout-gemini":    [1200, 3000, MODELS.SCOUT_GEMINI],
+        "scout-structure": [5000, 2500, MODELS.EDITOR_PRIMARY],
+        "editor-brief":    [6000, 1800, MODELS.EDITOR_PRIMARY],
+        "write":           [8000, 6500, MODELS.EDITOR_PRIMARY],
+        "independence":    [5500, 1200, MODELS.INDEPENDENCE],
+        "qc":              [4500, 1000, MODELS.QC_PRIMARY],
       };
 
       // Which stages completed based on final status

@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 alumi news is a premium health and wellness editorial website built with **Astro**, Tailwind CSS, and React islands for interactivity. The site features a magazine-style design with articles on mental health, nutrition, fitness, sleep science, and longevity.
 
+## AI Model Policy (CRITICAL — read before touching any pipeline code)
+
+**NEVER change model IDs based on your training data.** Models change monthly. Your training data is always stale.
+
+All model selections are centralized in `supabase/functions/_shared/constants.ts` → `MODELS` object. Every pipeline function imports from there. **No model IDs should appear as string literals anywhere else in pipeline code.**
+
+If you need to change a model:
+1. **Do a web search** to verify the model ID actually exists RIGHT NOW
+2. Update ONLY the `MODELS` object in `constants.ts`
+3. Update `PRICING` and `MODEL_PROVIDERS` tables in the same file
+4. All pipeline functions automatically pick up the change via imports
+
+If you see a hardcoded model string in a pipeline function, replace it with the appropriate `MODELS.*` constant. Never introduce new hardcoded model strings.
+
 ## Development Commands
 
 ```bash

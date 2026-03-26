@@ -3,6 +3,7 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, parseScore, dispatchStage } from "../_shared/db.ts";
 import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { auditVoiceQuality } from "../_shared/voice-audit.ts";
+import { QC_CHAIN } from "../_shared/constants.ts";
 
 // ---------------------------------------------------------------------------
 // Senior Editor QC Prompt
@@ -179,7 +180,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
     const { text: qcRaw, usage: qcUsage } = await generateWithFallback({
       system: SENIOR_EDITOR_QC_PROMPT + `\n\nCRITICAL: Return ONLY valid JSON. No markdown, no explanation — just the JSON object.`,
       user: qcPrompt,
-      models: ["gemini-2.5-flash", "claude-sonnet-4-6"], // Flash primary ($0.002), Sonnet fallback ($0.03)
+      models: QC_CHAIN,
       maxTokens: 2000,
       temperature: 0.3,
       stage: "qc",

@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, getExistingArticles } from "../_shared/db.ts";
-import { VALID_CATEGORIES, classifyCategory } from "../_shared/constants.ts";
+import { VALID_CATEGORIES, classifyCategory, MODELS } from "../_shared/constants.ts";
 import { gemini, grok } from "../_shared/api-clients.ts";
 import { extractFingerprint, isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
 import type { ApiUsage } from "../_shared/types.ts";
@@ -91,7 +91,7 @@ Number them 1-20. Plain text, no JSON.`;
 
     if (scoutModel === "gemini") {
       // Gemini with Google Search grounding — best for real-time trending data
-      const r = await gemini({ system: "You are a health editorial scout for a publication whose slogan is 'Evidence. Wherever it leads.' Read by smart, skeptical 20-35 year olds who distrust institutions. Use Google Search to find what's TRENDING in health right now — TikTok health debates, viral studies, Reddit health threads, Google Trends spikes. PRIORITY: find stories where industry funding has corrupted the science, where the 'expert consensus' is paid for, where young people are being lied to by the establishment. Frame topics as INVESTIGATIONS of industry, not neutral debates. When an industry funds the science that defends its product, that IS the story.", user: scoutPrompt, model: "gemini-2.5-pro", maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-gemini");
+      const r = await gemini({ system: "You are a health editorial scout for a publication whose slogan is 'Evidence. Wherever it leads.' Read by smart, skeptical 20-35 year olds who distrust institutions. Use Google Search to find what's TRENDING in health right now — TikTok health debates, viral studies, Reddit health threads, Google Trends spikes. PRIORITY: find stories where industry funding has corrupted the science, where the 'expert consensus' is paid for, where young people are being lied to by the establishment. Frame topics as INVESTIGATIONS of industry, not neutral debates. When an industry funds the science that defends its product, that IS the story.", user: scoutPrompt, model: MODELS.SCOUT_GEMINI, maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-gemini");
       rawFindings = r.text; scoutCost = r.usage;
     } else if (scoutModel === "grok") {
       // Grok — contrarian perspective, finds what mainstream outlets won't cover
@@ -100,7 +100,7 @@ Number them 1-20. Plain text, no JSON.`;
     } else {
       // "Sonnet" scout — now uses Gemini with search grounding (Sonnet web search costs $0.40+/call due to 120K+ input tokens)
       // Gemini search grounding gives the same quality at 1/10th the cost
-      const r = await gemini({ system: "You are a health editorial scout for a magazine whose slogan is 'Evidence. Wherever it leads.' Find the 'wait, really?' stories — where ESTABLISHMENT CONSENSUS is wrong because it's funded by the industry that profits from it. The 'popular belief' that's wrong isn't the Reddit skeptic — it's the AHA recommendation funded by Cargill, the FDA approval fast-tracked by pharma lobbying, the dietary guideline written by industry consultants. Think: seed oil industry capture of nutrition science, pharma-designed trials that hide side effects, food industry funding of nutrition research, supplement companies exploiting regulatory gaps. The second-order insight: not 'debunking internet health trends' but 'the institutions young people trust are funded by the industries they should be questioning, and here's the evidence.'", user: scoutPrompt, model: "gemini-2.5-pro", maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-sonnet");
+      const r = await gemini({ system: "You are a health editorial scout for a magazine whose slogan is 'Evidence. Wherever it leads.' Find the 'wait, really?' stories — where ESTABLISHMENT CONSENSUS is wrong because it's funded by the industry that profits from it. The 'popular belief' that's wrong isn't the Reddit skeptic — it's the AHA recommendation funded by Cargill, the FDA approval fast-tracked by pharma lobbying, the dietary guideline written by industry consultants. Think: seed oil industry capture of nutrition science, pharma-designed trials that hide side effects, food industry funding of nutrition research, supplement companies exploiting regulatory gaps. The second-order insight: not 'debunking internet health trends' but 'the institutions young people trust are funded by the industries they should be questioning, and here's the evidence.'", user: scoutPrompt, model: MODELS.SCOUT_GEMINI, maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-sonnet");
       rawFindings = r.text; scoutCost = r.usage;
     }
 
