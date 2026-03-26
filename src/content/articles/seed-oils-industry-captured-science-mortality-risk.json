@@ -1,5 +1,5 @@
 {
-  "title": "How 'Heart-Healthy' Fat Advice Raised Your Death Risk — And Who Profited",
+  "title": "How 'Heart-Healthy' Fat Advice Raised Your Death Risk â And Who Profited",
   "description": "For decades, major health organizations urged us to swap saturated fats for seed oils, citing heart health. But recovered data from old trials, combined with new insights into inflammation and industry funding, reveals a different, more troubling story about what this advice did to our health and who benefited.",
   "category": "Nutrition",
   "publishDate": "2026-03-26",
@@ -16,5 +16,7 @@
     "from": "emerald-600"
   },
   "keywords": [],
-  "sortOrder": 1774561017354
+  "sortOrder": 1774561017354,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/seed-oils-industry-captured-science-mortality-risk.png",
+  "heroImageAlt": "Editorial illustration for How 'Heart-Healthy' Fat Advice Raised Your Death Risk — And Who Profited"
 }
