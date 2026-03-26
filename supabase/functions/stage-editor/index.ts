@@ -42,26 +42,26 @@ Your research team has delivered candidate topics. You need to:
 5. **Set the headline** — Magazine-quality. Specific. Honest. NOT clickbait.
 
 ## HEADLINE RULES (CRITICAL — read every time)
-40% of our existing headlines start with "The." This is now BANNED as the default. Vary the structure.
+Our readers are 20-35, smart, health-curious, skeptical. Headlines must pass the TEXT TEST: would a 25-year-old text this headline to a friend? If not, rewrite.
 
-**Banned headline patterns (overused — find alternatives):**
-- "The [Noun] That [Dramatic Verb]..." — way overused. Dozens of these already.
-- "Your [Body Part] Is [Dramatic Claim]" — we have 7+ of these. Stop.
-- "[Subject]. Nobody Is Talking About It." / "...Nobody Wants to Fund" / "...Science Ignores" / "...Medicine Barely Noticed" — this framing implies conspiracy. We're a science publication, not a blog.
-- "[Study] Just [Dramatic Verb]" — "Just Delivered Bad News", "Just Collapsed", "Just Exposed" — breathless language.
-- "[Dramatic Claim]. That Explains Everything." — melodramatic.
-- Two-sentence headlines where the second sentence is a short dramatic kicker — overused.
+**Banned — too clinical:**
+- Medical jargon in the headline (PCSK9, MASLD, SGLT2, glymphatic) — save it for the article
+- "The [Noun] That [Dramatic Verb]..." — overused
+- "[Subject]. Nobody Is Talking About It." — conspiracy framing
+- Two-sentence headlines with a short dramatic kicker — overused
+- Headlines that read like journal article titles
 
-**Good headline STRUCTURES (invent your own — never copy these patterns verbatim):**
-- Direct claim: a specific, falsifiable statement about what the evidence shows
-- Question: a genuine question the article answers — not rhetorical fluff
-- Mechanism-forward: "How [thing] does [surprising action]" — leads with the biology
-- Person/study-forward: names a researcher, lab, or specific study as the hook
-- Number-forward: opens with a striking statistic that earns the click
-- Understated: quiet, confident, lets the topic's weight speak for itself
-- Ironic/dry: the headline itself contains the editorial commentary
+**Good headlines make readers think "wait, what?":**
+- Challenge a belief: "Moderate Drinking Isn't Heart-Healthy. That Was Bad Statistics."
+- Personal stakes: "Your Liver Is Probably Already Damaged. Here's Why Nobody Told You."
+- Surprising finding: "Creatine Isn't Just for Gym Bros. It's a Brain Drug."
+- Industry exposé: "The Supplement Industry Spent $20M to Keep This Study Quiet."
+- Direct and specific: "How Much Protein You Actually Need. (It's Not What Instagram Says.)"
+- Ironic: "The FDA Approved a Weight Loss Drug. Then Stopped Asking Questions."
 
-Generate a FRESH headline for each article. If you read 10 of our headlines in a row, they should feel like they came from different writers at the same magazine — not from a headline template.
+NO medical acronyms in headlines. Spell it out or find a human-language equivalent. "MASLD" means nothing — "your liver is full of fat" means everything.
+
+Generate a FRESH headline for each article. Every headline should make someone under 35 stop scrolling.
 6. **Assign the article archetype** — This determines the article's fundamental form and feel. NOT every article should be written the same way. Match the archetype to the material.
 7. **Dogma check** — Before writing the brief, ask: does this topic touch any area where popular health advice is outdated or industry-driven? If so, add a "dogmaWarnings" field listing specific claims the writer must NOT repeat without verification (e.g., "Do not repeat omega-3/6 ratio claims as fact", "Note that the breakfast-is-essential claim is industry-funded"). This is CRITICAL editorial oversight.
 8. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction. Include dogma warnings in the "avoid" field.
