@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.5.1] - 2026-03-26
+
+### Fixed — Post-Dashboard-Refactor Bugs
+- **UTF-8 double-encoding in GitHub commits** — `btoa(unescape(encodeURIComponent()))` double-encoded non-ASCII characters in Deno, producing mojibake (â€" instead of —). Switched to `encoding: "utf-8"` for Git Blobs API and `TextEncoder`-based base64 for Contents API. Fixed in 4 files. Repaired 2 corrupted article JSONs
+- **editor_approved → Write stage** — cards now appear in the Write box (not Editor) when waiting for human writing. Editor is done; Write is where the user acts
+- **Articles tab auto-refresh** — IntersectionObserver fires on dashboard tab switch, visibilitychange on browser tab switch. No more stale article lists
+- **Queue items stuck at "producing"** — topic matching replaced with `_queueId` lookup. `stage-publish` now marks queue items completed on publish. 30-minute auto-reset fallback for orphaned items
+- **Opus brief rewritten** — removed prescriptive rules ("use 'you' 6 times", "max 3 sentences") that constrained Opus into forced prose. Replaced with aspirational voice direction: "Write like The Atlantic, Vanity Fair, WSJ Magazine with Maher/Hitchens/Harris enrichments"
+- **Voice audit relaxed** — "you" count no longer enforced, paragraph density only flags when >30% exceed 3 sentences
+
 ## [12.5.0] - 2026-03-26
 
 ### Refactored — Admin Dashboard Code Quality
