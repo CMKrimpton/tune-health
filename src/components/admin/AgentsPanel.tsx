@@ -150,6 +150,7 @@ export default function AgentsPanel({ apiBase, initialArticleCount }: Props) {
       </div>
       <div>
         <DecisionLog apiBase={apiBase} />
+        <PingerActivity apiBase={apiBase} />
         <CronSchedule />
         <DatabaseSync apiBase={apiBase} initialCount={initialArticleCount} />
       </div>
@@ -257,7 +258,105 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
   );
 }
 
-// ─── 0. Cron Schedule Display ───────────────────────────────────────
+// ─── 0a. Pinger Activity Display ─────────────────────────────────────
+
+function PingerActivity({ apiBase }: { apiBase: string }) {
+  const [signals, setSignals] = useState<Array<{ id: string; topic: string; source: string; urgency: string; why_breaking: string; promoted_to_queue: boolean; created_at: string }>>([]);
+  const [promoted, setPromoted] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const fetchPinger = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pinger-status' }),
+      });
+      const data = await res.json();
+      setSignals(data.signals || []);
+      setPromoted(data.promotedLast24h || 0);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }, [apiBase]);
+
+  useEffect(() => { fetchPinger(); }, [fetchPinger]);
+
+  const sourceColors: Record<string, string> = {
+    gemini_search: '#fbbf24',
+    grok_social: '#3b82f6',
+    pubmed_rss: '#10b981',
+  };
+
+  const sourceLabels: Record<string, string> = {
+    gemini_search: 'Gemini Search',
+    grok_social: 'Grok Social',
+    pubmed_rss: 'PubMed RSS',
+  };
+
+  return (
+    <Section
+      title="Breaking News Pinger"
+      defaultOpen={false}
+      icon={
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #7f1d1d, #dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+      }
+      badge={
+        <span style={{ fontSize: '0.6875rem', color: promoted > 0 ? '#ef4444' : '#4ade80', fontWeight: 500 }}>
+          {promoted > 0 ? `${promoted} promoted (24h)` : 'monitoring'}
+        </span>
+      }
+    >
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <button onClick={fetchPinger} disabled={loading} style={{
+          fontSize: '0.6875rem', padding: '0.25rem 0.625rem',
+          background: 'rgba(255,255,255,0.05)', color: '#b5b0a9', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        }}>
+          {loading ? 'Loading...' : 'Refresh'}
+        </button>
+        <span style={{ fontSize: '0.6875rem', color: '#5c5752', alignSelf: 'center' }}>
+          Checks: :00 Gemini, :15 PubMed, :30 Grok, :45 PubMed
+        </span>
+      </div>
+
+      {signals.length === 0 ? (
+        <p style={{ fontSize: '0.75rem', color: '#5c5752' }}>No signals detected recently. The pinger runs every 15 minutes.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+          {signals.slice(0, 10).map(s => (
+            <div key={s.id} style={{
+              padding: '0.375rem 0.625rem',
+              background: s.promoted_to_queue ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)',
+              border: `1px solid ${s.promoted_to_queue ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)'}`,
+              borderLeft: `3px solid ${sourceColors[s.source] || '#5c5752'}`,
+              borderRadius: '8px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: '#eae8e4', fontWeight: 500 }}>{s.topic}</span>
+                {s.promoted_to_queue && (
+                  <span style={{ fontSize: '0.5625rem', color: '#ef4444', fontWeight: 700, padding: '0.0625rem 0.375rem', background: 'rgba(239,68,68,0.15)', borderRadius: '4px' }}>PROMOTED</span>
+                )}
+              </div>
+              <div style={{ fontSize: '0.625rem', color: '#7d7871', marginTop: '0.125rem' }}>
+                <span style={{ color: sourceColors[s.source] || '#5c5752' }}>{sourceLabels[s.source] || s.source}</span>
+                {' · '}
+                <span>{s.urgency}</span>
+                {s.why_breaking && <span> · {s.why_breaking.slice(0, 80)}</span>}
+                {' · '}
+                <span>{new Date(s.created_at).toLocaleTimeString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+// ─── 0b. Cron Schedule Display ──────────────────────────────────────
 
 function CronSchedule() {
   const cronJobs = [

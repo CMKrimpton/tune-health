@@ -675,6 +675,27 @@ End with a disclaimer div.
       return json({ success: true, action: "scout", scoutModel, result });
     }
 
+    // ------ PINGER-STATUS — recent signals for dashboard ------
+    if (action === "pinger-status") {
+      const { data: signals } = await db
+        .from("pinger_signals")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      const { data: promoted } = await db
+        .from("pinger_signals")
+        .select("id")
+        .eq("promoted_to_queue", true)
+        .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+      return json({
+        signals: signals || [],
+        promotedLast24h: promoted?.length || 0,
+        totalSignals: signals?.length || 0,
+      });
+    }
+
     return json({ error: `Unknown action: "${action}"` }, 400);
   } catch (err: unknown) {
     return json({
