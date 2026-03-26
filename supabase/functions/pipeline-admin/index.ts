@@ -54,23 +54,35 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Housekeeping: fix queue items stuck at in_progress
-      const { data: stuckQueue } = await db.from("topic_queue").select("id, topic").eq("status", "in_progress");
-      if (stuckQueue) {
-        for (const sq of stuckQueue as Array<{ id: string; topic: string }>) {
-          const { data: matchingLog } = await db
-            .from("daily_article_log")
-            .select("status")
-            .ilike("topic", `%${sq.topic.slice(0, 40)}%`)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (matchingLog?.status === "failed") {
-            await db.from("topic_queue").update({ status: "queued" }).eq("id", sq.id);
-          } else if (matchingLog?.status === "published") {
-            await db.from("topic_queue").update({ status: "completed" }).eq("id", sq.id);
+      // Housekeeping: fix queue items stuck at in_progress.
+      // Uses _queueId stored in research_data (set by produce-topic) — NOT topic matching,
+      // because the editor rewrites topics into different headlines.
+      const { data: stuckQueue } = await db.from("topic_queue").select("id").eq("status", "in_progress");
+      if (stuckQueue && stuckQueue.length > 0) {
+        const stuckIds = (stuckQueue as Array<{ id: string }>).map(sq => sq.id);
+        // Find pipeline logs that reference these queue IDs
+        const { data: logs } = await db
+          .from("daily_article_log")
+          .select("status, research_data")
+          .eq("source", "queue")
+          .in("status", ["published", "failed"])
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (logs) {
+          for (const log of logs as Array<{ status: string; research_data: Record<string, unknown> | null }>) {
+            const qId = log.research_data?._queueId as string | undefined;
+            if (qId && stuckIds.includes(qId)) {
+              await db.from("topic_queue").update({
+                status: log.status === "published" ? "completed" : "queued",
+              }).eq("id", qId);
+            }
           }
         }
+        // Fallback: any queue item stuck in_progress for >30min with no matching log is likely orphaned
+        await db.from("topic_queue")
+          .update({ status: "queued" })
+          .eq("status", "in_progress")
+          .lt("updated_at", new Date(Date.now() - 30 * 60 * 1000).toISOString());
       }
 
       // Fetch recent activity (all statuses) + ensure published articles aren't lost

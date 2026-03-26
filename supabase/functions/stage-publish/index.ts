@@ -286,6 +286,15 @@ Deno.serve(async (req: Request) => {
       .update({ status: "published", completed_at: new Date().toISOString() })
       .eq("id", logId);
 
+    // Complete the queue item (if this article came from the queue).
+    // Uses _queueId from research_data — topic text matching doesn't work
+    // because the editor rewrites topics into different headlines.
+    const queueId = researchData?._queueId as string | undefined;
+    if (queueId) {
+      await db.from("topic_queue").update({ status: "completed" }).eq("id", queueId);
+      console.log(`[Publish] Queue item ${queueId} marked completed`);
+    }
+
     return json({
       success: true,
       logId,
