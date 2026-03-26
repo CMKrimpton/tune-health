@@ -1,0 +1,34 @@
+{
+  "title": "A Diabetes Drug Rewrote Heart Failure Medicine. Cardiologists Still Can't Explain How.",
+  "description": "SGLT2 inhibitors — originally approved to lower blood sugar — have become the first drug class to show clinically meaningful benefit across every type of heart failure, regardless of ejection fraction or diabetes status. The mechanism remains genuinely unresolved, the evidence is overwhelming, and more than 60% of physicians still think these drugs are for diabetes. This is cardiology's most important pharmacological advance in a generation, and the implementation failure that may be costing millions of lives.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-26",
+  "author": {
+    "name": "Christine Wright",
+    "role": "Science & Evidence Desk"
+  },
+  "readTime": 9,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Heart Failure",
+    "Cardiology",
+    "SGLT2 Inhibitors",
+    "Clinical Trials",
+    "Medical Guidelines"
+  ],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [
+    "SGLT2 inhibitors",
+    "heart failure",
+    "empagliflozin",
+    "dapagliflozin",
+    "HFpEF",
+    "ejection fraction",
+    "cardiology guidelines"
+  ],
+  "sortOrder": 1774503060739
+}
