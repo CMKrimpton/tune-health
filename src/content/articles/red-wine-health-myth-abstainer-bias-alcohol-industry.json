@@ -1,6 +1,6 @@
 {
-  "title": "Moderate Drinking Wasn't Heart-Healthy. It Was Bad Statistics — and the Industry Knew.",
-  "description": "For three decades, the 'J-curve' — the finding that moderate drinkers outlive non-drinkers — shaped public health messaging, wine marketing, and dinner-party wisdom. New meta-analyses have identified the specific statistical flaw that created it: abstainer bias. Once corrected, the protective effect vanishes entirely. This piece traces how that flaw persisted so long, who benefited from it, and what the evidence actually says about alcohol and cancer risk.",
+  "title": "Moderate Drinking Wasn't Heart-Healthy. It Was Bad Statistics â and the Industry Knew.",
+  "description": "For three decades, the 'J-curve' â the finding that moderate drinkers outlive non-drinkers â shaped public health messaging, wine marketing, and dinner-party wisdom. New meta-analyses have identified the specific statistical flaw that created it: abstainer bias. Once corrected, the protective effect vanishes entirely. This piece traces how that flaw persisted so long, who benefited from it, and what the evidence actually says about alcohol and cancer risk.",
   "category": "Nutrition",
   "publishDate": "2026-03-27",
   "author": {
@@ -16,5 +16,7 @@
     "from": "emerald-600"
   },
   "keywords": [],
-  "sortOrder": 1774584818388
+  "sortOrder": 1774584818388,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/red-wine-health-myth-abstainer-bias-alcohol-industry.png",
+  "heroImageAlt": "Editorial illustration for Moderate Drinking Wasn't Heart-Healthy. It Was Bad Statistics — and the Industry Knew."
 }
