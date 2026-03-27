@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.6.0] - 2026-03-27
+
+### Changed — Manual-Only Production
+- **Removed automatic queue pickup from `dispatch_pipeline_stage()`** — the 5-min cron was auto-producing up to 5 articles/day from scout-discovered topics without admin approval. Killed 6 ghost articles that had been auto-produced overnight
+- **Cron now safety-net only** — recovers stuck articles and advances in-progress pipeline stages, but never picks new topics from the queue
+- **All production is manual** — admin must click "Produce" on a specific topic in the dashboard. `produce-topic` action dispatches research directly via pg_net
+
 ## [12.5.1] - 2026-03-26
 
 ### Fixed — Post-Dashboard-Refactor Bugs

@@ -250,7 +250,7 @@ AI handles discovery, research, editorial judgment, and quality control. Human w
 Each finds 20 topics with "why now" + search demand + shareability filter ("would a 25-year-old text this to a friend?"). ~$0.12/day total.
 
 **Job 2 — Pipeline Dispatch** (cron: `*/5 * * * *`, every 5 min → SQL function `dispatch_pipeline_stage()`):
-Safety-net cron. Chain-dispatch via `chain_dispatch()` SQL → `pg_net.http_post()` handles post-submit flow directly. Cron processes ≤5 queue items/day through research → editor brief → pause.
+Safety-net cron only — recovers stuck articles and advances in-progress stages. **Does NOT auto-pick from queue.** Admin must click "Produce" on a topic to start any article. Chain-dispatch via `chain_dispatch()` SQL → `pg_net.http_post()` handles post-produce flow directly.
 
 **Hybrid pipeline** (AI stages + human writing):
   1. **Research** (~30-80s): Gemini 2.5 Pro + Google Search grounding → Sonnet fallback. Deep research for queue topics.
@@ -265,14 +265,13 @@ Safety-net cron. Chain-dispatch via `chain_dispatch()` SQL → `pg_net.http_post
   8. **Publish** (~30s): GitHub commit (.astro + .json) with 422 retry loop. Vercel deploy hook. GPT Image illustration. Featured rotation.
 
 **Architecture (split pipeline, SQL dispatch)**:
-Each stage is its own edge function with shared utilities in `_shared/`. The SQL function `dispatch_pipeline_stage()` (called by pg_cron) reads DB state, picks the highest-priority article, and dispatches via `pg_net.http_post()` (fire-and-forget — no shared timeout). `editor_approved` is EXCLUDED from auto-dispatch — articles pause there for human writing. Dead code deleted: `daily-article-agent/` (old monolith) and `pipeline-orchestrator/` (replaced by SQL dispatch).
+Each stage is its own edge function with shared utilities in `_shared/`. The SQL function `dispatch_pipeline_stage()` (called by pg_cron) recovers stuck articles and advances in-progress stages via `pg_net.http_post()` (fire-and-forget). **It never auto-picks from the queue** — admin must click "Produce" to start any article. `editor_approved` is EXCLUDED from auto-dispatch — articles pause there for human writing. Dead code deleted: `daily-article-agent/` (old monolith) and `pipeline-orchestrator/` (replaced by SQL dispatch).
 
 **Chain-dispatch (all user-triggered flows)**: All stages fire the next directly via `chain_dispatch()` SQL → `pg_net.http_post()`. No cron waits.
 - Post-submit: submit-article → independence → QC → publish (seconds to publish)
-- Manual produce: produce-topic → research → editor brief → pause (bypasses daily cap)
-- Pre-submit auto: cron processes ≤5 queue items/day, research chain-dispatches editor
-**Safety-net cron**: `dispatch_pipeline_stage()` runs every 5 min (`*/5 * * * *`) to catch stuck articles and auto-process queue. NOT the primary dispatch mechanism.
-**5-brief daily cap**: cron-driven auto-processing caps at 5/day. Manual "Produce" button bypasses this cap via `produce-topic` action.
+- Manual produce: produce-topic → research → editor brief → pause
+**Safety-net cron**: `dispatch_pipeline_stage()` runs every 5 min (`*/5 * * * *`) to recover stuck articles and advance in-progress stages. Does NOT pick from queue.
+**Manual production only**: Admin clicks "Produce" on a topic → `produce-topic` action → research → editor brief → pause. No auto-production.
 **Error handling**: `safeStage()` wrapper + `parseScore()` for safe integer parsing. All stages log errors to DB on failure.
 **Model chains**: Writer (fallback path): Gemini 3.1 Pro → Sonnet → GPT-5.4. QC: Flash → Sonnet. Voice rewrite: Sonnet → Gemini → GPT-5.4 → Grok. Independence revision: Flash → Sonnet.
 **API timeout**: 75s constant (`API_TIMEOUT`).
@@ -364,7 +363,7 @@ done
 - `scout-gemini`: daily 6am UTC → `pipeline-scout` — Gemini + Google Search discovers 20 trending topics
 - `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Gemini + Google Search (editorial lens) discovers 20 topics
 - `scout-grok`: daily 10pm UTC → `pipeline-scout` — Grok discovers 20 contrarian topics
-- `article-produce`: every 5 min (`*/5 * * * *`) → SQL function `dispatch_pipeline_stage()`. Safety net only — chain-dispatch handles post-submit flow. Caps at 5 briefs/day. Skips `editor_approved`
+- `article-produce`: every 5 min (`*/5 * * * *`) → SQL function `dispatch_pipeline_stage()`. Safety net only — recovers stuck articles, advances in-progress stages. **Does NOT auto-pick from queue** (removed in v12.6). Admin must click "Produce"
 - `pinger`: every 15 min (`*/15 * * * *`) → `pipeline-pinger` — rotating breaking news detector (Gemini Flash/:00, PubMed RSS/:15, Grok/:30, PubMed RSS/:45)
 - `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
