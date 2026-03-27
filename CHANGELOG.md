@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.8.0] - 2026-03-26
+
+### Added — Navigation Overhaul
+- **Articles page: "Browse by Topic" view** — when "All" is active, articles are grouped by category (4 per topic) with section headers, counts, and "See all N" drill-down links. Selecting a category switches to a filtered grid with back-to-all navigation
+- **Category chip counts** — both homepage and articles page show article counts inline: "Nutrition 15"
+- **"Next in [Category]" strip** — at the end of every article, a one-line "Next in Nutrition" link shows the next article in the same category for continuous reading flow
+- **URL state for category filters** — articles page updates `?topic=` param on filter change, making filtered views shareable and bookmarkable
+- **Article utility helpers** — `getCategoriesWithCounts()`, `getArticlesByCategory()`, `getNextInCategory()` in articles.ts
+
+### Fixed — Animation & Performance
+- **View Transition stuttering eliminated** — reveal animations no longer cascade on page swap. Elements in/near viewport appear instantly (`transition: none` + immediate `.active`); only below-fold elements animate on scroll
+- **Pipeline heading variety** — writer prompt and human-brief now enforce max 1-2 of 5-7 section headings starting with "The". Suggests questions, imperatives, provocations instead
+
 ## [12.7.2] - 2026-03-26
 
 ### Fixed — Full UX/UI Audit

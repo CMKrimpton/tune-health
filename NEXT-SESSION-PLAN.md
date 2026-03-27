@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v12.7.2 live. Full UX/UI audit complete. 8 files fixed. 124 articles, all clean.
+> **Status**: v12.8.0 live. Navigation overhaul + UX/UI audit. Articles page redesigned with category-grouped view. 124 articles, all clean.
 
 ---
 
