@@ -56,21 +56,21 @@ import SideNav from '../components/SideNav.astro';
           <h2 class="font-serif text-sm uppercase tracking-widest text-stone-400 mb-6">What to expect</h2>
           <ul class="subscribe-list">
             <li>
-              <span class="subscribe-list-icon">📊</span>
+              <span class="subscribe-list-marker">01</span>
               <div>
                 <strong>Research Summaries</strong>
                 <p>Key findings from the latest clinical studies, translated into actionable insights.</p>
               </div>
             </li>
             <li>
-              <span class="subscribe-list-icon">💊</span>
+              <span class="subscribe-list-marker">02</span>
               <div>
                 <strong>Clinical Updates</strong>
                 <p>New medications, treatment protocols, and evidence updates from medical literature.</p>
               </div>
             </li>
             <li>
-              <span class="subscribe-list-icon">🧬</span>
+              <span class="subscribe-list-marker">03</span>
               <div>
                 <strong>Deep Dives</strong>
                 <p>Comprehensive guides on complex health topics, backed by peer-reviewed research.</p>
@@ -148,7 +148,7 @@ import SideNav from '../components/SideNav.astro';
   }
 
   .subscribe-container {
-    @apply max-w-6xl mx-auto px-6;
+    @apply w-full max-w-container mx-auto px-5 md:px-8 lg:px-10;
     @apply grid gap-16 lg:gap-24;
     @apply lg:grid-cols-[1fr_360px];
   }
@@ -177,19 +177,19 @@ import SideNav from '../components/SideNav.astro';
 
   .subscribe-input {
     @apply flex-1 px-5 py-3.5;
-    @apply bg-stone-100 dark:bg-stone-800 rounded-xl;
-    @apply text-stone-900 dark:text-white;
+    @apply bg-stone-100 dark:bg-stone-800 rounded-full;
+    @apply text-base text-stone-900 dark:text-white;
     @apply placeholder-stone-400 dark:placeholder-stone-500;
-    @apply border-2 border-transparent;
-    @apply focus:border-primary-500 focus:outline-none;
+    @apply border border-stone-200 dark:border-stone-700;
+    @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
     @apply transition-colors;
   }
 
   .subscribe-btn {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3.5;
-    @apply bg-primary-600 text-white font-medium;
-    @apply rounded-xl shadow-lg shadow-primary-600/25;
-    @apply hover:bg-primary-700 hover:shadow-xl;
+    @apply bg-stone-900 dark:bg-white text-white dark:text-stone-900 font-semibold text-sm;
+    @apply rounded-full;
+    @apply hover:bg-primary-600 dark:hover:bg-primary-500 hover:text-white;
     @apply transition-all duration-200;
   }
 
@@ -209,8 +209,9 @@ import SideNav from '../components/SideNav.astro';
     @apply flex gap-4;
   }
 
-  .subscribe-list-icon {
-    @apply text-2xl;
+  .subscribe-list-marker {
+    @apply text-xs font-mono font-semibold text-stone-300 dark:text-stone-600;
+    @apply w-8 flex-shrink-0 pt-0.5;
   }
 
   .subscribe-list strong {
@@ -227,7 +228,7 @@ import SideNav from '../components/SideNav.astro';
   }
 
   .subscribe-stats {
-    @apply grid grid-cols-3 gap-4 p-6;
+    @apply grid grid-cols-3 gap-3 sm:gap-4 p-4 sm:p-6;
     @apply bg-stone-50 dark:bg-stone-900 rounded-2xl;
   }
 

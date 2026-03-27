@@ -111,7 +111,6 @@ const nextArticle = await getNextInCategory(slug);
 
         <p
           class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-2xl mx-auto mb-10"
-          style="line-height: 1.8;"
           transition:animate={fade({ duration: '0.4s', delay: '0.1s' })}
         >
           {description}
@@ -235,7 +234,6 @@ const nextArticle = await getNextInCategory(slug);
                   {article.heroImage && (
                     <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
                   )}
-                  <span class="article-card-number absolute bottom-4 left-4">{String(i + 1).padStart(2, '0')}</span>
                 </div>
               </div>
               <div class="article-card-content">

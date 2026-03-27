@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [13.0.0] - 2026-03-27
+
+### Added — Topic Navigation Bar
+- **Persistent topic nav** below header on every page — category links (`/articles?topic=X`) visible site-wide
+- Hidden on homepage until user scrolls past hero, visible immediately on all other pages
+- Hides/shows in sync with header on article page scroll
+- Hidden on mobile touch devices (MobileNav handles navigation there)
+- Replaces the inline "Browse by Topic" section that was floating mid-homepage
+
+### Added — Editorial Manual (`/howwewrite`)
+- Full editorial manual published as a page — mission, voice & tone, evidence standards, pipeline, article structure, always/never rules, legitimacy, funnel strategy
+- Uses site design system with pull quotes, callout boxes, pipeline steps, always/never grid
+
+### Changed — Design System Overhaul
+- **Glow effects removed** — stripped ~100 lines of red hover glow from cards, buttons, nav links, footer, share buttons, TOC, back-to-top. Kept only on `.btn-primary`
+- **Card numbers removed** — no more "01", "02", "03" overlays on article cards across homepage, articles page, related articles, ArticleCard component
+- **Hero badge** — "Spring 2026" with pulsing dot replaced with dynamic "{count} investigations and counting"
+- **Featured label** — "Featured Story" replaced with category-aware labels (The Evidence, The Research, The Mind, Brain Science, Investigation, The Body, The Long Game)
+- **Newsletter visual** — rotated card stack replaced with clean vertical list of recent articles
+- **Subscribe page** — aligned to site conventions: container width, button radius (`rounded-full`), input radius
+- **Command palette redesigned** — emojis removed, frosted glass background, cleaner group headings, Pages + Actions merged into single "Navigate" group, tighter layout
+- **Footer headings** — custom `text-[10px]` replaced with `text-overline` matching site typography scale
+- **Subscribe page emojis** replaced with monospaced ordinal markers
+
+### Fixed — View Transition Dark Mode Flash
+- **Root cause**: during View Transitions, new page's `<html>` arrived without `dark` class — one frame rendered in light mode before `astro:after-swap` re-applied it
+- **Fix**: `astro:before-swap` listener applies `dark` class to incoming document BEFORE DOM swap
+- Added `background-color` on `html` and `html.dark` as safety net
+
+### Fixed — Command Palette Focus Styles
+- Global `*:focus-visible` red outline + `input:focus` glow leaked into command palette search input
+- Excluded `[cmdk-input]` from both rules, added `outline: none` + `box-shadow: none` directly
+
+### Changed — Spacing & Consistency
+- **Section padding standardized** to `py-16 md:py-24` (major) and `py-12 md:py-16` (compact) across all pages
+- **Page top padding** bumped to `pt-32 md:pt-36` (inner pages) and `pt-36 md:pt-44` (articles) to clear header + topic nav
+- **Card borders unified** — featured card `stone-100` → `stone-200`, newsletter items `rounded-xl` → `rounded-2xl`
+- **Inline line-heights removed** — 12 instances of `style="line-height: 1.7/1.8/1.85"` across 8 files (redundant with `text-body-lg` config)
+- **Dead CSS removed** — `.article-card-number`, `.editorial-divider`, zoom comments
+- **Homepage category chips** converted from filter buttons to navigation links, then replaced by topic nav
+- **Articles page category chips** removed (redundant with topic nav)
+
 ## [12.9.0] - 2026-03-27
 
 ### Fixed — Queue Items Stuck at 'Producing' (Permanent Structural Fix)

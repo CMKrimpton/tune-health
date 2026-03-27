@@ -16,6 +16,17 @@ const categoriesWithCounts = await getCategoriesWithCounts();
 
 // Homepage shows max 9 articles (excluding the featured hero)
 const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice(0, 9);
+
+const FEATURED_LABELS: Record<string, string> = {
+  'Clinical Evidence': 'The Evidence',
+  'Nutrition': 'The Research',
+  'Mental Health': 'The Mind',
+  'Neuroscience': 'Brain Science',
+  'Environmental Health': 'Investigation',
+  'Fitness': 'The Body',
+  'Longevity': 'The Long Game',
+};
+const featuredLabel = heroArticle ? (FEATURED_LABELS[heroArticle.category] || "Editor's Pick") : "Editor's Pick";
 ---
 
 <BaseLayout
@@ -48,8 +59,8 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
     <div class="container-editorial">
       <div class="max-w-narrow mx-auto text-center">
         <div class="hero-badge inline-flex items-center gap-2 px-3 py-1.5 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-medium tracking-wide uppercase text-stone-600 dark:text-stone-400 mb-6">
-          <span class="w-1.5 h-1.5 bg-primary-600 rounded-full animate-pulse"></span>
-          <span>Spring 2026</span>
+          <span class="w-1.5 h-1.5 bg-primary-600 rounded-full"></span>
+          <span>{allArticles.length} investigations and counting</span>
         </div>
 
         <h1 class="hero-title font-serif text-display-1 font-semibold mb-4 text-balance" transition:name="hero-title">
@@ -57,7 +68,7 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
           <span class="block italic font-normal text-primary-600">Wherever it leads.</span>
         </h1>
 
-        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg mx-auto mb-8" style="line-height: 1.7;">
+        <p class="hero-subtitle font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg mx-auto mb-8">
           Independent health analysis for people who think for themselves.
           Peer-reviewed journals and naturopathic claims — held to the same standard.
         </p>
@@ -83,10 +94,10 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
 
   <!-- Featured Article -->
   {heroArticle && (
-    <section class="py-14 md:py-20 bg-stone-50 dark:bg-stone-900/50" id="featured" data-featured-section data-category={heroArticle.category}>
+    <section class="py-16 md:py-24 bg-stone-50 dark:bg-stone-900/50" id="featured">
       <div class="container-editorial">
         <div class="flex items-center gap-6 mb-8">
-          <span class="section-label">Featured Story</span>
+          <span class="section-label">{featuredLabel}</span>
           <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
         </div>
 
@@ -95,11 +106,7 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
             <div class="featured-image-inner" style={heroArticle.heroImage ? undefined : getArticleGradientStyle(heroArticle.category)}>
               {heroArticle.heroImage ? (
                 <img src={heroArticle.heroImage} alt={heroArticle.heroImageAlt || heroArticle.title} class="w-full h-full object-cover" loading="eager" />
-              ) : (
-                <div class="absolute inset-0 flex items-end p-8">
-                  <span class="font-serif text-[6rem] lg:text-[8rem] font-bold text-white/[0.06] leading-none select-none">01</span>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -140,25 +147,8 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
     </section>
   )}
 
-  <!-- Categories -->
-  <section class="py-8 border-b border-stone-200 dark:border-stone-800" id="categories">
-    <div class="container-editorial">
-      <div class="categories-scroll">
-        <button class="category-chip active" data-category="all" aria-pressed="true">
-          <span class="text-sm font-medium">All</span>
-        </button>
-        {categoriesWithCounts.map(({ name, count }) => (
-          <button class="category-chip" data-category={name} aria-pressed="false">
-            <span class="text-sm font-medium">{name}</span>
-            <span class="chip-count">{count}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  </section>
-
   <!-- Latest Articles Grid -->
-  <section class="py-14 md:py-20" id="latest">
+  <section class="py-16 md:py-24" id="latest">
     <div class="container-editorial">
       <div class="flex items-center justify-between mb-8">
         <div>
@@ -178,14 +168,12 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
           <a
             href={article.href}
             class={`article-card group reveal${i === 0 ? ' article-card-large' : ''}${i > 0 ? ` reveal-delay-${Math.min(i, 5)}` : ''}`}
-            data-category={article.category}
           >
             <div class="article-card-image">
               <div class="article-card-image-inner relative overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
                 {article.heroImage && (
                   <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading={i < 3 ? 'eager' : 'lazy'} />
                 )}
-                <span class="article-card-number absolute bottom-4 left-4">{String(i + 1).padStart(2, '0')}</span>
               </div>
             </div>
             <div class="article-card-content">
@@ -225,7 +213,7 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
         <span class="section-label !text-primary-400 mb-6 block">Our Mission</span>
         <h2 class="font-serif text-heading-1 font-semibold mb-8 leading-tight">Health Without the Hype</h2>
 
-        <div class="font-body text-body-lg text-stone-300 space-y-6" style="line-height: 1.85;">
+        <div class="font-body text-body-lg text-stone-300 space-y-6">
           <p>
             Health information is broken. Mainstream sources defer to authority and industry-funded research.
             Alternative health cherry-picks studies and sells false hope. Both sides have conflicts of interest
@@ -263,7 +251,7 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
   <AppPromo />
 
   <!-- Deep Dives -->
-  <section class="py-14 md:py-20 bg-stone-100 dark:bg-stone-900" id="deep-dives">
+  <section class="py-16 md:py-24 bg-stone-100 dark:bg-stone-900" id="deep-dives">
     <div class="container-editorial">
       <div class="mb-8">
         <span class="section-label">Deep Dives</span>
@@ -320,13 +308,13 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
   </section>
 
   <!-- Newsletter -->
-  <section class="py-14 md:py-20" id="newsletter-section">
+  <section class="py-16 md:py-24" id="newsletter-section">
     <div class="container-editorial">
       <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <div>
           <span class="section-label">Newsletter</span>
           <h2 class="font-serif text-heading-1 font-semibold mt-2 mb-3">Real Wealth Starts Here</h2>
-          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-6" style="line-height: 1.7;">
+          <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 mb-6">
             Weekly evidence-based health insights delivered to your inbox.
             No hype, no sales pitches — just the research that matters.
           </p>
@@ -368,18 +356,17 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
           </div>
         </div>
 
-        <!-- Newsletter Visual — Real article previews -->
-        <div class="newsletter-visual">
-          {allArticles.slice(0, 3).map((article, i) => (
-            <div class={`newsletter-card newsletter-card-${i + 1}`}>
-              <div class="flex items-center justify-between mb-3">
-                <span class={`px-2 py-1 text-xs font-semibold uppercase rounded ${i === 0 ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600' : i === 1 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>
-                  {i === 0 ? 'New' : i === 1 ? 'Popular' : 'Featured'}
-                </span>
-                <span class="text-xs text-stone-400">{formatPublishDateShort(article.publishDate)}</span>
+        <!-- Newsletter Visual — Recent articles preview -->
+        <div class="newsletter-preview">
+          <p class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-1">Recent editions</p>
+          {allArticles.slice(0, 4).map((article) => (
+            <div class="newsletter-preview-item">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-[11px] font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+                <span class="text-stone-300 dark:text-stone-600">&middot;</span>
+                <span class="text-[11px] text-stone-400">{formatPublishDateShort(article.publishDate)}</span>
               </div>
-              <h4 class="font-serif font-semibold mb-1 line-clamp-1">{article.title}</h4>
-              <p class="text-sm text-stone-500 line-clamp-1">{article.description}</p>
+              <h4 class="font-serif font-semibold text-sm leading-snug">{article.title}</h4>
             </div>
           ))}
         </div>
@@ -430,49 +417,7 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
         }
       }
 
-      // Category filtering
-      const categoryChips = document.querySelectorAll('.category-chip');
-      const articleCards = document.querySelectorAll('#articleGrid .article-card');
-      const featuredSection = document.querySelector('[data-featured-section]') as HTMLElement | null;
 
-      categoryChips.forEach(chip => {
-        chip.addEventListener('click', () => {
-          // Update active state
-          categoryChips.forEach(c => {
-            c.classList.remove('active');
-            c.setAttribute('aria-pressed', 'false');
-          });
-          chip.classList.add('active');
-          chip.setAttribute('aria-pressed', 'true');
-
-          const category = (chip as HTMLElement).dataset.category;
-
-          // Filter featured section
-          if (featuredSection) {
-            const featuredCategory = featuredSection.dataset.category;
-            if (category === 'all' || featuredCategory === category) {
-              featuredSection.style.display = '';
-            } else {
-              featuredSection.style.display = 'none';
-            }
-          }
-
-          // Filter grid cards
-          articleCards.forEach(card => {
-            const cardEl = card as HTMLElement;
-            const cardCategory = cardEl.dataset.category;
-
-            if (category === 'all' || cardCategory === category) {
-              cardEl.style.display = '';
-              // Re-trigger reveal animation
-              cardEl.classList.remove('active');
-              requestAnimationFrame(() => cardEl.classList.add('active'));
-            } else {
-              cardEl.style.display = 'none';
-            }
-          });
-        });
-      });
 
       // Newsletter form handler (shared pattern — calls /api/subscribe)
       document.querySelectorAll('[data-newsletter-form]').forEach((form) => {

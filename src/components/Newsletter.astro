@@ -17,7 +17,7 @@ const isCompact = variant === 'compact';
 <section
   class:list={[
     'bg-stone-900 dark:bg-stone-950 text-white',
-    isCompact ? 'py-16 md:py-20' : 'py-20 md:py-24',
+    isCompact ? 'py-12 md:py-16' : 'py-16 md:py-24',
     className,
   ]}
   id="newsletter"
@@ -28,7 +28,7 @@ const isCompact = variant === 'compact';
       <h2 class:list={['font-serif font-semibold mb-4 leading-tight', isCompact ? 'text-heading-3' : 'text-heading-2']}>
         {isCompact ? 'Get More Like This' : 'Real Wealth Starts Here'}
       </h2>
-      <p class:list={['font-body text-stone-400', isCompact ? 'text-base mb-6' : 'text-lg mb-8']} style="line-height: 1.8;">
+      <p class:list={['font-body text-stone-400', isCompact ? 'text-base mb-6' : 'text-lg mb-8']}>
         {isCompact
           ? 'Weekly evidence-based health articles, delivered to your inbox.'
           : 'Weekly evidence-based health insights — no hype, no sales pitches, just the research that matters.'}

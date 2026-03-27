@@ -19,19 +19,19 @@ interface ArticleItem {
 }
 
 const pages = [
-  { id: 'home', title: 'Home', href: '/', icon: '🏠' },
-  { id: 'articles', title: 'All Articles', href: '/articles', icon: '📰' },
-  { id: 'deep-dives', title: 'Deep Dives', href: '/deep-dives', icon: '🔬' },
-  { id: 'reading-list', title: 'Reading List', href: '/reading-list', icon: '🔖' },
-  { id: 'subscribe', title: 'Subscribe', href: '/subscribe', icon: '📧' },
-  { id: 'about', title: 'About', href: '/about', icon: '📋' },
+  { id: 'home', title: 'Home', href: '/' },
+  { id: 'articles', title: 'All Articles', href: '/articles' },
+  { id: 'deep-dives', title: 'Deep Dives', href: '/deep-dives' },
+  { id: 'reading-list', title: 'Reading List', href: '/reading-list' },
+  { id: 'subscribe', title: 'Subscribe', href: '/subscribe' },
+  { id: 'about', title: 'About', href: '/about' },
 ];
 
 const actions = [
-  { id: 'theme', title: 'Cycle Theme (System / Light / Dark)', icon: '🌓', action: 'toggleTheme' },
-  { id: 'share', title: 'Share This Page', icon: '📤', action: 'share' },
-  { id: 'top', title: 'Back to Top', icon: '⬆️', action: 'scrollToTop' },
-  { id: 'print', title: 'Print', icon: '🖨️', action: 'print' },
+  { id: 'theme', title: 'Cycle Theme', subtitle: 'System / Light / Dark', action: 'toggleTheme' },
+  { id: 'share', title: 'Share This Page', action: 'share' },
+  { id: 'top', title: 'Back to Top', action: 'scrollToTop' },
+  { id: 'print', title: 'Print', action: 'print' },
 ];
 
 // Category colors for badges
@@ -48,6 +48,34 @@ const categoryColors: Record<string, string> = {
   'Research': '#78716c',
   'Research Summary': '#78716c',
 };
+
+// Minimal SVG icons
+function SearchIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, opacity: 0.4 }}>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, opacity: 0.3 }}>
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M19 12H5M5 12l7 7M5 12l7-7" />
+    </svg>
+  );
+}
+
+const itemClass = "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-colors data-[selected=true]:bg-stone-100 dark:data-[selected=true]:bg-stone-800";
 
 export default function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -196,81 +224,98 @@ export default function CommandPalette() {
   return (
     <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Search">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={() => setOpen(false)}
+        style={{ transition: 'opacity 150ms ease' }}
       />
 
-      <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-2xl px-4" style={{ top: 'max(12%, env(safe-area-inset-top, 0px))' }}>
+      <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-xl px-4" style={{ top: 'max(14%, env(safe-area-inset-top, 0px))' }}>
         <Command
-          className="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-700 overflow-hidden"
+          className="overflow-hidden rounded-xl border border-stone-200/80 dark:border-stone-700/80 shadow-2xl"
+          style={{
+            background: 'rgba(255,255,255,0.98)',
+            backdropFilter: 'blur(20px)',
+          }}
           loop
           shouldFilter={false}
         >
+          <style>{`
+            .dark [cmdk-root] { background: rgba(28,25,23,0.97) !important; }
+            [cmdk-group-heading] {
+              font-size: 11px;
+              font-weight: 600;
+              letter-spacing: 0.05em;
+              text-transform: uppercase;
+              padding: 8px 12px 4px;
+              color: rgb(168 162 158);
+            }
+            .dark [cmdk-group-heading] { color: rgb(120 113 108); }
+            [cmdk-input] { caret-color: rgb(220 38 38); box-shadow: none !important; outline: none !important; }
+            [cmdk-list]::-webkit-scrollbar { width: 6px; }
+            [cmdk-list]::-webkit-scrollbar-track { background: transparent; }
+            [cmdk-list]::-webkit-scrollbar-thumb { background: rgba(120,113,108,0.2); border-radius: 3px; }
+            [cmdk-list]::-webkit-scrollbar-thumb:hover { background: rgba(120,113,108,0.4); }
+          `}</style>
+
           {/* Input */}
-          <div className="flex items-center gap-3 px-4 border-b border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-3 px-4 border-b border-stone-200/60 dark:border-stone-700/60">
             {isBrowsingCategory && !isSearching ? (
               <button
                 onClick={() => setSelectedCategory(null)}
-                className="flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
+                className="flex items-center gap-1.5 text-xs font-medium text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 12H5M5 12l7 7M5 12l7-7" strokeWidth="2"/></svg>
-                Back
+                <BackIcon />
+                <span>Back</span>
               </button>
             ) : (
-              <svg className="w-5 h-5 text-stone-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" strokeWidth="2" />
-                <path d="m21 21-4.35-4.35" strokeWidth="2" />
-              </svg>
+              <SearchIcon />
             )}
             <Command.Input
               value={search}
               onValueChange={(v) => { setSearch(v); if (v) setSelectedCategory(null); }}
-              placeholder={isBrowsingCategory ? `Search in ${selectedCategory}...` : "Search articles, topics, pages..."}
-              className="flex-1 py-4 bg-transparent border-none outline-none text-base placeholder-stone-400"
+              placeholder={isBrowsingCategory ? `Search ${selectedCategory}...` : "Search..."}
+              className="flex-1 py-3.5 bg-transparent border-none outline-none text-sm placeholder:text-stone-400 dark:placeholder:text-stone-500"
               autoFocus
             />
             {(isSearching || isBrowsingCategory) && (
-              <span className="text-xs text-stone-400 font-medium whitespace-nowrap">
-                {filteredArticles.length} result{filteredArticles.length !== 1 ? 's' : ''}
+              <span className="text-[11px] text-stone-400 font-medium tabular-nums">
+                {filteredArticles.length}
               </span>
             )}
-            <kbd className="hidden sm:inline-flex px-2 py-1 text-xs font-mono text-stone-400 bg-stone-100 dark:bg-stone-800 rounded">
+            <kbd className="hidden sm:inline-flex px-1.5 py-0.5 text-[10px] font-mono text-stone-400 bg-stone-100 dark:bg-stone-800 rounded border border-stone-200/60 dark:border-stone-700/60">
               ESC
             </kbd>
           </div>
 
-          <Command.List className="max-h-[60vh] overflow-y-auto p-2">
-            <Command.Empty className="py-8 text-center text-sm text-stone-500">
-              No results for "{search}"
+          <Command.List className="max-h-[min(60vh,400px)] overflow-y-auto p-1.5">
+            <Command.Empty className="py-10 text-center text-sm text-stone-400">
+              No results for &ldquo;{search}&rdquo;
             </Command.Empty>
 
-            {/* === IDLE STATE: no search, no category === */}
+            {/* === IDLE STATE === */}
             {!showArticles && (
               <>
                 {/* Recently Used */}
                 {recentlyUsed.length > 0 && (
-                  <Command.Group heading="Recent" className="mb-3">
-                    {recentlyUsed.map((id) => {
+                  <Command.Group heading="Recent">
+                    {recentlyUsed.slice(0, 4).map((id) => {
                       const article = articles.find((a) => a.id === id);
                       const page = pages.find((p) => p.id === id);
                       if (article) {
                         return (
-                          <Command.Item key={id} value={article.title} onSelect={() => navigate(article.href, id)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20">
-                            <span className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white" style={{ background: categoryColors[article.category] || '#78716c' }}>
-                              {article.category[0]}
-                            </span>
-                            <span className="flex-1 truncate text-sm">{article.title}</span>
-                            <span className="text-xs text-stone-400">{article.readTime}</span>
+                          <Command.Item key={id} value={`recent-${article.title}`} onSelect={() => navigate(article.href, id)} className={itemClass}>
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: categoryColors[article.category] || '#78716c' }} />
+                            <span className="flex-1 truncate">{article.title}</span>
+                            <ArrowIcon />
                           </Command.Item>
                         );
                       }
                       if (page) {
                         return (
-                          <Command.Item key={id} value={page.title} onSelect={() => navigate(page.href, id)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20">
-                            <span className="text-base">{page.icon}</span>
-                            <span className="flex-1 text-sm">{page.title}</span>
+                          <Command.Item key={id} value={`recent-${page.title}`} onSelect={() => navigate(page.href, id)} className={itemClass}>
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-stone-400" />
+                            <span className="flex-1">{page.title}</span>
+                            <ArrowIcon />
                           </Command.Item>
                         );
                       }
@@ -280,49 +325,43 @@ export default function CommandPalette() {
                 )}
 
                 {/* Browse by Topic */}
-                <Command.Group heading="Browse by Topic" className="mb-3">
+                <Command.Group heading="Topics">
                   {categories.map(({ name, count }) => (
-                    <Command.Item key={name} value={name} onSelect={() => setSelectedCategory(name)}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: categoryColors[name] || '#78716c' }} />
-                      <span className="flex-1 text-sm font-medium">{name}</span>
-                      <span className="text-xs text-stone-400">{count}</span>
+                    <Command.Item key={name} value={name} onSelect={() => setSelectedCategory(name)} className={itemClass}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: categoryColors[name] || '#78716c' }} />
+                      <span className="flex-1 font-medium">{name}</span>
+                      <span className="text-[11px] text-stone-400 tabular-nums">{count}</span>
                     </Command.Item>
                   ))}
                 </Command.Group>
 
                 {/* Jump to Section (on article pages) */}
                 {sections.length > 0 && (
-                  <Command.Group heading="Jump to Section" className="mb-3">
+                  <Command.Group heading="Sections">
                     {sections.map((section) => (
-                      <Command.Item key={section.id} value={section.title}
+                      <Command.Item key={section.id} value={`section-${section.title}`}
                         onSelect={() => { setOpen(false); document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20">
-                        <span className="text-stone-400 text-xs">#</span>
-                        <span className="flex-1 text-sm truncate">{section.title}</span>
+                        className={itemClass}>
+                        <span className="text-[11px] text-stone-400 font-mono flex-shrink-0">#</span>
+                        <span className="flex-1 truncate">{section.title}</span>
                       </Command.Item>
                     ))}
                   </Command.Group>
                 )}
 
-                {/* Pages */}
-                <Command.Group heading="Pages" className="mb-3">
+                {/* Pages + Actions combined */}
+                <Command.Group heading="Navigate">
                   {pages.map((page) => (
-                    <Command.Item key={page.id} value={page.title} onSelect={() => navigate(page.href, page.id)}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20">
-                      <span className="text-base">{page.icon}</span>
-                      <span className="flex-1 text-sm">{page.title}</span>
+                    <Command.Item key={page.id} value={page.title} onSelect={() => navigate(page.href, page.id)} className={itemClass}>
+                      <span className="flex-1">{page.title}</span>
+                      <ArrowIcon />
                     </Command.Item>
                   ))}
-                </Command.Group>
-
-                {/* Actions */}
-                <Command.Group heading="Actions">
+                  <div className="h-px bg-stone-100 dark:bg-stone-800 mx-3 my-1" />
                   {actions.map((action) => (
-                    <Command.Item key={action.id} value={action.title} onSelect={() => executeAction(action.action, action.id)}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20">
-                      <span className="text-base">{action.icon}</span>
-                      <span className="flex-1 text-sm">{action.title}</span>
+                    <Command.Item key={action.id} value={action.title} onSelect={() => executeAction(action.action, action.id)} className={itemClass}>
+                      <span className="flex-1">{action.title}</span>
+                      {action.subtitle && <span className="text-[11px] text-stone-400">{action.subtitle}</span>}
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -331,45 +370,39 @@ export default function CommandPalette() {
 
             {/* === SEARCH / CATEGORY RESULTS === */}
             {showArticles && groupedArticles.map(([category, catArticles]) => (
-              <Command.Group key={category} heading={`${category} (${catArticles.length})`} className="mb-3">
+              <Command.Group key={category} heading={`${category} (${catArticles.length})`}>
                 {catArticles.map((article) => (
                   <Command.Item
                     key={article.id}
                     value={article.title}
                     onSelect={() => navigate(article.href, article.id)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer data-[selected=true]:bg-primary-50 dark:data-[selected=true]:bg-primary-900/20"
+                    className={itemClass}
                   >
-                    <span className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: categoryColors[article.category] || '#78716c' }}>
-                      {article.category[0]}
-                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: categoryColors[article.category] || '#78716c' }} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{article.title}</div>
-                      <div className="text-xs text-stone-500 truncate mt-0.5">{article.description}</div>
+                      <div className="font-medium truncate">{article.title}</div>
+                      <div className="text-xs text-stone-400 truncate mt-0.5">{article.description}</div>
                     </div>
-                    <span className="text-xs text-stone-400 whitespace-nowrap flex-shrink-0">{article.readTime}</span>
+                    <span className="text-[11px] text-stone-400 whitespace-nowrap flex-shrink-0 tabular-nums">{article.readTime}</span>
                   </Command.Item>
                 ))}
               </Command.Group>
             ))}
           </Command.List>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-stone-200 dark:border-stone-700 text-xs text-stone-400">
-            <div className="flex items-center gap-4">
+          {/* Footer — minimal */}
+          <div className="flex items-center justify-between px-4 py-2 border-t border-stone-200/60 dark:border-stone-700/60">
+            <div className="flex items-center gap-3 text-[11px] text-stone-400">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-stone-100 dark:bg-stone-800 rounded font-mono">↑↓</kbd>
+                <kbd className="px-1 py-px bg-stone-100 dark:bg-stone-800 rounded text-[10px] font-mono">↑↓</kbd>
                 navigate
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-stone-100 dark:bg-stone-800 rounded font-mono">↵</kbd>
+                <kbd className="px-1 py-px bg-stone-100 dark:bg-stone-800 rounded text-[10px] font-mono">↵</kbd>
                 select
               </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-stone-100 dark:bg-stone-800 rounded font-mono">esc</kbd>
-                close
-              </span>
             </div>
-            <span className="text-primary-600 font-medium">alumi news</span>
+            <span className="text-[11px] font-serif italic text-stone-300 dark:text-stone-600">alumi</span>
           </div>
         </Command>
       </div>

@@ -10,7 +10,6 @@ interface Props {
   category: string;
   href: string;
   gradient?: { from: string; to: string };
-  number?: string;
   readTime?: string;
   comingSoon?: boolean;
   size?: 'default' | 'featured';
@@ -26,7 +25,6 @@ const {
   category,
   href,
   gradient = { from: 'primary-500', to: 'primary-600' },
-  number,
   readTime,
   comingSoon = false,
   size = 'default',
@@ -54,9 +52,7 @@ const slug = href.split('/').pop() || 'article';
       <div class:list={['article-card-image-inner relative overflow-hidden', heroImage ? '' : `bg-gradient-to-br ${gradientClass}`]}>
         {heroImage ? (
           <img src={heroImage} alt={heroImageAlt || title} class="w-full h-full object-cover grayscale-[30%]" loading="lazy" />
-        ) : (
-          number && <span class="article-card-number">{number}</span>
-        )}
+        ) : null}
       </div>
       <span class="absolute top-3 right-3 px-2 py-1 bg-stone-900/80 text-white text-xs font-medium rounded">
         Coming Soon
@@ -76,9 +72,7 @@ const slug = href.split('/').pop() || 'article';
       <div class:list={['article-card-image-inner relative overflow-hidden', heroImage ? '' : `bg-gradient-to-br ${gradientClass}`]}>
         {heroImage ? (
           <img src={heroImage} alt={heroImageAlt || title} class="w-full h-full object-cover" loading="lazy" />
-        ) : (
-          number && <span class="article-card-number">{number}</span>
-        )}
+        ) : null}
       </div>
     </div>
     <div class="article-card-content">

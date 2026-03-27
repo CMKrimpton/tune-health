@@ -1,0 +1,76 @@
+---
+import { getCategoriesWithCounts } from '../utils/articles';
+
+const categoriesWithCounts = await getCategoriesWithCounts();
+const currentPath = Astro.url.pathname;
+const currentTopic = Astro.url.searchParams.get('topic');
+const isHome = currentPath === '/' || currentPath === '/index.html';
+
+// Determine active state
+const isArticlesPage = currentPath.startsWith('/articles');
+---
+
+<nav class:list={['topic-nav', { 'topic-nav-hidden': isHome }]} id="topicNav" aria-label="Topics">
+  <div class="topic-nav-inner container-editorial">
+    <a
+      href="/articles"
+      class:list={['topic-nav-link', { active: isArticlesPage && !currentTopic }]}
+    >All</a>
+    {categoriesWithCounts.map(({ name }) => (
+      <a
+        href={`/articles?topic=${encodeURIComponent(name)}`}
+        class:list={['topic-nav-link', { active: currentTopic === name }]}
+      >{name}</a>
+    ))}
+  </div>
+</nav>
+
+<style>
+  .topic-nav {
+    @apply fixed left-0 right-0 z-[39];
+    top: 3.5rem; /* h-14 default */
+    @apply bg-stone-50/95 dark:bg-stone-950/95 backdrop-blur-md;
+    @apply border-b border-stone-200/60 dark:border-stone-800/60;
+    transition: transform 0.375s ease, border-color 0.2s ease;
+  }
+
+  @media (min-width: 768px) {
+    .topic-nav {
+      top: 4rem; /* md:h-16 */
+    }
+  }
+
+  .topic-nav.header-hidden,
+  .topic-nav.topic-nav-hidden {
+    transform: translateY(-100%);
+  }
+
+  .topic-nav-inner {
+    @apply flex items-center gap-1 h-10 overflow-x-auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .topic-nav-inner::-webkit-scrollbar {
+    display: none;
+  }
+
+  .topic-nav-link {
+    @apply flex-shrink-0 px-3 py-1 text-xs font-medium;
+    @apply text-stone-500 dark:text-stone-400;
+    @apply rounded-full transition-colors duration-200;
+    @apply hover:text-stone-900 dark:hover:text-white;
+  }
+
+  .topic-nav-link.active {
+    @apply text-stone-900 dark:text-white;
+    @apply bg-stone-200/60 dark:bg-stone-800/60;
+  }
+
+  /* Hide on mobile — MobileNav handles navigation there */
+  @media (pointer: coarse) and (max-width: 1023px) {
+    .topic-nav {
+      display: none;
+    }
+  }
+</style>

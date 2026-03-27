@@ -24,7 +24,7 @@ const latestArticles = articles.slice(0, 4);
     <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-16">
       <!-- Latest -->
       <div class="col-span-2 md:col-span-1">
-        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-4">Latest</h4>
+        <h4 class="text-overline font-semibold text-stone-500 mb-4">Latest</h4>
         <ul class="space-y-2.5">
           {latestArticles.map((article) => (
             <li>
@@ -38,7 +38,7 @@ const latestArticles = articles.slice(0, 4);
 
       <!-- Explore -->
       <div>
-        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-4">Explore</h4>
+        <h4 class="text-overline font-semibold text-stone-500 mb-4">Explore</h4>
         <ul class="space-y-2.5">
           <li><a href="/articles" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">All Articles</a></li>
           <li><a href="/deep-dives" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">Deep Dives</a></li>
@@ -49,7 +49,7 @@ const latestArticles = articles.slice(0, 4);
 
       <!-- Topics -->
       <div>
-        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-4">Topics</h4>
+        <h4 class="text-overline font-semibold text-stone-500 mb-4">Topics</h4>
         <ul class="space-y-2.5">
           {categories.slice(0, 6).map((cat) => (
             <li>
@@ -63,7 +63,7 @@ const latestArticles = articles.slice(0, 4);
 
       <!-- Quick Actions -->
       <div>
-        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-4">Quick</h4>
+        <h4 class="text-overline font-semibold text-stone-500 mb-4">Quick</h4>
         <p class="text-xs text-stone-500 mb-3">
           Press <kbd class="px-1.5 py-0.5 bg-stone-800 border border-stone-700 rounded text-xs font-mono text-stone-400">⌘K</kbd> to search
         </p>
@@ -105,7 +105,7 @@ const latestArticles = articles.slice(0, 4);
     <!-- Social & Follow -->
     <div class="pt-8 border-t border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
       <div>
-        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-stone-500 mb-3">Follow & Subscribe</h4>
+        <h4 class="text-overline font-semibold text-stone-500 mb-3">Follow & Subscribe</h4>
         <div class="flex items-center gap-3">
           <!-- RSS Feed -->
           <a

@@ -1,6 +1,7 @@
 ---
 import { ViewTransitions } from 'astro:transitions';
 import MobileNav from '../components/MobileNav.astro';
+import TopicNav from '../components/TopicNav.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -88,6 +89,7 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
   <div class="scroll-progress" id="scrollProgress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
 
   <slot name="header" />
+  <TopicNav />
 
   <main id="main-content">
     <slot />
@@ -156,7 +158,12 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
       applyTheme(next);
     };
 
-    // Persist theme across View Transitions
+    // Persist theme across View Transitions — apply BEFORE swap to prevent light flash
+    document.addEventListener('astro:before-swap', (e: any) => {
+      const pref = getStoredPreference();
+      const effective = resolveTheme(pref);
+      e.newDocument.documentElement.classList.toggle('dark', effective === 'dark');
+    });
     document.addEventListener('astro:after-swap', () => {
       applyTheme(getStoredPreference());
     });
@@ -172,6 +179,7 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
       const signal = coreController.signal;
 
       const header = document.getElementById('header');
+      const topicNav = document.getElementById('topicNav');
       const scrollProgress = document.getElementById('scrollProgress');
       const backToTop = document.getElementById('backToTop');
       const themeToggle = document.getElementById('themeToggle');
@@ -195,19 +203,31 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
           header?.classList.remove('scrolled');
         }
 
+        // Reveal topic nav on homepage after scrolling past hero
+        if (topicNav?.classList.contains('topic-nav-hidden')) {
+          const hero = document.querySelector('.hero') as HTMLElement;
+          const threshold = hero ? hero.offsetHeight * 0.6 : 400;
+          if (scrollY > threshold) {
+            topicNav.classList.remove('topic-nav-hidden');
+          }
+        }
+
         // Sticky hide/show — only on article pages, desktop only
         if (isArticlePage && header && window.innerWidth >= 1024) {
           const delta = scrollY - lastScrollY;
           if (Math.abs(delta) > HEADER_DEAD_ZONE) {
             if (delta > 0 && scrollY > 300) {
               header.classList.add('header-hidden');
+              topicNav?.classList.add('header-hidden');
             } else {
               header.classList.remove('header-hidden');
+              topicNav?.classList.remove('header-hidden');
             }
             lastScrollY = scrollY;
           }
         } else {
           header?.classList.remove('header-hidden');
+          topicNav?.classList.remove('header-hidden');
         }
 
         // Progress bar

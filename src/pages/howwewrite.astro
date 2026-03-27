@@ -1,0 +1,539 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+import SideNav from '../components/SideNav.astro';
+---
+
+<BaseLayout
+  title="Editorial Manual | alumi news"
+  description="How we write, why we write it this way, and what separates health journalism from health marketing."
+>
+  <Header slot="header" />
+
+  <!-- Hero -->
+  <section class="manual-hero">
+    <div class="container-editorial">
+      <div class="max-w-narrow">
+        <div class="manual-kicker">
+          <span class="kicker-line"></span>
+          <span>Internal Document</span>
+        </div>
+        <h1 class="font-serif text-display-2 font-semibold mt-5 mb-5 leading-tight">
+          The alumi<br/>
+          <span class="italic font-normal text-primary-600">Editorial Manual</span>
+        </h1>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg">
+          How we write, why we write it this way, and what separates a piece of health journalism from a piece of health marketing wearing journalism's clothes.
+        </p>
+        <div class="manual-meta">
+          <span>Last updated: March 2026</span>
+          <span>Version 1.0</span>
+          <span>For all contributors</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOC -->
+  <section class="manual-toc">
+    <div class="container-editorial">
+      <div class="max-w-narrow">
+        <div class="toc-label">Contents</div>
+        <div class="toc-grid">
+          <a class="toc-item" href="#mission"><span class="toc-num">01</span> Mission</a>
+          <a class="toc-item" href="#voice"><span class="toc-num">02</span> Voice & tone</a>
+          <a class="toc-item" href="#evidence"><span class="toc-num">03</span> Evidence standards</a>
+          <a class="toc-item" href="#pipeline"><span class="toc-num">04</span> The pipeline</a>
+          <a class="toc-item" href="#structure"><span class="toc-num">05</span> Article structure</a>
+          <a class="toc-item" href="#rules"><span class="toc-num">06</span> Always / Never</a>
+          <a class="toc-item" href="#legitimacy"><span class="toc-num">07</span> Legitimacy</a>
+          <a class="toc-item" href="#funnel"><span class="toc-num">08</span> The funnel</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Content -->
+  <div class="container-editorial">
+    <div class="max-w-narrow manual-content">
+
+      <!-- 01 MISSION -->
+      <section class="manual-section" id="mission">
+        <div class="manual-kicker"><span class="kicker-line"></span><span>01 &mdash; Mission</span></div>
+        <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">What we are here to do</h2>
+        <p class="dropcap">Most health content online exists to sell something. Supplements, programs, fear, engagement. The information is shaped by the outcome the publisher needs, not the outcome the reader needs. alumi exists to do the opposite of that.</p>
+        <p>We publish health journalism. Not wellness content, not listicles, not "10 superfoods that will change your life." Journalism: evidence-examined, institutionally skeptical, honest about what we don't know, and written for adults who can handle complexity.</p>
+        <p>Our readers are not patients looking for reassurance. They are people who want to understand their bodies the way they understand their finances or their careers &mdash; with real information, not managed uncertainty.</p>
+
+        <div class="manual-pullquote">
+          <p>"The reader should finish each piece feeling accurately informed and respected &mdash; never lectured, never frightened without cause."</p>
+        </div>
+
+        <p>The magazine is also the top of our funnel. Every article we publish is an implicit argument that health information can be trustworthy &mdash; and a natural doorway to the alumi Health app, where that trustworthy information meets your actual data. That relationship only works if the magazine earns it. Editorial independence is not a principle we hold despite the business model. It is the mechanism by which the business model works.</p>
+      </section>
+
+      <!-- 02 VOICE -->
+      <section class="manual-section" id="voice">
+        <div class="manual-kicker"><span class="kicker-line"></span><span>02 &mdash; Voice & tone</span></div>
+        <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">How we sound</h2>
+        <p>The alumi voice is built from four distinct influences, each contributing something specific. Misread any one of them and the prose tips into parody.</p>
+
+        <h3 class="font-serif text-xl font-semibold italic mt-8 mb-3">Hitchens &mdash; forensic structure</h3>
+        <p>Premises stack until conclusions feel inevitable. Wit that works, never decorates. The argument is the entertainment. Never use cleverness as a substitute for evidence, and never use evidence as a substitute for a point of view.</p>
+
+        <h3 class="font-serif text-xl font-semibold italic mt-8 mb-3">Frontline &mdash; rhythmic economy</h3>
+        <p>Varied sentence length controls pace. Cold opens &mdash; start inside the story, not outside it. Structure implies rather than states. The documentary camera doesn't explain what you're looking at; it trusts you to see it.</p>
+
+        <h3 class="font-serif text-xl font-semibold italic mt-8 mb-3">Distill.pub &mdash; no throat-clearing</h3>
+        <p>Start on the claim. Complexity is dissolved, not displayed. If you need a setup sentence to explain your opening sentence, rewrite the opening sentence. Intelligence is assumed; expertise is not.</p>
+
+        <h3 class="font-serif text-xl font-semibold italic mt-8 mb-3">Bill Maher &mdash; zero patience for the gap</h3>
+        <p>The joke is the argument. No tolerance for the distance between what's officially said and what's demonstrably true. The institutional story and the actual story are different things; name that difference.</p>
+
+        <div class="manual-callout">
+          <div class="manual-callout-label">Tone test</div>
+          <p>Read your lede aloud. If it sounds like a press release, a Wikipedia article, or a wellness podcast intro &mdash; rewrite it. If it sounds like something a smart, slightly impatient friend would say at a dinner party &mdash; you're close.</p>
+        </div>
+      </section>
+
+      <!-- 03 EVIDENCE -->
+      <section class="manual-section" id="evidence">
+        <div class="manual-kicker"><span class="kicker-line"></span><span>03 &mdash; Evidence standards</span></div>
+        <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">What counts as evidence</h2>
+        <p>Not all research is equal. Treating it as such is one of the most common failures in health journalism &mdash; and one of the easiest ways to erode reader trust when someone checks your sources.</p>
+
+        <ol class="evidence-list">
+          <li><span class="ev-marker">&bull;</span><span>A <strong>Cochrane systematic review</strong> is the gold standard. It synthesizes all available RCTs on a question and weights them by quality. Treat it accordingly.</span></li>
+          <li><span class="ev-marker">&bull;</span><span><strong>Randomized controlled trials (RCTs)</strong> are strong evidence when well-designed, adequately powered, and independently funded. Check all three.</span></li>
+          <li><span class="ev-marker">&bull;</span><span><strong>Observational cohort studies</strong> can establish correlation and generate hypotheses. They cannot establish causation. Say this clearly in prose, not in a footnote.</span></li>
+          <li><span class="ev-marker">&bull;</span><span><strong>In vitro and animal studies</strong> are preliminary signal, not clinical evidence. One mouse study &ne; a Cochrane review. One petri dish &ne; a human trial.</span></li>
+          <li><span class="ev-marker">&bull;</span><span><strong>Industry-funded research</strong> is not automatically invalid &mdash; but the funding source must be disclosed and the methodology scrutinized harder. The incentive to find a positive result is structural.</span></li>
+          <li><span class="ev-marker">&bull;</span><span><strong>Expert opinion</strong> is useful context. It is not evidence. Name the expert, name their affiliation, name any conflicts of interest.</span></li>
+        </ol>
+
+        <div class="manual-pullquote">
+          <p>"When evidence is mixed or preliminary, say so in the prose &mdash; don't bury it in a closing caveat."</p>
+        </div>
+
+        <p>The most important editorial discipline: be honest about uncertainty in the body of the piece, not as a disclaimer at the end. A closing "consult your doctor" does not undo three paragraphs of overstatement. If the evidence doesn't support a strong conclusion, the piece should not have a strong conclusion.</p>
+      </section>
+
+      <!-- 04 PIPELINE -->
+      <section class="manual-section" id="pipeline">
+        <div class="manual-kicker"><span class="kicker-line"></span><span>04 &mdash; The pipeline</span></div>
+        <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">How an article gets made</h2>
+        <p>Every article published by alumi passes through an eight-stage production pipeline. AI handles discovery, research, editorial judgment, and quality control. A human writes with the best available model. This is not a cost-cutting measure &mdash; it is a quality architecture.</p>
+
+        <div class="pipeline">
+          <div class="pipe-step">
+            <div class="pipe-num">1</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Topic discovery</div>
+              <p class="pipe-desc">Three daily scouts surface emerging research, breaking health news, and underserved subject areas. Topics are ranked by editorial priority and queued.</p>
+              <span class="pipe-model">Gemini 2.5 Pro + Google Search &middot; 3&times;/day</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">2</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Deep research</div>
+              <p class="pipe-desc">Full literature review for the queued topic. Primary sources, methodology assessment, conflicting studies, funding sources.</p>
+              <span class="pipe-model">Gemini 2.5 Pro + Google Search &middot; fallback: Sonnet</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">3</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Editorial brief</div>
+              <p class="pipe-desc">Assigns archetype, tone preset, structural density, and pacing. Manually queued topics receive mandatory editorial direction.</p>
+              <span class="pipe-model">Gemini Flash &middot; fallback: Sonnet</span>
+            </div>
+          </div>
+          <div class="pipe-step pipe-step-human">
+            <div class="pipe-num pipe-num-human">4</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Human writing &mdash; with Opus</div>
+              <p class="pipe-desc">The pipeline pauses here. A human receives the research brief, writes the article with Claude Opus, and submits the final HTML. This is the only stage that cannot be automated &mdash; and it is the point of the entire system.</p>
+              <span class="pipe-model">Claude Opus &middot; human in the loop &middot; non-negotiable pause</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">5</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Independence review</div>
+              <p class="pipe-desc">Adversarial review. Checks for overstatement, missing caveats, unverified claims. Cross-references against PubMed. Applies corrections.</p>
+              <span class="pipe-model">Grok 3 + PubMed verification + Flash corrections</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">6</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Quality control</div>
+              <p class="pipe-desc">Final editorial gate: publish, revise, or kill. Mechanical voice audit checks for prohibited constructions, throat-clearing, and tone drift.</p>
+              <span class="pipe-model">Gemini Flash &middot; fallback: Sonnet</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">7</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Voice rewrite (if triggered)</div>
+              <p class="pipe-desc">Triggered by QC when voice drift is detected. Prose-only rewrite &mdash; facts and structure are not changed. Skipped for human-written articles that pass QC clean.</p>
+              <span class="pipe-model">Sonnet &rarr; Gemini &rarr; Grok &middot; cascade</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">8</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Publish</div>
+              <p class="pipe-desc">GitHub commit, Vercel deploy, AI-generated editorial illustration, featured rotation. Article is live.</p>
+              <span class="pipe-model">Automated &middot; ~$0.13/article all-in</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 05 STRUCTURE -->
+      <section class="manual-section" id="structure">
+        <div class="manual-kicker"><span class="kicker-line"></span><span>05 &mdash; Article structure</span></div>
+        <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">How a piece is built</h2>
+
+        <h3 class="font-serif text-xl font-semibold italic mt-8 mb-3">The lede</h3>
+        <p>Start inside the story. Not "Scientists have long wondered about X." Not "In recent years, research has suggested." Start with the thing that made the story worth writing. A number. A scene. A contradiction. A document. The reader should know within two sentences what they are reading and why it matters.</p>
+
+        <h3 class="font-serif text-xl font-semibold italic mt-8 mb-3">The structure</h3>
+        <p>Each section earns the next. Don't announce what you're about to say &mdash; say it. Don't summarize what you just said &mdash; move. Subheadings should make a claim, not label a category. "The funding problem" is a label. "The researchers were paid by the companies they were studying" is a claim.</p>
+
+        <h3 class="font-serif text-xl font-semibold italic mt-8 mb-3">The close</h3>
+        <p>Don't recap. Don't soften. Don't end with a lifestyle tip unless the lifestyle tip is the point of the piece. End where the argument ends &mdash; on the finding, the implication, or the unanswered question that the reader now has the information to think about properly.</p>
+
+        <div class="manual-callout">
+          <div class="manual-callout-label">Scene over assertion</div>
+          <p>Let the scene do the arguing. State the finding once &mdash; then show what it looks like in a person's life, an institution's behavior, or a document's language. The reader should reach the conclusion, not be handed it.</p>
+        </div>
+
+        <h3 class="font-serif text-xl font-semibold italic mt-8 mb-3">Sources</h3>
+        <p>Every factual claim needs a source. Every source needs a date. Every industry-funded study needs its funding disclosed in the prose, not in a citation. If you cannot source a claim, the claim comes out. If the sourced claim is weaker than the sentence implies, the sentence changes to match the source.</p>
+      </section>
+
+      <!-- 06 RULES -->
+      <section class="manual-section" id="rules">
+        <div class="manual-kicker"><span class="kicker-line"></span><span>06 &mdash; Always / Never</span></div>
+        <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">The non-negotiables</h2>
+
+        <div class="rules-grid">
+          <div class="rules-col">
+            <div class="rules-col-label rules-always">Always</div>
+            <ul class="rules-list">
+              <li>Oxford comma, US English</li>
+              <li>Start on the claim &mdash; no setup sentences</li>
+              <li>Name the awkward thing first</li>
+              <li>Say when evidence is mixed or preliminary &mdash; in the prose</li>
+              <li>Assume intelligence, not expertise</li>
+              <li>Edge targets institutions and bad ideas, not patients making real decisions</li>
+              <li>Disclose funding sources for cited research</li>
+              <li>Let the scene argue &mdash; state the finding once, then show it</li>
+            </ul>
+          </div>
+          <div class="rules-col">
+            <div class="rules-col-label rules-never">Never</div>
+            <ul class="rules-list">
+              <li>"This isn't X, it's Y" constructions</li>
+              <li>Hallmark-card warmth</li>
+              <li>Breathless wellness hype</li>
+              <li>Reflexive contrarianism</li>
+              <li>One mouse study presented as settled science</li>
+              <li>A closing disclaimer that undoes the body of the piece</li>
+              <li>Subheadings that label rather than claim</li>
+              <li>Setup sentences before the lede</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 07 LEGITIMACY -->
+      <section class="manual-section" id="legitimacy">
+        <div class="manual-kicker"><span class="kicker-line"></span><span>07 &mdash; Legitimacy</span></div>
+        <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">How we justify publishing health content</h2>
+        <p>It is a fair question. Anyone can publish health information. Most of what's published is wrong, incomplete, or optimized for engagement rather than accuracy. What makes alumi different is not the claim to expertise &mdash; we do not claim to be physicians. It is the method.</p>
+
+        <p>Journalists at the <em>New York Times</em> write about oncology without holding a medical degree. What legitimizes the work is not the author's title but the process: primary sources checked, methodology examined, conflicting evidence included, funding relationships disclosed, expert input solicited and attributed. We follow the same process. The pipeline enforces it. The independence review catches what slips through.</p>
+
+        <div class="manual-pullquote">
+          <p>"We do not diagnose. We do not recommend treatments. We explain what the evidence shows &mdash; and we are explicit when the evidence is weak, contested, or absent."</p>
+        </div>
+
+        <p>What we never do: diagnose, recommend specific treatments, present preliminary evidence as established fact, or write in a way that suggests a published article can substitute for a clinical conversation. Every piece ends with a disclaimer because the disclaimer is true &mdash; not because it provides legal cover for irresponsible claims in the body of the text.</p>
+      </section>
+
+      <!-- 08 FUNNEL -->
+      <section class="manual-section" id="funnel">
+        <div class="manual-kicker"><span class="kicker-line"></span><span>08 &mdash; The funnel</span></div>
+        <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">How the magazine connects to the app</h2>
+        <p>The relationship between alumi news and alumi Health is the most important structural fact about this publication. Every editorial decision exists inside that relationship. Understanding it prevents the most common mistake: treating the magazine as an app advertisement.</p>
+
+        <p>The sequence is fixed and non-negotiable: <strong>value &mdash; trust &mdash; download.</strong> Collapsing the sequence &mdash; pushing the app before earning the reader &mdash; produces worse outcomes on every metric. A reader who downloads the app because an article convinced them it was credible is worth ten readers who downloaded it because a banner told them to.</p>
+
+        <div class="manual-callout">
+          <div class="manual-callout-label">The rule</div>
+          <p>Editorial independence is not a brand positioning choice. It is the mechanism by which the app recommendation carries weight. The moment the magazine feels like an ad for the app, the trust that makes the ad work evaporates.</p>
+        </div>
+
+        <p>The app CTA at the end of each article is contextual, not generic. An article about ferritin trending low does not link to the app homepage &mdash; it links to the biomarker tracking feature, and the link text names the connection: <em>"Track your ferritin over time in alumi Health."</em> The reader should experience the CTA as a natural continuation of the article, not a commercial interruption of it.</p>
+
+        <p>The newsletter operates the same way. It does not promote the app. It delivers editorial value &mdash; and trusts that readers who consistently receive that value will find their way to the app when they are ready. That is not a slow strategy. It is the only strategy that compounds.</p>
+      </section>
+
+      <!-- Disclaimer -->
+      <div class="manual-disclaimer">
+        <p><strong>Editorial use only.</strong> This document is an internal manual for alumi contributors, editors, and AI pipeline configuration. It does not constitute medical advice. alumi Health content is for informational purposes only and does not constitute medical advice, diagnosis, or treatment.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="manual-footer">
+    <p><em>alumi news</em> &mdash; Evidence. Wherever it leads. &middot; Internal document, March 2026</p>
+  </div>
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+  <SideNav />
+</BaseLayout>
+
+<style>
+  .manual-hero {
+    @apply pt-32 md:pt-36 pb-12 md:pb-16;
+    @apply border-b border-stone-200 dark:border-stone-800;
+  }
+
+  .manual-kicker {
+    @apply flex items-center gap-3;
+    @apply text-overline font-semibold text-primary-600 dark:text-primary-400;
+  }
+
+  .kicker-line {
+    @apply block w-6 h-px bg-primary-600 dark:bg-primary-400;
+  }
+
+  .manual-meta {
+    @apply flex flex-wrap gap-6 mt-8;
+    @apply text-xs text-stone-400 dark:text-stone-500 font-sans;
+  }
+
+  /* TOC */
+  .manual-toc {
+    @apply py-10 border-b border-stone-200 dark:border-stone-800;
+  }
+
+  .toc-label {
+    @apply text-overline font-semibold text-stone-400 dark:text-stone-500 mb-5;
+  }
+
+  .toc-grid {
+    @apply grid grid-cols-2 sm:grid-cols-4 gap-2;
+  }
+
+  .toc-item {
+    @apply flex items-center gap-2.5 py-2;
+    @apply text-sm text-stone-500 dark:text-stone-400 no-underline;
+    @apply border-b border-stone-200/50 dark:border-stone-800/50;
+    @apply hover:text-primary-600 dark:hover:text-primary-400 transition-colors;
+  }
+
+  .toc-num {
+    @apply text-[10px] text-stone-400 dark:text-stone-600 font-mono;
+    min-width: 18px;
+  }
+
+  /* Content */
+  .manual-content {
+    @apply pb-16;
+  }
+
+  .manual-section {
+    @apply py-14 border-b border-stone-200 dark:border-stone-800;
+  }
+
+  .manual-section:last-of-type {
+    @apply border-b-0;
+  }
+
+  .manual-content p {
+    @apply font-body text-body text-stone-700 dark:text-stone-300 mb-5;
+  }
+
+  .manual-content p:last-child {
+    @apply mb-0;
+  }
+
+  .manual-content strong {
+    @apply font-medium;
+  }
+
+  .manual-content em {
+    @apply italic;
+  }
+
+  /* Drop cap */
+  .dropcap::first-letter {
+    @apply font-serif text-primary-600 font-bold;
+    font-size: 4.5rem;
+    line-height: 0.8;
+    float: left;
+    margin: 0.05em 0.12em 0 0;
+  }
+
+  /* Pull quote */
+  .manual-pullquote {
+    @apply my-10 py-6 pl-7 border-l-[3px] border-primary-600;
+  }
+
+  .manual-pullquote p {
+    @apply font-serif text-xl italic text-stone-500 dark:text-stone-400 leading-relaxed mb-0;
+  }
+
+  /* Callout */
+  .manual-callout {
+    @apply my-8 p-6 rounded-lg;
+    @apply bg-stone-100 dark:bg-stone-800/50;
+    @apply border-l-[3px] border-primary-600;
+  }
+
+  .manual-callout-label {
+    @apply text-overline font-semibold text-primary-600 dark:text-primary-400 mb-2;
+  }
+
+  .manual-callout p {
+    @apply text-sm text-stone-600 dark:text-stone-400 leading-relaxed mb-0;
+  }
+
+  /* Evidence list */
+  .evidence-list {
+    @apply list-none my-5;
+  }
+
+  .evidence-list li {
+    @apply flex gap-3 py-3;
+    @apply border-b border-stone-200/50 dark:border-stone-800/50;
+    @apply text-sm text-stone-600 dark:text-stone-400 leading-relaxed;
+  }
+
+  .evidence-list li:last-child {
+    @apply border-b-0;
+  }
+
+  .ev-marker {
+    @apply text-primary-600 text-xs flex-shrink-0 pt-0.5;
+  }
+
+  /* Pipeline */
+  .pipeline {
+    @apply my-8 flex flex-col;
+  }
+
+  .pipe-step {
+    @apply flex gap-5 py-4;
+    @apply border-b border-stone-200/50 dark:border-stone-800/50;
+  }
+
+  .pipe-step:last-child {
+    @apply border-b-0;
+  }
+
+  .pipe-num {
+    @apply w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5;
+    @apply bg-stone-400 dark:bg-stone-600 text-white dark:text-stone-200;
+    @apply text-[11px] font-semibold font-sans;
+  }
+
+  .pipe-num-human {
+    @apply bg-primary-600 dark:bg-primary-500;
+  }
+
+  .pipe-body {
+    @apply flex-1;
+  }
+
+  .pipe-title {
+    @apply text-sm font-semibold font-sans text-stone-900 dark:text-stone-100 mb-1;
+  }
+
+  .pipe-desc {
+    @apply text-sm text-stone-500 dark:text-stone-400 leading-relaxed mb-0;
+  }
+
+  .pipe-model {
+    @apply inline-block mt-2 px-2.5 py-0.5 rounded-full;
+    @apply text-[10px] font-sans font-medium;
+    @apply text-stone-400 dark:text-stone-500;
+    @apply bg-stone-100 dark:bg-stone-800;
+  }
+
+  /* Rules grid */
+  .rules-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-6 my-6;
+  }
+
+  .rules-col {
+    @apply bg-stone-100 dark:bg-stone-800/50 rounded-lg p-5;
+  }
+
+  .rules-col-label {
+    @apply text-overline font-semibold mb-3;
+  }
+
+  .rules-always {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .rules-never {
+    @apply text-primary-600 dark:text-primary-400;
+  }
+
+  .rules-list {
+    @apply list-none;
+  }
+
+  .rules-list li {
+    @apply py-1.5 text-sm text-stone-600 dark:text-stone-400 leading-relaxed;
+    @apply border-b border-stone-200/50 dark:border-stone-700/50;
+    @apply flex gap-2;
+  }
+
+  .rules-list li:last-child {
+    @apply border-b-0;
+  }
+
+  .rules-list li::before {
+    content: '\2013';
+    @apply text-stone-400 dark:text-stone-600 flex-shrink-0;
+  }
+
+  /* Disclaimer */
+  .manual-disclaimer {
+    @apply mt-16 p-5 rounded-lg;
+    @apply bg-stone-100 dark:bg-stone-800/50;
+    @apply border-l-[3px] border-primary-600;
+  }
+
+  .manual-disclaimer p {
+    @apply text-xs text-stone-500 dark:text-stone-400 leading-relaxed font-sans mb-0;
+  }
+
+  /* Footer */
+  .manual-footer {
+    @apply py-8 text-center;
+    @apply border-t border-stone-200 dark:border-stone-800;
+  }
+
+  .manual-footer p {
+    @apply text-xs text-stone-400 dark:text-stone-500 font-sans;
+  }
+
+  .manual-footer em {
+    @apply font-serif italic text-stone-500 dark:text-stone-400 not-italic;
+  }
+</style>
