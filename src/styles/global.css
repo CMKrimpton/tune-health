@@ -162,13 +162,13 @@
 
   /* Noise Texture Overlay */
   .noise-overlay {
-    @apply fixed inset-0 pointer-events-none z-50 opacity-[0.02] dark:opacity-[0.04];
+    @apply fixed inset-0 pointer-events-none z-10 opacity-[0.02] dark:opacity-[0.04];
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   }
 
   /* Scroll Progress Bar */
   .scroll-progress {
-    @apply fixed top-0 left-0 z-50;
+    @apply fixed top-0 left-0 z-40;
     height: 2px;
     background: linear-gradient(90deg, theme('colors.primary.600'), theme('colors.primary.400'));
     transform-origin: left;
@@ -501,7 +501,7 @@
    Loader Animation
    ========================================= */
 .loader {
-  @apply fixed inset-0 bg-stone-50 dark:bg-stone-950 z-50;
+  @apply fixed inset-0 bg-stone-50 dark:bg-stone-950 z-[60];
   @apply flex items-center justify-center;
   @apply transition-opacity duration-700 ease-editorial;
 }
@@ -891,7 +891,7 @@ body.menu-open {
    Back to Top
    ========================================= */
 .back-to-top {
-  @apply fixed bottom-8 right-6 z-40;
+  @apply fixed bottom-8 right-6 z-30;
   @apply w-12 h-12 rounded-full;
   @apply bg-stone-900/90 dark:bg-white/90 text-white dark:text-stone-900;
   @apply flex items-center justify-center;

@@ -85,7 +85,7 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
   <div class="noise-overlay" aria-hidden="true"></div>
 
   <!-- Scroll Progress -->
-  <div class="scroll-progress" id="scrollProgress" role="progressbar" aria-label="Reading progress"></div>
+  <div class="scroll-progress" id="scrollProgress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
 
   <slot name="header" />
 
@@ -216,6 +216,7 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
           const docHeight = document.documentElement.scrollHeight - vh;
           const progress = docHeight > 0 ? Math.min(scrollY / docHeight, 1) : 0;
           scrollProgress.style.transform = `scaleX(${progress})`;
+          scrollProgress.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
         }
 
         // Back to top

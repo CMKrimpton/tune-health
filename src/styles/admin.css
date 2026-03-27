@@ -2719,3 +2719,11 @@ button:focus-visible {
   outline: 2px solid var(--admin-accent);
   outline-offset: 2px;
 }
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

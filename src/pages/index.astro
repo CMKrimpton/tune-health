@@ -144,11 +144,11 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
   <section class="py-8 border-b border-stone-200 dark:border-stone-800" id="categories">
     <div class="container-editorial">
       <div class="categories-scroll">
-        <button class="category-chip active" data-category="all">
+        <button class="category-chip active" data-category="all" aria-pressed="true">
           <span class="text-sm font-medium">All</span>
         </button>
         {categoriesWithCounts.map(({ name, count }) => (
-          <button class="category-chip" data-category={name}>
+          <button class="category-chip" data-category={name} aria-pressed="false">
             <span class="text-sm font-medium">{name}</span>
             <span class="chip-count">{count}</span>
           </button>
@@ -438,8 +438,12 @@ const gridArticles = allArticles.filter(a => a.slug !== heroArticle?.slug).slice
       categoryChips.forEach(chip => {
         chip.addEventListener('click', () => {
           // Update active state
-          categoryChips.forEach(c => c.classList.remove('active'));
+          categoryChips.forEach(c => {
+            c.classList.remove('active');
+            c.setAttribute('aria-pressed', 'false');
+          });
           chip.classList.add('active');
+          chip.setAttribute('aria-pressed', 'true');
 
           const category = (chip as HTMLElement).dataset.category;
 
