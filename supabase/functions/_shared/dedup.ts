@@ -7,6 +7,12 @@ const STOP_WORDS = new Set([
   "health", "study", "research", "evidence", "science", "brain", "body", "human",
   "people", "patients", "treatment", "medical", "clinical", "risk", "effect",
   "effects", "years", "shows", "found", "actually", "problem", "really", "new",
+  "industry", "funded", "drugs", "behind", "truth", "hidden", "might", "here",
+  "aren", "aren't", "isn", "isn't", "don", "don't", "won", "won't", "didn",
+  "link", "linked", "connection", "between", "reveal", "exposed", "crisis",
+  "silent", "quietly", "nobody", "everyone", "knows", "knew", "told", "telling",
+  "worse", "better", "making", "causing", "doing", "getting", "being", "having",
+  "young", "adults", "millennials", "generation", "modern", "diet", "food",
 ]);
 
 /** Extract subject words from text, filtering stop words and short words */
@@ -16,7 +22,7 @@ export function extractFingerprint(text: string): Set<string> {
   );
 }
 
-/** Check if a topic is a duplicate of any existing fingerprint (30% overlap + 2 matching words) */
+/** Check if a topic is a duplicate of any existing fingerprint (25% overlap + 3 matching subject words) */
 export function isDuplicate(topic: string, fingerprints: Set<string>[]): boolean {
   const words = extractFingerprint(topic);
   if (words.size === 0) return false;
@@ -24,7 +30,7 @@ export function isDuplicate(topic: string, fingerprints: Set<string>[]): boolean
     if (fp.size === 0) continue;
     const overlap = [...words].filter(w => fp.has(w)).length;
     const reverse = [...fp].filter(w => words.has(w)).length;
-    if (Math.max(overlap / words.size, reverse / fp.size) >= 0.30 && overlap >= 2) return true;
+    if (Math.max(overlap / words.size, reverse / fp.size) >= 0.25 && overlap >= 3) return true;
   }
   return false;
 }
