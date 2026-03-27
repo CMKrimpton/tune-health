@@ -6,13 +6,7 @@
    TUNE HEALTH - Premium Editorial Design
    ========================================= */
 
-/* View Transitions */
-html {
-  background-color: #fafaf9; /* stone-50 — prevents flash if transition bleeds */
-}
-html.dark {
-  background-color: #0c0a09; /* stone-950 */
-}
+/* View Transitions — background on body, not html, to preserve -z-index stacking */
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
