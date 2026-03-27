@@ -36,7 +36,14 @@ async function updateGitHubFeatured(slug: string, featured: boolean): Promise<bo
       return false;
     }
     const fileData = await fileRes.json();
-    const existingContent = JSON.parse(atob(fileData.content.replace(/\n/g, "")));
+    // atob() decodes Base64 to a binary string where each char = one byte.
+    // For multi-byte UTF-8 chars (em dashes, smart quotes), atob() produces
+    // garbled chars. Must convert through Uint8Array + TextDecoder to get
+    // proper UTF-8 text. The old atob() → JSON.parse() path was the root
+    // cause of recurring mojibake — every 6h rotation cycle re-corrupted.
+    const raw = atob(fileData.content.replace(/\n/g, ""));
+    const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+    const existingContent = JSON.parse(new TextDecoder().decode(bytes));
     existingContent.featured = featured;
     const updatedContent = utf8ToBase64(JSON.stringify(existingContent, null, 2) + "\n");
 

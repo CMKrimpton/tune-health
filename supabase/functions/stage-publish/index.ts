@@ -237,7 +237,10 @@ Deno.serve(async (req: Request) => {
                 const fileRes = await fetch(`${apiBase}/contents/${jsonPath}?ref=main`, { headers: ghHeaders });
                 if (fileRes.ok) {
                   const fileData = await fileRes.json();
-                  const existingContent = JSON.parse(atob(fileData.content.replace(/\n/g, "")));
+                  // UTF-8-safe Base64 decode (atob alone corrupts multi-byte chars like em dashes)
+                  const _raw = atob(fileData.content.replace(/\n/g, ""));
+                  const _rawBytes = Uint8Array.from(_raw, c => c.charCodeAt(0));
+                  const existingContent = JSON.parse(new TextDecoder().decode(_rawBytes));
                   existingContent.heroImage = heroImage;
                   existingContent.heroImageAlt = heroImageAlt;
                   // UTF-8-safe base64 (btoa+unescape double-encodes non-ASCII in Deno)

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.7.1] - 2026-03-26
+
+### Fixed — Recurring Mojibake Root Cause (atob UTF-8 corruption)
+- **Root cause found**: `atob()` in `featured.ts` and `stage-publish` decoded Base64 GitHub content to a binary string, corrupting multi-byte UTF-8 characters (em dashes, smart quotes) into mojibake (`Ã¢ÂÂ`). Every 6-hour featured rotation cycle re-corrupted the same files — which is why SGLT2 article had **triple**-encoded mojibake
+- **Fixed `featured.ts` and `stage-publish`**: `atob()` → `Uint8Array.from()` + `TextDecoder` for proper UTF-8 decoding
+- **Repaired 6 corrupted JSON article files**: circadian-syndrome, protein-powder, sglt2-inhibitors, chemical-sunscreen, blue-light-glasses, probiotic-skin
+
 ## [12.7.0] - 2026-03-26
 
 ### Changed — Headline System Overhaul
