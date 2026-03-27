@@ -612,10 +612,16 @@ body.menu-open {
 /* Hero Elements - Hidden Initially for Smooth Animation */
 .hero-badge,
 .hero-title,
-.hero-subtitle,
+.hero-subtitle {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* CTA starts visible — must always be clickable */
 .hero-cta {
   opacity: 0;
   transform: translateY(30px);
+  pointer-events: auto;
 }
 
 /* Active state - reveal with CSS transition */
