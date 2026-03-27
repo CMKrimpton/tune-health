@@ -2707,3 +2707,15 @@
   .admin-dashboard-tab { white-space: nowrap; }
   .admin-stats { grid-template-columns: repeat(2, 1fr) !important; }
 }
+
+/* Focus-visible styles for keyboard accessibility (all inputs use outline:none) */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: -1px;
+}
+button:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+}

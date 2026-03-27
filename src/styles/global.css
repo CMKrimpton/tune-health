@@ -685,6 +685,7 @@ body.menu-open {
 .article-card {
   @apply relative bg-white dark:bg-stone-900;
   @apply rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800;
+  @apply flex flex-col;
   transition: box-shadow 0.5s ease, border-color 0.375s ease;
 }
 
@@ -710,7 +711,7 @@ body.menu-open {
 }
 
 .article-card-content {
-  @apply p-4 md:p-5;
+  @apply p-4 md:p-5 flex flex-col flex-1;
 }
 
 /* Large Card Variant — on desktop: image fills card, content overlays at bottom */

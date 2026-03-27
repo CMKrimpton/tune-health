@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.7.2] - 2026-03-26
+
+### Fixed — Full UX/UI Audit
+- **Article card white space bug** — cards in CSS grid stretched vertically but content didn't fill the space, leaving large empty gaps. Added `flex flex-col` to `.article-card` and `flex flex-col flex-1` to `.article-card-content` so the footer pushes to the bottom via `mt-auto`
+- **Broken TOC anchor links** — 5 of 7 "In This Article" links in `calcium-phosphorus-ratio-diet-health` pointed to non-existent IDs (e.g., `#why-ratio-matters` vs actual `#why-the-ratio-matters`)
+- **Admin keyboard accessibility** — all admin form inputs had `outline: none` with no `focus-visible` replacement, making them invisible to keyboard users. Added global `focus-visible` styles
+- **Subscribe page missing aria-label** — email input had no accessible label for screen readers
+- **HighlightShare incorrect ARIA role** — used `role="tooltip"` on an interactive popup with buttons (tooltips must be non-interactive per ARIA spec). Changed to `role="group"`
+- **Admin edit page XSS** — preview iframe srcdoc concatenated `articleData.title` and `.category` directly into HTML without escaping. Added `esc()` helper
+- **Heading hierarchy violation** — `non-opioid-painkillers` article used `<h4>` as section headings directly after `<h2>`, skipping `<h3>`. Fixed to proper hierarchy
+
 ## [12.7.1] - 2026-03-26
 
 ### Fixed — Recurring Mojibake Root Cause (atob UTF-8 corruption)
