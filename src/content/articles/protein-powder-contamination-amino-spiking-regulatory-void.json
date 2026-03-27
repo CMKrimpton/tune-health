@@ -10,7 +10,13 @@
   "readTime": 9,
   "featured": true,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Protein Supplements",
+    "Contamination",
+    "FDA Regulation",
+    "Heavy Metals",
+    "Amino Spiking"
+  ],
   "gradient": {
     "to": "teal-700",
     "from": "emerald-600"

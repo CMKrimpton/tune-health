@@ -1,6 +1,6 @@
 {
-  "title": "You Think You're Taking 5mg of Melatonin. You Might Be Taking 24mg â and Some Serotonin.",
-  "description": "JAMA studies found that 88% of melatonin supplements contain wildly different amounts than their labels claim â and nearly a third contain serotonin, a controlled substance, at potentially clinically significant levels. This piece investigates what's actually in the most popular sleep supplement in America, why the FDA can't touch it, and what that means for the tens of millions of adults and children taking it nightly.",
+  "title": "You Think You're Taking 5mg of Melatonin. You Might Be Taking 24mg — and Some Serotonin.",
+  "description": "JAMA studies found that 88% of melatonin supplements contain wildly different amounts than their labels claim — and nearly a third contain serotonin, a controlled substance, at potentially clinically significant levels. This piece investigates what's actually in the most popular sleep supplement in America, why the FDA can't touch it, and what that means for the tens of millions of adults and children taking it nightly.",
   "category": "Sleep Science",
   "publishDate": "2026-03-26",
   "author": {
@@ -10,7 +10,13 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Melatonin",
+    "Supplement Safety",
+    "Sleep",
+    "FDA Regulation",
+    "Contamination"
+  ],
   "gradient": {
     "to": "purple-600",
     "from": "indigo-500"

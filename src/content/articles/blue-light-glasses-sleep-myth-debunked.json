@@ -10,7 +10,13 @@
   "readTime": 7,
   "featured": false,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Blue Light",
+    "Sleep Science",
+    "Consumer Health",
+    "Vision",
+    "Circadian Rhythm"
+  ],
   "gradient": {
     "to": "purple-600",
     "from": "indigo-500"

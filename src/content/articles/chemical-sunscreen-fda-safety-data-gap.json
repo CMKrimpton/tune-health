@@ -10,7 +10,13 @@
   "readTime": 14,
   "featured": false,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Sunscreen",
+    "FDA Regulation",
+    "Endocrine Disruptors",
+    "Skin Health",
+    "Consumer Safety"
+  ],
   "gradient": {
     "to": "green-600",
     "from": "lime-500"

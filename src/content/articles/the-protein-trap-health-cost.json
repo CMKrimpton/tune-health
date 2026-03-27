@@ -10,7 +10,13 @@
   "readTime": 12,
   "featured": false,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Protein",
+    "Kidney Health",
+    "mTOR",
+    "Nutrition",
+    "Metabolic Health"
+  ],
   "gradient": {
     "to": "teal-700",
     "from": "emerald-600"

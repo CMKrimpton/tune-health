@@ -10,7 +10,13 @@
   "readTime": 10,
   "featured": false,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Seed Oils",
+    "Heart Health",
+    "Industry Funding",
+    "Linoleic Acid",
+    "Nutrition Science"
+  ],
   "gradient": {
     "to": "teal-700",
     "from": "emerald-600"

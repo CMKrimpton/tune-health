@@ -10,7 +10,13 @@
   "readTime": 11,
   "featured": false,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Cancer Immunotherapy",
+    "Synthetic Biology",
+    "Bacterial Therapy",
+    "Oncology",
+    "Clinical Trials"
+  ],
   "gradient": {
     "to": "orange-600",
     "from": "amber-500"

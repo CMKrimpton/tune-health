@@ -10,7 +10,13 @@
   "readTime": 9,
   "featured": false,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Alcohol",
+    "Liver Disease",
+    "Industry Funding",
+    "Public Health",
+    "Nutrition"
+  ],
   "gradient": {
     "to": "teal-700",
     "from": "emerald-600"

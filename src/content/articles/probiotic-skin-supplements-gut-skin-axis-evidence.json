@@ -10,7 +10,13 @@
   "readTime": 8,
   "featured": false,
   "draft": false,
-  "tags": [],
+  "tags": [
+    "Probiotics",
+    "Gut-Skin Axis",
+    "Dermatology",
+    "Microbiome",
+    "Supplement Claims"
+  ],
   "gradient": {
     "to": "teal-700",
     "from": "emerald-600"
