@@ -35,10 +35,18 @@ Deno.serve(async (req: Request) => {
 
 ## WHAT MAKES A TOPIC WORTH WRITING (ranked)
 1. **"Wait, really?"** — challenges something readers believed was true. NOT "debunking internet trends" — challenging ESTABLISHMENT consensus that turns out to be industry-funded
-2. **Follow-the-money exposé** — pharma pricing, seed oil industry capture, supplement fraud, food industry manipulation, insurance denials, industry-funded "scientific consensus." This is our HIGHEST PRIORITY category. Young people are angry about being lied to by institutions.
-3. **Personally relevant RIGHT NOW** — affects what they eat today, how they sleep tonight, what supplements they take, their workout routine, their prescriptions
-4. **Culturally trending** — debated on TikTok, Reddit, Twitter. Ozempic culture, gut health, longevity biohacking, psychedelics, seed oil truth, ultra-processed food exposure
-5. **New science that changes behavior** — not just "interesting mechanism" but "this changes what you should DO"
+2. **Follow-the-money exposé** — pharma pricing, seed oil industry capture, supplement fraud, food industry manipulation, insurance denials, industry-funded "scientific consensus." Young people are angry about being lied to by institutions.
+3. **Everyday health people actually search for** — common cold, flu, allergies, back pain, headaches, bloating, acid reflux, UTIs, sinus infections, sore throat, ear infections, blood pressure, cholesterol, acne, eczema, eye strain, dental health, period problems, injury recovery. These are the #1 search volume topics. Frame them with our editorial voice — not WebMD recitations but "here's what actually works vs what's industry marketing."
+4. **Personally relevant RIGHT NOW** — affects what they eat today, how they sleep tonight, what supplements they take, their workout routine, their prescriptions
+5. **Culturally trending** — debated on TikTok, Reddit, Twitter. Ozempic culture, gut health, longevity biohacking, psychedelics, seed oil truth, ultra-processed food exposure
+6. **New science that changes behavior** — not just "interesting mechanism" but "this changes what you should DO"
+
+## TOPIC MIX (MANDATORY)
+Of your 20 topics, deliver this mix:
+- **At least 5 everyday health topics** — conditions millions deal with weekly (colds, allergies, back pain, headaches, digestion, skin, heart basics, women's/men's health). Frame with our voice: what actually works, what's marketing, what your doctor won't tell you
+- **At least 5 investigation/exposé topics** — follow the money, industry capture, pharma/food/supplement fraud
+- **Up to 10 trending/contrarian/deep topics** — the "holy shit" stories
+Do NOT fill all 20 slots with niche deep-dives. A publication needs breadth to serve real readers.
 
 ## TOPIC FRAMING (CRITICAL — read every time)
 How you frame a topic determines the entire downstream article. BAD framing produces industry PR. GOOD framing produces journalism.
@@ -58,17 +66,21 @@ How you frame a topic determines the entire downstream article. BAD framing prod
 When suggesting industry-related topics: frame them as investigations OF the industry, not neutral "debates" about the product. The story is always WHO PROFITS and WHO FUNDS THE SCIENCE.
 
 ## TOPICS YOUNG READERS ACTUALLY CARE ABOUT (use as inspiration, not limits)
-- Their medications: Ozempic/GLP-1 culture, SSRIs, birth control side effects, Adderall
+- **Everyday body stuff**: common cold (what actually works), allergies (why they're getting worse), back pain (why it's epidemic in 20s-30s), headaches vs migraines, bloating & IBS, acid reflux, UTIs, sinus infections, sore throats, ear infections, eye strain from screens, dental health & heart disease link
+- **Heart & metabolic basics**: blood pressure at 30, cholesterol myths, resting heart rate, when to worry about chest pain, pre-diabetes signs
+- **Women's health**: periods & pain, PCOS, birth control side effects, UTIs, endometriosis, iron deficiency
+- **Men's health**: testosterone truth, prostate basics, hair loss science, fertility
+- **Skin**: acne & diet, eczema triggers, retinoids, sunscreen chemicals, gut-skin connection
+- Their medications: Ozempic/GLP-1 culture, SSRIs, birth control, Adderall, antibiotics overuse
 - Their diet: seed oils, ultra-processed food, protein amounts, artificial sweeteners, alcohol truth, fasting, gut microbiome
-- Their fitness: creatine for brain health, VO2 max as mortality predictor, overtraining, zone 2 cardio hype
+- Their fitness: creatine for brain health, VO2 max, overtraining, zone 2 cardio, injury recovery (sprains, tendinitis)
 - Their mental health: psychedelics vs SSRIs, social media and anxiety, burnout biology, ADHD meds
 - Their sleep: blue light truth, melatonin evidence, caffeine half-life, sleep trackers accuracy
-- Their skin: retinoids, sunscreen chemicals, gut-skin connection, acne and diet
 - Things they're being lied to about: supplement industry, wellness influencers, "clean eating" pseudoscience
 - Longevity biohacking: rapamycin, NMN/NAD+, cold plunges (evidence vs hype), metformin
 
 ## THE SHAREABILITY TEST
-For EACH topic, ask: would a 25-year-old text this to a friend? If the answer is "no, this is interesting but I wouldn't share it" — find a better angle or drop the topic. We want topics that make people say "holy shit, did you know this?"
+For EACH topic, ask: would a 25-year-old text this to a friend OR search for it when they're feeling sick? Both count. "Holy shit, did you know this?" is great for investigations. "Wait, Tylenol doesn't actually work for back pain?" is great for everyday topics. Everyday health topics don't need to be shocking — they need to be USEFUL and framed with our editorial voice (not WebMD recitations).
 
 ## FORMAT FOR EACH TOPIC
 - **Topic**: specific angle a 25-year-old would click on, not a journal article title
