@@ -43,6 +43,8 @@ const isArticlesPage = currentPath.startsWith('/articles');
   .topic-nav.header-hidden,
   .topic-nav.topic-nav-hidden {
     transform: translateY(-100%);
+    pointer-events: none;
+    visibility: hidden;
   }
 
   .topic-nav-inner {
