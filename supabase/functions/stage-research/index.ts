@@ -143,13 +143,17 @@ Deno.serve(async (req: Request) => {
     if (!topic) {
       const { data: logMeta } = await db
         .from("daily_article_log")
-        .select("topic, source")
+        .select("topic, source, research_data")
         .eq("id", logId)
         .maybeSingle();
       if (logMeta?.topic) {
         topic = logMeta.topic;
         source = source || logMeta.source || undefined;
-        console.log(`[Research] Read topic from DB: "${topic}" (source: ${source})`);
+        // Preserve _queueId from produce-topic (stored in research_data before research runs)
+        if (!queueId && logMeta.research_data?._queueId) {
+          queueId = logMeta.research_data._queueId as string;
+        }
+        console.log(`[Research] Read topic from DB: "${topic}" (source: ${source}, queueId: ${queueId || 'none'})`);
       }
     }
 
