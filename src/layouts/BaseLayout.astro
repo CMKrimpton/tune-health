@@ -274,7 +274,21 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
         });
       }, { threshold: 0.1 });
 
-      reveals.forEach((el) => revealObserver.observe(el));
+      reveals.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 100) {
+          // In or near viewport — show instantly (no stutter after page swap)
+          (el as HTMLElement).style.transition = 'none';
+          el.classList.add('active');
+          // Re-enable transitions after paint for any future interactions
+          requestAnimationFrame(() => {
+            (el as HTMLElement).style.transition = '';
+          });
+        } else {
+          // Below fold — animate on scroll
+          revealObserver.observe(el);
+        }
+      });
 
       // Run scroll handler immediately to sync header state
       // (prevents stale .scrolled / .header-hidden classes after View Transition)

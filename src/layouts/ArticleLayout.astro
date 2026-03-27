@@ -15,7 +15,7 @@ import FloatingShareBar from '../components/FloatingShareBar.astro';
 import HighlightShare from '../components/HighlightShare.astro';
 import SideNav from '../components/SideNav.astro';
 import { fade, slide } from 'astro:transitions';
-import { getRelatedArticles, getArticleGradientStyle, getArticles } from '../utils/articles';
+import { getRelatedArticles, getArticleGradientStyle, getArticles, getNextInCategory } from '../utils/articles';
 
 interface Props {
   title: string;
@@ -46,6 +46,7 @@ const allArticles = await getArticles();
 const currentArticle = allArticles.find((a) => a.slug === slug);
 const resolvedOgImage = ogImage || currentArticle?.heroImage || '/assets/og-image.png';
 const articleSeries = currentArticle?.series;
+const nextArticle = await getNextInCategory(slug);
 ---
 
 <BaseLayout
@@ -200,6 +201,23 @@ const articleSeries = currentArticle?.series;
       </div>
     </div>
   </article>
+
+  <!-- Next in Category -->
+  {nextArticle && (
+    <section class="py-8 md:py-12 border-t border-stone-200 dark:border-stone-800">
+      <div class="container-editorial">
+        <a href={nextArticle.href} class="group flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 reveal">
+          <span class="text-xs font-medium uppercase tracking-widest text-stone-400 whitespace-nowrap">Next in {category}</span>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-serif text-lg md:text-xl font-semibold group-hover:text-primary-600 transition-colors leading-snug truncate">{nextArticle.title}</h3>
+          </div>
+          <svg class="w-5 h-5 text-stone-300 dark:text-stone-600 group-hover:text-primary-600 transition-colors flex-shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+  )}
 
   <!-- Related Articles -->
   {relatedArticles.length > 0 && (

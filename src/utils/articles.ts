@@ -180,6 +180,49 @@ export async function getCategories(): Promise<string[]> {
 }
 
 /**
+ * Get categories with article counts
+ */
+export async function getCategoriesWithCounts(): Promise<{ name: string; count: number }[]> {
+  const articles = await getArticles();
+  const countMap = new Map<string, number>();
+  articles.forEach((a) => {
+    countMap.set(a.category, (countMap.get(a.category) || 0) + 1);
+  });
+  return Array.from(countMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Get articles grouped by category, sorted by recency within each group
+ */
+export async function getArticlesByCategory(): Promise<Map<string, Article[]>> {
+  const articles = await getArticles();
+  const grouped = new Map<string, Article[]>();
+  articles.forEach((a) => {
+    const existing = grouped.get(a.category) || [];
+    existing.push(a);
+    grouped.set(a.category, existing);
+  });
+  return grouped;
+}
+
+/**
+ * Get the next article in the same category (for continuous reading)
+ */
+export async function getNextInCategory(currentSlug: string): Promise<Article | null> {
+  const articles = await getArticles();
+  const current = articles.find((a) => a.slug === currentSlug);
+  if (!current) return null;
+
+  const sameCategory = articles.filter((a) => a.category === current.category && a.slug !== currentSlug);
+  const currentIndex = articles.indexOf(current);
+  // Find the next article in same category that comes after the current one
+  const next = sameCategory.find((a) => articles.indexOf(a) > currentIndex);
+  return next || sameCategory[0] || null; // wrap around to first if at end
+}
+
+/**
  * Truncate a string to a max length with ellipsis
  */
 export function truncate(str: string, maxLength: number): string {

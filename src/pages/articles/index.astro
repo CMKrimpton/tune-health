@@ -5,15 +5,26 @@ import Footer from '../../components/Footer.astro';
 import Newsletter from '../../components/Newsletter.astro';
 import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
 import SideNav from '../../components/SideNav.astro';
-import { getArticles, getComingSoonArticles, getCategories, formatPublishDateShort, getArticleGradientStyle } from '../../utils/articles';
+import { getArticles, getComingSoonArticles, getCategoriesWithCounts, formatPublishDateShort, getArticleGradientStyle } from '../../utils/articles';
 
 const articles = await getArticles();
 const comingSoon = await getComingSoonArticles();
-const categories = await getCategories();
+const categoriesWithCounts = await getCategoriesWithCounts();
 
-// Split articles: first 3 featured, rest in grid
+// Featured: top 3 articles
 const featuredArticles = articles.slice(0, 3);
-const gridArticles = articles.slice(3);
+
+// Group articles by category for the "All" overview
+const articlesByCategory = new Map<string, typeof articles>();
+articles.forEach(a => {
+  const existing = articlesByCategory.get(a.category) || [];
+  existing.push(a);
+  articlesByCategory.set(a.category, existing);
+});
+
+// Sort categories by article count (most articles first) for better overview
+const sortedCategories = [...articlesByCategory.entries()]
+  .sort((a, b) => b[1].length - a[1].length);
 ---
 
 <BaseLayout
@@ -33,7 +44,7 @@ const gridArticles = articles.slice(3);
             <span class="italic font-normal text-primary-600">Health Insights</span>
           </h1>
           <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg" style="line-height: 1.8;">
-            Every article thoroughly researched and reviewed by our editorial board.
+            {articles.length} articles across {categoriesWithCounts.length} topics — every one researched and reviewed.
           </p>
         </div>
 
@@ -53,14 +64,16 @@ const gridArticles = articles.slice(3);
         </div>
       </div>
 
-      <!-- Category Pills -->
+      <!-- Category Pills with counts -->
       <div class="flex flex-wrap gap-2 mt-8">
-        <button class="category-chip active" data-filter="all">
+        <button class="category-chip active" data-filter="all" aria-pressed="true">
           <span class="text-sm font-medium">All</span>
+          <span class="chip-count">{articles.length}</span>
         </button>
-        {categories.map((cat) => (
-          <button class="category-chip" data-filter={cat}>
-            <span class="text-sm font-medium">{cat}</span>
+        {categoriesWithCounts.map(({ name, count }) => (
+          <button class="category-chip" data-filter={name} aria-pressed="false">
+            <span class="text-sm font-medium">{name}</span>
+            <span class="chip-count">{count}</span>
           </button>
         ))}
       </div>
@@ -121,30 +134,92 @@ const gridArticles = articles.slice(3);
     </div>
   </section>
 
-  <!-- All Articles — Dense Grid -->
-  <section class="py-12 md:py-16 bg-stone-50 dark:bg-stone-900/30">
+  <!-- Category Overview (shown when "All" is active, no search) -->
+  <section class="py-12 md:py-16 bg-stone-50 dark:bg-stone-900/30" id="categoryOverview">
     <div class="container-editorial">
-      <div class="flex items-center gap-6 mb-8">
-        <span class="section-label">All Articles</span>
+      <div class="flex items-center gap-6 mb-10">
+        <span class="section-label">Browse by Topic</span>
         <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
         <span class="text-xs text-stone-400 uppercase tracking-widest" id="articleCount">{articles.length} articles</span>
+      </div>
+
+      <div class="space-y-14" id="categorySections">
+        {sortedCategories.map(([category, catArticles], catIdx) => (
+          <div class="category-section reveal" data-cat-section={category}>
+            <div class="flex items-center justify-between mb-5">
+              <div class="flex items-center gap-3">
+                <h3 class="font-serif text-xl font-semibold">{category}</h3>
+                <span class="text-xs text-stone-500 bg-stone-200 dark:bg-stone-800 px-2.5 py-0.5 rounded-full font-medium">{catArticles.length}</span>
+              </div>
+              {catArticles.length > 4 && (
+                <button class="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors inline-flex items-center gap-1 cat-see-all" data-cat-filter={category} type="button">
+                  See all {catArticles.length}
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/></svg>
+                </button>
+              )}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {catArticles.slice(0, 4).map((article) => (
+                <a href={article.href} class="group block">
+                  <div class="bg-white dark:bg-stone-900 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-all duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700 h-full flex flex-col">
+                    <div class="relative aspect-[16/10] overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+                      {article.heroImage && (
+                        <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
+                      )}
+                    </div>
+                    <div class="p-4 flex flex-col flex-1">
+                      <span class="text-xs text-stone-400 mb-1.5">{article.readTime} min read</span>
+                      <h4 class="font-serif text-base font-semibold group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">{article.title}</h4>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Filtered Grid (shown when a category is selected or search is active) -->
+  <section class="py-12 md:py-16 bg-stone-50 dark:bg-stone-900/30" id="filteredView" style="display: none;">
+    <div class="container-editorial">
+      <!-- Category header (shown when a specific category is selected) -->
+      <div id="categoryHeader" class="mb-10" style="display: none;">
+        <div class="flex items-center gap-6 mb-2">
+          <button class="text-sm text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors inline-flex items-center gap-1" id="backToAll" type="button">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke-width="2"/></svg>
+            All topics
+          </button>
+          <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
+        </div>
+        <h2 class="font-serif text-heading-2 font-semibold" id="categoryTitle"></h2>
+        <span class="text-sm text-stone-500 mt-1 block" id="filteredCount"></span>
+      </div>
+
+      <!-- Search results header -->
+      <div id="searchHeader" class="mb-10" style="display: none;">
+        <div class="flex items-center gap-6">
+          <span class="section-label">Search Results</span>
+          <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
+          <span class="text-xs text-stone-400 uppercase tracking-widest" id="searchCount"></span>
+        </div>
       </div>
 
       <!-- No results message -->
       <div id="noResults" style="display: none;" class="py-16 text-center">
         <p class="font-serif text-heading-3 text-stone-400 dark:text-stone-500 mb-2">No articles found</p>
-        <p class="text-sm text-stone-500 dark:text-stone-600">Try a different search term or category.</p>
+        <p class="text-sm text-stone-500 dark:text-stone-600">Try a different search term or topic.</p>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="articlesGrid">
-        {gridArticles.map((article, i) => (
-          <a href={article.href} class={`article-grid-card group reveal${i > 0 && i < 6 ? ` reveal-delay-${Math.min(i, 5)}` : ''} block${i >= 12 ? ' hidden-paginated' : ''}`} data-category={article.category} data-title={article.title.toLowerCase()} data-tags={article.tags.join(' ').toLowerCase()}>
+        {articles.map((article) => (
+          <a href={article.href} class="article-grid-card group block" data-category={article.category} data-title={article.title.toLowerCase()} data-tags={article.tags.join(' ').toLowerCase()}>
             <div class="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-all duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700 h-full flex flex-col">
               <div class="relative aspect-[16/10] overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
                 {article.heroImage && (
                   <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
                 )}
-                <span class="absolute bottom-3 left-4 font-serif text-5xl font-bold text-white/[0.08] leading-none select-none">{String(i + 4).padStart(2, '0')}</span>
               </div>
               <div class="p-5 flex flex-col flex-1">
                 <div class="flex items-center gap-2 mb-2">
@@ -164,17 +239,6 @@ const gridArticles = articles.slice(3);
           </a>
         ))}
       </div>
-
-      {gridArticles.length > 12 && (
-        <div class="mt-10 text-center" id="showMoreWrapper">
-          <button class="btn-secondary magnetic inline-flex" id="showMoreBtn" type="button">
-            <span>Show More Articles</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M19 9l-7 7-7-7" stroke-width="2"/>
-            </svg>
-          </button>
-        </div>
-      )}
     </div>
   </section>
 
@@ -245,51 +309,63 @@ const gridArticles = articles.slice(3);
   function initArticlesPage() {
     const searchInput = document.getElementById('articleSearch') as HTMLInputElement;
     const categoryChips = document.querySelectorAll('.category-chip[data-filter]');
-    // Select ALL filterable cards (featured + grid)
-    const allCards = document.querySelectorAll('[data-category][data-title]');
+    const categoryOverview = document.getElementById('categoryOverview');
+    const filteredView = document.getElementById('filteredView');
+    const categoryHeader = document.getElementById('categoryHeader');
+    const searchHeader = document.getElementById('searchHeader');
+    const allCards = document.querySelectorAll('#articlesGrid .article-grid-card');
+    const backToAll = document.getElementById('backToAll');
+    const seeAllBtns = document.querySelectorAll('.cat-see-all');
 
-    // Read ?topic= from URL and map to category
+    // Read ?topic= from URL
     const params = new URLSearchParams(window.location.search);
     const topicParam = params.get('topic');
     let activeCategory = 'all';
 
     if (topicParam) {
-      // Map slug to display category (e.g., "mental-health" → "Mental Health")
       const topicLower = topicParam.toLowerCase().replace(/-/g, ' ');
       categoryChips.forEach(chip => {
         const filterVal = (chip as HTMLElement).dataset.filter || '';
         if (filterVal.toLowerCase() === topicLower) {
           activeCategory = filterVal;
-          categoryChips.forEach(c => c.classList.remove('active'));
-          chip.classList.add('active');
         }
       });
     }
 
-    // Show More pagination
-    const showMoreBtn = document.getElementById('showMoreBtn');
-    const showMoreWrapper = document.getElementById('showMoreWrapper');
-    let paginationExpanded = false;
-
-    function expandPagination() {
-      paginationExpanded = true;
-      document.querySelectorAll('.hidden-paginated').forEach(el => {
-        (el as HTMLElement).classList.remove('hidden-paginated');
-      });
-      if (showMoreWrapper) showMoreWrapper.style.display = 'none';
+    function showView(mode: 'overview' | 'filtered') {
+      if (mode === 'overview') {
+        if (categoryOverview) categoryOverview.style.display = '';
+        if (filteredView) filteredView.style.display = 'none';
+      } else {
+        if (categoryOverview) categoryOverview.style.display = 'none';
+        if (filteredView) filteredView.style.display = '';
+      }
     }
 
-    showMoreBtn?.addEventListener('click', expandPagination);
+    function updateChips() {
+      categoryChips.forEach(chip => {
+        const val = (chip as HTMLElement).dataset.filter || '';
+        const isActive = val === activeCategory;
+        chip.classList.toggle('active', isActive);
+        chip.setAttribute('aria-pressed', String(isActive));
+      });
+    }
 
-    // When filtering/searching, reveal all paginated items
     function filterArticles() {
       const query = searchInput?.value.toLowerCase().trim() || '';
+      const isSearching = !!query;
+      const isCategoryFiltered = activeCategory !== 'all';
 
-      // If user is filtering, show all paginated items
-      if (!paginationExpanded && (query || activeCategory !== 'all')) {
-        expandPagination();
+      if (!isSearching && !isCategoryFiltered) {
+        // Show category overview
+        showView('overview');
+        const countEl = document.getElementById('articleCount');
+        if (countEl) countEl.textContent = `${allCards.length} articles`;
+        return;
       }
 
+      // Show filtered view
+      showView('filtered');
       let visibleCount = 0;
 
       allCards.forEach(card => {
@@ -298,8 +374,8 @@ const gridArticles = articles.slice(3);
         const title = el.dataset.title || '';
         const tags = el.dataset.tags || '';
 
-        const matchesCategory = activeCategory === 'all' || category === activeCategory;
-        const matchesSearch = !query || title.includes(query) || tags.includes(query) || category.toLowerCase().includes(query);
+        const matchesCategory = !isCategoryFiltered || category === activeCategory;
+        const matchesSearch = !isSearching || title.includes(query) || tags.includes(query) || category.toLowerCase().includes(query);
 
         if (matchesCategory && matchesSearch) {
           el.style.display = '';
@@ -309,37 +385,89 @@ const gridArticles = articles.slice(3);
         }
       });
 
-      const noResults = document.getElementById('noResults');
-      if (noResults) {
-        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+      // Show appropriate header
+      if (categoryHeader) categoryHeader.style.display = isCategoryFiltered && !isSearching ? '' : 'none';
+      if (searchHeader) searchHeader.style.display = isSearching ? '' : 'none';
+
+      if (isCategoryFiltered && !isSearching) {
+        const titleEl = document.getElementById('categoryTitle');
+        const countEl = document.getElementById('filteredCount');
+        if (titleEl) titleEl.textContent = activeCategory;
+        if (countEl) countEl.textContent = `${visibleCount} article${visibleCount !== 1 ? 's' : ''}`;
       }
 
-      const countEl = document.getElementById('articleCount');
-      if (countEl) {
-        countEl.textContent = `${visibleCount} article${visibleCount !== 1 ? 's' : ''}`;
+      if (isSearching) {
+        const countEl = document.getElementById('searchCount');
+        if (countEl) countEl.textContent = `${visibleCount} result${visibleCount !== 1 ? 's' : ''}`;
+      }
+
+      const noResults = document.getElementById('noResults');
+      if (noResults) noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    function setCategory(cat: string) {
+      activeCategory = cat;
+      updateChips();
+
+      // Update URL
+      const url = new URL(window.location.href);
+      if (cat === 'all') {
+        url.searchParams.delete('topic');
+      } else {
+        url.searchParams.set('topic', cat.toLowerCase().replace(/\s+/g, '-'));
+      }
+      history.replaceState(null, '', url.toString());
+
+      filterArticles();
+
+      // Scroll to content
+      if (cat !== 'all') {
+        filteredView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
-    // Debounced search to avoid filtering on every keystroke
-    let searchTimer: ReturnType<typeof setTimeout>;
-    searchInput?.addEventListener('input', () => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(filterArticles, 150);
-    });
-
+    // Category chip clicks
     categoryChips.forEach(chip => {
       chip.addEventListener('click', () => {
-        categoryChips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        activeCategory = (chip as HTMLElement).dataset.filter || 'all';
-        filterArticles();
+        const cat = (chip as HTMLElement).dataset.filter || 'all';
+        if (searchInput) searchInput.value = '';
+        setCategory(cat);
       });
     });
 
-    // Apply initial filter (handles ?topic= param on page load)
-    if (activeCategory !== 'all') {
-      filterArticles();
-    }
+    // "See all" buttons in category sections
+    seeAllBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = (btn as HTMLElement).dataset.catFilter || '';
+        if (searchInput) searchInput.value = '';
+        setCategory(cat);
+      });
+    });
+
+    // "Back to all" button
+    backToAll?.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      setCategory('all');
+      categoryOverview?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Debounced search
+    let searchTimer: ReturnType<typeof setTimeout>;
+    searchInput?.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        // When searching, switch to "all" category to search everything
+        if (searchInput.value.trim()) {
+          activeCategory = 'all';
+          updateChips();
+        }
+        filterArticles();
+      }, 150);
+    });
+
+    // Apply initial state
+    updateChips();
+    filterArticles();
   }
 
   initArticlesPage();
@@ -361,7 +489,11 @@ const gridArticles = articles.slice(3);
     @apply shadow-2xl;
   }
 
-  .hidden-paginated {
-    display: none !important;
+  .chip-count {
+    @apply text-xs text-stone-400 font-normal ml-1;
+  }
+
+  .category-chip.active .chip-count {
+    @apply text-primary-400;
   }
 </style>

@@ -640,6 +640,7 @@ ${((researchData.counterArguments as string[]) || []).length > 0 ? `Counter-argu
 - Take positions. This is journalism, not Wikipedia.
 - Zero fabrication. Only cite studies from the research above.
 - When the evidence is clear, say so. When it's not, say that too.
+- Section headings (h2): do NOT start most with "The". Max 1-2 can. Use questions, imperatives, provocations instead.
 
 ## HTML FORMAT
 <section id="introduction" class="reveal">
