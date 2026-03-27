@@ -290,9 +290,10 @@ Deno.serve(async (req: Request) => {
       .eq("id", logId);
 
     // Complete the queue item (if this article came from the queue).
-    // Uses _queueId from research_data — topic text matching doesn't work
-    // because the editor rewrites topics into different headlines.
-    const queueId = researchData?._queueId as string | undefined;
+    // queue_id is a proper column — can't be overwritten by research_data updates.
+    // Falls back to _queueId in research_data for articles created before the column existed.
+    const { data: logRow } = await db.from("daily_article_log").select("queue_id").eq("id", logId).maybeSingle();
+    const queueId = logRow?.queue_id || researchData?._queueId as string | undefined;
     if (queueId) {
       await db.from("topic_queue").update({ status: "completed" }).eq("id", queueId);
       console.log(`[Publish] Queue item ${queueId} marked completed`);

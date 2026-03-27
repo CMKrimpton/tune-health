@@ -55,22 +55,21 @@ Deno.serve(async (req: Request) => {
       }
 
       // Housekeeping: fix queue items stuck at in_progress.
-      // Uses _queueId stored in research_data (set by produce-topic) — NOT topic matching,
-      // because the editor rewrites topics into different headlines.
+      // Uses queue_id column (reliable) with _queueId in research_data as fallback.
       const { data: stuckQueue } = await db.from("topic_queue").select("id").eq("status", "in_progress");
       if (stuckQueue && stuckQueue.length > 0) {
         const stuckIds = (stuckQueue as Array<{ id: string }>).map(sq => sq.id);
-        // Find pipeline logs that reference these queue IDs
+        // Find pipeline logs that reference these queue IDs via the column
         const { data: logs } = await db
           .from("daily_article_log")
-          .select("status, research_data")
+          .select("status, queue_id, research_data")
           .eq("source", "queue")
           .in("status", ["published", "failed"])
           .order("created_at", { ascending: false })
           .limit(50);
         if (logs) {
-          for (const log of logs as Array<{ status: string; research_data: Record<string, unknown> | null }>) {
-            const qId = log.research_data?._queueId as string | undefined;
+          for (const log of logs as Array<{ status: string; queue_id: string | null; research_data: Record<string, unknown> | null }>) {
+            const qId = log.queue_id || (log.research_data?._queueId as string | undefined);
             if (qId && stuckIds.includes(qId)) {
               await db.from("topic_queue").update({
                 status: log.status === "published" ? "completed" : "queued",
@@ -686,15 +685,15 @@ End with: <div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border
       // Mark queue item as in_progress
       await db.from("topic_queue").update({ status: "in_progress" }).eq("id", queueId);
 
-      // Create log entry — store queueId in research_data so it flows through the entire pipeline
-      // (stage-editor uses _queueId to mark queue item as completed on approval)
+      // Create log entry — queue_id stored as a proper column (not in research_data where it gets overwritten)
       const { data: logEntry } = await db.from("daily_article_log").insert({
         run_date: new Date().toISOString().split("T")[0],
         status: "started",
         topic: topic.topic,
         source: "queue",
         stage_started_at: new Date().toISOString(),
-        research_data: { _queueId: queueId, _fromQueue: true, _queueSource: topic.source || "manual" },
+        queue_id: queueId,
+        research_data: { _fromQueue: true, _queueSource: topic.source || "manual" },
       }).select("id").single();
 
       if (!logEntry) return json({ error: "Failed to create log entry" }, 500);

@@ -134,26 +134,22 @@ Deno.serve(async (req: Request) => {
 
     const db = supabase();
 
-    // chain_dispatch() only sends {logId} — read topic/source/queueId from the log entry
+    // chain_dispatch() only sends {logId} — read topic/source from the log entry
     // when not provided in the request body (produce-topic saves these to the DB before dispatching)
+    // queue_id is now a proper column on daily_article_log — no need to pass it through research_data
     let topic = body.topic as string | undefined;
     let source = body.source as string | undefined;
-    let queueId = body.queueId as string | undefined;
 
     if (!topic) {
       const { data: logMeta } = await db
         .from("daily_article_log")
-        .select("topic, source, research_data")
+        .select("topic, source")
         .eq("id", logId)
         .maybeSingle();
       if (logMeta?.topic) {
         topic = logMeta.topic;
         source = source || logMeta.source || undefined;
-        // Preserve _queueId from produce-topic (stored in research_data before research runs)
-        if (!queueId && logMeta.research_data?._queueId) {
-          queueId = logMeta.research_data._queueId as string;
-        }
-        console.log(`[Research] Read topic from DB: "${topic}" (source: ${source}, queueId: ${queueId || 'none'})`);
+        console.log(`[Research] Read topic from DB: "${topic}" (source: ${source})`);
       }
     }
 
@@ -256,7 +252,6 @@ Deep-research this topic thoroughly. Find the key studies, statistics, expert po
         }
         research._fromQueue = true;
         research._queueSource = source || "manual";
-        if (queueId) research._queueId = queueId;
         await addCostToLog(db, logId, researchUsage);
       }
 
