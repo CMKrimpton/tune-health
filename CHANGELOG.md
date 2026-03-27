@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.6.1] - 2026-03-26
+
+### Fixed — Article HTML Tag Audit
+- **Fixed 4 articles with broken HTML tags** causing layout issues (content flowing outside containers, styling not applying):
+  - `omega-3-supplement-industry-waste-claims`: `</div>` closing a `<section>` → fixed to `</section>`
+  - `aging-metabolic-reprogramming-caveats`: `</div>` closing a `<section>` → fixed to `</section>`
+  - `intermittent-fasting-metabolic-switch-risks`: missing `</div>` for `article-content` wrapper
+  - `engineered-bacteria-cancer-therapy-probiotics`: missing `</div>` for `article-content` wrapper
+- **Audited all 121 article files** — no encoding issues, no mojibake, no broken symbols. 117 files clean
+
 ## [12.6.0] - 2026-03-27
 
 ### Changed — Manual-Only Production
