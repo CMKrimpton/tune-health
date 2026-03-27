@@ -74,7 +74,7 @@ Return ONLY valid JSON (no code fences, no explanation):
     {
       "rank": 1,
       "topic": "The specific topic/angle",
-      "headline_draft": "A working headline (magazine-quality, not clickbait)",
+      "headline_draft": "Working headline — max 10 words, one sentence, no two-part kickers",
       "why": "1-2 sentences on why this topic is compelling",
       "category": "One of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
       "keyFindings": ["Finding 1...", "Finding 2..."],
@@ -110,7 +110,7 @@ Find the key studies, statistics, expert positions, biological mechanisms, and c
 Return ONLY valid JSON (no code fences, no explanation):
 {
   "topic": "The specific topic as researched",
-  "headline_draft": "A working headline (magazine-quality, not clickbait)",
+  "headline_draft": "Working headline — max 10 words, one sentence, no two-part kickers",
   "why": "1-2 sentences on why this topic is worth covering",
   "category": "One of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
   "keyFindings": ["Finding 1...", "Finding 2..."],

@@ -44,24 +44,29 @@ Your research team has delivered candidate topics. You need to:
 ## HEADLINE RULES (CRITICAL — read every time)
 Our readers are 20-35, smart, health-curious, skeptical. Headlines must pass the TEXT TEST: would a 25-year-old text this headline to a friend? If not, rewrite.
 
-**Banned — too clinical:**
-- Medical jargon in the headline (PCSK9, MASLD, SGLT2, glymphatic) — save it for the article
+**LENGTH: 10 words maximum.** This is a hard cap — not a target, a ceiling. The best headlines are 5-8 words. Shorter is almost always better. If you can cut a word without losing meaning, cut it.
+
+**Banned:**
+- Medical jargon (PCSK9, MASLD, SGLT2, glymphatic) — save it for the article
 - "The [Noun] That [Dramatic Verb]..." — overused
 - "[Subject]. Nobody Is Talking About It." — conspiracy framing
-- Two-sentence headlines with a short dramatic kicker — overused
+- Two-sentence headlines with a short dramatic kicker — this is our #1 overused pattern. ONE sentence only
 - Headlines that read like journal article titles
+- Starting with "The" by default
 
-**Good headlines make readers think "wait, what?":**
-- Challenge a belief: "Moderate Drinking Isn't Heart-Healthy. That Was Bad Statistics."
-- Personal stakes: "Your Liver Is Probably Already Damaged. Here's Why Nobody Told You."
-- Surprising finding: "Creatine Isn't Just for Gym Bros. It's a Brain Drug."
-- Industry exposé: "The Supplement Industry Spent $20M to Keep This Study Quiet."
-- Direct and specific: "How Much Protein You Actually Need. (It's Not What Instagram Says.)"
-- Ironic: "The FDA Approved a Weight Loss Drug. Then Stopped Asking Questions."
+**Good headlines are short, specific, and make readers think "wait, what?":**
+- "Creatine Is a Brain Drug" (5 words)
+- "Your Liver Is Already Damaged" (6 words)
+- "Moderate Drinking Was Never Heart-Healthy" (6 words)
+- "Protein Powder Labels Are Lying to You" (7 words)
+- "The FDA Stopped Asking Questions About Ozempic" (8 words)
+- "Fish Oil Is a $5 Billion Waste Product" (9 words)
 
-NO medical acronyms in headlines. Spell it out or find a human-language equivalent. "MASLD" means nothing — "your liver is full of fat" means everything.
+Notice: every example is ONE sentence, under 10 words.
 
-Generate a FRESH headline for each article. Every headline should make someone under 35 stop scrolling.
+NO medical acronyms in headlines. Spell it out or find a human-language equivalent.
+
+This is a WORKING headline — the writer may improve it during writing. Generate the best you can, but the writer has final say.
 6. **Assign the article archetype** — This determines the article's fundamental form and feel. NOT every article should be written the same way. Match the archetype to the material.
 7. **Dogma check** — Before writing the brief, ask: does this topic touch any area where popular health advice is outdated or industry-driven? If so, add a "dogmaWarnings" field listing specific claims the writer must NOT repeat without verification (e.g., "Do not repeat omega-3/6 ratio claims as fact", "Note that the breakfast-is-essential claim is industry-funded"). This is CRITICAL editorial oversight.
 8. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction. Include dogma warnings in the "avoid" field.
@@ -99,7 +104,7 @@ Return ONLY valid JSON:
   "candidateScores": [{ "rank": 1, "topic": "...", "score": "(1-10, be honest — 7+ only for genuinely strong topics)", "note": "why this score", "overlapsExisting": "slug-of-overlapping-article or null" }],
   "chosenCandidate": 1,
   "topicScore": "(1-10, your honest assessment of the chosen topic)",
-  "headline": "The final headline — DO NOT start with 'The' by default. Match the tone to the subject: understated for nuanced science, direct for clear findings, pointed for institutional failures. See HEADLINE RULES above.",
+  "headline": "Working headline — MAX 10 WORDS, one sentence only. Match tone to subject. See HEADLINE RULES above.",
   "slug": "url-friendly-slug",
   "description": "2-3 sentence description. Specific about what the reader will learn. Match the subject's weight — don't hype a quiet study, don't underplay a major finding.",
   "angle": "The specific editorial angle",

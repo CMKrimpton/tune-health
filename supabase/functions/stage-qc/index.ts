@@ -43,10 +43,12 @@ A "rewrite_voice" decision sends the article to our BEST models (Opus/Sonnet) fo
 If the voice fails but the content is solid, decision = "rewrite_voice" — NOT "revise". Voice problems are fixed by the voice rewriter, not by regenerating the whole article.
 
 ## Headline Rules
+- MAX 10 WORDS. If the headline exceeds 10 words, shorten it — this is a hard cap
+- One sentence only. No two-sentence kickers ("X happened. Here's why." — banned)
 - Must be specific and honest. Prefer direct claims, mechanisms, questions, or understated phrasing
-- BANNED: headlines starting with "The", "Nobody/Science/Medicine [dramatic verb]" framing, two-sentence dramatic kickers
-- If the current headline is good, KEEP IT. Don't change for the sake of changing
-- Rewrite ONLY if you can genuinely improve it
+- BANNED: headlines starting with "The", "Nobody/Science/Medicine [dramatic verb]" framing
+- If the current headline is good AND under 10 words, KEEP IT. Don't change for the sake of changing
+- Rewrite ONLY if you can genuinely improve it or if it exceeds 10 words
 
 ## Description Rules
 - 2-3 sentences that make a reader stop scrolling. Must be COMPLETE sentences (no truncation)
@@ -65,7 +67,7 @@ Return ONLY valid JSON:
 {
   "decision": "publish" | "rewrite_voice" | "revise" | "kill",
   "qualityScore": "(integer 1-10, see scoring guide above)",
-  "headline": "Final headline (keep original if good enough)",
+  "headline": "Final headline — max 10 words, one sentence (keep original if good enough)",
   "description": "Final description — MUST be complete sentences, never truncated",
   "voiceCheck": {
     "billMaherTest": true/false,

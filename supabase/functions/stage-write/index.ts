@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
       const articleUserPrompt = `Write an article following this editorial brief from the Senior Editor. The archetype and voice modulation are critical — they determine the article's form, not just its content.
 
 ## EDITORIAL BRIEF
-Headline: ${editorBrief?.headline || researchData.headline_draft}
+Working headline (you may improve this — max 10 words, one sentence): ${editorBrief?.headline || researchData.headline_draft}
 Slug: ${editorBrief?.slug || "auto-generate"}
 Description: ${editorBrief?.description || "Write a compelling 2-3 sentence description"}
 Angle: ${editorBrief?.angle || "Follow the research"}
@@ -153,7 +153,7 @@ ${((researchData.statistics as string[]) || []).join("\n")}
 
 Today's date: ${today}
 
-IMPORTANT: Use the headline, slug, and description from the editorial brief exactly. Return ONLY valid JSON.
+IMPORTANT: Use the slug from the editorial brief exactly. You may improve the headline (max 10 words, one sentence — no two-part kickers) and description if you can genuinely do better. Return ONLY valid JSON.
 
 CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last section should be a conclusion, sign-off, or forward-looking closing — NOT an abrupt stop mid-thought. If you're running low on space, cut a middle section shorter rather than omitting the ending. A missing conclusion is worse than a shorter article. Follow the closing direction from the editorial brief.
 
@@ -192,9 +192,11 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
       const slug = (editorBrief?.slug as string) || (article.metadata.slug as string);
       const readTime = article.readTime || (article.metadata.readTime as number) || 10;
 
-      // Override metadata with editor's headline/description
-      if (editorBrief?.headline) article.metadata.title = editorBrief.headline as string;
-      if (editorBrief?.description) article.metadata.description = editorBrief.description as string;
+      // Writer's title wins if they improved it; fall back to editor's headline
+      if (!article.metadata.title && editorBrief?.headline) article.metadata.title = editorBrief.headline as string;
+      // Writer's description wins if they improved it; fall back to editor's
+      if (!article.metadata.description && editorBrief?.description) article.metadata.description = editorBrief.description as string;
+      // Slug always comes from editor (URL stability)
       if (editorBrief?.slug) article.metadata.slug = editorBrief.slug as string;
 
       // Guard against truncated descriptions (from token-limit JSON repair)

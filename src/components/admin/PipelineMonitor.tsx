@@ -926,6 +926,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [articleHtml, setArticleHtml] = useState('');
+  const [writerTitle, setWriterTitle] = useState('');
   const [submitResult, setSubmitResult] = useState<string | null>(null);
 
   const isActive = ACTIVE_STATUSES.has(log.status);
@@ -1015,13 +1016,14 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || (rd as PipelineR
       const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'submit-article', logId: log.id, articleHtml: articleHtml.trim() }),
+        body: JSON.stringify({ action: 'submit-article', logId: log.id, articleHtml: articleHtml.trim(), ...(writerTitle.trim() ? { title: writerTitle.trim() } : {}) }),
       });
       const data = await res.json();
       if (data.success) {
         setSubmitResult('Article submitted! Pipeline resuming with Grok independence review.');
         setShowSubmitForm(false);
         setArticleHtml('');
+        setWriterTitle('');
         setTimeout(() => { setSubmitResult(null); onRefresh(); }, 2000);
       } else {
         setSubmitResult(`Error: ${data.error}`);
@@ -1202,6 +1204,19 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || (rd as PipelineR
 
               {showSubmitForm && (
                 <div className="admin-mt-md" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="text"
+                    value={writerTitle}
+                    onChange={(e) => setWriterTitle(e.target.value)}
+                    placeholder="Headline (optional — overrides editor's working headline)"
+                    style={{
+                      width: '100%', padding: '0.5rem',
+                      background: 'rgba(255,255,255,0.03)', color: '#eae8e4',
+                      border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
+                      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.8125rem',
+                      marginBottom: '0.5rem',
+                    }}
+                  />
                   <textarea
                     value={articleHtml}
                     onChange={(e) => setArticleHtml(e.target.value)}

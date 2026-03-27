@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.7.0] - 2026-03-26
+
+### Changed — Headline System Overhaul
+- **10-word max cap enforced across entire pipeline** — research, editor, writer, and QC stages all enforce max 10 words, one sentence only
+- **Fixed contradictory editor prompt** — banned "two-sentence kickers" but every example was a two-sentence kicker. Replaced with 6 short single-sentence examples (5-9 words each)
+- **Writer now owns the headline** — editor's headline reframed as "working headline" that the writer can improve. Write stage no longer force-overrides writer's title with editor's
+- **submit-article accepts optional `title` field** — writer's title takes priority over editor's headline. Also accepts optional `description`
+- **Dashboard submit form has title input** — new text field above the HTML textarea for overriding the editor's working headline
+- **get-brief tells writer headline is improvable** — brief prompt explicitly says "improve if you can — max 10 words"
+- **QC enforces the cap** — headlines over 10 words are shortened at QC stage as a hard gate
+
 ## [12.6.1] - 2026-03-26
 
 ### Fixed — Article HTML Tag Audit

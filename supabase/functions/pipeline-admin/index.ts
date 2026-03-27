@@ -461,6 +461,8 @@ Deno.serve(async (req: Request) => {
     if (action === "submit-article") {
       const logId = body.logId as string;
       let articleHtml = body.articleHtml as string;
+      const writerTitle = (body.title as string)?.trim() || null;
+      const writerDescription = (body.description as string)?.trim() || null;
       if (!logId || !articleHtml) {
         return json({ error: "logId and articleHtml are required" }, 400);
       }
@@ -497,7 +499,8 @@ Deno.serve(async (req: Request) => {
       const researchData = (logEntry.research_data as Record<string, unknown>) || {};
       const editorBrief = (researchData._editorBrief as Record<string, unknown>) || {};
       const slug = logEntry.slug || (editorBrief.slug as string);
-      const title = logEntry.title || (editorBrief.headline as string);
+      // Writer's title wins over editor's headline — the writer knows the piece best
+      const title = writerTitle || logEntry.title || (editorBrief.headline as string);
 
       if (!slug) return json({ error: "No slug found in log entry" }, 400);
 
@@ -516,7 +519,7 @@ Deno.serve(async (req: Request) => {
       const metadata = {
         title,
         slug,
-        description: editorBrief.description as string || "",
+        description: writerDescription || (editorBrief.description as string) || "",
         category,
         tags: (researchData.tags as string[]) || [],
         keywords: (researchData.keywords as string[]) || [],
@@ -606,9 +609,9 @@ Deno.serve(async (req: Request) => {
 Write in the style of exceptional, effortless long-form journalism — The Atlantic, Vanity Fair, The New York Times Magazine, The Wall Street Journal — with tonal enrichments from oratory greats like Bill Maher, Christopher Hitchens, and Sam Harris. The writing should feel like the best magazine feature you've ever read: authoritative without being academic, personal without being confessional, sharp without being cruel.
 
 ## YOUR ASSIGNMENT
-Headline: ${editorBrief.headline || logEntry.title}
+Working headline (improve if you can — max 10 words, one sentence, no two-part kickers): ${editorBrief.headline || logEntry.title}
 Angle: ${editorBrief.angle || "Follow the research"}
-${editorBrief.description ? `Description: ${editorBrief.description}` : ""}
+${editorBrief.description ? `Description (improve if you can): ${editorBrief.description}` : ""}
 ${editorBrief.archetype ? `Form: ${editorBrief.archetype}` : ""}
 
 ### Editorial Direction
