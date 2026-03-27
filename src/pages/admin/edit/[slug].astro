@@ -411,11 +411,17 @@ const editorScore = article.editor_score ?? null;
       const btn = document.getElementById('publishGitHubBtn');
       const status = document.getElementById('publishStatus');
       const error = document.getElementById('publishError');
-      btn.textContent = 'Publishing...'; btn.disabled = true;
+      btn.textContent = 'Saving...'; btn.disabled = true;
       error.style.display = 'none'; status.style.display = 'none';
 
       try {
-        // First get the latest article data from DB
+        // Force save metadata + content to DB before publishing (autosave may not have fired yet)
+        if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+        await doSaveMetadata();
+        await doSaveContent();
+        btn.textContent = 'Publishing...';
+
+        // Now get the latest article data from DB
         const getRes = await fetch(`${apiBase}/articles-api`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
