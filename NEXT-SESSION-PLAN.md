@@ -1,57 +1,63 @@
 # Next Session Plan
 
-> **Status**: v12.8.0 live. Navigation overhaul + UX/UI audit. Articles page redesigned with category-grouped view. 124 articles, all clean.
+> **Status**: v12.9.0 live. Full UX/UI audit + navigation overhaul + search redesign + queue bug permanently killed. 127 articles, all clean.
 
 ---
 
-## Current Architecture (v12.7.2)
+## Current Architecture (v12.9.0)
 
 - **Manual Produce only**: Admin clicks "Produce" → `produce-topic` → pg_net → research → chain-dispatch → editor brief → pause. No auto-production.
 - **Safety-net cron**: `dispatch_pipeline_stage()` runs every 5 min. Recovers stuck articles, advances in-progress stages. **Does NOT pick from queue.**
 - **Post-submit**: chain-dispatch → independence (Grok 4) → QC (Flash) → publish. Seconds to publish.
-- **Headline system**: 10-word max cap enforced at research, editor, writer, and QC stages. Writer owns the headline — editor's is a "working headline." Submit form has title input field.
-- **Encoding**: All GitHub read paths use `Uint8Array + TextDecoder`. All write paths use `TextEncoder + btoa` or `encoding: "utf-8"`. No raw `atob()` on text content anywhere.
-- **Featured rotation**: every 6h, updates DB + GitHub JSON + triggers Vercel rebuild. UTF-8-safe round-trip.
-- **Model config**: ALL model IDs centralized in `constants.ts` → `MODELS` object. Zero hardcoded strings.
-- **Article cards**: flex column layout ensures cards fill grid height properly with footer pushed to bottom via `mt-auto`.
+- **Queue tracking**: `queue_id` is a proper column on `daily_article_log` — can't be overwritten by research_data updates. Permanently fixed the "stuck at producing" bug.
+- **Scout schedule**: 6am Gemini + Search, 2pm Grok/X, 10pm Grok/X. Mandatory 5+ everyday health topics per run.
+- **Dedup**: 25% overlap + 3 matching words + 40+ domain stop words.
+- **Search**: Command palette with category drill-down, tag matching, result counts. No more article dump on open.
+- **Article cards**: 3/2 image ratio, flex column layout, no 2-row large card.
+- **Encoding**: All GitHub read/write paths are UTF-8-safe.
+- **Model config**: ALL model IDs centralized in `constants.ts` → `MODELS` object.
 
 ## What Was Fixed This Session
 
-1. **Article card white space** — `.article-card` lacked flex layout, causing empty white gaps when CSS grid stretched cards vertically. Added `flex flex-col` to card and `flex-1` to content area
-2. **Broken TOC links** — calcium-phosphorus article had 5/7 anchor links pointing to non-existent IDs
-3. **Admin keyboard accessibility** — all form inputs had `outline: none` with no focus-visible replacement. Added global `focus-visible` styles
-4. **Subscribe page aria-label** — email input missing screen reader label
-5. **HighlightShare ARIA role** — `role="tooltip"` on interactive popup → `role="group"`
-6. **Admin edit page XSS** — preview iframe srcdoc concatenated raw strings. Added `esc()` helper
-7. **Heading hierarchy** — non-opioid-painkillers article used h4 as section headings after h2 (skipping h3)
+1. **Full UX/UI audit** — 8 files: card white space, broken TOC links, admin a11y, XSS, heading hierarchy
+2. **Navigation overhaul** — articles page with category-grouped view, chip counts, next-in-category, URL state
+3. **Animation stuttering** — in-viewport reveals instant after View Transitions
+4. **Search redesign** — CommandPalette rebuilt with category browse, tag search, result counts
+5. **Deep dive sharing** — share button per series with Web Share API
+6. **Touch targets** — 44px minimum across Header, Footer, SideNav, ShareButtons
+7. **Z-index hierarchy** — loader/SideNav/Header/MobileNav/back-to-top/noise properly layered
+8. **Reduced motion** — admin.css + MobileNav respect `prefers-reduced-motion`
+9. **ARIA** — progressbar values, breadcrumb separators, category chip pressed state
+10. **Card proportions** — 3/2 image ratio, removed 2-row large card overlay
+11. **Scout everyday topics** — mandatory 5+ per run, expanded topic list
+12. **Grok/X 2 of 3 scout runs** — better social trend coverage
+13. **Tighter dedup** — 25% threshold, 3+ words, 40+ stop words, cleaned 29 dupes
+14. **"The" heading variety** — pipeline prompts enforce max 1-2 per article
+15. **Queue stuck at producing** — permanent structural fix (queue_id column, not jsonb)
 
 ## What's Working
 - Pipeline is manual-only: admin picks topics, clicks Produce
-- Chain-dispatch works for post-produce stages (research → editor → pause)
-- Post-submit flow works (independence → QC → publish)
-- Writer can override headline at submit time
-- All 124 articles are HTML-clean with balanced tags and correct heading hierarchy
-- All JSON content files are encoding-clean (no mojibake)
-- Article cards fill grid height properly (no empty white space)
-- Admin inputs are keyboard-accessible with visible focus rings
-- Scouts still fill the queue for admin to curate
+- Chain-dispatch works for all stages (research → editor → pause → submit → independence → QC → publish)
+- Queue items correctly marked completed on publish (queue_id column)
+- Scouts fill queue with everyday + investigative + trending mix
+- All 127 articles are HTML-clean, encoding-clean, heading-hierarchy-clean
+- Search is category-browsable with tag matching
+- Touch targets WCAG compliant, z-index layered, reduced-motion supported
 
 ## Priority for Next Session
 
-### 1. Produce Hybrid Articles
-- Queue has topics ready. Pick 2-3, produce, write with Opus, verify end-to-end
-- Verify the new headline system produces shorter titles (10-word cap)
-- Verify the encoding fix holds through a full publish + featured rotation cycle
+### 1. Produce Articles
+- Queue has 59 topics ready — good mix of everyday health + investigations
+- Pick 3-5, produce, write with Opus, verify end-to-end
+- Verify queue_id fix holds (queue items marked completed on publish)
 
-### 2. Remaining UX/UI Polish (from audit)
-- **Touch targets below 44px**: Header theme/search buttons (40px), Footer social buttons (40px), SideNav action buttons (32px), ShareButtons (36px), HighlightShare buttons (32px)
-- **Z-index conflicts**: Header dropdown, SideNav, MobileNav, noise overlay all at z-50 — needs a z-index scale
-- **No `prefers-reduced-motion`** in admin.css animations
-- **CommandPalette** missing `role="dialog"` and `aria-modal`
-- **Missing `aria-pressed`** on category filter buttons
-- **No `beforeunload`** warning in ArticleEditor for unsaved changes
+### 2. Content Gaps to Fill
+- Common cold, allergies, back pain, headaches — everyday topics now in queue
+- Heart health basics (blood pressure at 30, cholesterol)
+- Women's health (periods, PCOS, UTIs)
 
 ### 3. Consider
-- Reduce scouts from 3x/day to 1x/day (60 topics/day is excessive for 2-3 articles/day)
-- Dead CSS cleanup in admin.css (83 classes from original pre-React layouts)
-- Reader analytics: Vercel traffic → scout prompts
+- Queue cleanup: purge old completed items (150+ cluttering the DB)
+- Category pages: dedicated `/articles/category/[name]` with descriptions
+- Tag-based navigation: clickable tags that filter to articles page
+- Newsletter integration with Beehiiv (per NEWSLETTER-STRATEGY.md)

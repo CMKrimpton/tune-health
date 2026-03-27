@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [12.9.0] - 2026-03-27
+
+### Fixed — Queue Items Stuck at 'Producing' (Permanent Structural Fix)
+- **Root cause**: `_queueId` was stored inside `research_data` (jsonb), which every pipeline stage overwrites entirely. Three prior "fixes" added read-before-overwrite band-aids in individual stages — each broke when the next stage touched `research_data`
+- **Structural fix**: added `queue_id` UUID column to `daily_article_log` (FK → `topic_queue`). A column can't be overwritten by a JSON blob replacement. Removed all `_queueId` band-aids from `stage-research`
+- `produce-topic` writes `queue_id` to the column; `stage-publish` reads it to mark queue completed; housekeeping uses it with `research_data._queueId` as fallback for pre-migration articles
+
+### Added — Search Redesign & Deep Dive Sharing
+- **Command Palette rebuilt** — idle state shows Recent + Browse by Topic (with counts) + Jump to Section + Pages + Actions instead of dumping all 124 articles. Search matches title, description, category, AND tags. Category drill-down with back button. Result count shown. Proper `role="dialog"` + `aria-modal`
+- **Deep Dives sharing** — share button on each published series (Web Share API + clipboard fallback with anchor hash)
+
+### Added — Scout Improvements
+- **Everyday health topics required** — scout prompt now mandates 5+ everyday topics per run (common cold, allergies, back pain, headaches, bloating, blood pressure, etc.) alongside 5+ investigations and up to 10 deep/trending topics
+- **Grok/X gets 2 of 3 daily scout runs** — 6am Gemini, 2pm Grok, 10pm Grok (was Gemini/Gemini/Grok). Better X/Twitter social trend coverage
+- **Tighter dedup** — threshold 30% → 25% overlap, min words 2 → 3, added 40+ domain stop words. Cleaned 29 duplicates from queue
+
+### Fixed — Accessibility & Polish
+- **Touch targets to 44px** — Header theme/search (40→44), Footer social (40→44), SideNav actions (32→44), ShareButtons (36→44), HighlightShare (32→36)
+- **Z-index hierarchy** — loader z-60, SideNav z-50, Header/MobileNav z-40, back-to-top z-30, noise z-10
+- **`prefers-reduced-motion`** — admin.css + MobileNav now disable animations
+- **ARIA** — scroll progress valuenow/min/max, breadcrumb separator aria-hidden, category chips aria-pressed
+- **Article cards compacted** — image ratio 16/9 → 3/2, removed 2-row large card span
+
+### Fixed — Pipeline Heading Variety
+- Writer prompt + human brief enforce max 1-2 of 5-7 section headings starting with "The"
+
 ## [12.8.0] - 2026-03-26
 
 ### Added — Navigation Overhaul
