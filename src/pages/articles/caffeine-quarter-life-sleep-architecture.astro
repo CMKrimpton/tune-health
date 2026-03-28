@@ -1,0 +1,91 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="Your Afternoon Coffee Is Still Awake at Midnight"
+  description="Most people know caffeine has a half-life of 5-7 hours and plan accordingly. What they don't know is that the half-life is the wrong number to care about. The quarter-life — the point at which 25% of caffeine remains active — runs 10-14 hours, long enough for a 2pm coffee to still be blocking adenosine receptors at 2am. This piece explains what that actually does to your sleep architecture, why you might feel fine falling asleep while your deep sleep is quietly being gutted, and why your genetics determine how badly you're affected."
+  category="Sleep Science"
+  readTime="6 min read"
+  publishDate="March 2026"
+>
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#introduction" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What caffeine is actually doing</a>
+      <a href="#the-math" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The number nobody quotes</a>
+      <a href="#sleep-architecture" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Sleeping versus recovering</a>
+      <a href="#genetics" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The genetic variable</a>
+      <a href="#conclusion" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">What to do with this</a>
+      <a href="#sources" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Sources</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="introduction" class="reveal">
+  <p>You've probably heard that caffeine's half-life is 5–7 hours and used it to green-light that 3pm espresso, thinking: cup after lunch, half gone by dinner, another half by the late news, negligible by midnight, vanished by morning. Sounds like a plan—until it wrecks your sleep like a bad loan shark.</p>
+  <p>The problem isn't that this number is wrong. It's that it answers the wrong question.</p>
+  <p>The figure that actually governs sleep disruption isn't when half the caffeine clears — it's when the last <em>meaningful</em> fraction does. That benchmark, the quarter-life, runs 10–14 hours in an average metabolizer. Which means that 2pm coffee has roughly 25% of its original dose still active in your brain around midnight. Sometimes 2am. And that residual fraction isn't sitting dormant while you sleep. It's working.</p>
+</section>
+
+<section id="how-caffeine-works" class="reveal">
+  <h2>What caffeine is actually doing</h2>
+  <p>Caffeine doesn't generate wakefulness. It blocks the signal that erodes it.</p>
+  <p>Throughout the day, a molecule called adenosine builds up in the brain as a byproduct of neural activity. It binds to adenosine receptors and produces a progressive heaviness — a running tab of how long the brain has been awake. Caffeine is structurally similar enough to adenosine that it fits into those same receptors, blocking them without activating them. The adenosine is still there, still accumulating. The brain just can't hear it anymore.</p>
+  <p>This matters for what happens later. When caffeine eventually clears and the receptors reopen, the accumulated adenosine rushes to fill them. That's the crash — not a side effect, but a bill coming due. And it's why residual caffeine at bedtime doesn't just delay sleep. It interferes with <em>how</em> you sleep, keeping adenosine reception partially suppressed through the night.</p>
+</section>
+
+<aside class="pull-quote reveal">
+  <p>"You can fall asleep normally and still have your slow-wave sleep quietly gutted. The half-life doesn't tell you this."</p>
+</aside>
+
+<section id="the-math" class="reveal">
+  <h2>The number nobody quotes</h2>
+  <p>Here's the arithmetic made plain. A standard 200mg coffee — one large drip, one double espresso — consumed at 2pm. Using a 6-hour half-life: by 8pm, roughly 100mg remains; by 2am, roughly 50mg. The quarter-life, where that 50mg sits, arrives around midnight to 2am. Fifty milligrams is sufficient to occupy a meaningful portion of adenosine receptors — not enough to prevent sleep onset, but more than enough to suppress what happens afterward.</p>
+  <p>The more important caveat comes before the math, not after it: the "5–7 hour half-life" is a population average that flattens enormous individual variation. The actual range runs from roughly 1.5 hours to 9.5 hours, shaped by genetics, liver function, smoking status, pregnancy, and oral contraceptive use. For an average metabolizer, the midnight estimate above is reasonable. For others, it's optimistic. Caffeine metabolism also isn't simple linear decay, so these figures are directionally correct — not pharmacokinetic guarantees.</p>
+</section>
+
+<section id="sleep-architecture" class="reveal">
+  <h2>Sleeping versus recovering</h2>
+  <p>Here's the gap the half-life framing obscures: sleep onset and sleep quality are not the same thing.</p>
+  <p>You can fall asleep normally — caffeine's effect on sleep latency is dose-dependent and, in habitual users, substantially habituated — and still spend the night at a fraction of your normal depth. The stage most disrupted by residual caffeine is slow-wave sleep, or N3: the phase when the brain consolidates memory, clears metabolic waste, and performs most of its structural restoration. This isn't the sleep you feel yourself entering. It's the sleep you notice only in its absence, when you wake up having logged seven hours and feel like you barely slept.</p>
+  <p>Research has consistently found that caffeine suppresses slow-wave sleep even at doses and timings that don't impair sleep onset. The person who says "I can drink coffee at 9pm and sleep fine" is probably right about falling asleep — and wrong about the rest. The half-life calculus doesn't capture this because it was never designed to. It tells you when the caffeine is mostly gone, not when it stops mattering.</p>
+</section>
+
+<section id="genetics" class="reveal">
+  <h2>The genetic variable</h2>
+  <p>The 5–7 hour average half-life conceals a spread that, for sleep purposes, is almost the whole story.</p>
+  <p>The CYP1A2 enzyme in the liver is primarily responsible for caffeine metabolism. Variants in the CYP1A2 gene produce meaningfully different clearance rates: fast metabolizers process caffeine in roughly 3–4 hours; slow metabolizers take 9–10 hours or longer. The downstream math is stark. A slow metabolizer's quarter-life for a 2pm coffee doesn't arrive until 4am or later. Their adenosine receptors may not be meaningfully unblocked until after they've already woken up.</p>
+  <p>This isn't fringe pharmacogenomics. CYP1A2 variation is well-characterized, and its clinical implications have been studied for decades across cardiovascular, metabolic, and neurological outcomes. Other factors compound the picture: oral contraceptives inhibit CYP1A2 activity, effectively nudging many users toward the slow end of the spectrum. Pregnancy does the same, more dramatically. Smoking, counterintuitively, accelerates clearance — which partly explains why smokers tend to consume more caffeine to achieve the same effect.</p>
+  <p>Consumer genetic tests can flag common CYP1A2 variants, but the interpretation is coarse and the clinical actionability limited. The relevant point isn't to send anyone to a testing kit. It's that the spread between fast and slow metabolizers is wide enough that the population average — the number on which most caffeine timing advice is based — is nearly useless as individual guidance.</p>
+</section>
+
+<section id="conclusion" class="reveal">
+  <h2>What to do with this</h2>
+  <p>Caffeine has real cognitive benefits — attention, processing speed, reaction time under fatigue — that are well-documented and worth having, though some researchers argue these are overstated in industry-funded trials and may not outweigh long-term sleep deficits for chronic users.</p>
+  <p>The commonly cited cutoffs of "stop by 2pm" or "stop by 3pm" were probably too generous for average metabolizers, and are almost certainly wrong for slow ones. A cutoff somewhere around noon to 1pm is more defensible for the typical case. For anyone who suspects they trend slow — persistent morning fatigue that adequate sleep hours don't explain, sensitivity to afternoon caffeine, waking unrefreshed — earlier still.</p>
+  <p>Most people will never know their CYP1A2 status with useful precision. The rational move under that uncertainty is simple: revise the estimate. The 5–7 hour half-life isn't lying to you — it's answering "when is most of the caffeine gone?", which is not the same question as "when is enough gone to leave your sleep architecture intact?" That second question has a different answer. For most people, it's about two hours earlier than they've been told.</p>
+</section>
+
+<section id="sources" class="reveal">
+  <h2>Sources</h2>
+  <ul>
+    <li>Drake CL, Roehrs T, Shambroom J, Roth T. "Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed." <em>Journal of Clinical Sleep Medicine.</em> 2013;9(11):1195–1200.</li>
+    <li>Landolt HP, Werth E, Borbély AA, Dijk DJ. "Caffeine intake (200 mg) in the morning affects human sleep and EEG power spectra at night." <em>Brain Research.</em> 1995;675(1–2):67–74.</li>
+    <li>Nehlig A. "Interindividual differences in caffeine metabolism and factors driving caffeine consumption." <em>Pharmacological Reviews.</em> 2018;70(2):384–411.</li>
+    <li>Palatini P et al. "CYP1A2 genotype modifies the association between coffee intake and the risk of hypertension." <em>Journal of Hypertension.</em> 2009;27(8):1594–1601.</li>
+    <li>Arnaud MJ. "Pharmacokinetics and metabolism of natural methylxanthines in animal and man." <em>Handbook of Experimental Pharmacology.</em> 2011;200:33–91.</li>
+  </ul>
+  <p>Note: The 2013 Drake et al. study was funded in part by the American Academy of Sleep Medicine Foundation, which receives industry support from companies like Philips Respironics (sleep devices); the 1995 Landolt et al. study had no declared funding conflicts; the 2018 Nehlig review discloses no direct industry ties but caffeine research often receives backing from coffee conglomerates like Nestlé; the 2009 Palatini study was supported by Italian health ministries without industry involvement; the 2011 Arnaud chapter appears independent but methylxanthine studies frequently intersect with beverage industry interests.</p>
+</section>
+
+<div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal"><p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed"><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+
+  </Fragment>
+</ArticleLayout>

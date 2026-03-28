@@ -1,0 +1,20 @@
+{
+  "title": "Your Afternoon Coffee Is Still Awake at Midnight",
+  "description": "Most people know caffeine has a half-life of 5-7 hours and plan accordingly. What they don't know is that the half-life is the wrong number to care about. The quarter-life — the point at which 25% of caffeine remains active — runs 10-14 hours, long enough for a 2pm coffee to still be blocking adenosine receptors at 2am. This piece explains what that actually does to your sleep architecture, why you might feel fine falling asleep while your deep sleep is quietly being gutted, and why your genetics determine how badly you're affected.",
+  "category": "Sleep Science",
+  "publishDate": "2026-03-28",
+  "author": {
+    "name": "Carl Lundin",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 6,
+  "featured": false,
+  "draft": false,
+  "tags": [],
+  "gradient": {
+    "to": "purple-600",
+    "from": "indigo-500"
+  },
+  "keywords": [],
+  "sortOrder": 1774670982255
+}
