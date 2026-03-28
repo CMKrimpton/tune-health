@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [13.1.0] - 2026-03-27
+
+### Added — Multi-Source Citation Verification
+- **Three academic databases** — citations now verified against PubMed, CrossRef, AND Semantic Scholar in cascade. Previously only PubMed, which missed most non-biomedical papers
+- **Smart search strategies** — PubMed uses 4 tiers (exact title `[ti]`, title+journal, title+year, keyword fallback). CrossRef uses relevance scoring + fuzzy title match. Semantic Scholar as broadest fallback
+- **PMIDs and DOIs returned** — verified citations now include clickable links to source papers (PubMed, DOI.org, Semantic Scholar)
+- **DOI shortcut** — if research stage provides a DOI, verified instantly via CrossRef without title search
+- **Non-academic source classification** — government reports, news, think tank publications classified as "skipped" instead of "NOT FOUND" failures
+- **Research prompt updated** — now requests DOIs alongside title/journal/year for each cited study
+- **Dashboard upgraded** — verified citations show green checkmarks with source badges (PUBMED/CROSSREF/S2) and clickable links. Failed stay red. Skipped show as gray dashes
+- **8 citations checked** per article (was 5)
+
 ## [13.0.1] - 2026-03-27
 
 ### Fixed — Footer Topic Links

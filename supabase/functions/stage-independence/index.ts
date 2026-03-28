@@ -227,7 +227,7 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
       const pubmedResult = await pubmedPromise;
 
       // ── FACT-CHECK: If PubMed can't verify studies, revise the article to flag them ──
-      const unverifiedStudies = (pubmedResult.details || []).filter(d => !d.found);
+      const unverifiedStudies = (pubmedResult.details || []).filter(d => !d.found && !d.skipped);
       if (unverifiedStudies.length > 0 && pubmedResult.total > 0) {
         const failRate = unverifiedStudies.length / pubmedResult.total;
         console.log(`[Fact-check] ${unverifiedStudies.length}/${pubmedResult.total} studies unverified on PubMed (${Math.round(failRate * 100)}%)`);

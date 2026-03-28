@@ -78,7 +78,7 @@ Return ONLY valid JSON (no code fences, no explanation):
       "why": "1-2 sentences on why this topic is compelling",
       "category": "One of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
       "keyFindings": ["Finding 1...", "Finding 2..."],
-      "studies": [{ "title": "...", "journal": "...", "year": "...", "finding": "..." }],
+      "studies": [{ "title": "exact paper title", "journal": "...", "year": "...", "doi": "10.xxxx/... (if available)", "finding": "..." }],
       "counterArguments": ["Skeptic point 1", "Skeptic point 2"],
       "mechanism": "Brief explanation of the biological/physiological mechanism",
       "statistics": ["Key statistic 1", "Key statistic 2"]
@@ -114,7 +114,7 @@ Return ONLY valid JSON (no code fences, no explanation):
   "why": "1-2 sentences on why this topic is worth covering",
   "category": "One of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
   "keyFindings": ["Finding 1...", "Finding 2..."],
-  "studies": [{ "title": "...", "journal": "...", "year": "...", "finding": "..." }],
+  "studies": [{ "title": "exact paper title", "journal": "...", "year": "...", "doi": "10.xxxx/... (if available)", "finding": "..." }],
   "counterArguments": ["Skeptic point 1", "Skeptic point 2"],
   "mechanism": "Brief explanation of the biological/physiological mechanism",
   "expertQuotes": ["Any notable expert positions or statements found"],

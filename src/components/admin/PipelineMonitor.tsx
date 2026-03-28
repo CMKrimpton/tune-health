@@ -697,7 +697,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               const rd = log.research_data || {};
               const brief = (rd as PipelineResearchData)._editorBrief as Record<string, unknown> | undefined;
               const indReview = (rd as PipelineResearchData)._independenceReview as Record<string, unknown> | undefined;
-              const pubmed = (rd as PipelineResearchData)._pubmedVerification as { verified?: number; failed?: number; total?: number; details?: Array<{ title: string; found: boolean }> } | undefined;
+              const pubmed = (rd as PipelineResearchData)._pubmedVerification as { verified?: number; failed?: number; skipped?: number; total?: number; details?: Array<{ title: string; found: boolean; skipped?: boolean; source?: string; pmid?: string; doi?: string; url?: string }> } | undefined;
               const qcResult = (rd as PipelineResearchData)._qcResult as Record<string, unknown> | undefined;
               const briefDetails = brief?.brief as Record<string, unknown> | undefined;
               const tokenUsage = log.token_usage as Array<{ model: string; stage: string; inputTokens: number; outputTokens: number; costUsd: number }> | null;
@@ -785,12 +785,25 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                           <div className="admin-stage-label">5. PubMed Verification</div>
                           <div className="admin-color-secondary">
                             <span className="admin-color-green">{pubmed.verified} verified</span>
-                            {pubmed.failed ? <span className="admin-color-red admin-ml-md">{pubmed.failed} NOT FOUND</span> : null}
-                            {' / '}{pubmed.total} checked
+                            {pubmed.failed ? <span className="admin-color-red admin-ml-md">{pubmed.failed} not found</span> : null}
+                            {pubmed.skipped ? <span className="admin-color-muted admin-ml-md">{pubmed.skipped} skipped</span> : null}
+                            {' / '}{pubmed.total} citations
                           </div>
-                          {pubmed.details?.filter(d => !d.found).map((d, i) => (
+                          {pubmed.details?.filter(d => d.found).map((d, i) => (
+                            <div key={i} className="admin-text-sm admin-mt-sm admin-color-green admin-pl-md pipeline-error-bar">
+                              {'\u2713'} {d.title.slice(0, 70)}
+                              {d.source && <span className="admin-color-muted admin-ml-sm" style={{ fontSize: '10px', textTransform: 'uppercase' }}>{d.source === 'semantic_scholar' ? 'S2' : d.source}</span>}
+                              {d.url && <a href={d.url} target="_blank" rel="noopener noreferrer" className="admin-color-purple admin-ml-sm admin-no-underline" onClick={e => e.stopPropagation()} style={{ fontSize: '10px' }}>{d.pmid ? `PMID:${d.pmid}` : d.doi ? `DOI` : 'link'}</a>}
+                            </div>
+                          ))}
+                          {pubmed.details?.filter(d => !d.found && !d.skipped).map((d, i) => (
                             <div key={i} className="admin-text-sm admin-mt-sm admin-color-red admin-pl-md pipeline-error-bar">
                               {'\u2717'} {d.title.slice(0, 80)}
+                            </div>
+                          ))}
+                          {pubmed.details?.filter(d => d.skipped).map((d, i) => (
+                            <div key={i} className="admin-text-sm admin-mt-sm admin-color-muted admin-pl-md pipeline-error-bar">
+                              {'—'} {d.title.slice(0, 80)}
                             </div>
                           ))}
                         </div>

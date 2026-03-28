@@ -190,8 +190,10 @@ export interface PipelineResearchData {
   };
   _pubmedVerification?: {
     verified?: number;
+    failed?: number;
+    skipped?: number;
     total?: number;
-    details?: Array<{ title: string; found: boolean; pmid?: string }>;
+    details?: Array<{ title: string; found: boolean; skipped?: boolean; source?: string; pmid?: string; doi?: string; url?: string }>;
   };
   _qcResult?: QCResult;
   _reviseInstructions?: string | null;
