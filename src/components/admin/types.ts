@@ -351,11 +351,6 @@ export function getAdminToken(): string {
   return match ? decodeURIComponent(match[1]) : '';
 }
 
-export function getApiBase(): string {
-  const meta = import.meta as Record<string, Record<string, string>>;
-  const url = (meta.env?.PUBLIC_SUPABASE_URL ?? '').trim();
-  return url ? `${url}/functions/v1` : '';
-}
 
 export function getStageForStatus(status: string): PipelineStage | null {
   for (const [stage, statuses] of Object.entries(PIPELINE_STAGES)) {

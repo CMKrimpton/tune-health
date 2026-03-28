@@ -1,6 +1,9 @@
 ---
 export const prerender = false;
 import ArticleEditor from '../../components/admin/ArticleEditor';
+
+const edgeFunctionBase = (process.env.PUBLIC_SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL || '').trim();
+const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
 ---
 
 <html lang="en">
@@ -28,6 +31,6 @@ import ArticleEditor from '../../components/admin/ArticleEditor';
     </div>
   </header>
 
-  <ArticleEditor client:load />
+  <ArticleEditor client:load apiBase={apiBase} />
 </body>
 </html>

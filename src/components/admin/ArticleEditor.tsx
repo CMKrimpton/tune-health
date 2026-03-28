@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react
 import type { DragEvent, ChangeEvent } from 'react';
 import {
   getAdminToken,
-  getApiBase,
   VALID_CATEGORIES,
   GRADIENT_PRESETS,
 } from './types';
@@ -109,8 +108,8 @@ function clearDraft() {
 
 // ─── Component ──────────────────────────────────────────────────
 
-export default function ArticleEditor() {
-  const API_BASE = getApiBase();
+export default function ArticleEditor({ apiBase }: { apiBase: string }) {
+  const API_BASE = apiBase;
 
   // Core state
   const [state, setState] = useState<EditorState>('upload');
