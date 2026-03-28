@@ -96,8 +96,8 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
       </div>
     )}
 
-    <!-- Stats Row — 4 columns, 2 rows -->
-    <div class="admin-stats" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1.5rem">
+    <!-- Stats Strip -->
+    <div class="admin-stats">
       <div class="admin-stat-card">
         <span class="admin-stat-number">{articleCount}</span>
         <span class="admin-stat-label">Total</span>

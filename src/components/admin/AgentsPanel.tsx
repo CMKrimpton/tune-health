@@ -73,33 +73,23 @@ function gradeBg(grade: string): string {
   return 'rgba(239, 68, 68, 0.1)';
 }
 
-// ─── Collapsible Section ────────────────────────────────────────────
+// ─── Panel (Bloomberg-style block) ─────────────────────────────────
 
-function Section({ title, icon, defaultOpen = false, badge, children }: {
+function Panel({ title, badge, children, maxHeight }: {
   title: string;
-  icon: React.ReactNode;
-  defaultOpen?: boolean;
   badge?: React.ReactNode;
   children: React.ReactNode;
+  maxHeight?: string;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="agents-section">
-      <button
-        className="agents-section-header"
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-      >
-        <span className="agents-header-left">
-          {icon}
-          <span>{title}</span>
-        </span>
+    <div className="agents-panel-block">
+      <div className="agents-panel-header">
+        <span className="agents-panel-title">{title}</span>
         {badge}
-        <span className={`agents-chevron${open ? ' open' : ''}`}>
-          &#9662;
-        </span>
-      </button>
-      {open && <div className="agents-section-body">{children}</div>}
+      </div>
+      <div className="agents-panel-content" style={maxHeight ? { maxHeight, overflowY: 'auto' } : undefined}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -108,18 +98,25 @@ function Section({ title, icon, defaultOpen = false, badge, children }: {
 
 export default function AgentsPanel({ apiBase, initialArticleCount }: Props) {
   return (
-    <div className="agents-panel-grid">
-      <div>
-        <ReaderQuestions apiBase={apiBase} />
-        <EditorialQC apiBase={apiBase} articleCount={initialArticleCount} />
-        <IllustrationAgent apiBase={apiBase} />
-      </div>
-      <div>
-        <DecisionLog apiBase={apiBase} />
-        <PingerActivity apiBase={apiBase} />
+    <div className="agents-layout">
+      {/* Row 1: Compact status strip */}
+      <div className="agents-status-strip">
         <CronSchedule />
+        <PingerActivity apiBase={apiBase} />
         <DatabaseSync apiBase={apiBase} initialCount={initialArticleCount} />
       </div>
+
+      {/* Row 2: Decision Log (full width) */}
+      <DecisionLog apiBase={apiBase} />
+
+      {/* Row 3: QC + Reader Questions side by side */}
+      <div className="agents-tools-row">
+        <EditorialQC apiBase={apiBase} articleCount={initialArticleCount} />
+        <ReaderQuestions apiBase={apiBase} />
+      </div>
+
+      {/* Row 4: Illustration Agent */}
+      <IllustrationAgent apiBase={apiBase} />
     </div>
   );
 }
@@ -167,14 +164,8 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
   }, [apiBase]);
 
   return (
-    <Section
+    <Panel
       title="Reader Questions"
-      defaultOpen={true}
-      icon={
-        <div className="admin-section-icon-box admin-section-icon-red">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </div>
-      }
       badge={questions.length > 0 ? <span className="agents-badge-green">{questions.length} found</span> : undefined}
     >
       <p className="agents-hint">
@@ -219,7 +210,7 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
           ))}
         </div>
       )}
-    </Section>
+    </Panel>
   );
 }
 
@@ -247,105 +238,43 @@ function PingerActivity({ apiBase }: { apiBase: string }) {
 
   useEffect(() => { fetchPinger(); }, [fetchPinger]);
 
-  const sourceColors: Record<string, string> = {
-    gemini_search: '#fbbf24',
-    grok_social: '#3b82f6',
-    pubmed_rss: '#10b981',
-  };
-
-  const sourceLabels: Record<string, string> = {
-    gemini_search: 'Gemini Search',
-    grok_social: 'Grok Social',
-    pubmed_rss: 'PubMed RSS',
-  };
-
   return (
-    <Section
-      title="Breaking News Pinger"
-      defaultOpen={false}
-      icon={
-        <div className="admin-section-icon-box admin-section-icon-red">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        </div>
-      }
-      badge={
-        <span className={promoted > 0 ? 'agents-badge-red' : 'agents-badge-green'}>
-          {promoted > 0 ? `${promoted} promoted (24h)` : 'monitoring'}
-        </span>
-      }
-    >
-      <div className="agents-pinger-controls">
-        <button onClick={fetchPinger} disabled={loading} className="agents-pinger-refresh">
-          {loading ? 'Loading...' : 'Refresh'}
-        </button>
-        <span className="agents-pinger-hint">
-          Checks: :00 Gemini, :15 PubMed, :30 Grok, :45 PubMed
-        </span>
-      </div>
-
-      {signals.length === 0 ? (
-        <p className="agents-empty-muted">No signals detected recently. The pinger runs every 15 minutes.</p>
-      ) : (
-        <div className="agents-signal-list">
-          {signals.slice(0, 10).map(s => (
-            <div key={s.id} className={`agents-signal-card${s.promoted_to_queue ? ' promoted' : ''}`} style={{ borderLeft: `3px solid ${sourceColors[s.source] || '#5c5752'}` }}>
-              <div className="admin-flex-between admin-flex-center">
-                <span className="agents-signal-topic">{s.topic}</span>
-                {s.promoted_to_queue && (
-                  <span className="admin-status-badge admin-status-breaking">PROMOTED</span>
-                )}
-              </div>
-              <div className="agents-signal-meta">
-                <span style={{ color: sourceColors[s.source] || '#5c5752' }}>{sourceLabels[s.source] || s.source}</span>
-                {' · '}
-                <span>{s.urgency}</span>
-                {s.why_breaking && <span> · {s.why_breaking.slice(0, 80)}</span>}
-                {' · '}
-                <span>{new Date(s.created_at).toLocaleTimeString()}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="agents-strip-cell" style={{ flex: '0 1 auto' }}>
+      <span className="agents-strip-label">Pinger</span>
+      <span className={`agents-pinger-dot ${promoted > 0 ? 'active' : ''}`} />
+      <span style={{ fontSize: '0.6875rem', color: promoted > 0 ? 'var(--admin-green)' : 'var(--admin-text-3)' }}>
+        {promoted > 0 ? `${promoted} promoted` : 'idle'}
+      </span>
+      {signals.length > 0 && (
+        <span style={{ fontSize: '0.625rem', color: 'var(--admin-text-4)' }}>{signals.length} signals</span>
       )}
-    </Section>
+      <button onClick={fetchPinger} disabled={loading} className="agents-strip-btn">
+        {loading ? '...' : '\u21BB'}
+      </button>
+    </div>
   );
 }
 
 // ─── 0b. Cron Schedule Display ──────────────────────────────────────
 
 function CronSchedule() {
-  const cronJobs = [
-    { name: 'Scout (Gemini)', schedule: 'Daily 6:00 AM UTC (0 6 * * *)', model: 'Gemini + Google Search', color: '#fbbf24' },
-    { name: 'Scout (Sonnet)', schedule: 'Daily 2:00 PM UTC (0 14 * * *)', model: 'Sonnet + web search', color: '#f97316' },
-    { name: 'Scout (Grok)', schedule: 'Daily 10:00 PM UTC (0 22 * * *)', model: 'Grok 4 (contrarian)', color: '#3b82f6' },
-    { name: 'Pipeline Dispatch', schedule: 'Every minute (* * * * *)', model: 'SQL \u2192 pg_net \u2192 stage functions', color: '#16a34a' },
-    { name: 'Featured Rotation', schedule: 'Every 6 hours (0 */6 * * *)', model: 'Score-weighted rotation', color: '#a78bfa' },
+  const jobs = [
+    { name: 'Scout', time: '06:00', color: '#fbbf24' },
+    { name: 'Scout', time: '14:00', color: '#f97316' },
+    { name: 'Scout', time: '22:00', color: '#3b82f6' },
+    { name: 'Dispatch', time: '*/5m', color: '#16a34a' },
+    { name: 'Featured', time: '*/6h', color: '#a78bfa' },
   ];
-
   return (
-    <Section
-      title="Cron Schedule"
-      defaultOpen={false}
-      icon={
-        <div className="admin-section-icon-box admin-section-icon-indigo">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-      }
-      badge={<span className="agents-badge-green">5 active</span>}
-    >
-      <div className="agents-cron-grid">
-        {cronJobs.map(job => (
-          <div key={job.name} className="agents-cron-card" style={{ borderLeft: `3px solid ${job.color}` }}>
-            <div className="agents-cron-name">{job.name}</div>
-            <div className="agents-cron-schedule">{job.schedule}</div>
-            <div className="agents-cron-model" style={{ color: job.color }}>{job.model}</div>
-          </div>
-        ))}
-      </div>
-      <p className="agents-hint-bottom">
-        Managed via pg_cron in Supabase. Use Scout Now / Produce Now in Pipeline tab for manual triggers.
-      </p>
-    </Section>
+    <div className="agents-strip-cell" style={{ flex: '1 1 auto' }}>
+      <span className="agents-strip-label">Cron</span>
+      {jobs.map((j, i) => (
+        <span key={i} className="agents-cron-chip" style={{ borderColor: j.color }}>
+          <span style={{ color: j.color }}>{j.name}</span>
+          <span className="agents-cron-time">{j.time}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -381,15 +310,7 @@ function DecisionLog({ apiBase }: { apiBase: string }) {
   );
 
   return (
-    <Section
-      title="Senior Editor Decision Log"
-      defaultOpen={true}
-      icon={
-        <div className="admin-section-icon-box admin-section-icon-amber">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </div>
-      }
-    >
+    <Panel title="Decision Log">
       {loading ? (
         <div className="agents-loading-center">
           <div className="admin-spinner admin-spinner-lg agents-spinner-block" />
@@ -400,17 +321,24 @@ function DecisionLog({ apiBase }: { apiBase: string }) {
           No editorial decisions yet. The daily pipeline will populate this log.
         </p>
       ) : (
-        <div className="agents-decision-log">
+        <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+          <div className="agents-decision-table-header">
+            <span>Status</span>
+            <span>Score</span>
+            <span>Headline</span>
+            <span>QC</span>
+            <span>Time</span>
+          </div>
           {decisionsLogs.map(log => (
-            <DecisionCard key={log.id} log={log} />
+            <DecisionRow key={log.id} log={log} />
           ))}
         </div>
       )}
-    </Section>
+    </Panel>
   );
 }
 
-function DecisionCard({ log }: { log: LogEntry }) {
+function DecisionRow({ log }: { log: LogEntry }) {
   const brief = log.research_data?._editorBrief;
   const qc = log.research_data?._qcResult;
   const isPublished = log.status === 'published';
@@ -418,48 +346,25 @@ function DecisionCard({ log }: { log: LogEntry }) {
   const isKilled = brief?.decision === 'kill';
 
   return (
-    <div className="agents-decision-card">
-      <div className="agents-decision-layout">
-        <div className="admin-flex-1">
-          <div className="agents-decision-badges">
-            {isPublished && <span className="admin-status-badge admin-status-published">Published</span>}
-            {isKilled && <span className="admin-status-badge admin-status-failed">Killed</span>}
-            {isFailed && !isKilled && <span className="admin-status-badge admin-status-failed">Failed</span>}
-            {!isPublished && !isFailed && brief?.decision === 'approve' && <span className="admin-status-badge admin-status-in-progress">{log.status}</span>}
-            {brief?.topicScore != null && (
-              <span className="agents-score-badge" style={{ color: getScoreColor(brief.topicScore) }}>
-                {brief.topicScore}/10
-              </span>
-            )}
-          </div>
-          <h4 className="agents-decision-title">
-            {brief?.headline || log.title || log.topic || 'Untitled'}
-          </h4>
-          {brief?.angle && !isKilled && (
-            <p className="agents-decision-angle">{brief.angle}</p>
-          )}
-          {isKilled && brief?.killReason && (
-            <p className="agents-decision-error">
-              {brief.killReason}
-            </p>
-          )}
-          {isFailed && !isKilled && log.error && (
-            <p className="agents-decision-error">
-              {log.error}
-            </p>
-          )}
-          {isPublished && qc && (
-            <div className="agents-decision-qc">
-              {qc.qualityScore != null && <span style={{ color: getScoreColor(qc.qualityScore), fontWeight: 600 }}>QC {qc.qualityScore}/10</span>}
-              {qc.edits?.headlineChanged && <span className="admin-ml-md">Headline revised</span>}
-              {qc.edits?.notes && <p className="admin-mt-xs admin-color-subtle admin-italic">{qc.edits.notes}</p>}
-            </div>
-          )}
-        </div>
-        <span className="agents-decision-time">
-          {timeAgo(log.completed_at || log.created_at)}
-        </span>
-      </div>
+    <div className="agents-decision-row">
+      <span>
+        {isPublished && <span className="admin-status-badge admin-status-published" style={{ fontSize: '0.5625rem', padding: '1px 5px' }}>Published</span>}
+        {isKilled && <span className="admin-status-badge admin-status-failed" style={{ fontSize: '0.5625rem', padding: '1px 5px' }}>Killed</span>}
+        {isFailed && !isKilled && <span className="admin-status-badge admin-status-failed" style={{ fontSize: '0.5625rem', padding: '1px 5px' }}>Failed</span>}
+        {!isPublished && !isFailed && <span style={{ fontSize: '0.625rem', color: 'var(--admin-text-3)' }}>{log.status}</span>}
+      </span>
+      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: brief?.topicScore != null ? getScoreColor(brief.topicScore) : 'var(--admin-text-4)', fontVariantNumeric: 'tabular-nums' }}>
+        {brief?.topicScore != null ? `${brief.topicScore}/10` : '\u2014'}
+      </span>
+      <span style={{ fontSize: '0.75rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {brief?.headline || log.title || log.topic || 'Untitled'}
+      </span>
+      <span style={{ fontSize: '0.6875rem', color: qc?.qualityScore != null ? getScoreColor(qc.qualityScore) : 'var(--admin-text-4)', fontVariantNumeric: 'tabular-nums' }}>
+        {qc?.qualityScore != null ? `${qc.qualityScore}/10` : '\u2014'}
+      </span>
+      <span style={{ fontSize: '0.625rem', color: 'var(--admin-text-4)', whiteSpace: 'nowrap' }}>
+        {timeAgo(log.completed_at || log.created_at)}
+      </span>
     </div>
   );
 }
@@ -534,13 +439,8 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
   const issues = report?.issues || [];
 
   return (
-    <Section
-      title="Editorial QC Agent"
-      icon={
-        <div className="admin-section-icon-box admin-section-icon-indigo">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-        </div>
-      }
+    <Panel
+      title="Editorial QC"
       badge={statusBadge ? (
         <span className="agents-qc-pill" style={{ background: statusBadge.bg, color: statusBadge.color }}>
           {statusBadge.text}
@@ -662,7 +562,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
           </div>
         </div>
       )}
-    </Section>
+    </Panel>
   );
 }
 
@@ -751,13 +651,8 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
   }, [apiBase, selectedSlug]);
 
   return (
-    <Section
-      title="Illustration Agent"
-      icon={
-        <div className="admin-section-icon-box admin-section-icon-emerald">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        </div>
-      }
+    <Panel
+      title="Illustrations"
       badge={
         <span className={withoutIllustration.length > 0 ? 'agents-badge-yellow' : 'agents-badge-green'}>
           {withIllustration.length}/{articles.length} illustrated
@@ -817,7 +712,7 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
           </div>
         </div>
       )}
-    </Section>
+    </Panel>
   );
 }
 
@@ -908,37 +803,14 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
   }, [apiBase]);
 
   return (
-    <Section
-      title="Database & Maintenance"
-      icon={
-        <div className="admin-section-icon-box admin-section-icon-amber">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-        </div>
-      }
-      badge={<span className="agents-badge-muted">{count} articles</span>}
-    >
-      <div className="agents-db-buttons">
-        <button className="agents-btn agents-btn-primary" disabled={loading} onClick={refresh}>
-          {loading ? 'Syncing...' : 'Refresh DB'}
-        </button>
-        <button className="agents-btn" disabled={backfilling} onClick={backfillCosts}>
-          {backfilling ? 'Estimating...' : 'Backfill Costs'}
-        </button>
-        <button className="agents-btn" disabled={rotating} onClick={rotateFeatured}>
-          {rotating ? 'Rotating...' : 'Rotate Featured'}
-        </button>
-        <button className="agents-btn" disabled={verifying} onClick={backfillCitations} style={{ borderColor: verifying ? '#a78bfa' : undefined }}>
-          {verifying ? 'Verifying citations...' : 'Re-verify Citations'}
-        </button>
-      </div>
-      <p className="agents-db-help">
-        Re-verify Citations: re-check all published articles against PubMed, CrossRef, and Semantic Scholar (takes a few minutes).
-      </p>
-      {result && (
-        <p className={`agents-result ${result.includes('Failed') || result.includes('failed') ? 'agents-result-error' : 'agents-result-success'}`}>
-          {result.includes('Failed') || result.includes('failed') ? result : `\u2713 ${result}`}
-        </p>
-      )}
-    </Section>
+    <div className="agents-strip-cell" style={{ flex: '0 1 auto' }}>
+      <span className="agents-strip-label">DB</span>
+      <span style={{ fontSize: '0.75rem', fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: 'var(--admin-text-2)' }}>{count}</span>
+      <button className="agents-strip-btn" disabled={loading} onClick={refresh}>Sync</button>
+      <button className="agents-strip-btn" disabled={backfilling} onClick={backfillCosts}>Costs</button>
+      <button className="agents-strip-btn" disabled={rotating} onClick={rotateFeatured}>Rotate</button>
+      <button className="agents-strip-btn" disabled={verifying} onClick={backfillCitations}>Citations</button>
+      {result && <span className="agents-strip-result">{result.includes('Failed') ? '\u2717' : '\u2713'} {result.slice(0, 40)}</span>}
+    </div>
   );
 }

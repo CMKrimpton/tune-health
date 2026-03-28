@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [14.0.0] - 2026-03-27
+
+### Changed — Admin UI Redesign (Bloomberg Terminal Style)
+- **Design system tightened** — border radii 12/8/6px → 6/4/3px, shadows simplified, decorative glass effects removed, ambient gradient removed
+- **Stats bar** — 4×2 grid → horizontal ticker strip (single flex row, hairline dividers, left-aligned numbers, Inter with tabular-nums replacing Playfair Display serif)
+- **Header** — 56px → 44px, compact nav links
+- **Tabs** — uppercase, smaller, tighter padding
+- **Pipeline** — 7-stage grid (was 5), tighter stage headers/cards, scrollable stage bodies (max-height 300px), compact status bar and buttons
+- **Articles** — tighter toolbar, compact rows
+- **AI Agents tab completely restructured**:
+  - Collapsible accordions → always-visible panels (no toggle/chevron/expand)
+  - Cron, Pinger, Database → compact status strip (one row of chips and buttons)
+  - Decision Log → full-width table with columns (Status | Score | Headline | QC | Time), scrollable
+  - QC + Reader Questions → side by side (3:2 grid)
+  - Illustrations → compact bottom panel
+- **All buttons** — ~30% smaller padding, no bounce hover effects
+- **Responsive breakpoints** — pipeline 7→4→3→2→1 columns
+
 ## [13.1.0] - 2026-03-27
 
 ### Added — Multi-Source Citation Verification
