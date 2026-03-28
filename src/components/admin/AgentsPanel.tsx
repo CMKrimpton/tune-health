@@ -829,6 +829,7 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
   const [result, setResult] = useState<string | null>(null);
   const [backfilling, setBackfilling] = useState(false);
   const [rotating, setRotating] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -866,6 +867,25 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
       setResult(`Backfill failed: ${(err as Error).message || 'Unknown error'}`);
     } finally {
       setBackfilling(false);
+    }
+  }, [apiBase]);
+
+  const backfillCitations = useCallback(async () => {
+    if (!confirm('Re-verify citations for ALL published articles using PubMed + CrossRef + Semantic Scholar? This may take several minutes.')) return;
+    setVerifying(true);
+    setResult(null);
+    try {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
+        body: JSON.stringify({ action: 'backfill-citations' }),
+      });
+      const data = await res.json();
+      setResult(data.message || `Verified: ${data.totalVerified}, Failed: ${data.totalFailed}, Skipped: ${data.totalSkipped}`);
+    } catch (err) {
+      setResult(`Citation verification failed: ${(err as Error).message || 'Unknown error'}`);
+    } finally {
+      setVerifying(false);
     }
   }, [apiBase]);
 
@@ -907,9 +927,12 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
         <button className="agents-btn" disabled={rotating} onClick={rotateFeatured}>
           {rotating ? 'Rotating...' : 'Rotate Featured'}
         </button>
+        <button className="agents-btn" disabled={verifying} onClick={backfillCitations} style={{ borderColor: verifying ? '#a78bfa' : undefined }}>
+          {verifying ? 'Verifying citations...' : 'Re-verify Citations'}
+        </button>
       </div>
       <p className="agents-db-help">
-        Backfill Costs: estimate spend for articles logged before cost tracking. Rotate Featured: manually trigger featured article rotation.
+        Re-verify Citations: re-check all published articles against PubMed, CrossRef, and Semantic Scholar (takes a few minutes).
       </p>
       {result && (
         <p className={`agents-result ${result.includes('Failed') || result.includes('failed') ? 'agents-result-error' : 'agents-result-success'}`}>

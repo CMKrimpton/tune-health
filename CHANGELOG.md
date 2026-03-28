@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Non-academic source classification** — government reports, news, think tank publications classified as "skipped" instead of "NOT FOUND" failures
 - **Research prompt updated** — now requests DOIs alongside title/journal/year for each cited study
 - **Dashboard upgraded** — verified citations show green checkmarks with source badges (PUBMED/CROSSREF/S2) and clickable links. Failed stay red. Skipped show as gray dashes
+- **Backfill button** — "Re-verify Citations" in admin Database & Maintenance section re-runs the 3-source verifier against all published articles retroactively
 - **8 citations checked** per article (was 5)
 
 ## [13.0.1] - 2026-03-27

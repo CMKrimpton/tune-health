@@ -3,6 +3,7 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, calcCost, dispatchStage } from "../_shared/db.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
 import { getCategoryGradient, MODELS } from "../_shared/constants.ts";
+import { verifyPubMedCitations } from "../_shared/pubmed.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
 Deno.serve(async (req: Request) => {
@@ -372,6 +373,60 @@ Deno.serve(async (req: Request) => {
         updated,
         totalEstimated: Math.round(totalEstimated * 100) / 100,
         note: "These are estimates based on typical token counts per stage. Actual costs may vary ±20%.",
+      });
+    }
+
+    // ------ BACKFILL CITATIONS — re-verify all published articles ------
+    if (action === "backfill-citations") {
+      const { data: logs } = await db
+        .from("daily_article_log")
+        .select("id, topic, research_data")
+        .eq("status", "published")
+        .not("research_data", "is", null);
+
+      if (!logs || logs.length === 0) {
+        return json({ message: "No published articles with research data", updated: 0 });
+      }
+
+      let updated = 0;
+      let totalVerified = 0;
+      let totalFailed = 0;
+      let totalSkipped = 0;
+      const errors: string[] = [];
+
+      for (const log of logs as Array<{ id: string; topic: string; research_data: Record<string, unknown> }>) {
+        const rd = log.research_data;
+        const studies = (rd.studies as Array<{ title?: string; journal?: string; year?: string; doi?: string }>) || [];
+        if (studies.length === 0) continue;
+
+        try {
+          const result = await verifyPubMedCitations(studies);
+          totalVerified += result.verified;
+          totalFailed += result.failed;
+          totalSkipped += result.skipped;
+
+          await db.from("daily_article_log").update({
+            research_data: { ...rd, _pubmedVerification: result },
+          }).eq("id", log.id);
+          updated++;
+          console.log(`[backfill-citations] ${log.topic?.slice(0, 40)}: ${result.verified}/${result.total} verified`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "unknown";
+          errors.push(`${log.id}: ${msg}`);
+          console.log(`[backfill-citations] Error for ${log.id}: ${msg}`);
+        }
+
+        // Rate limit: 1 article per 3 seconds (each article makes ~5-15 API calls)
+        await new Promise(r => setTimeout(r, 3000));
+      }
+
+      return json({
+        message: `Re-verified citations for ${updated} published articles`,
+        updated,
+        totalVerified,
+        totalFailed,
+        totalSkipped,
+        errors: errors.length > 0 ? errors : undefined,
       });
     }
 
