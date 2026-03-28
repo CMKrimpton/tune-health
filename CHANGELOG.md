@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [13.0.1] - 2026-03-27
+
+### Fixed — Footer Topic Links
+- **Footer topic links were broken** — used `.toLowerCase().replace(/\s+/g, '-')` which produced `mental-health` instead of `Mental%20Health`. Articles page filtering matches against raw category names with spaces, so hyphenated links never matched. Fixed to `encodeURIComponent(cat)` matching TopicNav
+
+### Added — Editorial Manual Links
+- **`/howwewrite` linked from footer** — added to Explore column alongside About, Deep Dives, Subscribe
+- **`/howwewrite` linked from about page** — "Read the full editorial manual" link under the "How We Write" section heading
+
 ## [13.0.0] - 2026-03-27
 
 ### Added — Topic Navigation Bar

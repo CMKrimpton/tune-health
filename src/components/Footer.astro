@@ -43,6 +43,7 @@ const latestArticles = articles.slice(0, 4);
           <li><a href="/articles" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">All Articles</a></li>
           <li><a href="/deep-dives" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">Deep Dives</a></li>
           <li><a href="/about" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">About</a></li>
+          <li><a href="/howwewrite" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">How We Write</a></li>
           <li><a href="/subscribe" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">Subscribe</a></li>
         </ul>
       </div>
@@ -53,7 +54,7 @@ const latestArticles = articles.slice(0, 4);
         <ul class="space-y-2.5">
           {categories.slice(0, 6).map((cat) => (
             <li>
-              <a href={`/articles?topic=${cat.toLowerCase().replace(/\s+/g, '-')}`} class="text-sm text-stone-400 hover:text-white transition-colors duration-200">
+              <a href={`/articles?topic=${encodeURIComponent(cat)}`} class="text-sm text-stone-400 hover:text-white transition-colors duration-200">
                 {cat}
               </a>
             </li>
