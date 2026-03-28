@@ -33,10 +33,14 @@ const { narrationUrl, title } = Astro.props;
 <script>
   const STORAGE_KEY = 'alumi-narration-enabled';
 
-  document.addEventListener('astro:page-load', () => {
+  function initNarration() {
     const toggle = document.querySelector('[data-narration-toggle]') as HTMLButtonElement;
     const audio = document.querySelector('[data-narration-audio]') as HTMLAudioElement;
     if (!toggle || !audio) return;
+
+    // Prevent double-init from hot reloads
+    if (toggle.dataset.initialized === 'true') return;
+    toggle.dataset.initialized = 'true';
 
     const iconOn = toggle.querySelector('.narration-icon-on') as SVGElement;
     const iconOff = toggle.querySelector('.narration-icon-off') as SVGElement;
@@ -52,12 +56,10 @@ const { narrationUrl, title } = Astro.props;
     const enabled = localStorage.getItem(STORAGE_KEY) === 'true';
 
     if (enabled) {
-      // Auto-play for returning users
       audio.preload = 'auto';
       audio.play().then(() => {
         setVisual(true);
       }).catch(() => {
-        // Safari blocks autoplay without prior interaction — show muted state
         setVisual(false);
       });
     }
@@ -67,7 +69,9 @@ const { narrationUrl, title } = Astro.props;
         audio.play().then(() => {
           localStorage.setItem(STORAGE_KEY, 'true');
           setVisual(true);
-        }).catch(() => {});
+        }).catch((err) => {
+          console.warn('[Narration] Play failed:', err);
+        });
       } else {
         audio.pause();
         audio.currentTime = 0;
@@ -79,7 +83,15 @@ const { narrationUrl, title } = Astro.props;
     audio.addEventListener('ended', () => {
       setVisual(false);
     });
-  });
+
+    audio.addEventListener('error', (e) => {
+      console.warn('[Narration] Audio error:', (e.target as HTMLAudioElement)?.error);
+    });
+  }
+
+  document.addEventListener('astro:page-load', initNarration);
+  // Also run immediately in case astro:page-load already fired
+  initNarration();
 </script>
 
 <style>
