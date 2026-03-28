@@ -153,7 +153,12 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
       setState(draft.state === 'publishing' ? 'preview' : draft.state);
       setSourceText(draft.sourceText || '');
       setArticle(draft.article || null);
-      setMetadata(draft.metadata || null);
+      const m = draft.metadata;
+      if (m && !m.gradient) {
+        const cat = CATEGORY_GRADIENTS[m.category];
+        m.gradient = cat ? { from: cat.from, to: cat.to } : { from: 'rose-600', to: 'red-700' };
+      }
+      setMetadata(m || null);
       setChatMessages(draft.chatMessages || []);
       setSnapshots(draft.snapshots || []);
     }
@@ -299,8 +304,8 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
               category: data.metadata.category,
               tags: data.metadata.tags,
               keywords: data.metadata.keywords || [],
-              gradient_from: data.metadata.gradient.from,
-              gradient_to: data.metadata.gradient.to,
+              gradient_from: data.metadata.gradient?.from || 'rose-600',
+              gradient_to: data.metadata.gradient?.to || 'red-700',
               featured: data.metadata.featured,
               read_time: data.metadata.readTime,
               publish_date: data.metadata.publishDate,
@@ -732,7 +737,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                         <button
                           key={g.label}
                           title={g.label}
-                          className={`admin-gradient-swatch${metadata.gradient.from === g.from ? ' active' : ''}`}
+                          className={`admin-gradient-swatch${metadata.gradient?.from === g.from ? ' active' : ''}`}
                           style={{ background: `linear-gradient(135deg, ${g.colors[0]}, ${g.colors[1]})` }}
                           onClick={() => updateMetadata('gradient', { from: g.from, to: g.to })}
                         />
