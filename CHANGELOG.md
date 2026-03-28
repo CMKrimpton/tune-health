@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`/howwewrite` linked from footer** — added to Explore column alongside About, Deep Dives, Subscribe
 - **`/howwewrite` linked from about page** — "Read the full editorial manual" link under the "How We Write" section heading
 
+### Changed — Editorial Manual Prose
+- **Voice archetypes renamed** — replaced real-name influences with archetype nicknames: The Prosecutor (forensic structure), The Documentarian (rhythmic economy), The Cartographer (no throat-clearing), The Satirist (zero patience for the gap)
+- **Brevity pass** — trimmed redundant prose across all 8 sections (~20% shorter) while preserving substance
+
 ## [13.0.0] - 2026-03-27
 
 ### Added — Topic Navigation Bar
