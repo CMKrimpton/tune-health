@@ -16,8 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`/howwewrite` linked from about page** — "Read the full editorial manual" link under the "How We Write" section heading
 
 ### Changed — Editorial Manual Prose
-- **Voice archetypes renamed** — replaced real-name influences with archetype nicknames: The Prosecutor (forensic structure), The Documentarian (rhythmic economy), The Cartographer (no throat-clearing), The Satirist (zero patience for the gap)
+- **Voice archetypes renamed** — replaced real-name influences with archetype nicknames: The Prosecutor (forensic structure), The Documentarian (rhythmic economy), The Cartographer (no throat-clearing), The Comedian (holding insiders accountable)
 - **Brevity pass** — trimmed redundant prose across all 8 sections (~20% shorter) while preserving substance
+- **Founding voice rewritten** — Mission and Legitimacy sections now lead with "health obsessives who got tired of the math" and the 90% agenda-driven content problem. No sponsors, no sacred cows, seriously balanced coverage
+- **About page mission aligned** — same founding energy: "exists to push back," 90% line, no sponsors
 
 ## [13.0.0] - 2026-03-27
 
