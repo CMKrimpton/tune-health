@@ -1,0 +1,125 @@
+---
+interface Props {
+  narrationUrl: string;
+  title: string;
+}
+
+const { narrationUrl, title } = Astro.props;
+---
+
+<button
+  class="narration-toggle"
+  aria-label={`Toggle narration for ${title}`}
+  data-narration-toggle
+  data-narration-src={narrationUrl}
+  title="Listen to intro"
+>
+  <!-- Speaker on (playing) -->
+  <svg class="narration-icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+  </svg>
+  <!-- Speaker off (muted / default) -->
+  <svg class="narration-icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+    <line x1="23" y1="9" x2="17" y2="15"/>
+    <line x1="17" y1="9" x2="23" y2="15"/>
+  </svg>
+</button>
+
+<audio data-narration-audio preload="none" src={narrationUrl}></audio>
+
+<script>
+  const STORAGE_KEY = 'alumi-narration-enabled';
+
+  document.addEventListener('astro:page-load', () => {
+    const toggle = document.querySelector('[data-narration-toggle]') as HTMLButtonElement;
+    const audio = document.querySelector('[data-narration-audio]') as HTMLAudioElement;
+    if (!toggle || !audio) return;
+
+    const iconOn = toggle.querySelector('.narration-icon-on') as SVGElement;
+    const iconOff = toggle.querySelector('.narration-icon-off') as SVGElement;
+
+    function setVisual(playing: boolean) {
+      iconOn.style.display = playing ? '' : 'none';
+      iconOff.style.display = playing ? 'none' : '';
+      toggle.classList.toggle('narration-active', playing);
+      toggle.title = playing ? 'Mute narration' : 'Listen to intro';
+    }
+
+    // Check if user previously opted in
+    const enabled = localStorage.getItem(STORAGE_KEY) === 'true';
+
+    if (enabled) {
+      // Auto-play for returning users
+      audio.preload = 'auto';
+      audio.play().then(() => {
+        setVisual(true);
+      }).catch(() => {
+        // Safari blocks autoplay without prior interaction — show muted state
+        setVisual(false);
+      });
+    }
+
+    toggle.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play().then(() => {
+          localStorage.setItem(STORAGE_KEY, 'true');
+          setVisual(true);
+        }).catch(() => {});
+      } else {
+        audio.pause();
+        audio.currentTime = 0;
+        localStorage.setItem(STORAGE_KEY, 'false');
+        setVisual(false);
+      }
+    });
+
+    audio.addEventListener('ended', () => {
+      setVisual(false);
+    });
+  });
+</script>
+
+<style>
+  .narration-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: none;
+    color: var(--stone-400, #a8a29e);
+    cursor: pointer;
+    border-radius: 9999px;
+    transition: color 200ms, background-color 200ms;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .narration-toggle:hover {
+    color: var(--stone-600, #57534e);
+    background: var(--stone-100, #f5f5f4);
+  }
+
+  :global(.dark) .narration-toggle:hover {
+    color: var(--stone-300, #d6d3d1);
+    background: var(--stone-800, #292524);
+  }
+
+  .narration-toggle.narration-active {
+    color: var(--primary-600, #dc2626);
+  }
+
+  .narration-toggle.narration-active:hover {
+    color: var(--primary-700, #b91c1c);
+    background: var(--primary-50, #fef2f2);
+  }
+
+  :global(.dark) .narration-toggle.narration-active:hover {
+    color: var(--primary-400, #f87171);
+    background: var(--primary-900, #450a0a);
+  }
+</style>

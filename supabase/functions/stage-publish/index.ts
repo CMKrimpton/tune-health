@@ -281,6 +281,88 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // ---- POST-PUBLISH NARRATION ----
+    // Generate intro narration via ElevenLabs TTS (non-fatal — article publishes without it)
+    if (supabaseUrl) {
+      const { data: narrationCheck } = await db
+        .from("articles")
+        .select("narration_url")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (!narrationCheck?.narration_url) {
+        console.log(`[Publish] No narration for ${slug} — generating TTS post-publish.`);
+        try {
+          const narRes = await fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({ action: "generate", slug }),
+            signal: AbortSignal.timeout(API_TIMEOUT),
+          });
+          if (narRes.ok) {
+            const narData = await narRes.json();
+            if (narData.success && narData.narrationUrl) {
+              console.log(`[Publish] Narration generated for ${slug}: ${narData.narrationUrl}`);
+
+              // Update the GitHub .json file to include narrationUrl
+              const githubToken = (Deno.env.get("GITHUB_TOKEN") || "").trim();
+              const githubRepo = (Deno.env.get("GITHUB_REPO") || "").trim();
+              if (githubToken && githubRepo) {
+                try {
+                  const jsonPath = `src/content/articles/${slug}.json`;
+                  const apiBase = `https://api.github.com/repos/${githubRepo}`;
+                  const ghHeaders = {
+                    Authorization: `Bearer ${githubToken}`,
+                    Accept: "application/vnd.github.v3+json",
+                    "Content-Type": "application/json",
+                  };
+                  const fileRes = await fetch(`${apiBase}/contents/${jsonPath}?ref=main`, { headers: ghHeaders });
+                  if (fileRes.ok) {
+                    const fileData = await fileRes.json();
+                    const _raw = atob(fileData.content.replace(/\n/g, ""));
+                    const _rawBytes = Uint8Array.from(_raw, c => c.charCodeAt(0));
+                    const existingContent = JSON.parse(new TextDecoder().decode(_rawBytes));
+                    existingContent.narrationUrl = narData.narrationUrl;
+                    const _bytes = new TextEncoder().encode(JSON.stringify(existingContent, null, 2) + "\n");
+                    let _bin = ""; for (const b of _bytes) _bin += String.fromCharCode(b);
+                    const updatedContent = btoa(_bin);
+                    const updateRes = await fetch(`${apiBase}/contents/${jsonPath}`, {
+                      method: "PUT",
+                      headers: ghHeaders,
+                      body: JSON.stringify({
+                        message: `feat: Add narration — '${slug}'`,
+                        content: updatedContent,
+                        sha: fileData.sha,
+                        branch: "main",
+                      }),
+                    });
+                    if (updateRes.ok) {
+                      console.log(`[Publish] Updated GitHub .json with narration for ${slug}`);
+                      const rebuildHook = Deno.env.get("VERCEL_DEPLOY_HOOK");
+                      if (rebuildHook) {
+                        fetch(rebuildHook, { method: "POST" }).catch(() => {});
+                      }
+                    } else {
+                      console.warn(`[Publish] Failed to update GitHub .json with narration: ${updateRes.status}`);
+                    }
+                  }
+                } catch (ghErr) {
+                  console.warn(`[Publish] GitHub .json narration update failed: ${ghErr instanceof Error ? ghErr.message : "unknown"}`);
+                }
+              }
+            }
+          } else {
+            console.warn(`[Publish] Narration generation returned ${narRes.status} for ${slug}`);
+          }
+        } catch (narErr) {
+          console.warn(`[Publish] Narration generation failed for ${slug}: ${narErr instanceof Error ? narErr.message : "unknown"}. Article published without narration.`);
+        }
+      }
+    }
+
     // Smart featured rotation
     const newFeatured = await rotateFeatured(db);
 

@@ -78,6 +78,7 @@ src/
 │   ├── FloatingShareBar.astro # Sticky vertical share sidebar on article pages (desktop xl+)
 │   ├── HighlightShare.astro  # Select text to share quote popup (X, Bluesky, copy)
 │   ├── SeriesNav.astro       # Series prev/next navigation with progress dots
+│   ├── AudioNarration.astro  # ElevenLabs TTS intro narration (speaker icon, localStorage preference)
 │   ├── BookmarkButton.astro  # localStorage reading list / bookmark toggle
 │   └── admin/
 │       └── ArticleEditor.tsx # Admin publishing portal React component
@@ -131,7 +132,7 @@ supabase/
     ├── stage-independence/               # Stage 4: Grok 3 adversarial review + Flash corrections + PubMed
     ├── stage-qc/                         # Stage 5: Flash → Sonnet. QC — publish/rewrite_voice/revise/kill
     ├── stage-voice-rewrite/              # Stage 6: Sonnet → Gemini → GPT-5.4 (skipped for human-written articles)
-    ├── stage-publish/                    # Stage 7: GitHub commit + Vercel hook + GPT Image illustration
+    ├── stage-publish/                    # Stage 7: GitHub commit + Vercel hook + GPT Image illustration + ElevenLabs narration
     ├── pipeline-scout/                   # Scout — 3x/day topic discovery (all Gemini + Google Search)
     ├── pipeline-pinger/                  # Pinger — 4x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
     ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article
@@ -143,6 +144,7 @@ supabase/
     ├── delete-article/                   # (existing) GitHub deletion
     ├── fetch-article/                    # (existing) GitHub fetch
     ├── generate-illustration/            # (existing) AI illustration
+    ├── generate-narration/               # ElevenLabs TTS narration of article description
     └── editorial-qc/                     # (existing) collection-wide QC
 ```
 
@@ -304,7 +306,7 @@ The admin CMS uses a Supabase PostgreSQL database as the source of truth for edi
 - `read_time`, `publish_date`, `sort_order`, `hero_image`, `hero_image_alt`
 - `article_html` (full article body), `article_svg` (deprecated, no longer generated), `toc` (jsonb)
 - `source_text` (original source document), `status` (draft/published/archived)
-- `independence_score` (Grok), `editor_score`, `pipeline_log_id` (FK to daily_article_log)
+- `independence_score` (Grok), `editor_score`, `pipeline_log_id` (FK to daily_article_log), `narration_url`
 - `created_at`, `updated_at`, `published_at`
 
 **Data flow:**
@@ -334,6 +336,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `publish-article` | Commits .astro + .json to GitHub via REST API | ADMIN_TOKEN (Bearer) |
 | `delete-article` | Removes article files from GitHub | ADMIN_TOKEN (Bearer) |
 | `fetch-article` | Fetches .astro file content from GitHub | None |
+| `generate-narration` | ElevenLabs TTS narration of article description → Supabase Storage | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
 
@@ -349,6 +352,7 @@ done
 
 **Required secrets** (set via `supabase secrets set`):
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
+- `ELEVENLABS_API_KEY` (ElevenLabs TTS for article narrations — "Frontline" voice)
 - `XAI_API_KEY` (Grok 3 for independence review + pinger social trending), `GOOGLE_API_KEY` (Gemini for research, scouts, pinger)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
 

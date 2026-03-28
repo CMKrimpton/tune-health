@@ -14,6 +14,7 @@ import BookmarkButton from '../components/BookmarkButton.astro';
 import FloatingShareBar from '../components/FloatingShareBar.astro';
 import HighlightShare from '../components/HighlightShare.astro';
 import SideNav from '../components/SideNav.astro';
+import AudioNarration from '../components/AudioNarration.astro';
 import { fade, slide } from 'astro:transitions';
 import { getRelatedArticles, getArticleGradientStyle, getArticles, getNextInCategory } from '../utils/articles';
 
@@ -45,6 +46,7 @@ const relatedArticles = await getRelatedArticles(slug, 3);
 const allArticles = await getArticles();
 const currentArticle = allArticles.find((a) => a.slug === slug);
 const resolvedOgImage = ogImage || currentArticle?.heroImage || '/assets/og-image.png';
+const narrationUrl = currentArticle?.narrationUrl;
 const articleSeries = currentArticle?.series;
 const nextArticle = await getNextInCategory(slug);
 ---
@@ -99,6 +101,12 @@ const nextArticle = await getNextInCategory(slug);
           <span class="text-xs text-stone-500 uppercase tracking-wide">{publishDate}</span>
           <span class="text-stone-300 dark:text-stone-700">/</span>
           <span class="text-xs text-stone-500 uppercase tracking-wide">{readTime}</span>
+          {narrationUrl && (
+            <>
+              <span class="text-stone-300 dark:text-stone-700">/</span>
+              <AudioNarration narrationUrl={narrationUrl} title={title} />
+            </>
+          )}
         </div>
 
         <h1

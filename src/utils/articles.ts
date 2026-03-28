@@ -16,6 +16,7 @@ export interface Article {
   featured: boolean;
   heroImage?: string;
   heroImageAlt?: string;
+  narrationUrl?: string;
   comingSoon: boolean;
   href: string;
   sortOrder?: number;
@@ -36,6 +37,7 @@ function mapArticle(article: CollectionEntry<'articles'>): Article {
     featured: article.data.featured,
     heroImage: article.data.heroImage,
     heroImageAlt: article.data.heroImageAlt,
+    narrationUrl: article.data.narrationUrl,
     comingSoon: article.data.comingSoon ?? false,
     sortOrder: article.data.sortOrder,
     href: `/articles/${article.id.replace('.json', '')}`,

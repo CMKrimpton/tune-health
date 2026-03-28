@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [14.1.0] - 2026-03-28
+
+### Added — Article Intro Narration (ElevenLabs TTS)
+- **ElevenLabs v3 integration** — article descriptions narrated by custom "Frontline" voice, stored as MP3 in Supabase Storage
+- **New edge function `generate-narration`** — extracts article description, calls ElevenLabs TTS API, uploads to `article-narrations` storage bucket, updates `narration_url` in articles table
+- **Pipeline integration** — `stage-publish` auto-generates narration post-publish (after illustration), updates GitHub JSON, triggers Vercel rebuild. Non-fatal — articles publish without narration if TTS fails
+- **Elegant UX** — small speaker icon inline with article metadata (category / date / read time / speaker). First tap enables narration and saves preference to localStorage. Subsequent articles auto-play. Tap again to mute
+- **Batch backfill** — `generate-narration` supports `{ action: "batch" }` to narrate existing articles in chunks of 20
+- **Voice settings** — stability 0.3, similarity 0.7, style 0.6, speaker boost on, centralized in `_shared/constants.ts`
+- **Content schema** — `narrationUrl` added to Zod schema, Article interface, and mapArticle function
+- **Database** — `narration_url` text column on articles table, `article-narrations` public storage bucket
+
 ## [14.0.0] - 2026-03-27
 
 ### Changed — Admin UI Redesign (Bloomberg Terminal Style)

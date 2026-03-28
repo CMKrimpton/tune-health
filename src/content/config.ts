@@ -27,6 +27,7 @@ const articles = defineCollection({
     // For collection-driven homepage and article cards
     heroImage: z.string().optional(),
     heroImageAlt: z.string().optional(),
+    narrationUrl: z.string().optional(),
     sortOrder: z.number().optional(),
     comingSoon: z.boolean().default(false),
     // Series support

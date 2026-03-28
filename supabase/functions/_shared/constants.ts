@@ -103,6 +103,18 @@ export const MODELS = {
 
   // Image generation
   ILLUSTRATION: "gpt-image-1",
+
+  // Narration (ElevenLabs TTS)
+  NARRATION_MODEL: "eleven_v3",
+  NARRATION_VOICE: "JpssfnWJAdLHxP1IhHpx", // "Frontline" custom voice
+} as const;
+
+export const NARRATION_SETTINGS = {
+  stability: 0.3,
+  similarity_boost: 0.7,
+  style: 0.6,
+  use_speaker_boost: true,
+  speed: 1.0,
 } as const;
 
 // Fallback chains — ordered by preference
