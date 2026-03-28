@@ -196,6 +196,7 @@ export default function ArticleEditor() {
         setSourceFormat('html');
         setStatusMessage('');
       } catch {
+        setStatusMessage('');
         setError('Failed to parse DOCX. Try pasting the text instead.');
         return;
       }
@@ -280,7 +281,7 @@ export default function ArticleEditor() {
 
       // Save to database
       try {
-        await fetch(`${API_BASE}/articles-api`, {
+        const saveRes = await fetch(`${API_BASE}/articles-api`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
@@ -304,6 +305,7 @@ export default function ArticleEditor() {
             }
           }),
         });
+        if (!saveRes.ok) throw new Error(`DB save returned ${saveRes.status}`);
       } catch {
         // Non-blocking — don't fail if DB save fails, article is still in local state
         setStatusMessage('Note: could not save to database, but article is available locally.');
@@ -351,10 +353,18 @@ export default function ArticleEditor() {
         timestamp: Date.now(),
       }]);
 
-      // Save draft immediately
+      // Save draft immediately (include initial chat + snapshot so refresh doesn't lose them)
+      const initialChat: ChatMessage[] = [{
+        role: 'assistant',
+        content: `Article generated: "${data.metadata.title}" (${data.metadata.readTime} min read, ${wordCount(data.html)} words).\n\nYou can refine it using the chat or quick actions below, edit the metadata on the left, or publish when ready.`,
+        timestamp: Date.now(),
+      }];
+      const initialSnaps: ArticleSnapshot[] = [{
+        article: data, metadata: data.metadata, label: 'Initial generation', timestamp: Date.now(),
+      }];
       saveDraft({
         state: 'preview', sourceText, article: data, metadata: data.metadata,
-        chatMessages: [], snapshots: [],
+        chatMessages: initialChat, snapshots: initialSnaps,
       });
     } catch (err: unknown) {
       timers.forEach(clearTimeout);
@@ -412,7 +422,7 @@ export default function ArticleEditor() {
       try {
         const m = data.metadata || metadata;
         if (m) {
-          await fetch(`${API_BASE}/articles-api`, {
+          const syncRes = await fetch(`${API_BASE}/articles-api`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
             body: JSON.stringify({
@@ -420,6 +430,7 @@ export default function ArticleEditor() {
               article: { slug: m.slug, article_html: data.html }
             }),
           });
+          if (!syncRes.ok) console.warn('DB sync failed after refinement:', syncRes.status);
         }
       } catch {
         // Non-blocking — refinement succeeded even if DB sync failed
@@ -520,7 +531,7 @@ export default function ArticleEditor() {
 
       // Update database status to published
       try {
-        await fetch(`${API_BASE}/articles-api`, {
+        const statusRes = await fetch(`${API_BASE}/articles-api`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
@@ -532,6 +543,7 @@ export default function ArticleEditor() {
             }
           }),
         });
+        if (!statusRes.ok) console.warn('DB status update failed after publish:', statusRes.status);
       } catch {
         // Non-blocking — publish to GitHub succeeded even if DB status update failed
       }

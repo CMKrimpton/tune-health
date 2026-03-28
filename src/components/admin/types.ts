@@ -115,6 +115,7 @@ export interface ArticleRecord {
   independence_score: number | null;
   editor_score: number | null;
   pipeline_log_id: string | null;
+  narration_url: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;

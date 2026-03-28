@@ -98,7 +98,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
   const [scouting, setScouting] = useState<string | null>(null);
   const [scoutResult, setScoutResult] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashFeedback = useCallback((ok: boolean, msg: string) => {
+    setActionFeedback({ ok, msg });
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 4000);
+  }, []);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -140,6 +148,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'produce' }),
       });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       const result = data.result || data;
       if (data.skipped || result.skipped) {
@@ -169,6 +178,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'scout', scoutModel: model }),
       });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       setScoutResult(`${model}: ${data.message || data.error || 'done'}`);
     } catch (err) {
@@ -189,9 +199,10 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({ action: 'scout', scoutModel: model }),
         });
+        if (!res.ok) throw new Error(`API error ${res.status}`);
         const data = await res.json();
         setScoutResult(prev => (prev ? prev + '\n' : '') + `${model}: ${data.message || data.error || 'done'}`);
-      } catch { /* continue to next */ }
+      } catch (err) { setScoutResult(prev => (prev ? prev + '\n' : '') + `${model}: ${err instanceof Error ? err.message : 'failed'}`); }
     }
     setScouting(null);
     setTimeout(fetchStatus, 2000);
@@ -199,25 +210,29 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const requeueFromFailed = async (logId: string, topic: string) => {
     try {
-      await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'queue-topic', topic, priority: 1, expedite: true }),
       });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      flashFeedback(true, `Re-queued: "${topic.slice(0, 50)}"`);
       setTimeout(fetchStatus, 1000);
-    } catch { /* ignore */ }
+    } catch (err) { flashFeedback(false, `Re-queue failed: ${err instanceof Error ? err.message : 'unknown'}`); }
   };
 
   const retryArticle = async (logId: string) => {
     setRetryingId(logId);
     try {
-      await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'retry', logId }),
       });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      flashFeedback(true, 'Retry dispatched');
       setTimeout(fetchStatus, 2000);
-    } catch { /* next poll */ }
+    } catch (err) { flashFeedback(false, `Retry failed: ${err instanceof Error ? err.message : 'unknown'}`); }
     finally { setRetryingId(null); }
   };
 
@@ -263,11 +278,11 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     try {
       const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'produce-topic', queueId }),
       });
       const data = await res.json();
-      if (data.error) {
+      if (!res.ok || data.error) {
         setProduceResult(`Error: ${data.error}`);
       } else {
         setProduceResult(data.message || `Dispatched research for "${topic.replace(/\*\*/g, '').slice(0, 60)}"`);
@@ -280,39 +295,49 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   };
 
   const updateQueueItem = async (queueId: string, updates: Record<string, unknown>) => {
+    const prev = queue.find(q => q.id === queueId);
     try {
-      await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'update-queue', queueId, ...updates }),
       });
-      setQueue(prev => prev.map(q => q.id === queueId ? { ...q, ...updates } as QueueItem : q));
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      setQueue(q => q.map(item => item.id === queueId ? { ...item, ...updates } as QueueItem : item));
       setTimeout(fetchStatus, 1000);
-    } catch { /* next poll */ }
+    } catch (err) {
+      flashFeedback(false, `Update failed: ${err instanceof Error ? err.message : 'unknown'}`);
+      // Rollback: restore previous state via refetch
+      if (prev) setTimeout(fetchStatus, 500);
+    }
   };
 
   const deleteQueueItem = async (queueId: string) => {
     try {
-      await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'delete-queue', queueId }),
       });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      flashFeedback(true, 'Topic removed from queue');
       setTimeout(fetchStatus, 500);
-    } catch { /* ignore */ }
+    } catch (err) { flashFeedback(false, `Delete failed: ${err instanceof Error ? err.message : 'unknown'}`); }
   };
 
   const killArticle = async (logId: string) => {
     if (!confirm('Kill this article? It will be marked as failed and removed from the pipeline.')) return;
     setKillingId(logId);
     try {
-      await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'kill-article', logId, reason: 'Killed by admin from Mission Control' }),
       });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      flashFeedback(true, 'Article killed');
       setTimeout(fetchStatus, 1000);
-    } catch { /* ignore */ }
+    } catch (err) { flashFeedback(false, `Kill failed: ${err instanceof Error ? err.message : 'unknown'}`); }
     finally { setKillingId(null); }
   };
 
@@ -325,7 +350,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       for (const log of briefLogs) {
         await fetch(`${apiBase}/pipeline-admin`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({ action: 'kill-article', logId: log.id, reason: 'Cleared by admin — stale brief' }),
         });
       }
@@ -459,6 +484,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         <div className={`admin-toast ${produceResult.includes('Error') || produceResult.includes('Skipped') ? 'admin-toast-error' : 'admin-toast-success'}`}>
           <span>{produceResult}</span>
           <button className="admin-toast-dismiss" onClick={() => setProduceResult(null)}>{'\u00d7'}</button>
+        </div>
+      )}
+      {actionFeedback && (
+        <div className={`admin-toast ${actionFeedback.ok ? 'admin-toast-success' : 'admin-toast-error'}`}>
+          <span>{actionFeedback.msg}</span>
+          <button className="admin-toast-dismiss" onClick={() => setActionFeedback(null)}>{'\u00d7'}</button>
         </div>
       )}
 
@@ -1028,9 +1059,10 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || (rd as PipelineR
     try {
       const res = await fetch(`${apiBase}/pipeline-admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'submit-article', logId: log.id, articleHtml: articleHtml.trim(), ...(writerTitle.trim() ? { title: writerTitle.trim() } : {}) }),
       });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       if (data.success) {
         setSubmitResult('Article submitted! Pipeline resuming with Grok independence review.');

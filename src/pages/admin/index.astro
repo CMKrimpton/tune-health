@@ -14,6 +14,7 @@ interface ArticleRecord {
   read_time: number; publish_date: string; updated_at: string; status: string;
   coming_soon: boolean; draft: boolean; gradient_from: string; gradient_to: string;
   keywords: string[]; hero_image_alt: string; sort_order: number;
+  narration_url: string | null;
 }
 
 let articles: ArticleRecord[] = [];
@@ -54,6 +55,7 @@ try {
 const published = articles.filter(a => a.status === 'published' && !a.coming_soon);
 const drafts = articles.filter(a => a.status === 'draft' && !a.coming_soon);
 const withIllustration = articles.filter(a => a.hero_image);
+const withNarration = articles.filter(a => a.narration_url);
 const featuredCount = published.filter(a => a.featured).length;
 const avgReadTime = articles.length > 0 ? Math.round(articles.reduce((s, a) => s + (a.read_time || 0), 0) / articles.length) : 0;
 const avgCostPerArticle = published.length > 0 && totalCost > 0 ? (totalCost / published.length).toFixed(2) : '—';
@@ -117,6 +119,10 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
       <div class="admin-stat-card">
         <span class="admin-stat-number" style={withIllustration.length < articles.length ? "color: #f59e0b" : "color: #22c55e"}>{withIllustration.length}</span>
         <span class="admin-stat-label">Illustrated</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-number" style={withNarration.length < articles.length ? "color: #f59e0b" : "color: #22c55e"}>{withNarration.length}</span>
+        <span class="admin-stat-label">Narrated</span>
       </div>
       <div class="admin-stat-card">
         <span class="admin-stat-number">{avgReadTime}m</span>

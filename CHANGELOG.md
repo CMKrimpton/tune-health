@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [14.2.0] - 2026-03-28
+
+### Fixed — Admin Auth & Error Handling Overhaul
+- **Edit page saves were returning 401 Unauthorized** — `doSaveMetadata()`, `doSaveContent()`, and save-refined-article all called `articles-api` without Authorization header. Every save, autosave, and Cmd+S silently failed. Fixed all 3 calls
+- **PipelineMonitor missing auth on 3 calls** — `produce-topic`, `submit-article`, and `clearAllBriefs` loop now send Authorization header
+- **7 PipelineMonitor operations silently swallowed errors** — requeue, retry, update queue, delete queue, kill article now show success/failure toast via new `flashFeedback` system
+- **6 fetch calls missing `res.ok` checks** — `triggerRun`, `triggerSingleScout`, `triggerScout`, `produceFromQueue`, `submit-article` now verify response status before parsing JSON
+- **3 ArticleEditor DB saves missing status checks** — initial draft save, refine sync, publish status update now check `res.ok`
+- **Edit page autosave race condition** — added `autosaveInFlight` mutex to prevent concurrent saves
+- **Refine result triggered redundant autosave** — `suppressAutosave` flag prevents content textarea input event from firing during programmatic value set
+- **Status messages persisted forever** — metadata/content save confirmations now auto-clear after 4 seconds
+- **Refine save error used `alert()`** — now uses the `refineError` div consistent with other error patterns
+- **Draft persistence lost initial chat/snapshot** — `saveDraft()` now includes generation message and initial snapshot instead of empty arrays
+- **DOCX parse error left stale status** — "Parsing DOCX..." message now cleared on failure
+- **Illustration result used `dangerouslySetInnerHTML`** — replaced with safe JSX rendering + separate `resultUrl` state
+- **PipelineMonitor optimistic update without rollback** — `updateQueueItem` now refetches on failure
+
+### Added — Narration Data in Admin
+- **Dashboard stats bar** — new "Narrated" stat card showing article narration coverage (yellow if incomplete, green if all narrated)
+- **Articles tab narration indicator** — each article row shows 🔊 (has narration) or 🔇 (missing) next to illustration indicator
+- **Edit page narration field** — "Narration URL" input in metadata form, saved with autosave
+- **`narration_url` added to `ArticleRecord` type** — all admin components can now access narration data
+
 ## [14.1.0] - 2026-03-28
 
 ### Added — Article Intro Narration (ElevenLabs TTS)

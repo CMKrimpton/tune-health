@@ -574,6 +574,7 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
   const [result, setResult] = useState<string | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -597,6 +598,7 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
 
   const runBatch = useCallback(async (force: boolean) => {
     setResult(null);
+    setResultUrl(null);
     setLoading(true);
     setProgress(0);
     setLoadingText(force ? 'Regenerating all illustrations...' : 'Generating missing illustrations...');
@@ -641,8 +643,8 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
       if (!res.ok) throw new Error(data.error || 'Generation failed');
 
       setProgress(100);
-      const link = data.imageUrl ? ` <a href="${data.imageUrl}" target="_blank" style="color:#6ee7b7;text-decoration:underline">View</a>` : '';
-      setResult(`Illustration generated for "${selectedSlug}"${link}`);
+      setResultUrl(data.imageUrl || null);
+      setResult(`Illustration generated for "${selectedSlug}"`);
     } catch (err) {
       alert('Generation error: ' + ((err as Error).message || 'Unknown error'));
     } finally {
@@ -706,7 +708,14 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
       {/* Results */}
       {result && !loading && (
         <div>
-          <p className="admin-text-base agents-result-line-height admin-color-secondary" dangerouslySetInnerHTML={{ __html: result.startsWith('Batch') ? `<span style="color:#fbbf24">${result}</span>` : `<span style="color:#4ade80">&#10003; ${result}</span>` }} />
+          <p className="admin-text-base agents-result-line-height admin-color-secondary">
+            <span style={{ color: result.startsWith('Batch') ? '#fbbf24' : '#4ade80' }}>
+              {result.startsWith('Batch') ? '' : '\u2713 '}{result}
+            </span>
+            {resultUrl && (
+              <> <a href={resultUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#6ee7b7', textDecoration: 'underline' }}>View</a></>
+            )}
+          </p>
           <div className="agents-progress-bar">
             <div className="agents-progress-fill" style={{ width: `${progress}%` }} />
           </div>

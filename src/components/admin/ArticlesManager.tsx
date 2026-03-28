@@ -513,6 +513,13 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                     >
                       {article.hero_image ? '\u25C9' : '\u25CB'}
                     </span>
+                    {/* Narration indicator */}
+                    <span
+                      className={`articles-hero-indicator ${article.narration_url ? 'articles-hero-yes' : 'articles-hero-no'}`}
+                      title={article.narration_url ? 'Has narration' : 'Missing narration'}
+                    >
+                      {article.narration_url ? '\uD83D\uDD0A' : '\uD83D\uDD07'}
+                    </span>
                   </div>
                 </div>
 
