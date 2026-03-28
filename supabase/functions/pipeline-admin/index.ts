@@ -640,6 +640,92 @@ Deno.serve(async (req: Request) => {
       return json({ success: true, slug, status: "written", message: "Article saved. Independence review dispatched immediately." });
     }
 
+    // ------ SUBMIT-NEW-ARTICLE — create pipeline log + feed into independence review ------
+    // Used by /admin/new ArticleEditor when generating articles outside the pipeline.
+    // Creates a fresh pipeline log entry and dispatches to independence review.
+    if (action === "submit-new-article") {
+      const articleHtml = body.articleHtml as string;
+      const title = (body.title as string)?.trim();
+      const slug = (body.slug as string)?.trim();
+      const description = (body.description as string)?.trim() || "";
+      const category = (body.category as string)?.trim() || "Clinical Evidence";
+      const tags = (body.tags as string[]) || [];
+      const keywords = (body.keywords as string[]) || [];
+
+      if (!articleHtml || !title || !slug) {
+        return json({ error: "articleHtml, title, and slug are required" }, 400);
+      }
+
+      // Parse TOC from the HTML
+      const tocMatches = [...articleHtml.matchAll(/<section[^>]*id="([^"]+)"[^>]*>[\s\S]*?<h2[^>]*>([^<]+)<\/h2>/gi)];
+      const toc = tocMatches.map(m => ({ id: m[1], title: m[2].trim() }));
+
+      const plainText = articleHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      const wordCount = plainText.split(/\s+/).length;
+      const readTime = Math.ceil(wordCount / 220);
+
+      const gradient = getCategoryGradient(category);
+      const metadata = { title, slug, description, category, tags, keywords, gradient };
+
+      // 1. Create pipeline log entry in "written" status
+      const { data: logEntry, error: logInsertErr } = await db.from("daily_article_log").insert({
+        topic: title,
+        slug,
+        title,
+        status: "written",
+        model_used: "admin-editor",
+        source: "admin-editor",
+        stage_started_at: new Date().toISOString(),
+        research_data: {
+          topic: title,
+          category,
+          tags,
+          keywords,
+          _article: { metadata, html: articleHtml, toc, readTime },
+          _writtenBy: "admin-editor",
+        },
+        token_usage: [
+          { model: "admin-editor", stage: "write", inputTokens: 0, outputTokens: 0, costUsd: 0 },
+        ],
+        cost_usd: 0,
+      }).select("id").single();
+
+      if (logInsertErr || !logEntry) {
+        return json({ error: `Failed to create pipeline log: ${logInsertErr?.message}` }, 500);
+      }
+
+      const logId = logEntry.id;
+
+      // 2. Upsert article to articles table as draft (link to pipeline log)
+      const { error: upsertErr } = await db.from("articles").upsert({
+        slug,
+        title,
+        description,
+        category,
+        tags,
+        keywords,
+        gradient_from: gradient.from,
+        gradient_to: gradient.to,
+        featured: false,
+        draft: true,
+        coming_soon: false,
+        read_time: readTime,
+        publish_date: new Date().toISOString().split("T")[0],
+        article_html: articleHtml,
+        toc,
+        source_text: `[Admin Editor — ${new Date().toISOString().split("T")[0]}]`,
+        status: "draft",
+        pipeline_log_id: logId,
+      }, { onConflict: "slug" });
+
+      if (upsertErr) return json({ error: `Failed to save article: ${upsertErr.message}` }, 500);
+
+      // 3. Chain-dispatch independence review immediately
+      await dispatchStage("stage-independence", logId);
+      console.log(`[Admin] New article "${slug}" submitted via editor — dispatched stage-independence`);
+      return json({ success: true, slug, logId, status: "written", message: "Article entered pipeline. Independence review dispatched." });
+    }
+
     // ------ GET-BRIEF — fetch formatted editorial brief for Claude ------
     if (action === "get-brief") {
       const logId = body.logId as string;

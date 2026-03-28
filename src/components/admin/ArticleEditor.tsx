@@ -487,12 +487,12 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     return errors;
   }, [metadata]);
 
-  const publishArticle = useCallback(async () => {
+  const submitToPipeline = useCallback(async () => {
     if (!article || !metadata) return;
 
     const errors = validateMetadata();
     if (errors.length > 0) {
-      setError(`Fix before publishing: ${errors.join(', ')}`);
+      setError(`Fix before submitting: ${errors.join(', ')}`);
       setShowPublishConfirm(false);
       return;
     }
@@ -500,58 +500,27 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     setIsPublishing(true);
     setState('publishing');
     setShowPublishConfirm(false);
-    setStatusMessage('Committing to GitHub...');
+    setStatusMessage('Submitting to pipeline — independence review next...');
 
     try {
-      const astroContent = assembleAstroFile(article, metadata);
-
-      const res = await fetch(`${API_BASE}/publish-article`, {
+      const res = await fetch(`${API_BASE}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
+          action: 'submit-new-article',
+          articleHtml: article.html,
+          title: metadata.title,
           slug: metadata.slug,
-          astroContent,
-          metadata: {
-            title: metadata.title,
-            description: metadata.description,
-            category: metadata.category,
-            publishDate: metadata.publishDate,
-            author: { name: 'alumi news Editorial', role: 'Medical Review Board' },
-            readTime: metadata.readTime,
-            featured: metadata.featured,
-            draft: false,
-            tags: metadata.tags,
-            gradient: metadata.gradient,
-            keywords: metadata.keywords,
-            heroImage: metadata.heroImage || undefined,
-            heroImageAlt: metadata.heroImageAlt || undefined,
-          },
-          commitMessage: `feat: Add '${metadata.title}' article`,
+          description: metadata.description,
+          category: metadata.category,
+          tags: metadata.tags,
+          keywords: metadata.keywords,
         }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Publish failed');
-      }
-
-      // Update database status to published
-      try {
-        const statusRes = await fetch(`${API_BASE}/articles-api`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
-          body: JSON.stringify({
-            action: 'save',
-            article: {
-              slug: metadata.slug,
-              status: 'published',
-              published_at: new Date().toISOString(),
-            }
-          }),
-        });
-        if (!statusRes.ok) console.warn('DB status update failed after publish:', statusRes.status);
-      } catch {
-        // Non-blocking — publish to GitHub succeeded even if DB status update failed
+        throw new Error(err.error || 'Pipeline submission failed');
       }
 
       setState('done');
@@ -559,12 +528,12 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
       clearDraft();
       setChatMessages(prev => [...prev, {
         role: 'assistant',
-        content: `Published! Vercel is rebuilding now. Your article will be live at /articles/${metadata.slug} within ~60 seconds.`,
+        content: `Submitted to pipeline! Grok independence review → QC → publish will run automatically. Track progress on the Dashboard → Pipeline tab.`,
         timestamp: Date.now(),
       }]);
     } catch (err: unknown) {
       setState('preview');
-      setError(err instanceof Error ? err.message : 'Publish failed.');
+      setError(err instanceof Error ? err.message : 'Pipeline submission failed.');
       setStatusMessage('');
     } finally {
       setIsPublishing(false);
@@ -884,8 +853,8 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                     validationErrors.length > 0 ? 'admin-status-dot-error' :
                     'admin-status-dot-ready'
                   }`}/>
-                  {state === 'done' ? 'Published' :
-                   state === 'publishing' ? 'Publishing...' :
+                  {state === 'done' ? 'In Pipeline' :
+                   state === 'publishing' ? 'Submitting...' :
                    validationErrors.length > 0 ? `${validationErrors.length} issue${validationErrors.length > 1 ? 's' : ''}` :
                    'Ready'}
                 </div>
@@ -898,8 +867,8 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
               </div>
               {state === 'done' ? (
                 <div className="admin-flex admin-gap-md">
-                  <a href={`/articles/${metadata?.slug}`} target="_blank" className="admin-publish-btn admin-publish-btn-view">
-                    View Article
+                  <a href="/admin#pipeline" className="admin-publish-btn admin-publish-btn-view">
+                    Track in Pipeline
                   </a>
                   <button onClick={startOver} className="admin-publish-btn admin-publish-btn-dark">
                     New Article
@@ -907,9 +876,9 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                 </div>
               ) : showPublishConfirm ? (
                 <div className="admin-flex-center admin-gap-md">
-                  <span className="admin-text-base admin-color-secondary">Publish to production?</span>
-                  <button className="admin-publish-btn" onClick={publishArticle} disabled={isPublishing}>
-                    {isPublishing ? 'Publishing...' : 'Confirm'}
+                  <span className="admin-text-base admin-color-secondary">Submit to pipeline?</span>
+                  <button className="admin-publish-btn" onClick={submitToPipeline} disabled={isPublishing}>
+                    {isPublishing ? 'Submitting...' : 'Confirm'}
                   </button>
                   <button className="admin-cancel-btn admin-cancel-btn-compact" onClick={() => setShowPublishConfirm(false)}>
                     Cancel
@@ -921,7 +890,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                   onClick={() => setShowPublishConfirm(true)}
                   disabled={isPublishing || validationErrors.length > 0}
                 >
-                  Publish to GitHub
+                  Submit to Pipeline
                 </button>
               )}
             </div>
@@ -951,49 +920,4 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
       </div>
     </div>
   );
-}
-
-// ─── Assemble .astro file ───────────────────────────────────────────
-
-function assembleAstroFile(article: GeneratedArticle, metadata: ArticleMetadata): string {
-  const publishDate = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-  const tagsHtml = metadata.tags
-    .map(tag => `    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">${tag}</span>`)
-    .join('\n');
-
-  const tocHtml = article.toc
-    .map(item => `      <a href="#${item.id}" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">${item.title}</a>`)
-    .join('\n');
-
-  return `---
-import ArticleLayout from '../../layouts/ArticleLayout.astro';
----
-
-<ArticleLayout
-  title="${metadata.title.replace(/"/g, '&quot;')}"
-  description="${metadata.description.replace(/"/g, '&quot;')}"
-  category="${metadata.category}"
-  readTime="${metadata.readTime} min read"
-  publishDate="${publishDate}"
->
-  <!-- Table of Contents -->
-  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
-    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
-    <nav class="space-y-2">
-${tocHtml}
-    </nav>
-  </div>
-
-  <!-- Article Content -->
-  <div class="article-content">
-${article.html}
-  </div>
-
-  <!-- Tags -->
-  <Fragment slot="tags">
-${tagsHtml}
-  </Fragment>
-</ArticleLayout>
-`;
 }
