@@ -4,6 +4,7 @@ import {
   getAdminToken,
   VALID_CATEGORIES,
   GRADIENT_PRESETS,
+  CATEGORY_GRADIENTS,
 } from './types';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -263,14 +264,20 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
 
       const data: GeneratedArticle = await res.json();
 
-      // Auto-generate slug if missing
-      if (data.metadata && !data.metadata.slug) {
-        data.metadata.slug = slugify(data.metadata.title);
-      }
-
-      // Set today's date
+      // Fill in missing metadata fields the API doesn't return
       if (data.metadata) {
+        if (!data.metadata.slug) {
+          data.metadata.slug = slugify(data.metadata.title);
+        }
         data.metadata.publishDate = new Date().toISOString().split('T')[0];
+        if (!data.metadata.gradient) {
+          const cat = CATEGORY_GRADIENTS[data.metadata.category];
+          data.metadata.gradient = cat
+            ? { from: cat.from, to: cat.to }
+            : { from: 'rose-600', to: 'red-700' };
+        }
+        if (!data.metadata.heroImage) data.metadata.heroImage = '';
+        if (!data.metadata.heroImageAlt) data.metadata.heroImageAlt = '';
       }
 
       setArticle(data);
