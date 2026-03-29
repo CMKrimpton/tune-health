@@ -298,21 +298,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     try {
       if (ext === 'md' || ext === 'txt' || ext === 'html' || ext === 'htm') {
         setUploadHtml(await file.text());
-      } else if (ext === 'docx') {
-        const mammoth = await import('mammoth');
-        const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
-        setUploadHtml(result.value);
-      } else if (ext === 'pdf') {
-        // PDF extraction runs server-side to avoid bloating the client bundle
-        const formData = new FormData();
-        formData.append('file', file);
+      } else if (ext === 'docx' || ext === 'pdf') {
+        // DOCX and PDF parsing runs server-side to keep client bundle small
         const res = await fetch(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
-          body: JSON.stringify({ action: 'parse-pdf', pdfBase64: await fileToBase64(file) }),
+          body: JSON.stringify({ action: 'parse-file', fileBase64: await fileToBase64(file), fileName: file.name }),
         });
         const data = await res.json();
-        if (!res.ok || data.error) throw new Error(data.error || 'PDF parse failed');
+        if (!res.ok || data.error) throw new Error(data.error || 'File parse failed');
         setUploadHtml(data.text || '');
       } else {
         flashFeedback(false, `Unsupported: .${ext}. Use .pdf, .md, .txt, .html, or .docx`);
