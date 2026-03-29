@@ -103,6 +103,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [uploadResult, setUploadResult] = useState<string | null>(null);
   const [uploadParsing, setUploadParsing] = useState(false);
   const [uploadEntry, setUploadEntry] = useState<'full' | 'independence'>('full');
+  const [uploadDragOver, setUploadDragOver] = useState(false);
   const uploadFileRef = useRef<HTMLInputElement>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
@@ -698,12 +699,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               <input ref={uploadFileRef} type="file" accept=".md,.txt,.html,.htm,.docx" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }} />
             </div>
             <textarea
-              placeholder={uploadEntry === 'full' ? 'Paste source material, notes, study text, or a draft (optional — research will supplement)' : 'Paste finished article HTML here, or upload a file above'}
+              placeholder={uploadEntry === 'full' ? 'Paste or drop source material, notes, study text, or a draft (optional)' : 'Paste or drop finished article HTML, or use the file button above'}
               value={uploadHtml}
               onChange={e => setUploadHtml(e.target.value)}
+              onDragOver={e => { e.preventDefault(); setUploadDragOver(true); }}
+              onDragLeave={() => setUploadDragOver(false)}
+              onDrop={e => { e.preventDefault(); setUploadDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleUploadFile(f); }}
               rows={4}
               className="pipeline-queue-input"
-              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', resize: 'vertical', minHeight: '80px' }}
+              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', resize: 'vertical', minHeight: '80px', borderColor: uploadDragOver ? '#ef4444' : undefined, background: uploadDragOver ? 'rgba(239,68,68,0.05)' : undefined }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.375rem' }}>
               <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>
