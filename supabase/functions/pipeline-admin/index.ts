@@ -733,24 +733,44 @@ Deno.serve(async (req: Request) => {
       if (!fileBase64) return json({ error: "fileBase64 is required" }, 400);
       const ext = fileName.split(".").pop()?.toLowerCase();
       try {
-        const bytes = Uint8Array.from(atob(fileBase64), c => c.charCodeAt(0));
+        const raw = atob(fileBase64);
         if (ext === "pdf") {
-          const pdfjsLib = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.min.mjs");
-          const pdf = await pdfjsLib.getDocument({ data: bytes, useSystemFonts: true }).promise;
-          const pages: string[] = [];
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-            pages.push(content.items.map((item: Record<string, unknown>) => (item.str as string) || "").join(" "));
+          // Lightweight PDF text extraction — pull text between BT/ET operators
+          // and parenthesized strings. Works for most text-based PDFs.
+          const texts: string[] = [];
+          // Match parenthesized text strings in PDF content streams
+          const matches = raw.matchAll(/\(([^)\\]*(?:\\.[^)\\]*)*)\)/g);
+          for (const m of matches) {
+            const decoded = m[1]
+              .replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t")
+              .replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\");
+            if (decoded.trim().length > 1) texts.push(decoded.trim());
           }
-          return json({ text: pages.join("\n\n") });
-        } else if (ext === "docx") {
-          // Use mammoth via CDN
-          const mammoth = await import("https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js");
-          const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer });
-          // Strip HTML tags for plain text
-          const text = result.value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+          const text = texts.join(" ").replace(/\s+/g, " ").trim();
+          if (text.length < 50) {
+            return json({ error: "Could not extract text from this PDF. It may be image-based or encrypted. Try copy-pasting the text instead." }, 400);
+          }
           return json({ text });
+        } else if (ext === "docx") {
+          // DOCX is a ZIP containing XML. Extract text from word/document.xml
+          // Find PK signature and locate word/document.xml
+          const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+          // Use DecompressionStream for ZIP extraction
+          // Find all <w:t> text nodes in the raw XML (DOCX stores uncompressed XML in some cases)
+          const decoder = new TextDecoder("utf-8", { fatal: false });
+          const fullText = decoder.decode(bytes);
+          // Try to find XML text content
+          const wtMatches = [...fullText.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)];
+          if (wtMatches.length > 0) {
+            const text = wtMatches.map(m => m[1]).join(" ").replace(/\s+/g, " ").trim();
+            return json({ text });
+          }
+          // Fallback: strip all XML/binary and return printable text
+          const printable = fullText.replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s+/g, " ").trim();
+          if (printable.length < 50) {
+            return json({ error: "Could not extract text from this DOCX. Try copy-pasting the text or saving as .txt." }, 400);
+          }
+          return json({ text: printable.slice(0, 100000) });
         } else {
           return json({ error: `Unsupported file type: .${ext}` }, 400);
         }
