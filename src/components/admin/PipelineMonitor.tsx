@@ -294,10 +294,18 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
         setUploadHtml(result.value);
       } else if (ext === 'pdf') {
-        flashFeedback(false, 'PDF not supported yet — paste the text or use .docx/.md/.txt');
-        return;
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+        const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+        const pages: string[] = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          pages.push(content.items.map((item: { str?: string }) => item.str ?? '').join(' '));
+        }
+        setUploadHtml(pages.join('\n\n'));
       } else {
-        flashFeedback(false, `Unsupported: .${ext}. Use .md, .txt, .html, or .docx`);
+        flashFeedback(false, `Unsupported: .${ext}. Use .pdf, .md, .txt, .html, or .docx`);
         return;
       }
       flashFeedback(true, `Parsed ${file.name}`);
@@ -694,9 +702,9 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                 style={{ whiteSpace: 'nowrap' }}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                {uploadParsing ? 'Parsing\u2026' : '.md .docx .html .txt'}
+                {uploadParsing ? 'Parsing\u2026' : '.pdf .md .docx .html .txt'}
               </button>
-              <input ref={uploadFileRef} type="file" accept=".md,.txt,.html,.htm,.docx" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }} />
+              <input ref={uploadFileRef} type="file" accept=".md,.txt,.html,.htm,.docx,.pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }} />
             </div>
             <textarea
               placeholder={uploadEntry === 'full' ? 'Paste or drop source material, notes, study text, or a draft (optional)' : 'Paste or drop finished article HTML, or use the file button above'}
