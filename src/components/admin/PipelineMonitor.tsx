@@ -865,16 +865,20 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               className="pipeline-queue-input"
               style={{ flex: 1 }}
             />
-            {(['queued', 'all', 'completed', 'in_progress'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => setQueueFilter(f)}
-                className="pipeline-trigger-btn admin-text-md"
-                style={{ padding: '0.25rem 0.5rem', background: queueFilter === f ? 'rgba(168,162,158,0.15)' : 'transparent', color: queueFilter === f ? '#e7e6e3' : '#78716c', border: 'none', fontWeight: queueFilter === f ? 600 : 400 }}
-              >
-                {f === 'in_progress' ? 'Active' : f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
+            {(['queued', 'all', 'completed', 'in_progress'] as const).map(f => {
+              const count = f === 'all' ? queue.length : queue.filter(q => q.status === f).length;
+              const label = f === 'in_progress' ? 'Active' : f.charAt(0).toUpperCase() + f.slice(1);
+              return (
+                <button
+                  key={f}
+                  onClick={() => setQueueFilter(f)}
+                  className="pipeline-trigger-btn admin-text-md"
+                  style={{ padding: '0.25rem 0.5rem', background: queueFilter === f ? 'rgba(168,162,158,0.15)' : 'transparent', color: queueFilter === f ? '#e7e6e3' : '#78716c', border: 'none', fontWeight: queueFilter === f ? 600 : 400 }}
+                >
+                  {label} <span style={{ opacity: 0.5, fontSize: '0.6875rem' }}>({count})</span>
+                </button>
+              );
+            })}
           </div>
         )}
 
