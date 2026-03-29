@@ -409,21 +409,32 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
       }
 
       if (editorBrief.decision === "kill") {
-        await db
-          .from("daily_article_log")
-          .update({
-            status: "failed",
-            error: `Senior Editor killed: ${editorBrief.killReason || "Did not meet editorial standards"}`,
-            completed_at: new Date().toISOString(),
-          })
-          .eq("id", logId);
-        // Re-queue the topic so it's not lost
-        const queueId = researchData._queueId as string | undefined;
-        if (queueId) {
-          await db.from("topic_queue").update({ status: "queued" }).eq("id", queueId);
-          console.log(`[Editor] Editor killed — re-queued topic (queueId: ${queueId})`);
+        if (isManuallyQueued) {
+          // Never kill manually queued topics — force approve with editor's concerns as directions
+          console.log(`[Editor] Editor wanted to kill manually queued topic "${originalQueuedTopic}" — overriding to approve with editorial notes`);
+          editorBrief.decision = "approve";
+          const killNote = editorBrief.killReason || "Editor had concerns but topic was manually queued";
+          if (!editorBrief.brief) editorBrief.brief = {};
+          const brief = editorBrief.brief as Record<string, unknown>;
+          brief.structuralNotes = `[EDITOR OVERRIDE — manually queued] ${killNote}. Address these concerns in the article.`;
+          if (!editorBrief.topicScore || (editorBrief.topicScore as number) < 5) editorBrief.topicScore = 5;
+        } else {
+          await db
+            .from("daily_article_log")
+            .update({
+              status: "failed",
+              error: `Senior Editor killed: ${editorBrief.killReason || "Did not meet editorial standards"}`,
+              completed_at: new Date().toISOString(),
+            })
+            .eq("id", logId);
+          // Re-queue the topic so it's not lost
+          const queueId = researchData._queueId as string | undefined;
+          if (queueId) {
+            await db.from("topic_queue").update({ status: "queued" }).eq("id", queueId);
+            console.log(`[Editor] Editor killed — re-queued topic (queueId: ${queueId})`);
+          }
+          return;
         }
-        return;
       }
 
       // Extract the chosen candidate's research data for the writer
