@@ -979,6 +979,25 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         </button>
                       </div>
                     )}
+                    {!isQueued && !isActive && (
+                      <div className="admin-flex-center admin-gap-xs admin-flex-shrink-0">
+                        <span className="admin-color-muted admin-text-sm">{item.status}</span>
+                        <button
+                          className="pipeline-retry-btn admin-action-btn-yellow"
+                          onClick={(e) => { e.stopPropagation(); updateQueueItem(item.id, { status: 'queued' }); }}
+                          title="Requeue this topic"
+                        >
+                          Requeue
+                        </button>
+                        <button
+                          className="pipeline-retry-btn admin-action-btn-danger-subtle"
+                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
+                          title="Delete from queue"
+                        >
+                          {'\u2715'}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Expanded detail view */}
