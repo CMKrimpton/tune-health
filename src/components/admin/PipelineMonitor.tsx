@@ -102,6 +102,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
   const [uploadParsing, setUploadParsing] = useState(false);
+  const [uploadEntry, setUploadEntry] = useState<'full' | 'independence'>('full');
   const uploadFileRef = useRef<HTMLInputElement>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
@@ -308,27 +309,49 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   };
 
   const submitArticleToChain = async () => {
-    if (!uploadHtml.trim() || !uploadTitle.trim()) return;
+    if (!uploadTitle.trim()) return;
+    if (uploadEntry === 'independence' && !uploadHtml.trim()) return;
     setUploading(true);
     setUploadResult(null);
-    const slug = uploadTitle.toLowerCase().replace(/['']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
-        body: JSON.stringify({
-          action: 'submit-new-article',
-          articleHtml: uploadHtml.trim(),
-          title: uploadTitle.trim(),
-          slug,
-          category: uploadCategory || undefined,
-        }),
-      });
+      let res: Response;
+      if (uploadEntry === 'full') {
+        // Queue as topic — full chain from research
+        res = await fetch(`${apiBase}/pipeline-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+          body: JSON.stringify({
+            action: 'queue-topic',
+            topic: uploadTitle.trim(),
+            category: uploadCategory || undefined,
+            notes: uploadHtml.trim() || undefined,
+            priority: 5,
+            expedite: true,
+          }),
+        });
+      } else {
+        // Submit as finished article — independence review
+        const slug = uploadTitle.toLowerCase().replace(/['']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+        res = await fetch(`${apiBase}/pipeline-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+          body: JSON.stringify({
+            action: 'submit-new-article',
+            articleHtml: uploadHtml.trim(),
+            title: uploadTitle.trim(),
+            slug,
+            category: uploadCategory || undefined,
+          }),
+        });
+      }
       const data = await res.json();
       if (!res.ok || data.error) {
         setUploadResult(`Failed: ${data.error || res.status}`);
       } else {
-        setUploadResult(`Submitted "${uploadTitle.trim().slice(0, 50)}" — independence review dispatched`);
+        const msg = uploadEntry === 'full'
+          ? `Queued "${uploadTitle.trim().slice(0, 50)}" — click Produce to start`
+          : `Submitted "${uploadTitle.trim().slice(0, 50)}" — independence review dispatched`;
+        setUploadResult(msg);
         setUploadTitle('');
         setUploadCategory('');
         setUploadHtml('');
@@ -626,9 +649,27 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
         {uploadOpen && (
           <div style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(15,14,12,0.5)', border: '1px solid rgba(168,162,158,0.12)', borderRadius: '6px' }}>
+            {/* Entry point toggle */}
+            <div style={{ display: 'flex', gap: '2px', marginBottom: '0.5rem', background: 'rgba(168,162,158,0.08)', borderRadius: '4px', padding: '2px' }}>
+              <button
+                onClick={() => setUploadEntry('full')}
+                className="admin-text-md"
+                style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === 'full' ? 'rgba(168,162,158,0.15)' : 'transparent', color: uploadEntry === 'full' ? '#e7e6e3' : '#78716c' }}
+              >
+                Full Chain — Research → Editor → Write → QC → Publish
+              </button>
+              <button
+                onClick={() => setUploadEntry('independence')}
+                className="admin-text-md"
+                style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === 'independence' ? 'rgba(168,162,158,0.15)' : 'transparent', color: uploadEntry === 'independence' ? '#e7e6e3' : '#78716c' }}
+              >
+                Finished Article — Independence → QC → Publish
+              </button>
+            </div>
+
             <input
               type="text"
-              placeholder="Article title"
+              placeholder={uploadEntry === 'full' ? 'Topic or article title' : 'Article title'}
               value={uploadTitle}
               onChange={e => setUploadTitle(e.target.value)}
               className="pipeline-queue-input"
@@ -657,7 +698,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               <input ref={uploadFileRef} type="file" accept=".md,.txt,.html,.htm,.docx" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }} />
             </div>
             <textarea
-              placeholder="Paste article HTML here, or upload a file above"
+              placeholder={uploadEntry === 'full' ? 'Paste source material, notes, study text, or a draft (optional — research will supplement)' : 'Paste finished article HTML here, or upload a file above'}
               value={uploadHtml}
               onChange={e => setUploadHtml(e.target.value)}
               rows={4}
@@ -666,14 +707,18 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.375rem' }}>
               <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>
-                {uploadHtml ? `${uploadHtml.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length} words` : 'Full editorial chain: Independence → QC → Publish'}
+                {uploadHtml
+                  ? `${uploadHtml.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length} words`
+                  : uploadEntry === 'full'
+                    ? 'Queues as topic with source material — click Produce to start'
+                    : 'Finished article enters at Grok independence review'}
               </span>
               <button
                 onClick={submitArticleToChain}
-                disabled={uploading || !uploadHtml.trim() || !uploadTitle.trim()}
+                disabled={uploading || !uploadTitle.trim() || (uploadEntry === 'independence' && !uploadHtml.trim())}
                 className="pipeline-trigger-btn primary admin-text-md"
               >
-                {uploading ? 'Submitting\u2026' : 'Submit to Pipeline'}
+                {uploading ? 'Submitting\u2026' : uploadEntry === 'full' ? 'Queue Topic' : 'Submit Article'}
               </button>
             </div>
             {uploadResult && (
