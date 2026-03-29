@@ -36,11 +36,13 @@ Deno.serve(async (req: Request) => {
 
     // ------ STATUS ------
     if (action === "status") {
-      // Housekeeping: clean up queue items whose topics have already been written
+      // Housekeeping: clean up OLD queue items whose topics have already been written
+      // Only auto-complete items queued >2 hours ago to avoid nuking freshly added topics
       const { data: publishedSlugs } = await db.from("articles").select("title").eq("status", "published");
       if (publishedSlugs && publishedSlugs.length > 0) {
         const publishedTitles = publishedSlugs.map((a: { title: string }) => a.title.toLowerCase());
-        const { data: queuedItems } = await db.from("topic_queue").select("id, topic").eq("status", "queued");
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const { data: queuedItems } = await db.from("topic_queue").select("id, topic").eq("status", "queued").lt("created_at", twoHoursAgo);
         if (queuedItems) {
           for (const q of queuedItems as Array<{ id: string; topic: string }>) {
             const topicWords = q.topic.toLowerCase().split(/\s+/).filter(w => w.length > 4);
