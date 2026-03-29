@@ -118,6 +118,11 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
     finally { setRefreshing(false); }
   }, [apiBase]);
 
+  // Fetch articles on mount (needed for client:only rendering)
+  useEffect(() => {
+    if (initialArticles.length === 0) refreshArticles();
+  }, [initialArticles.length, refreshArticles]);
+
   // Auto-refresh when the Articles tab becomes visible — handles both:
   // 1. Browser tab switches (visibilitychange)
   // 2. Dashboard tab switches (IntersectionObserver on the component root)
