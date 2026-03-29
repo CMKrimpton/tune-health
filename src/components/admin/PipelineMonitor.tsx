@@ -105,6 +105,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [uploadEntry, setUploadEntry] = useState<'full' | 'independence'>('full');
   const [uploadDragOver, setUploadDragOver] = useState(false);
   const [uploadUrl, setUploadUrl] = useState('');
+  const [queueSearch, setQueueSearch] = useState('');
+  const [queueFilter, setQueueFilter] = useState<'all' | 'queued' | 'completed' | 'in_progress'>('queued');
   const uploadFileRef = useRef<HTMLInputElement>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
@@ -854,8 +856,38 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         )}
 
         {queue.length > 0 && (
+          <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.5rem' }}>
+            <input
+              type="text"
+              placeholder="Search queue..."
+              value={queueSearch}
+              onChange={e => setQueueSearch(e.target.value)}
+              className="pipeline-queue-input"
+              style={{ flex: 1 }}
+            />
+            {(['queued', 'all', 'completed', 'in_progress'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setQueueFilter(f)}
+                className="pipeline-trigger-btn admin-text-md"
+                style={{ padding: '0.25rem 0.5rem', background: queueFilter === f ? 'rgba(168,162,158,0.15)' : 'transparent', color: queueFilter === f ? '#e7e6e3' : '#78716c', border: 'none', fontWeight: queueFilter === f ? 600 : 400 }}
+              >
+                {f === 'in_progress' ? 'Active' : f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {queue.length > 0 && (
           <div className="pipeline-completed-list">
-            {queue.map(item => {
+            {queue.filter(item => {
+              if (queueFilter !== 'all' && item.status !== queueFilter) return false;
+              if (queueSearch.trim()) {
+                const s = queueSearch.toLowerCase();
+                return item.topic.toLowerCase().includes(s) || (item.category || '').toLowerCase().includes(s) || (item.notes || '').toLowerCase().includes(s);
+              }
+              return true;
+            }).map(item => {
               const isActive = item.status === 'in_progress' || item.status === 'assigned';
               const isQueued = item.status === 'queued';
               const cleanTopic = item.topic.replace(/\*\*/g, '').replace(/^[\s\-]*Topic\s*Description\s*:?\s*/i, '').trim();
