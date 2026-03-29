@@ -1,0 +1,39 @@
+{
+  "title": "Biology's Machine Metaphor Is Broken",
+  "description": "The cell is a machine. Jacques Monod said so in 1972, and molecular biology spent the next half-century building an entire research program on that premise.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-03-29",
+  "author": {
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
+  },
+  "readTime": 15,
+  "featured": false,
+  "draft": false,
+  "tags": [
+    "Cell Biology",
+    "Molecular Biology",
+    "Stochasticity",
+    "Self-Organization",
+    "Philosophy of Science"
+  ],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [
+    "machine conception of the cell",
+    "stochasticity",
+    "self-organization",
+    "non-genetic heterogeneity",
+    "Brownian ratchet",
+    "pleomorphic ensembles",
+    "cell biology",
+    "molecular biology",
+    "philosophy of biology",
+    "intracellular transport",
+    "protein complexes",
+    "gene expression noise"
+  ],
+  "sortOrder": 1774743314086
+}
