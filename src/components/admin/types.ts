@@ -430,3 +430,23 @@ export function getScoreColor(score: number | null | undefined): string {
   if (score >= 5) return '#fbbf24';
   return '#f87171';
 }
+
+// ─── Fetch with Timeout ─────────────────────────────────────────────
+// Wraps fetch with an AbortController timeout (default 60s).
+// Rejects with a descriptive error on timeout.
+
+const DEFAULT_TIMEOUT = 60_000;
+
+export function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init?: RequestInit & { timeout?: number },
+): Promise<Response> {
+  const { timeout = DEFAULT_TIMEOUT, ...fetchInit } = init ?? {};
+  const controller = new AbortController();
+  if (fetchInit.signal) {
+    // Chain with existing signal
+    fetchInit.signal.addEventListener('abort', () => controller.abort(fetchInit.signal!.reason));
+  }
+  const timer = setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), timeout);
+  return fetch(input, { ...fetchInit, signal: controller.signal }).finally(() => clearTimeout(timer));
+}

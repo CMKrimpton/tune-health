@@ -5,7 +5,9 @@ import {
   VALID_CATEGORIES,
   GRADIENT_PRESETS,
   CATEGORY_GRADIENTS,
+  fetchWithTimeout,
 } from './types';
+import { useConfirm } from './ConfirmModal';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -137,6 +139,9 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
 
   // Version history
   const [snapshots, setSnapshots] = useState<ArticleSnapshot[]>([]);
+
+  // Confirm modal
+  const { ask, ConfirmDialog } = useConfirm();
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -292,7 +297,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
 
       // Save to database
       try {
-        const saveRes = await fetch(`${API_BASE}/articles-api`, {
+        const saveRes = await fetchWithTimeout(`${API_BASE}/articles-api`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
@@ -325,7 +330,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
       // Auto-generate editorial illustration
       try {
         setStatusMessage('Generating editorial illustration...');
-        const illustrationRes = await fetch(`${API_BASE}/generate-illustration`, {
+        const illustrationRes = await fetchWithTimeout(`${API_BASE}/generate-illustration`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -409,7 +414,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/refine-article`, {
+      const res = await fetchWithTimeout(`${API_BASE}/refine-article`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
@@ -433,7 +438,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
       try {
         const m = data.metadata || metadata;
         if (m) {
-          const syncRes = await fetch(`${API_BASE}/articles-api`, {
+          const syncRes = await fetchWithTimeout(`${API_BASE}/articles-api`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
             body: JSON.stringify({
@@ -508,7 +513,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     setStatusMessage('Submitting to pipeline — independence review next...');
 
     try {
-      const res = await fetch(`${API_BASE}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${API_BASE}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
@@ -561,8 +566,8 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
 
   // ─── Start Over ─────────────────────────────────────────────────
 
-  const startOver = useCallback(() => {
-    if (!confirm('Start over? This will discard the current article.')) return;
+  const startOver = useCallback(async () => {
+    if (!await ask({ title: 'Start over', message: 'Start over? This will discard the current article.', confirmLabel: 'Discard', danger: true })) return;
     setState('upload');
     setSourceText('');
     setArticle(null);
@@ -923,6 +928,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
           <iframe className="admin-preview-frame" srcDoc={previewHtml} title="Article Preview"/>
         )}
       </div>
+      {ConfirmDialog}
     </div>
   );
 }

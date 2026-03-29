@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v14.5.1 live. ~140 articles. Full UI audit complete — focus-visible, z-index, accessibility, dead CSS cleanup.
+> **Status**: v14.6.0 live. ~140 articles. Admin UX polish complete — styled modals, ARIA tabs, dialog a11y, fetch timeouts.
 
 ---
 
@@ -15,15 +15,13 @@
 
 ## What Was Done This Session
 
-1. **Full UI audit** — 3 parallel deep audits (public components, pages/layouts/CSS, admin UI)
-2. **Focus-visible keyboard navigation** — global styles for all interactive elements
-3. **Z-index hierarchy fix** — clear stacking: ShareBar (35) < TOC (40) < MobileNav (45) < Back-to-top (46)
-4. **Decorative SVGs** — `aria-hidden="true"` on 12 icons across 6 components
-5. **FloatingTOC design tokens** — 12 hardcoded `rgb()` → `theme()` functions
-6. **AudioNarration error state** — visual feedback on audio load failure
-7. **Newsletter accessibility** — `role="status"` on aria-live region
-8. **Dead CSS cleanup** — removed ~150 lines of unused classes from global.css
-9. **Reveal animation performance** — `will-change` hints
+1. **Styled confirm modals** — replaced all 13 native `confirm()` dialogs with ConfirmModal component (glass morphism, focus trapping, Escape, entrance animation)
+2. **useConfirm hook** — Promise-based async confirm that replaces `if (confirm(...))` pattern
+3. **ARIA tab roles** — dashboard tabs + edit page tabs: `role="tablist/tab/tabpanel"`, `aria-selected`, arrow key nav, roving tabindex
+4. **Dialog accessibility** — `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, auto-focus on cancel
+5. **fetchWithTimeout utility** — 60s AbortController-based timeout on all 37 admin fetch calls
+6. **ArticlesManager modal upgrade** — delete + bulk delete modals now use ConfirmModal component
+7. **Edit page vanilla modals** — `styledConfirm()` function for publish/delete in inline scripts
 
 ## Priority for Next Session
 
@@ -39,11 +37,11 @@
 - Musculoskeletal / back pain / arthritis (ZERO)
 - Respiratory (ZERO — no asthma, COPD)
 
-### 3. Admin UX Polish (from audit)
-- Replace native `confirm()` dialogs with styled modals in admin components
-- Add proper ARIA tab roles to dashboard tab navigation
-- Add `role="dialog"` and focus trapping to delete confirmation modals
-- Request timeout handling on all admin fetch calls
+### 3. Admin UX Polish (from audit) ✓ DONE
+- ~~Replace native `confirm()` dialogs with styled modals in admin components~~
+- ~~Add proper ARIA tab roles to dashboard tab navigation~~
+- ~~Add `role="dialog"` and focus trapping to delete confirmation modals~~
+- ~~Request timeout handling on all admin fetch calls~~
 
 ### 4. Further Polish
 - Narration: sync narrationUrl into all GitHub JSON files

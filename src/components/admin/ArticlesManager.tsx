@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
-import { type ArticleRecord, getAdminToken, getCategoryColor, getGradientHex, getScoreColor } from './types';
+import { type ArticleRecord, getAdminToken, getCategoryColor, getGradientHex, getScoreColor, fetchWithTimeout } from './types';
+import ConfirmModal from './ConfirmModal';
 
 // Extended article with scores (returned by DB but not in base type)
 interface ArticleWithScores extends ArticleRecord {
@@ -105,7 +106,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
   const refreshArticles = useCallback(async () => {
     setRefreshing(true);
     try {
-      const res = await fetch(`${apiBase}/articles-api`, {
+      const res = await fetchWithTimeout(`${apiBase}/articles-api`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'list' }),
@@ -147,7 +148,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
 
   const apiCall = useCallback(async (endpoint: string, body: Record<string, unknown>) => {
     const token = getAdminToken();
-    const res = await fetch(`${apiBase}/${endpoint}`, {
+    const res = await fetchWithTimeout(`${apiBase}/${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -170,7 +171,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
       if (!getRes.article_html) throw new Error('No article content');
 
       // 2. Send through refine-article with improvement instruction
-      const refineRes = await fetch(`${apiBase}/refine-article`, {
+      const refineRes = await fetchWithTimeout(`${apiBase}/refine-article`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
@@ -590,46 +591,26 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
       )}
 
       {/* ── Delete confirm modal ── */}
-      {deleteTarget && (
-        <div className="admin-modal">
-          <div className="admin-modal-backdrop" onClick={() => setDeleteTarget(null)} />
-          <div className="admin-modal-card">
-            <h3 className="admin-modal-title">Delete article</h3>
-            <p className="admin-modal-text">
-              Delete <strong>{deleteTarget.title}</strong>? This removes the article from the database and GitHub.
-            </p>
-            <div className="admin-modal-actions">
-              <button className="admin-action-btn admin-action-btn-muted" onClick={() => setDeleteTarget(null)}>
-                Cancel
-              </button>
-              <button className="admin-action-btn admin-action-delete" onClick={() => confirmDelete(deleteTarget.slug)}>
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete article"
+        message={deleteTarget ? `Delete "${deleteTarget.title}"? This removes the article from the database and GitHub.` : ''}
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => { if (deleteTarget) confirmDelete(deleteTarget.slug); }}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {/* ── Bulk delete confirm modal ── */}
-      {bulkDeleteConfirm && (
-        <div className="admin-modal">
-          <div className="admin-modal-backdrop" onClick={() => setBulkDeleteConfirm(false)} />
-          <div className="admin-modal-card">
-            <h3 className="admin-modal-title">Delete {selected.size} articles</h3>
-            <p className="admin-modal-text">
-              This will permanently remove {selected.size} article{selected.size !== 1 ? 's' : ''} from the database and GitHub. This cannot be undone.
-            </p>
-            <div className="admin-modal-actions">
-              <button className="admin-action-btn admin-action-btn-muted" onClick={() => setBulkDeleteConfirm(false)}>
-                Cancel
-              </button>
-              <button className="admin-action-btn admin-action-delete" onClick={confirmBulkDelete}>
-                Delete {selected.size} article{selected.size !== 1 ? 's' : ''}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={bulkDeleteConfirm}
+        title={`Delete ${selected.size} articles`}
+        message={`This will permanently remove ${selected.size} article${selected.size !== 1 ? 's' : ''} from the database and GitHub. This cannot be undone.`}
+        confirmLabel={`Delete ${selected.size} article${selected.size !== 1 ? 's' : ''}`}
+        danger
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setBulkDeleteConfirm(false)}
+      />
     </div>
   );
 }

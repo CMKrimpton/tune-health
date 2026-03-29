@@ -3,7 +3,9 @@ import {
   type PipelineLog, type PipelineResearchData, type StageConfig,
   PIPELINE_STAGE_CONFIG, ACTIVE_STATUSES, VALID_CATEGORIES,
   getAdminToken, timeAgo, getStatusText, getPenName, getScoreColor,
+  fetchWithTimeout,
 } from './types';
+import { useConfirm } from './ConfirmModal';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -115,6 +117,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [actionFeedback, setActionFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { ask, ConfirmDialog } = useConfirm();
 
   const flashFeedback = useCallback((ok: boolean, msg: string) => {
     setActionFeedback({ ok, msg });
@@ -124,7 +127,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'status' }),
@@ -157,7 +160,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     setTriggering(true);
     setProduceResult(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'produce' }),
@@ -187,7 +190,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     setScouting(model);
     setScoutResult(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'scout', scoutModel: model }),
@@ -208,7 +211,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     for (const model of models) {
       setScouting(model);
       try {
-        const res = await fetch(`${apiBase}/pipeline-admin`, {
+        const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({ action: 'scout', scoutModel: model }),
@@ -224,7 +227,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const requeueFromFailed = async (logId: string, topic: string) => {
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'queue-topic', topic, priority: 1, expedite: true }),
@@ -238,7 +241,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const retryArticle = async (logId: string) => {
     setRetryingId(logId);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'retry', logId }),
@@ -257,7 +260,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     setQueueing(true);
     setQueueResult(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({
@@ -320,7 +323,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       if (ext === 'md' || ext === 'txt' || ext === 'html' || ext === 'htm') {
         parsed = await file.text();
       } else if (ext === 'docx' || ext === 'pdf') {
-        const res = await fetch(`${apiBase}/pipeline-admin`, {
+        const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({ action: 'parse-file', fileBase64: await fileToBase64(file), fileName: file.name }),
@@ -347,7 +350,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     if (!uploadUrl.trim()) return;
     setUploadParsing(true);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'fetch-url', url: uploadUrl.trim() }),
@@ -376,7 +379,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       let res: Response;
       if (uploadEntry === 'full') {
         // Queue as topic — full chain from research
-        res = await fetch(`${apiBase}/pipeline-admin`, {
+        res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
@@ -391,7 +394,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       } else {
         // Submit as finished article — independence review
         const slug = uploadTitle.toLowerCase().replace(/['']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
-        res = await fetch(`${apiBase}/pipeline-admin`, {
+        res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({
@@ -423,11 +426,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   };
 
   const produceFromQueue = async (queueId: string, topic: string) => {
-    if (!confirm(`Produce "${topic.replace(/\*\*/g, '').slice(0, 80)}" now? This will research + create editorial brief.`)) return;
+    const ok = await ask({ title: 'Produce topic', message: `Produce "${topic.replace(/\*\*/g, '').slice(0, 80)}" now? This will research and create an editorial brief.`, confirmLabel: 'Produce' });
+    if (!ok) return;
     setTriggering(true);
     setProduceResult(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'produce-topic', queueId }),
@@ -448,7 +452,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const updateQueueItem = async (queueId: string, updates: Record<string, unknown>) => {
     const prev = queue.find(q => q.id === queueId);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'update-queue', queueId, ...updates }),
@@ -465,7 +469,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const deleteQueueItem = async (queueId: string) => {
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'delete-queue', queueId }),
@@ -477,10 +481,11 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   };
 
   const killArticle = async (logId: string) => {
-    if (!confirm('Kill this article? It will be marked as failed and removed from the pipeline.')) return;
+    const ok = await ask({ title: 'Kill article', message: 'Kill this article? It will be marked as failed and removed from the pipeline.', confirmLabel: 'Kill', danger: true });
+    if (!ok) return;
     setKillingId(logId);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'kill-article', logId, reason: 'Killed by admin from Mission Control' }),
@@ -495,11 +500,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const clearAllBriefs = async () => {
     const briefCount = logs.filter(l => l.status === 'editor_approved').length;
     if (briefCount === 0) return;
-    if (!confirm(`Clear all ${briefCount} editor-approved briefs? They will be marked as failed.`)) return;
+    const ok = await ask({ title: 'Clear all briefs', message: `Clear all ${briefCount} editor-approved briefs? They will be marked as failed.`, confirmLabel: 'Clear All', danger: true });
+    if (!ok) return;
     try {
       const briefLogs = logs.filter(l => l.status === 'editor_approved');
       for (const log of briefLogs) {
-        await fetch(`${apiBase}/pipeline-admin`, {
+        await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({ action: 'kill-article', logId: log.id, reason: 'Cleared by admin — stale brief' }),
@@ -955,7 +961,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         </button>
                         <button
                           className="pipeline-retry-btn admin-action-btn-danger-subtle"
-                          onClick={() => { if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
+                          onClick={async () => { if (await ask({ title: 'Delete topic', message: `Delete "${cleanTopic}" from queue?`, confirmLabel: 'Delete', danger: true })) deleteQueueItem(item.id); }}
                           title="Delete from queue"
                         >
                           {'\u2715'}
@@ -976,7 +982,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         </button>
                         <button
                           className="pipeline-retry-btn admin-action-btn-danger-subtle"
-                          onClick={() => { if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
+                          onClick={async () => { if (await ask({ title: 'Delete topic', message: `Delete "${cleanTopic}" from queue?`, confirmLabel: 'Delete', danger: true })) deleteQueueItem(item.id); }}
                           title="Delete from queue"
                         >
                           {'\u2715'}
@@ -995,7 +1001,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         </button>
                         <button
                           className="pipeline-retry-btn admin-action-btn-danger-subtle"
-                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${cleanTopic}" from queue?`)) deleteQueueItem(item.id); }}
+                          onClick={async (e) => { e.stopPropagation(); if (await ask({ title: 'Delete topic', message: `Delete "${cleanTopic}" from queue?`, confirmLabel: 'Delete', danger: true })) deleteQueueItem(item.id); }}
                           title="Delete from queue"
                         >
                           {'\u2715'}
@@ -1280,6 +1286,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       )}
       </div>{/* end right column */}
       </div>{/* end pipeline-lower-grid */}
+      {ConfirmDialog}
     </div>
   );
 }
@@ -1379,7 +1386,7 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || (rd as PipelineR
     setSubmitting(true);
     setSubmitResult(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'submit-article', logId: log.id, articleHtml: articleHtml.trim(), ...(writerTitle.trim() ? { title: writerTitle.trim() } : {}) }),

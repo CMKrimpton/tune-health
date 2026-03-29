@@ -139,14 +139,14 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
     </div>
 
     <!-- Tab Navigation -->
-    <div class="admin-dashboard-tabs">
-      <button class="admin-dashboard-tab active" data-tab="pipeline">Pipeline</button>
-      <button class="admin-dashboard-tab" data-tab="articles">Articles</button>
-      <button class="admin-dashboard-tab" data-tab="agents">AI Agents</button>
+    <div class="admin-dashboard-tabs" role="tablist" aria-label="Dashboard sections">
+      <button class="admin-dashboard-tab active" data-tab="pipeline" role="tab" aria-selected="true" aria-controls="tab-pipeline" id="tab-btn-pipeline">Pipeline</button>
+      <button class="admin-dashboard-tab" data-tab="articles" role="tab" aria-selected="false" aria-controls="tab-articles" id="tab-btn-articles">Articles</button>
+      <button class="admin-dashboard-tab" data-tab="agents" role="tab" aria-selected="false" aria-controls="tab-agents" id="tab-btn-agents">AI Agents</button>
     </div>
 
     <!-- Pipeline Tab -->
-    <div id="tab-pipeline" class="admin-tab-panel active">
+    <div id="tab-pipeline" class="admin-tab-panel active" role="tabpanel" aria-labelledby="tab-btn-pipeline">
       <PipelineMonitor
         client:only="react"
         initialLogs={[]}
@@ -157,7 +157,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
     </div>
 
     <!-- Articles Tab -->
-    <div id="tab-articles" class="admin-tab-panel">
+    <div id="tab-articles" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-btn-articles">
       <ArticlesManager
         client:only="react"
         initialArticles={[]}
@@ -166,7 +166,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
     </div>
 
     <!-- AI Agents Tab -->
-    <div id="tab-agents" class="admin-tab-panel">
+    <div id="tab-agents" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-btn-agents">
       <AgentsPanel
         client:only="react"
         apiBase={apiBase}
@@ -176,18 +176,32 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
   </main>
 
   <script is:inline>
-    // Tab switching
+    // Tab switching with ARIA
     try {
-      document.querySelectorAll('.admin-dashboard-tab').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          document.querySelectorAll('.admin-dashboard-tab').forEach(function(b) { b.classList.remove('active'); });
-          document.querySelectorAll('.admin-tab-panel').forEach(function(p) { p.classList.remove('active'); });
-          btn.classList.add('active');
-          var tab = btn.getAttribute('data-tab');
-          var panel = document.getElementById('tab-' + tab);
-          if (panel) panel.classList.add('active');
-          if (tab) window.history.replaceState(null, '', '#' + tab);
+      var allTabs = Array.from(document.querySelectorAll('.admin-dashboard-tab'));
+      function activateTab(btn) {
+        allTabs.forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); b.setAttribute('tabindex', '-1'); });
+        document.querySelectorAll('.admin-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        btn.setAttribute('tabindex', '0');
+        var tab = btn.getAttribute('data-tab');
+        var panel = document.getElementById('tab-' + tab);
+        if (panel) panel.classList.add('active');
+        if (tab) window.history.replaceState(null, '', '#' + tab);
+      }
+      allTabs.forEach(function(btn, idx) {
+        btn.addEventListener('click', function() { activateTab(btn); });
+        btn.addEventListener('keydown', function(e) {
+          var next = -1;
+          if (e.key === 'ArrowRight') next = (idx + 1) % allTabs.length;
+          else if (e.key === 'ArrowLeft') next = (idx - 1 + allTabs.length) % allTabs.length;
+          else if (e.key === 'Home') next = 0;
+          else if (e.key === 'End') next = allTabs.length - 1;
+          if (next >= 0) { e.preventDefault(); allTabs[next].focus(); activateTab(allTabs[next]); }
         });
+        // Only the active tab is in tab order
+        if (!btn.classList.contains('active')) btn.setAttribute('tabindex', '-1');
       });
 
       // Logout

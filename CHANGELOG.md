@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [14.6.0] - 2026-03-29
+
+### Added — Admin UX Polish
+- **Styled confirm modals** — replaced all 13 native `confirm()` dialogs with glass morphism modals (ConfirmModal component + useConfirm hook). Focus trapping, Escape key, backdrop click, entrance animation
+- **ARIA tab roles** — dashboard and edit page tabs now use `role="tablist/tab/tabpanel"`, `aria-selected`, `aria-controls/aria-labelledby`, arrow key navigation (Left/Right/Home/End), roving tabindex
+- **Dialog accessibility** — all modals have `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, auto-focus on cancel button
+- **Request timeout handling** — `fetchWithTimeout()` utility (60s default, AbortController-based) applied to all 37 admin fetch calls. Prevents hung requests from blocking the UI
+
+### Changed
+- ArticlesManager delete modals upgraded from inline JSX to reusable ConfirmModal component
+- Edit page publish/delete confirmations now use styled modals instead of native browser dialogs
+
 ## [14.5.1] - 2026-03-29
 
 ### Fixed — UI Polish & Accessibility Audit

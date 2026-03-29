@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAdminToken, timeAgo, getScoreColor } from './types';
+import { getAdminToken, timeAgo, getScoreColor, fetchWithTimeout } from './types';
 import type { EditorBrief, QCResult } from './types';
+import { useConfirm } from './ConfirmModal';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -134,7 +135,7 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'reader-questions' }),
@@ -153,7 +154,7 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
   const addToQueue = useCallback(async (idx: number, topic: string) => {
     setQueueingIdx(idx);
     try {
-      await fetch(`${apiBase}/pipeline-admin`, {
+      await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'queue-topic', topic, source: 'reader_request', priority: 5, notes: `Asked by multiple users in alumi Health AI assistant` }),
@@ -224,7 +225,7 @@ function PingerActivity({ apiBase }: { apiBase: string }) {
   const fetchPinger = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'pinger-status' }),
@@ -287,7 +288,7 @@ function DecisionLog({ apiBase }: { apiBase: string }) {
 
   const fetchLogs = useCallback(async () => {
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'status' }),
@@ -383,6 +384,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
   const [errored, setErrored] = useState(0);
   const [statusBadge, setStatusBadge] = useState<{ text: string; bg: string; color: string } | null>(null);
   const lastReportRef = useRef<QCReport | null>(null);
+  const { ask, ConfirmDialog } = useConfirm();
 
   const runQC = useCallback(async (mode: 'audit' | 'dryrun' | 'fix') => {
     setReport(null);
@@ -400,7 +402,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
       else if (mode === 'dryrun') body = { action: 'audit-and-fix', min_severity: severity, dry_run: true };
       else body = { action: 'audit-and-fix', min_severity: severity };
 
-      const res = await fetch(`${apiBase}/editorial-qc`, {
+      const res = await fetchWithTimeout(`${apiBase}/editorial-qc`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -476,7 +478,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
         <button
           className="agents-btn agents-btn-danger"
           disabled={loading}
-          onClick={() => { if (confirm('This will audit all articles and auto-apply fixes. Continue?')) runQC('fix'); }}
+          onClick={async () => { if (await ask({ title: 'Auto-fix all articles', message: 'This will audit all articles and auto-apply fixes. Continue?', confirmLabel: 'Auto-Fix', danger: true })) runQC('fix'); }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           Auto-Fix
@@ -562,6 +564,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </Panel>
   );
 }
@@ -576,11 +579,12 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
   const [result, setResult] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const { ask, ConfirmDialog: IllustrationConfirm } = useConfirm();
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${apiBase}/articles-api`, {
+        const res = await fetchWithTimeout(`${apiBase}/articles-api`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'list' }),
@@ -604,7 +608,7 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
     setLoadingText(force ? 'Regenerating all illustrations...' : 'Generating missing illustrations...');
 
     try {
-      const res = await fetch(`${apiBase}/generate-illustration`, {
+      const res = await fetchWithTimeout(`${apiBase}/generate-illustration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'batch', force }),
@@ -634,7 +638,7 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
     setLoadingText(`Generating illustration for "${selectedSlug}"...`);
 
     try {
-      const res = await fetch(`${apiBase}/generate-illustration`, {
+      const res = await fetchWithTimeout(`${apiBase}/generate-illustration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'generate', slug: selectedSlug }),
@@ -691,7 +695,7 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
         <button
           className="agents-btn agents-btn-danger"
           disabled={loading}
-          onClick={() => { if (confirm('Regenerate ALL illustrations? This replaces existing ones and costs ~$0.04/article.')) runBatch(true); }}
+          onClick={async () => { if (await ask({ title: 'Regenerate all illustrations', message: 'Regenerate ALL illustrations? This replaces existing ones and costs ~$0.04/article.', confirmLabel: 'Regenerate All', danger: true })) runBatch(true); }}
         >
           Regenerate All
         </button>
@@ -721,6 +725,7 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
           </div>
         </div>
       )}
+      {IllustrationConfirm}
     </Panel>
   );
 }
@@ -734,12 +739,13 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
   const [backfilling, setBackfilling] = useState(false);
   const [rotating, setRotating] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const { ask, ConfirmDialog: DbConfirm } = useConfirm();
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch(`${apiBase}/articles-api`, {
+      const res = await fetchWithTimeout(`${apiBase}/articles-api`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'list' }),
@@ -756,11 +762,11 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
   }, [apiBase]);
 
   const backfillCosts = useCallback(async () => {
-    if (!confirm('Estimate costs for all articles with missing cost data? This uses stage-based estimates.')) return;
+    if (!await ask({ title: 'Backfill costs', message: 'Estimate costs for all articles with missing cost data? This uses stage-based estimates.', confirmLabel: 'Backfill' })) return;
     setBackfilling(true);
     setResult(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'backfill-costs' }),
@@ -775,11 +781,11 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
   }, [apiBase]);
 
   const backfillCitations = useCallback(async () => {
-    if (!confirm('Re-verify citations for ALL published articles using PubMed + CrossRef + Semantic Scholar? This may take several minutes.')) return;
+    if (!await ask({ title: 'Re-verify citations', message: 'Re-verify citations for ALL published articles using PubMed + CrossRef + Semantic Scholar? This may take several minutes.', confirmLabel: 'Verify All' })) return;
     setVerifying(true);
     setResult(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'backfill-citations' }),
@@ -797,7 +803,7 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
     setRotating(true);
     setResult(null);
     try {
-      const res = await fetch(`${apiBase}/pipeline-admin`, {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
         body: JSON.stringify({ action: 'rotate-featured' }),
@@ -820,6 +826,7 @@ function DatabaseSync({ apiBase, initialCount }: { apiBase: string; initialCount
       <button className="agents-strip-btn" disabled={rotating} onClick={rotateFeatured}>Rotate</button>
       <button className="agents-strip-btn" disabled={verifying} onClick={backfillCitations}>Citations</button>
       {result && <span className="agents-strip-result">{result.includes('Failed') ? '\u2717' : '\u2713'} {result.slice(0, 40)}</span>}
+      {DbConfirm}
     </div>
   );
 }

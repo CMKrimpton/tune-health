@@ -103,16 +103,16 @@ const editorScore = article.editor_score ?? null;
   <div class="admin-edit-layout">
     <!-- Left Panel -->
     <div class="admin-edit-left">
-      <div class="admin-tabs">
-        <button class="admin-tab active" data-tab="metadata">Metadata</button>
-        <button class="admin-tab" data-tab="content">Content</button>
-        <button class="admin-tab" data-tab="refine">AI Refine</button>
+      <div class="admin-tabs" role="tablist" aria-label="Edit sections">
+        <button class="admin-tab active" data-tab="metadata" role="tab" aria-selected="true" aria-controls="tab-metadata" id="edit-tab-metadata">Metadata</button>
+        <button class="admin-tab" data-tab="content" role="tab" aria-selected="false" aria-controls="tab-content" id="edit-tab-content" tabindex="-1">Content</button>
+        <button class="admin-tab" data-tab="refine" role="tab" aria-selected="false" aria-controls="tab-refine" id="edit-tab-refine" tabindex="-1">AI Refine</button>
         <span id="autosaveIndicator" class="autosave-indicator" style="margin-left:auto"></span>
       </div>
 
       <div class="admin-edit-scroll">
         <!-- METADATA TAB -->
-        <div id="tab-metadata" class="admin-tab-panel">
+        <div id="tab-metadata" class="admin-tab-panel" role="tabpanel" aria-labelledby="edit-tab-metadata">
           <div class="admin-edit-header">
             <span class="admin-edit-label">Editing</span>
             <h1 class="admin-edit-title">{article.title}</h1>
@@ -231,7 +231,7 @@ const editorScore = article.editor_score ?? null;
         </div>
 
         <!-- CONTENT TAB -->
-        <div id="tab-content" class="admin-tab-panel" style="display:none">
+        <div id="tab-content" class="admin-tab-panel" role="tabpanel" aria-labelledby="edit-tab-content" style="display:none">
           <div class="admin-content-toolbar">
             <span class="admin-content-toolbar-label">Article HTML</span>
             <span id="contentWordCount" class="admin-content-toolbar-info"></span>
@@ -246,7 +246,7 @@ const editorScore = article.editor_score ?? null;
         </div>
 
         <!-- REFINE TAB -->
-        <div id="tab-refine" class="admin-tab-panel" style="display:none">
+        <div id="tab-refine" class="admin-tab-panel" role="tabpanel" aria-labelledby="edit-tab-refine" style="display:none">
           {article.article_html ? (
             <div class="admin-refine-chat">
               <div id="refineMessages" class="admin-chat-messages">
@@ -301,6 +301,32 @@ const editorScore = article.editor_score ?? null;
   <script define:vars={{ slug, apiBase, articleData: article }}>
     const getToken = () => (document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/)?.[1] || '');
     const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+    // Styled confirm dialog (replaces native confirm())
+    function styledConfirm(title, message, confirmLabel, danger) {
+      return new Promise(resolve => {
+        const modal = document.createElement('div');
+        modal.className = 'admin-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.innerHTML = '<div class="admin-modal-backdrop"></div>'
+          + '<div class="admin-modal-card">'
+          + '<h3 class="admin-modal-title">' + esc(title) + '</h3>'
+          + '<p class="admin-modal-text">' + esc(message) + '</p>'
+          + '<div class="admin-modal-actions">'
+          + '<button class="admin-action-btn admin-action-btn-muted" data-role="cancel">' + esc('Cancel') + '</button>'
+          + '<button class="admin-action-btn ' + (danger ? 'admin-action-delete' : 'admin-action-btn-primary') + '" data-role="confirm">' + esc(confirmLabel || 'Confirm') + '</button>'
+          + '</div></div>';
+        document.body.appendChild(modal);
+        const cleanup = (v) => { modal.remove(); resolve(v); };
+        modal.querySelector('[data-role="cancel"]').addEventListener('click', () => cleanup(false));
+        modal.querySelector('[data-role="confirm"]').addEventListener('click', () => cleanup(true));
+        modal.querySelector('.admin-modal-backdrop').addEventListener('click', () => cleanup(false));
+        const onKey = (e) => { if (e.key === 'Escape') { document.removeEventListener('keydown', onKey); cleanup(false); } };
+        document.addEventListener('keydown', onKey);
+        modal.querySelector('[data-role="cancel"]').focus();
+      });
+    }
     let currentHtml = articleData.article_html || '';
     let suppressAutosave = false;
 
@@ -418,7 +444,7 @@ const editorScore = article.editor_score ?? null;
 
     // Publish to GitHub
     document.getElementById('publishGitHubBtn')?.addEventListener('click', async () => {
-      if (!confirm('Publish this article to the live site?')) return;
+      if (!await styledConfirm('Publish article', 'Publish this article to the live site?', 'Publish')) return;
       const btn = document.getElementById('publishGitHubBtn');
       const status = document.getElementById('publishStatus');
       const error = document.getElementById('publishError');
@@ -512,7 +538,7 @@ const editorScore = article.editor_score ?? null;
 
     // ─── Delete from GitHub ───
     document.getElementById('deleteGitHubBtn')?.addEventListener('click', async () => {
-      if (!confirm('Delete this article from GitHub? This will remove it from the live site after the next Vercel rebuild.')) return;
+      if (!await styledConfirm('Delete from GitHub', 'Delete this article from GitHub? This will remove it from the live site after the next Vercel rebuild.', 'Delete', true)) return;
       const btn = document.getElementById('deleteGitHubBtn');
       const status = document.getElementById('deleteStatus');
       const error = document.getElementById('deleteError');
@@ -540,13 +566,25 @@ const editorScore = article.editor_score ?? null;
       }
     });
 
-    // ─── Tab switching ───
-    document.querySelectorAll('.admin-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.admin-tab-panel').forEach(p => p.style.display = 'none');
-        tab.classList.add('active');
-        document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+    // ─── Tab switching with ARIA ───
+    var editTabs = Array.from(document.querySelectorAll('.admin-tab[role="tab"]'));
+    function activateEditTab(tab) {
+      editTabs.forEach(function(t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); t.setAttribute('tabindex', '-1'); });
+      document.querySelectorAll('.admin-tab-panel').forEach(function(p) { p.style.display = 'none'; });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      tab.setAttribute('tabindex', '0');
+      document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+    }
+    editTabs.forEach(function(tab, idx) {
+      tab.addEventListener('click', function() { activateEditTab(tab); });
+      tab.addEventListener('keydown', function(e) {
+        var next = -1;
+        if (e.key === 'ArrowRight') next = (idx + 1) % editTabs.length;
+        else if (e.key === 'ArrowLeft') next = (idx - 1 + editTabs.length) % editTabs.length;
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = editTabs.length - 1;
+        if (next >= 0) { e.preventDefault(); editTabs[next].focus(); activateEditTab(editTabs[next]); }
       });
     });
 
