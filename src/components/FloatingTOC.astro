@@ -167,7 +167,7 @@
     .floating-toc {
       right: 1rem;
       top: auto;
-      bottom: 5rem;
+      bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
       transform: none;
       width: auto;
       max-height: none;
@@ -194,6 +194,8 @@
       overflow: hidden;
       text-overflow: ellipsis;
       display: block;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .floating-toc-collapse {

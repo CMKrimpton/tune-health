@@ -74,6 +74,14 @@ const fullUrl = `${siteUrl}${articleUrl}`;
     transition: color 0.15s ease, background-color 0.15s ease;
   }
 
+  /* Expand to 44px on touch devices */
+  @media (pointer: coarse) {
+    .hs-btn {
+      width: 44px;
+      height: 44px;
+    }
+  }
+
   .hs-btn:hover {
     color: #fff;
     background: rgba(255, 255, 255, 0.1);

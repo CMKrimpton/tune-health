@@ -34,17 +34,21 @@ const isCompact = variant === 'compact';
           : 'Weekly evidence-based health insights — no hype, no sales pitches, just the research that matters.'}
       </p>
       <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" data-newsletter-form>
+        <label for="newsletter-email" class="sr-only">Email address</label>
         <input
+          id="newsletter-email"
           type="email"
           required
           placeholder="you@example.com"
           class="flex-1 px-5 py-3 bg-stone-800 border border-stone-700 rounded-full text-base text-white placeholder-stone-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors duration-200"
           aria-label="Email address"
+          autocomplete="email"
         />
-        <button type="submit" class="px-6 py-3 bg-white text-stone-900 font-semibold text-sm rounded-full hover:bg-primary-500 hover:text-white transition-colors duration-200 whitespace-nowrap">
+        <button type="submit" class="px-6 py-3 bg-white text-stone-900 font-semibold text-sm rounded-full hover:bg-primary-500 hover:text-white transition-colors duration-200 whitespace-nowrap min-h-[44px]">
           Subscribe
         </button>
       </form>
+      <div class="sr-only" aria-live="polite" data-newsletter-status></div>
       <p class="text-xs text-stone-600 mt-4">No spam. Unsubscribe anytime.</p>
 
       {!isCompact && (
@@ -90,6 +94,7 @@ const isCompact = variant === 'compact';
         if (!email) return;
 
         const originalText = button.textContent;
+        const statusEl = form.parentElement?.querySelector('[data-newsletter-status]');
         button.textContent = 'Subscribing...';
         button.disabled = true;
         input.disabled = true;
@@ -107,30 +112,36 @@ const isCompact = variant === 'compact';
             button.textContent = 'Subscribed!';
             button.classList.add('bg-primary-500', 'text-white');
             input.value = '';
+            if (statusEl) statusEl.textContent = 'Successfully subscribed!';
 
             setTimeout(() => {
               button.textContent = originalText;
               button.disabled = false;
               input.disabled = false;
               button.classList.remove('bg-primary-500', 'text-white');
+              if (statusEl) statusEl.textContent = '';
             }, 3000);
           } else {
             button.textContent = data.error || 'Try again';
             button.classList.add('bg-red-500', 'text-white');
+            if (statusEl) statusEl.textContent = data.error || 'Subscription failed. Please try again.';
 
             setTimeout(() => {
               button.textContent = originalText;
               button.disabled = false;
               input.disabled = false;
               button.classList.remove('bg-red-500', 'text-white');
+              if (statusEl) statusEl.textContent = '';
             }, 3000);
           }
         } catch {
           button.textContent = 'Error — try again';
+          if (statusEl) statusEl.textContent = 'Connection error. Please try again.';
           setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;
             input.disabled = false;
+            if (statusEl) statusEl.textContent = '';
           }, 3000);
         }
       });

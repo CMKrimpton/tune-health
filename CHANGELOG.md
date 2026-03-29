@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [14.5.0] - 2026-03-29
+
+### Fixed — Mobile & Accessibility Audit
+- **HighlightShare touch targets** — 36px buttons expanded to 44px on touch devices via `@media (pointer: coarse)`
+- **FloatingTOC pill overlaps MobileNav** — added `env(safe-area-inset-bottom)` to bottom positioning on notched iPhones
+- **FloatingTOC pill text selectable** — added `user-select: none` to prevent accidental selection when tapping
+- **ShareButtons gap too tight** — inline share button gap widened from 4px to 8px for fat-finger safety
+- **Back-to-top hidden behind MobileNav** — z-index raised from 30 to 40
+- **iOS auto-zoom on admin inputs** — all admin form inputs forced to 16px font on touch devices
+- **Admin stat grid unreadable on phones** — now wraps to 3-column at 900px, 2-column at 600px
+- **Admin nav links too small for touch** — 44px min-height, responsive font size
+- **Admin modals overflow on small screens** — max-width respects viewport, reduced padding
+- **Articles search input triggers iOS zoom** — changed from `text-sm` (14px) to `text-base` (16px)
+
+### Added — Mobile & Accessibility Polish
+- **`viewport-fit=cover`** on all pages (public + 4 admin pages) for proper notch/safe-area support
+- **Admin safe area insets** — left/right padding respects notch on header and main content
+- **Admin iPhone SE breakpoint** (380px) — smaller stat numbers, tighter padding, hidden logo badge
+- **Newsletter form accessibility** — `<label>` with `htmlFor`/`id` pairing, `autocomplete="email"`, `aria-live="polite"` region announces subscribe/error status to screen readers
+- **Admin touch scrolling** — dashboard tabs use `-webkit-overflow-scrolling: touch` for smooth horizontal scroll
+- **Admin action buttons** — 44px min-height touch targets on mobile
+
 ## [14.4.0] - 2026-03-29
 
 ### Added — Upload Article to Pipeline (Dashboard)

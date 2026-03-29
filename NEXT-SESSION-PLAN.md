@@ -1,28 +1,28 @@
 # Next Session Plan
 
-> **Status**: v14.4.0 live. ~140 articles. Pipeline upload form working. Admin dashboard stable with client:only rendering. Editor never kills manual topics.
+> **Status**: v14.5.0 live. ~140 articles. Full mobile audit complete — touch targets, safe areas, accessibility. Admin responsive on all iPhones.
 
 ---
 
-## Current Architecture (v14.4.0)
+## Current Architecture (v14.5.0)
 
 - **Admin UI**: `client:only="react"` on all islands — no hydration, no server-render for admin components. All data fetched client-side via polling
 - **Admin Editor** (`/admin/new`): generates article via `process-article` (Sonnet), then submits to pipeline (independence → QC → publish)
 - **Pipeline Upload** (Dashboard): "Upload Article to Pipeline" form with two modes — Full Chain (queues as topic) or Finished Article (straight to independence). Supports file drop (.pdf/.docx/.md/.html/.txt), URL fetch, paste. Server-side file parsing
 - **Pipeline**: 7-stage + post-publish narration (ElevenLabs TTS) + illustration (GPT Image)
-- **Editor override**: manually queued topics can never be killed by editor — concerns become structural notes in brief
-- **Queue**: search + filter (Queued/All/Completed/Active), Requeue/Delete on completed items, sorted by expedite → priority → created_at
+- **Mobile**: viewport-fit=cover on all pages, safe area insets, 44px touch targets, iOS auto-zoom prevention, responsive stat grid/nav/modals
+- **Accessibility**: aria-live regions for newsletter, label/id pairing, skip links, ARIA landmarks
 
 ## What Was Done This Session
 
-1. **Admin editor completely broken on Vercel** — env var, gradient crash, draft restore crash, preview iframe blocked. All fixed
-2. **Pipeline integration** — ArticleEditor and dashboard upload both feed into production chain
-3. **Upload Article to Pipeline** — two entry points (Full Chain / Finished Article), file upload, URL fetch, auto-title, drag-and-drop
-4. **React hydration crash** — mammoth + pdfjs in client bundle caused hydration mismatch. Moved all file parsing server-side. Switched to `client:only="react"`
-5. **Queue UX** — search, filter tabs, requeue/delete on completed items, sort fixed
-6. **Housekeeping bug** — auto-completed fresh topics as duplicates within seconds. Now 2-hour grace period
-7. **Editor killing manual topics** — overridden to approve with structural notes
-8. **Voice rewrite loop** — admin-editor articles skip voice rewrite (Sonnet rewriting Sonnet is circular)
+1. **Full mobile audit** — 3 parallel audits (public mobile, admin mobile, accessibility/SEO) across all components
+2. **HighlightShare 44px touch targets** — expanded from 36px on touch devices
+3. **FloatingTOC safe-area** — pill now respects notch bottom inset, text not selectable
+4. **ShareButtons gap** — widened from 4px to 8px for touch safety
+5. **viewport-fit=cover** — added to all 5 page templates (BaseLayout + 4 admin pages)
+6. **Admin mobile overhaul** — stat grid responsive (3→2 col), 44px nav/button targets, iOS zoom prevention, safe area insets, modal viewport safety, iPhone SE breakpoint
+7. **Newsletter accessibility** — label/id pairing, aria-live status announcements, autocomplete
+8. **Input zoom prevention** — articles search and all admin inputs at 16px+ on touch
 
 ## Priority for Next Session
 
@@ -38,16 +38,13 @@
 - Musculoskeletal / back pain / arthritis (ZERO)
 - Respiratory (ZERO — no asthma, COPD)
 
-### 3. Admin Polish
-- Mobile admin experience (responsive breakpoints)
+### 3. Further Polish
 - Queue: show total counts per filter tab
 - Article table column headers in Articles tab
-
-### 4. Narration Polish
-- Sync narrationUrl into all GitHub JSON files
+- Narration: sync narrationUrl into all GitHub JSON files
 - Monitor ElevenLabs credit usage (Starter plan: 30K chars/mo)
 
-### 5. Consider
+### 4. Consider
 - Newsletter integration with Beehiiv (per NEWSLETTER-STRATEGY.md)
 - Performance audit — Lighthouse scores, image optimization
-- Mobile UX review on real device
+- Real device testing on iPhone SE, iPhone 14 Pro, iPad

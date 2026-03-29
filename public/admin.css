@@ -2685,6 +2685,7 @@
   .admin-edit-left { border-right: none; border-bottom: 1px solid var(--admin-border); min-height: 60vh; }
   .admin-edit-right { min-height: 50vh; }
   .admin-stats { flex-wrap: wrap; }
+  .admin-stat-card { flex: none; width: 33.333%; }
   .admin-table-header, .admin-table-row { grid-template-columns: 1fr 100px; }
   .admin-col-date, .admin-col-time { display: none; }
   .admin-edit-row { grid-template-columns: 1fr; }
@@ -2699,10 +2700,36 @@
 
 @media (max-width: 600px) {
   .pipeline-container { grid-template-columns: 1fr; }
-  .admin-dashboard-tabs { overflow-x: auto; }
+  .admin-dashboard-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .admin-dashboard-tab { white-space: nowrap; }
   .admin-stats { flex-wrap: wrap; }
   .admin-stat-card { flex: none; width: 50%; }
+  .admin-header { padding: 0 0.75rem; padding-left: max(0.75rem, env(safe-area-inset-left, 0px)); padding-right: max(0.75rem, env(safe-area-inset-right, 0px)); }
+  .admin-main { padding: 0.75rem; padding-left: max(0.75rem, env(safe-area-inset-left, 0px)); padding-right: max(0.75rem, env(safe-area-inset-right, 0px)); }
+  .admin-nav-link { padding: 0.5rem 0.5rem; font-size: 0.6875rem; min-height: 44px; display: inline-flex; align-items: center; }
+  .admin-logo-badge { display: none; }
+  .admin-action-btn { padding: 0.5rem 0.75rem; min-height: 44px; }
+  .admin-modal-card { max-width: calc(100vw - 2rem); margin: 1rem; padding: 1rem; }
+  .admin-modal-actions { flex-wrap: wrap; }
+  .admin-article-actions { flex-wrap: wrap; gap: 0.25rem; }
+}
+
+/* iPhone SE and small phones */
+@media (max-width: 380px) {
+  .admin-stat-card { width: 50%; }
+  .admin-stat-number { font-size: 1rem; }
+  .admin-stat-label { font-size: 0.5rem; }
+  .admin-main { padding: 0.5rem; }
+  .admin-dashboard-tab { font-size: 0.75rem; padding: 0.5rem 0.75rem; }
+}
+
+/* Prevent iOS auto-zoom on form inputs (<16px triggers zoom) */
+@media (pointer: coarse) {
+  .admin-body input,
+  .admin-body select,
+  .admin-body textarea {
+    font-size: 1rem;
+  }
 }
 
 /* Focus-visible styles for keyboard accessibility (all inputs use outline:none) */
