@@ -292,14 +292,32 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       reader.readAsDataURL(file);
     });
 
+  const suggestTitle = useCallback((text: string) => {
+    if (uploadTitle.trim()) return; // don't overwrite manual title
+    const plain = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    // Try: first heading
+    const h1 = text.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1) { setUploadTitle(h1[1].trim().slice(0, 120)); return; }
+    const h2 = text.match(/<h2[^>]*>([^<]+)<\/h2>/i);
+    if (h2) { setUploadTitle(h2[1].trim().slice(0, 120)); return; }
+    // Try: markdown heading
+    const md = plain.match(/^#+ (.+)/m);
+    if (md) { setUploadTitle(md[1].trim().slice(0, 120)); return; }
+    // Fallback: first sentence
+    const sentence = plain.match(/^[^.!?]{10,120}[.!?]/);
+    if (sentence) { setUploadTitle(sentence[0].trim()); return; }
+    // Last resort: first 80 chars
+    if (plain.length > 10) setUploadTitle(plain.slice(0, 80));
+  }, [uploadTitle]);
+
   const handleUploadFile = async (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     setUploadParsing(true);
     try {
+      let parsed = '';
       if (ext === 'md' || ext === 'txt' || ext === 'html' || ext === 'htm') {
-        setUploadHtml(await file.text());
+        parsed = await file.text();
       } else if (ext === 'docx' || ext === 'pdf') {
-        // DOCX and PDF parsing runs server-side to keep client bundle small
         const res = await fetch(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
@@ -307,11 +325,13 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || 'File parse failed');
-        setUploadHtml(data.text || '');
+        parsed = data.text || '';
       } else {
         flashFeedback(false, `Unsupported: .${ext}. Use .pdf, .md, .txt, .html, or .docx`);
         return;
       }
+      setUploadHtml(parsed);
+      suggestTitle(parsed);
       flashFeedback(true, `Parsed ${file.name}`);
     } catch {
       flashFeedback(false, 'Failed to parse file');
@@ -334,7 +354,9 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       if (!res.ok || data.error) {
         flashFeedback(false, data.error || `Fetch failed: ${res.status}`);
       } else {
-        setUploadHtml(data.text || '');
+        const fetched = data.text || '';
+        setUploadHtml(fetched);
+        suggestTitle(fetched);
         flashFeedback(true, `Fetched ${uploadUrl.trim().slice(0, 50)}`);
         setUploadUrl('');
       }
@@ -756,6 +778,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               placeholder={uploadEntry === 'full' ? 'Paste or drop source material, notes, study text, or a draft (optional)' : 'Paste or drop finished article HTML, or use the file button above'}
               value={uploadHtml}
               onChange={e => setUploadHtml(e.target.value)}
+              onPaste={e => { setTimeout(() => { const v = (e.target as HTMLTextAreaElement).value; if (v) suggestTitle(v); }, 0); }}
               onDragOver={e => { e.preventDefault(); setUploadDragOver(true); }}
               onDragLeave={() => setUploadDragOver(false)}
               onDrop={e => { e.preventDefault(); setUploadDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleUploadFile(f); }}
