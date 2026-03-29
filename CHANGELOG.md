@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [14.5.1] - 2026-03-29
+
+### Fixed — UI Polish & Accessibility Audit
+- **Focus-visible styles** — all interactive elements (links, buttons, tabs, inputs) now have visible keyboard focus rings with primary color outline
+- **Z-index stacking conflicts** — established clear hierarchy: FloatingShareBar (35) < FloatingTOC (40) < MobileNav (45) < Back-to-top (46). Previously MobileNav and FloatingTOC both at z-40
+- **Decorative SVGs missing aria-hidden** — added `aria-hidden="true"` to 12 decorative icons across BaseLayout, SeriesNav, AudioNarration, BookmarkButton, Newsletter
+- **FloatingTOC hardcoded colors** — replaced 12 raw `rgb()` values with Tailwind `theme()` tokens for consistent theming
+- **FloatingShareBar hardcoded color** — replaced `#a8a29e` with `theme('colors.stone.400')`
+- **AudioNarration error state** — audio load failure now visually dims button and disables interaction instead of only logging to console
+- **Newsletter aria-live region** — added `role="status"` for proper screen reader announcements
+- **SeriesNav empty placeholders** — changed empty `<div />` to `<span />` to reduce semantic noise in grid
+
+### Removed — Dead CSS Cleanup (~150 lines)
+- `.cursor-dot` / `.cursor-ring` — custom cursor classes never implemented
+- `.split-text` / `.char` — GSAP split text animation never used
+- `.blur-gradient` — gradient utility never referenced
+- `.home-layout`, `.home-main`, `.home-masthead`, `.home-featured`, `.featured-label`, `.home-sidebar` — old homepage layout classes replaced by current implementation
+- `.sidebar-section`, `.sidebar-heading`, `.sidebar-list`, `.sidebar-link`, `.sidebar-num`, `.sidebar-more`, `.sidebar-tag`, `.sidebar-newsletter` — old sidebar classes replaced by SideNav component
+
+### Improved — Performance
+- **Reveal animations** — added `will-change: opacity, transform` for smoother GPU-accelerated transitions
+
 ## [14.5.0] - 2026-03-29
 
 ### Fixed — Mobile & Accessibility Audit

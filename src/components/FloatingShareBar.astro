@@ -26,7 +26,7 @@ const { title, url, description = '' } = Astro.props;
   .floating-share-bar {
     display: none;
     position: fixed;
-    z-index: 30;
+    z-index: 35;
     opacity: 0;
     transform: translateX(-12px);
     transition: opacity 0.3s ease, transform 0.3s ease;
@@ -76,7 +76,7 @@ const { title, url, description = '' } = Astro.props;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #a8a29e;
+    color: theme('colors.stone.400');
     writing-mode: horizontal-tb;
     margin-bottom: 0.25rem;
   }

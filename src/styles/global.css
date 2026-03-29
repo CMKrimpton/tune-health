@@ -363,6 +363,7 @@
     opacity: 0;
     transform: translateY(2rem);
     transition: opacity 500ms cubic-bezier(0.22, 1, 0.36, 1), transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
   }
 
   .reveal.active {
@@ -476,11 +477,6 @@
                 radial-gradient(ellipse at 70% 80%, rgba(239, 68, 68, 0.08) 0%, transparent 50%);
   }
 
-  /* Blur Gradient */
-  .blur-gradient {
-    @apply absolute inset-0 pointer-events-none;
-    background: linear-gradient(to bottom, transparent, var(--tw-gradient-from) 50%, var(--tw-gradient-to));
-  }
 }
 
 /* =========================================
@@ -838,7 +834,7 @@ body.menu-open {
    Back to Top
    ========================================= */
 .back-to-top {
-  @apply fixed bottom-8 right-6 z-40;
+  @apply fixed bottom-8 right-6 z-[46];
   @apply w-12 h-12 rounded-full;
   @apply bg-stone-900/90 dark:bg-white/90 text-white dark:text-stone-900;
   @apply flex items-center justify-center;
@@ -856,36 +852,7 @@ body.menu-open {
   @apply bg-primary-600 dark:bg-primary-500 text-white;
 }
 
-/* =========================================
-   GSAP Split Text
-   ========================================= */
-.split-text .char {
-  @apply inline-block opacity-0 translate-y-full;
-}
 
-.split-text.active .char {
-  @apply opacity-100 translate-y-0;
-}
-
-/* =========================================
-   Custom Cursor (optional enhancement)
-   ========================================= */
-.cursor-dot {
-  @apply fixed w-2 h-2 bg-primary-600 rounded-full pointer-events-none z-50;
-  @apply hidden lg:block;
-  transform: translate(-50%, -50%);
-}
-
-.cursor-ring {
-  @apply fixed w-8 h-8 border border-primary-600 rounded-full pointer-events-none z-50;
-  @apply hidden lg:block opacity-50;
-  transform: translate(-50%, -50%);
-  transition: width 0.2s, height 0.2s, opacity 0.2s;
-}
-
-.cursor-ring.expand {
-  @apply w-16 h-16 opacity-20;
-}
 
 /* =========================================
    Article Page Specific
@@ -1101,9 +1068,22 @@ header a[href="/"]:hover .text-primary-600 {
    ========================================= */
 
 /* Enhanced focus states for keyboard navigation — exclude command palette */
-*:focus-visible:not([cmdk-input]) {
-  @apply outline-2 outline-offset-2 outline-primary-500;
-  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+*:focus-visible:not([cmdk-input]):not([data-narration-toggle]) {
+  outline: 2px solid theme('colors.primary.500');
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
+}
+
+/* Ensure buttons and links have visible focus indicator */
+a:focus-visible,
+button:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid theme('colors.primary.500');
+  outline-offset: 2px;
 }
 
 /* Skip link styles */
@@ -1420,98 +1400,6 @@ header a[href="/"]:hover .text-primary-600 {
   }
 }
 
-/* =========================================
-   Editorial Homepage Layout
-   ========================================= */
-
-.home-layout {
-  @apply grid gap-12 lg:gap-16;
-  @apply max-w-6xl mx-auto px-6 py-12 lg:py-20;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 1024px) {
-  .home-layout {
-    grid-template-columns: 1fr 320px;
-  }
-}
-
-/* Main Content Area */
-.home-main {
-  @apply space-y-12;
-}
-
-/* Masthead / Hero */
-.home-masthead {
-  @apply pb-12 border-b border-stone-200 dark:border-stone-800;
-}
-
-/* Featured Article */
-.home-featured {
-  @apply pt-2;
-}
-
-.featured-label {
-  @apply flex items-center gap-2 mb-4;
-}
-
-/* Sidebar */
-.home-sidebar {
-  @apply space-y-8 lg:pl-8 lg:border-l lg:border-stone-200 lg:dark:border-stone-800;
-}
-
-@media (max-width: 1023px) {
-  .home-sidebar {
-    @apply border-t border-stone-200 dark:border-stone-800 pt-8;
-  }
-}
-
-.sidebar-section {
-  @apply pb-6;
-}
-
-.sidebar-section:not(:last-child) {
-  @apply border-b border-stone-100 dark:border-stone-800/50;
-}
-
-.sidebar-heading {
-  @apply font-serif text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4;
-  @apply font-semibold;
-}
-
-.sidebar-list {
-  @apply space-y-3;
-}
-
-.sidebar-link {
-  @apply flex items-start gap-3 py-2 -mx-2 px-2 rounded-lg;
-  @apply transition-colors duration-200;
-}
-
-.sidebar-link:hover {
-  @apply bg-stone-50 dark:bg-stone-800/50;
-}
-
-.sidebar-num {
-  @apply text-[10px] font-mono text-stone-300 dark:text-stone-600 mt-1;
-  @apply font-medium;
-}
-
-.sidebar-more {
-  @apply inline-flex items-center gap-1 text-sm text-primary-600 font-medium mt-4;
-  @apply hover:text-primary-700 dark:hover:text-primary-500 transition-colors;
-}
-
-.sidebar-tag {
-  @apply px-3 py-1.5 text-xs font-medium rounded-full;
-  @apply bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400;
-  @apply hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-500/10 dark:hover:text-primary-400;
-  @apply transition-colors duration-200;
-}
-
-.sidebar-newsletter {
-  @apply bg-stone-50 dark:bg-stone-800/50 -mx-4 px-4 py-5 rounded-xl;
-}
 
 /* Buttons — defined in @layer components above. Do not duplicate here. */
 
