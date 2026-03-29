@@ -284,6 +284,14 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   };
 
   // ─── Article Upload ────────────────────────────────────────────
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const handleUploadFile = async (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     setUploadParsing(true);
@@ -295,16 +303,17 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
         setUploadHtml(result.value);
       } else if (ext === 'pdf') {
-        const pdfjsLib = await import('pdfjs-dist');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-        const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-        const pages: string[] = [];
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          pages.push(content.items.map((item: { str?: string }) => item.str ?? '').join(' '));
-        }
-        setUploadHtml(pages.join('\n\n'));
+        // PDF extraction runs server-side to avoid bloating the client bundle
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${apiBase}/pipeline-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+          body: JSON.stringify({ action: 'parse-pdf', pdfBase64: await fileToBase64(file) }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'PDF parse failed');
+        setUploadHtml(data.text || '');
       } else {
         flashFeedback(false, `Unsupported: .${ext}. Use .pdf, .md, .txt, .html, or .docx`);
         return;

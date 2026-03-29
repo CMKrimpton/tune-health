@@ -726,6 +726,27 @@ Deno.serve(async (req: Request) => {
       return json({ success: true, slug, logId, status: "written", message: "Article entered pipeline. Independence review dispatched." });
     }
 
+    // ------ PARSE-PDF — extract text from a base64-encoded PDF ------
+    if (action === "parse-pdf") {
+      const pdfBase64 = body.pdfBase64 as string;
+      if (!pdfBase64) return json({ error: "pdfBase64 is required" }, 400);
+      try {
+        const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
+        // Use pdf.js via CDN in Deno
+        const pdfjsLib = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.min.mjs");
+        const pdf = await pdfjsLib.getDocument({ data: pdfBytes, useSystemFonts: true }).promise;
+        const pages: string[] = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          pages.push(content.items.map((item: Record<string, unknown>) => (item.str as string) || '').join(' '));
+        }
+        return json({ text: pages.join('\n\n') });
+      } catch (err: unknown) {
+        return json({ error: `PDF parse failed: ${err instanceof Error ? err.message : 'unknown'}` }, 500);
+      }
+    }
+
     // ------ FETCH-URL — fetch a web page and return text content ------
     if (action === "fetch-url") {
       const url = (body.url as string)?.trim();
