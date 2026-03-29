@@ -149,7 +149,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
     <div id="tab-pipeline" class="admin-tab-panel active">
       <PipelineMonitor
         client:load
-        initialLogs={pipelineLogs}
+        initialLogs={[]}
         initialArticleCount={articleCount}
         apiBase={apiBase}
         initialTotalCost={totalCost}
