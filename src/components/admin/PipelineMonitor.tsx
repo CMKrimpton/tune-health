@@ -104,6 +104,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [uploadParsing, setUploadParsing] = useState(false);
   const [uploadEntry, setUploadEntry] = useState<'full' | 'independence'>('full');
   const [uploadDragOver, setUploadDragOver] = useState(false);
+  const [uploadUrl, setUploadUrl] = useState('');
   const uploadFileRef = useRef<HTMLInputElement>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
@@ -315,6 +316,28 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       setUploadParsing(false);
       if (uploadFileRef.current) uploadFileRef.current.value = '';
     }
+  };
+
+  const fetchUrl = async () => {
+    if (!uploadUrl.trim()) return;
+    setUploadParsing(true);
+    try {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ action: 'fetch-url', url: uploadUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        flashFeedback(false, data.error || `Fetch failed: ${res.status}`);
+      } else {
+        setUploadHtml(data.text || '');
+        flashFeedback(true, `Fetched ${uploadUrl.trim().slice(0, 50)}`);
+        setUploadUrl('');
+      }
+    } catch {
+      flashFeedback(false, 'Failed to fetch URL');
+    } finally { setUploadParsing(false); }
   };
 
   const submitArticleToChain = async () => {
@@ -705,6 +728,26 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                 {uploadParsing ? 'Parsing\u2026' : '.pdf .md .docx .html .txt'}
               </button>
               <input ref={uploadFileRef} type="file" accept=".md,.txt,.html,.htm,.docx,.pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }} />
+            </div>
+            <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.375rem' }}>
+              <input
+                type="text"
+                placeholder="https://... — fetch article from URL"
+                value={uploadUrl}
+                onChange={e => setUploadUrl(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') fetchUrl(); }}
+                className="pipeline-queue-input"
+                style={{ flex: 1 }}
+              />
+              <button
+                onClick={fetchUrl}
+                disabled={uploadParsing || !uploadUrl.trim()}
+                className="pipeline-trigger-btn admin-text-md"
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                {uploadParsing ? 'Fetching\u2026' : 'Fetch'}
+              </button>
             </div>
             <textarea
               placeholder={uploadEntry === 'full' ? 'Paste or drop source material, notes, study text, or a draft (optional)' : 'Paste or drop finished article HTML, or use the file button above'}

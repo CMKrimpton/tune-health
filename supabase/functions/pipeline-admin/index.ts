@@ -726,6 +726,41 @@ Deno.serve(async (req: Request) => {
       return json({ success: true, slug, logId, status: "written", message: "Article entered pipeline. Independence review dispatched." });
     }
 
+    // ------ FETCH-URL — fetch a web page and return text content ------
+    if (action === "fetch-url") {
+      const url = (body.url as string)?.trim();
+      if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+        return json({ error: "Valid URL required" }, 400);
+      }
+      try {
+        const res = await fetch(url, {
+          headers: { "User-Agent": "Mozilla/5.0 (compatible; alumi-news-admin/1.0)" },
+          redirect: "follow",
+        });
+        if (!res.ok) return json({ error: `Fetch failed: HTTP ${res.status}` }, 502);
+        const html = await res.text();
+        // Strip scripts, styles, nav, footer, header — keep article body text
+        const cleaned = html
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?<\/style>/gi, '')
+          .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+          .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+          .replace(/<header[\s\S]*?<\/header>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/\s+/g, ' ')
+          .trim();
+        return json({ text: cleaned.slice(0, 100000) });
+      } catch (err: unknown) {
+        return json({ error: `Fetch failed: ${err instanceof Error ? err.message : 'unknown'}` }, 502);
+      }
+    }
+
     // ------ GET-BRIEF — fetch formatted editorial brief for Claude ------
     if (action === "get-brief") {
       const logId = body.logId as string;
