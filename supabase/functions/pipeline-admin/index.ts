@@ -251,7 +251,8 @@ Deno.serve(async (req: Request) => {
       const { data: queue } = await db
         .from("topic_queue")
         .select("*")
-        .order("priority", { ascending: false })
+        .order("expedite", { ascending: false })
+        .order("priority", { ascending: true })
         .order("created_at", { ascending: true });
       return json({ queue: queue || [] });
     }
