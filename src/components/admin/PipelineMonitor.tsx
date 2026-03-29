@@ -94,6 +94,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [newCategory, setNewCategory] = useState('');
   const [newExpedite, setNewExpedite] = useState(false);
   const [queueing, setQueueing] = useState(false);
+  // Article upload state
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadCategory, setUploadCategory] = useState('');
+  const [uploadHtml, setUploadHtml] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<string | null>(null);
+  const [uploadParsing, setUploadParsing] = useState(false);
+  const uploadFileRef = useRef<HTMLInputElement>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
   const [scouting, setScouting] = useState<string | null>(null);
@@ -269,6 +278,66 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       setQueueResult(`Error: ${err instanceof Error ? err.message : 'network failure'}`);
     }
     finally { setQueueing(false); }
+  };
+
+  // ─── Article Upload ────────────────────────────────────────────
+  const handleUploadFile = async (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    setUploadParsing(true);
+    try {
+      if (ext === 'md' || ext === 'txt' || ext === 'html' || ext === 'htm') {
+        setUploadHtml(await file.text());
+      } else if (ext === 'docx') {
+        const mammoth = await import('mammoth');
+        const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+        setUploadHtml(result.value);
+      } else if (ext === 'pdf') {
+        flashFeedback(false, 'PDF not supported yet — paste the text or use .docx/.md/.txt');
+        return;
+      } else {
+        flashFeedback(false, `Unsupported: .${ext}. Use .md, .txt, .html, or .docx`);
+        return;
+      }
+      flashFeedback(true, `Parsed ${file.name}`);
+    } catch {
+      flashFeedback(false, 'Failed to parse file');
+    } finally {
+      setUploadParsing(false);
+      if (uploadFileRef.current) uploadFileRef.current.value = '';
+    }
+  };
+
+  const submitArticleToChain = async () => {
+    if (!uploadHtml.trim() || !uploadTitle.trim()) return;
+    setUploading(true);
+    setUploadResult(null);
+    const slug = uploadTitle.toLowerCase().replace(/['']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+    try {
+      const res = await fetch(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({
+          action: 'submit-new-article',
+          articleHtml: uploadHtml.trim(),
+          title: uploadTitle.trim(),
+          slug,
+          category: uploadCategory || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setUploadResult(`Failed: ${data.error || res.status}`);
+      } else {
+        setUploadResult(`Submitted "${uploadTitle.trim().slice(0, 50)}" — independence review dispatched`);
+        setUploadTitle('');
+        setUploadCategory('');
+        setUploadHtml('');
+        setTimeout(() => setUploadResult(null), 6000);
+      }
+      setTimeout(fetchStatus, 2000);
+    } catch (err) {
+      setUploadResult(`Error: ${err instanceof Error ? err.message : 'network failure'}`);
+    } finally { setUploading(false); }
   };
 
   const produceFromQueue = async (queueId: string, topic: string) => {
@@ -544,6 +613,76 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             </span>
           )}
         </h3>
+
+        {/* ── Upload Article ── */}
+        <button
+          onClick={() => setUploadOpen(!uploadOpen)}
+          className="pipeline-trigger-btn admin-text-md"
+          style={{ marginBottom: '0.5rem', width: '100%', justifyContent: 'center', gap: '0.375rem', background: uploadOpen ? 'rgba(168,162,158,0.1)' : 'transparent', border: '1px dashed rgba(168,162,158,0.25)' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          {uploadOpen ? 'Close' : 'Upload Article to Pipeline'}
+        </button>
+
+        {uploadOpen && (
+          <div style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(15,14,12,0.5)', border: '1px solid rgba(168,162,158,0.12)', borderRadius: '6px' }}>
+            <input
+              type="text"
+              placeholder="Article title"
+              value={uploadTitle}
+              onChange={e => setUploadTitle(e.target.value)}
+              className="pipeline-queue-input"
+              style={{ marginBottom: '0.375rem' }}
+            />
+            <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.375rem' }}>
+              <select
+                value={uploadCategory}
+                onChange={e => setUploadCategory(e.target.value)}
+                className="pipeline-queue-select"
+              >
+                <option value="">Category</option>
+                {VALID_CATEGORIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => uploadFileRef.current?.click()}
+                disabled={uploadParsing}
+                className="pipeline-trigger-btn admin-text-md"
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                {uploadParsing ? 'Parsing\u2026' : '.md .docx .html .txt'}
+              </button>
+              <input ref={uploadFileRef} type="file" accept=".md,.txt,.html,.htm,.docx" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }} />
+            </div>
+            <textarea
+              placeholder="Paste article HTML here, or upload a file above"
+              value={uploadHtml}
+              onChange={e => setUploadHtml(e.target.value)}
+              rows={4}
+              className="pipeline-queue-input"
+              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', resize: 'vertical', minHeight: '80px' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.375rem' }}>
+              <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>
+                {uploadHtml ? `${uploadHtml.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length} words` : 'Full editorial chain: Independence → QC → Publish'}
+              </span>
+              <button
+                onClick={submitArticleToChain}
+                disabled={uploading || !uploadHtml.trim() || !uploadTitle.trim()}
+                className="pipeline-trigger-btn primary admin-text-md"
+              >
+                {uploading ? 'Submitting\u2026' : 'Submit to Pipeline'}
+              </button>
+            </div>
+            {uploadResult && (
+              <div className={`admin-toast admin-mt-sm ${uploadResult.startsWith('Failed') || uploadResult.startsWith('Error') ? 'admin-toast-error' : 'admin-toast-success'}`}>
+                {uploadResult}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="pipeline-queue-input-row">
           <input
