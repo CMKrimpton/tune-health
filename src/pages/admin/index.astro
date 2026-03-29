@@ -148,7 +148,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
     <!-- Pipeline Tab -->
     <div id="tab-pipeline" class="admin-tab-panel active">
       <PipelineMonitor
-        client:load
+        client:only="react"
         initialLogs={pipelineLogs}
         initialArticleCount={articleCount}
         apiBase={apiBase}
@@ -159,7 +159,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
     <!-- Articles Tab -->
     <div id="tab-articles" class="admin-tab-panel">
       <ArticlesManager
-        client:load
+        client:only="react"
         initialArticles={articles}
         apiBase={apiBase}
       />
@@ -168,7 +168,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
     <!-- AI Agents Tab -->
     <div id="tab-agents" class="admin-tab-panel">
       <AgentsPanel
-        client:load
+        client:only="react"
         apiBase={apiBase}
         initialArticleCount={articleCount}
       />
