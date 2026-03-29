@@ -704,11 +704,11 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
             <input
               type="text"
-              placeholder={uploadEntry === 'full' ? 'Topic or article title' : 'Article title'}
+              placeholder={uploadEntry === 'full' ? 'Topic or article title (required)' : 'Article title (required)'}
               value={uploadTitle}
               onChange={e => setUploadTitle(e.target.value)}
               className="pipeline-queue-input"
-              style={{ marginBottom: '0.375rem' }}
+              style={{ marginBottom: '0.375rem', borderColor: !uploadTitle.trim() && uploadHtml.trim() ? '#ef4444' : undefined }}
             />
             <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.375rem' }}>
               <select
