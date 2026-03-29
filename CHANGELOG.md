@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [14.4.0] - 2026-03-29
+
+### Added — Upload Article to Pipeline (Dashboard)
+- **"Upload Article to Pipeline"** collapsible form on Pipeline tab, above topic queue
+- **Two entry points**: "Full Chain" (research → editor → write → QC → publish) queues as topic with source material; "Finished Article" (independence → QC → publish) submits directly
+- **File upload**: drag-and-drop or file picker for .pdf, .md, .docx, .html, .txt — PDF/DOCX parsed server-side via `parse-file` action
+- **URL fetch**: paste a URL, server fetches and strips to clean text via `fetch-url` action
+- **Auto-suggest title**: first heading, markdown heading, or first sentence auto-fills the title field on paste/upload/fetch
+- **Queue search and filter**: search bar filters by topic/category/notes, status tabs (Queued/All/Completed/Active), search overrides status filter
+- **Requeue + Delete buttons** on completed/skipped queue items
+- **Queue sort fixed**: now matches dispatch order (expedite first, low priority number first)
+
+### Fixed — Admin Dashboard Stability
+- **React hydration crash killed all admin components** — Astro prop serialization of large objects (article HTML, research_data) caused React 19 hydration mismatch (#418) that left event handlers dead. Fixed by switching all admin islands to `client:only="react"` (no server HTML = no hydration = no mismatch)
+- **mammoth + pdfjs-dist broke React hydration** — both libraries (884KB total) had Node.js `process` references that caused hydration mismatches even as dynamic imports due to Vite preload-helper. Removed both from client bundle; file parsing moved server-side
+- **CSP blocked pdfjs worker** — added `cdn.jsdelivr.net` to `script-src` and `worker-src`
+- **Housekeeping nuked fresh queue items** — status endpoint's dedup logic auto-completed manually queued topics within seconds if 50%+ words matched a published title. Now only deduplicates items >2 hours old
+- **Status endpoint hid completed queue items** — only returned queued/assigned/in_progress, so search couldn't find completed items. Now returns all
+- **Editor killed manually queued topics** — category balance rules overrode MANDATORY EDITORIAL DIRECTION. Now: manually queued topics are NEVER killed; editor concerns become structural notes in the brief
+- **QC voice rewrite loop on admin-editor articles** — Sonnet rewriting Sonnet is circular and timed out. QC now skips voice rewrite for `_writtenBy: "admin-editor"`
+- **ArticlesManager missing auto-fetch** — needed for `client:only` rendering; now fetches on mount when initialArticles is empty
+
 ## [14.3.0] - 2026-03-29
 
 ### Fixed — Admin Article Editor Overhaul
