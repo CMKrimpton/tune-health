@@ -881,8 +881,10 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         {queue.length > 0 && (
           <div className="pipeline-completed-list">
             {queue.filter(item => {
-              if (queueFilter !== 'all' && item.status !== queueFilter) return false;
-              if (queueSearch.trim()) {
+              const hasSearch = queueSearch.trim().length > 0;
+              // When searching, show all statuses so results aren't hidden
+              if (!hasSearch && queueFilter !== 'all' && item.status !== queueFilter) return false;
+              if (hasSearch) {
                 const s = queueSearch.toLowerCase();
                 return item.topic.toLowerCase().includes(s) || (item.category || '').toLowerCase().includes(s) || (item.notes || '').toLowerCase().includes(s);
               }
