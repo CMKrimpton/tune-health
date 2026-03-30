@@ -47,12 +47,11 @@ Our readers are 20-35, smart, health-curious, skeptical. Headlines must pass the
 **LENGTH: 10 words maximum.** This is a hard cap — not a target, a ceiling. The best headlines are 5-8 words. Shorter is almost always better. If you can cut a word without losing meaning, cut it.
 
 **Banned:**
-- Medical jargon (PCSK9, MASLD, SGLT2, glymphatic) — save it for the article
-- "The [Noun] That [Dramatic Verb]..." — overused
-- "[Subject]. Nobody Is Talking About It." — conspiracy framing
-- Two-sentence headlines with a short dramatic kicker — this is our #1 overused pattern. ONE sentence only
-- Headlines that read like journal article titles
-- Starting with "The" by default
+- Medical jargon and acronyms — save them for the article body, not the headline
+- Dramatic two-part structures with a short kicker sentence — our most overused pattern. One sentence only
+- Conspiracy framing that implies hidden knowledge or institutional cover-up
+- Headlines that read like journal article titles or conference abstracts
+- Defaulting to any single repeated opener across articles
 
 **A strong headline** makes a specific claim or asks a specific question that could only belong to THIS article. It tells the reader exactly what argument the piece makes. The reader should think "wait, what?" — not because of manufactured mystery, but because the claim itself is surprising or specific enough to demand reading. If you could swap the headline onto a different article about the same broad topic without anyone noticing, it is too generic.
 
@@ -60,7 +59,7 @@ NO medical acronyms in headlines. Spell it out or find a human-language equivale
 
 This is a WORKING headline — the writer may improve it during writing. Generate the best you can, but the writer has final say.
 6. **Assign the article archetype** — This determines the article's fundamental form and feel. NOT every article should be written the same way. Match the archetype to the material.
-7. **Dogma check** — Before writing the brief, ask: does this topic touch any area where popular health advice is outdated or industry-driven? If so, add a "dogmaWarnings" field listing specific claims the writer must NOT repeat without verification (e.g., "Do not repeat omega-3/6 ratio claims as fact", "Note that the breakfast-is-essential claim is industry-funded"). This is CRITICAL editorial oversight.
+7. **Dogma check** — Does this topic touch any area where popular health advice is outdated or industry-funded? If so, add dogmaWarnings listing the specific claims the writer must not repeat as settled fact. Think about what a lazy writer would assume is true for this topic that the evidence no longer supports.
 8. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction. Include dogma warnings in the "avoid" field.
 9. **Make the call** — approve or kill the entire batch.
 10. **Flag series potential** — If a topic is so rich it naturally breaks into 2-4 standalone pieces (e.g., a drug class with distinct mechanisms, a condition with distinct subtopics), flag it. Don't force a series, but don't ignore natural multi-part material either.
@@ -104,16 +103,16 @@ Return ONLY valid JSON:
   "archetype": "deep-investigation | the-explainer | provocation | case-study | profile | the-roundup | myth-autopsy",
   "wordCount": { "min": 1600, "max": 2000 },
   "brief": {
-    "tonePreset": "straight-science | smart-casual | dry-analytical | storyteller | debunker | wire-dispatch | pointed | measured-authority | curious | understated — Same voice, different gear. Match to subject. Vary across collection.",
-    "tone": "Specific tone guidance for THIS piece beyond the preset — what makes this article's voice unique?",
+    "tonePreset": "straight-science | smart-casual | dry-analytical | storyteller | debunker | wire-dispatch | pointed | measured-authority | curious | understated",
+    "tone": "What makes THIS article's voice different from the last one we published? Give the writer a feel, not a formula.",
     "density": "data-heavy | narrative-driven | balanced",
     "pacing": "slow-build | rapid-fire | crescendo",
-    "openWith": "How to open — be SPECIFIC about what the writer should lead with. The opening must earn the second paragraph. Vary across the collection — not every article should open the same way. Match the opening energy to the archetype and subject.",
-    "emphasize": "The 2-3 most important threads the writer should weave through the piece. These are not section titles — they are thematic directions that should shape the argument, not scaffold it into a numbered list.",
-    "avoid": "Specific pitfalls for THIS topic — clichés, false framings, angles that would weaken the piece.",
-    "dogmaWarnings": "Specific outdated claims the writer must NOT repeat as fact for this topic. Only include when relevant — not every topic has dogma traps.",
-    "closingDirection": "How to end — vary this across the collection. Not every article needs a twist, a paradox, or a call to action. Match the closing to the subject's weight.",
-    "structuralNotes": "Any specific structural choices that would serve this particular piece — pacing, pull-quote density, whether to use a framing device. Leave null if standard structure works."
+    "openWith": "Tell the writer exactly what to lead with. Not a category of opening — the actual detail, claim, or tension that should hit the reader first.",
+    "emphasize": "The tensions and threads that make this story worth telling. These should shape how the writer thinks, not what sections they create.",
+    "avoid": "Where could this piece go wrong? What would make it boring, dishonest, or predictable?",
+    "dogmaWarnings": "Claims the writer might repeat out of habit that are actually outdated or industry-funded for this topic. Null if none.",
+    "closingDirection": "Where should the reader's mind be when they finish? Not a format — a destination.",
+    "structuralNotes": "Anything about how this piece should be built that the archetype alone doesn't capture. Null if standard."
   },
   "seriesCandidate": false,
   "seriesNotes": null,
