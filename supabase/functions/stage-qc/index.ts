@@ -59,8 +59,8 @@ If the voice fails but the content is solid, decision = "rewrite_voice" — NOT 
 
 ## Headline Rules
 - MAX 10 WORDS. Shorten if it exceeds this — hard cap
-- One sentence only. No two-sentence kickers ("X happened. Here's why." — banned)
-- Must be specific and honest. No clickbait, no manufactured mystery ("The Truth About X", "What Doctors Won't Tell You")
+- One sentence only. No two-sentence kicker structures — banned
+- Must be specific and honest. No clickbait, no manufactured mystery or conspiracy framing
 - If the current headline is good AND under 10 words, KEEP IT. Don't change for the sake of changing
 
 ## Description Rules
@@ -68,7 +68,7 @@ If the voice fails but the content is solid, decision = "rewrite_voice" — NOT 
 - Must accurately represent the article's argument, not just its topic
 
 ## Quality Score (craft-weighted — a well-researched but flat article is not a 7)
-- 9-10: Exceptional — you'd be proud to see this in The Atlantic. Has rhythm, gear changes, at least one paragraph worth texting. Takes clear positions. Follows the money
+- 9-10: Exceptional — writing you would be proud to publish anywhere. Has rhythm, gear changes, at least one paragraph worth sharing. Takes clear positions. Follows the money
 - 7-8: Strong — genuinely good writing with voice and edge. Minor craft issues but the reader stays engaged throughout. Has editorial opinions and a financial angle
 - 5-6: Competent — accurate, well-structured, but reads like a health blog. Uniformly measured prose, no surprises, no moments that raise the temperature. This is the most common failure mode: articles that pass every mechanical check but that no one would read twice. SHOULD TRIGGER REWRITE_VOICE
 - 3-4: Weak — AI slop. No voice, no opinion, banned phrases. SHOULD TRIGGER KILL

@@ -59,21 +59,17 @@ ${qcFeedback}
 - Word count: ${voiceAudit.wordCount}
 
 ## BRAND VOICE (this is non-negotiable)
-60% exceptional journalism (The Atlantic, Wired, Atavist)
-20% Bill Maher (irreverent, says the uncomfortable thing, calls out hypocrisy)
-15% Christopher Hitchens (precise demolition of lazy thinking, no sacred cows)
-15% Sam Harris (calm clarity on controversial topics, follows logic wherever it leads)
+Write at the level of the best long-form magazine journalism — authoritative, slightly irreverent, with moral clarity and intellectual precision. The prose should feel like a smart friend who reads the studies, not a professor or a wellness influencer. Say the uncomfortable thing when the evidence supports it. No sacred cows.
 
 ## REWRITE RULES
-1. Add "you" and "your" — talk TO the reader, not AT them. "Your doctor probably hasn't ordered this test." "You're paying for a system that profits from your confusion."
-2. Break paragraphs over 3 sentences. Short paragraphs are power.
-3. Add SHORT sentences (under 8 words). "That's the problem." "Nobody's talking about this." "Follow the money." These create rhythm.
-4. Remove ALL banned phrases. Replace with specific, vivid language.
-5. Add at least 2 editorial opinions. Not hedged — actual verdicts. "Doctors are undertesting." "This industry profits from ignorance."
-6. Earn the Bill Maher moment. One paragraph where you say what a hospital pamphlet never would.
-7. Add 2+ everyday analogies. "Think of your immune system like a fire department that sometimes torches the building it's trying to save."
-8. KEEP every fact, study citation, number, source, and HTML structure tag (<section>, <h2>, <aside>, etc.) EXACTLY as they are.
-9. Keep the same approximate word count. You're rewriting sentences, not adding new content.
+1. Vary sentence length dramatically. Follow long analytical sentences with short verdicts that land with force. Monotonous rhythm is what makes prose feel flat — break the pattern constantly.
+2. Break paragraphs over 3 sentences. Short paragraphs create emphasis and pacing.
+3. Remove ALL banned phrases. Replace with specific, vivid language that could only belong in THIS article.
+4. Add at least 2 editorial opinions stated directly — not hedged with qualifiers, but clear verdicts backed by the evidence in the article.
+5. There must be at least one moment where the writing says something a cautious institutional publication never would — something honest, uncomfortable, or irreverent that earns the reader's trust.
+6. Add everyday analogies drawn from ordinary life that make complex mechanisms feel intuitive and concrete.
+7. KEEP every fact, study citation, number, source, and HTML structure tag (<section>, <h2>, <aside>, etc.) EXACTLY as they are.
+8. Keep the same approximate word count. You are rewriting sentences, not adding new content.
 
 Return ONLY the rewritten HTML. No JSON wrapper, no explanation, no markdown fences.`;
 

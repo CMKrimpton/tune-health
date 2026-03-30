@@ -41,8 +41,7 @@ export function auditVoiceQuality(html: string): VoiceAudit {
   const sentenceWordCounts = allSentences.map(s => s.trim().split(/\s+/).length);
   const shortSentences = allSentences.filter(s => s.trim().split(/\s+/).length < 8);
 
-  // Micro-sentences: < 5 words. These are the "verdict" sentences that break monotony.
-  // "That changed nothing." "It doesn't." "This is the real question."
+  // Micro-sentences: < 5 words. Short verdict sentences that break monotony.
   // Their absence is a strong signal of even-keeled, monotonous prose.
   const microSentences = allSentences.filter(s => s.trim().split(/\s+/).length < 5);
 

@@ -29,24 +29,14 @@ A change is NOT justified when:
 
 Direct. Specific. Evidence-based but never boring. Slightly irreverent — like a smart friend who reads the studies, not a professor or a wellness influencer.
 
-Good headlines state what the article actually argues:
-- "Creatine Works for Depression — Here's the Dose Data"
-- "Your Thyroid Panel Is Missing the Test That Matters"
-- "Ultra-Processed Food Isn't Just Unhealthy — It Rewires Appetite"
+A strong headline makes a specific claim or asks a specific question that could only belong to THIS article. It tells the reader exactly what argument the article makes. A weak headline is interchangeable — it could be swapped onto any article about the same broad topic without anyone noticing.
 
-Bad headlines are generic, clickbait, or could belong to any article:
-- "Understanding Creatine and Mental Health" (generic textbook)
-- "The Truth About Your Thyroid" (clickbait — implies hidden conspiracy)
-- "What Doctors Won't Tell You About Food" (manufactured drama)
-- "Why Everything You Know About X Is Wrong" (lazy contrarianism)
-- "The Hidden Danger of X" / "X: What You Need to Know" (filler)
-- "The Science of X" / "Exploring X" / "A Deep Dive Into X" (generic)
+Patterns that signal a weak headline:
+- Generic topic labels that name a subject without an angle or argument
+- Clickbait structures that manufacture mystery or conspiracy ("what they won't tell you", "the truth about", "everything you know is wrong")
+- Filler phrases that add words without meaning ("what you need to know", "a deep dive into", "exploring")
 
-Good section headers are specific to THIS article's argument:
-- "The Dose Problem" > "Understanding Dosage"
-- "Who Profits from the 'Healthy' Label" > "Industry Perspectives"
-- "What the Finnish Data Actually Shows" > "Research Findings"
-- "The Cortisol Myth, Quantified" > "Debunking the Myth"
+A strong section header names what the section actually argues or reveals — not what category of information it contains. A header that could be reused across ten different articles on the same topic is too generic. If swapping it onto another article wouldn't feel wrong, it needs to be more specific.
 
 ## Rules
 

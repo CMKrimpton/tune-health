@@ -840,15 +840,15 @@ Your job is to write an article so good that a reader would text a paragraph to 
 
 ## THE STANDARD
 
-Write like the best magazine journalists alive -- The Atlantic, Vanity Fair, NYT Magazine, WSJ features -- with the moral clarity of Hitchens, the uncomfortable honesty of Bill Maher, and the intellectual precision of Sam Harris. The writing should feel effortless, even though nothing about it is easy.
+Write at the level of the best long-form magazine journalism. The prose should feel effortless and authoritative -- the kind of writing where a reader forgets they are reading because the sentences carry them forward. Every sentence should earn the next one.
 
 What makes writing exceptional (not just good):
-- **Rhythm**: Vary sentence length dramatically. A 40-word analytical sentence followed by a 4-word verdict. "That changed nothing." after a complex paragraph. Monotonous sentence length is the #1 sign of mediocre prose.
-- **Gear changes**: The article should not be the same emotional temperature throughout. Shift from calm analysis to controlled anger. From data to a single human detail. From explanation to judgment. If every paragraph sounds the same, rewrite until they don't.
-- **Openings that grip**: The first 2-3 sentences decide everything. A specific, surprising, or tension-creating opening. Never a definition, a broad context-setter, or a procedural fact. Earn the second paragraph.
-- **Specificity over abstraction**: "The medical system failed" is abstract. Name the mechanism. Name the dollar amount. Name the person. Specific details are what make writing feel real.
-- **Positions, not hedges**: State verdicts. "Doctors are undertesting." "The standard of care is outdated." "This industry profits from your confusion." If you can only explain without judging, you are writing an encyclopedia.
-- **Honest, not meek**: Be fair to the evidence, not to institutions. False equivalence -- giving equal weight to a well-supported finding and an industry talking point -- is not fairness. It is cowardice dressed as balance. When the evidence is clear, say so clearly. When it genuinely isn't, say that too.
+- **Rhythm**: Vary sentence length dramatically. Follow long analytical sentences with short verdicts that land with force. Monotonous sentence length -- where every sentence is roughly the same number of words -- is the single clearest sign of mediocre prose. Break the pattern constantly.
+- **Gear changes**: The article must not be the same emotional temperature throughout. There must be moments where the writing shifts from calm analysis to something that makes the reader feel -- anger, surprise, discomfort, recognition. If the emotional register never changes, the article will bore smart readers regardless of accuracy.
+- **Openings that grip**: The first 2-3 sentences decide everything. Open with something specific, surprising, or tension-creating. Never a definition, a broad context-setter, or a procedural fact. The opening must earn the second paragraph.
+- **Specificity over abstraction**: Abstract claims are forgettable. Name the mechanism. Name the dollar amount. Name the person. Specific details are what make writing feel real and trustworthy.
+- **Positions, not hedges**: State verdicts directly. If you can only explain without ever passing judgment, you are writing an encyclopedia, not journalism. At least two clear editorial opinions per article -- not hedged with qualifiers, but direct claims backed by the evidence you have presented.
+- **Honest, not meek**: Be fair to the evidence, not to institutions or conventional wisdom. Giving equal weight to a well-supported finding and an industry talking point is not balance -- it is cowardice. When the evidence clearly supports a conclusion, state it without hedging. When it genuinely does not, say that plainly too.
 
 ## SELF-EDITING (do this BEFORE you say "done")
 
@@ -895,7 +895,7 @@ ${((researchData.counterArguments as string[]) || []).length > 0 ? `Counter-argu
 - Take positions. This is journalism, not Wikipedia.
 - Zero fabrication. Only cite studies from the research above.
 - When the evidence is clear, say so without hedging. When it genuinely isn't, say that too. Never give equal weight to a well-supported finding and an industry talking point.
-- Section headings (h2): specific to THIS article's argument. Not generic labels ("The Science", "Understanding X"). Max 1-2 can start with "The".
+- Section headings (h2): every header must be specific to THIS article's argument. If you could swap it onto a different article about the same broad topic, it is too generic. Max 1-2 can start with "The".
 
 ## HTML FORMAT
 <section id="introduction" class="reveal">
