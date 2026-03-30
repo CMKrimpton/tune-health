@@ -51,8 +51,9 @@ Deno.serve(async (req: Request) => {
 ${qcFeedback}
 
 ## MECHANICAL AUDIT (code-generated, these numbers are facts):
-- "you/your" count: ${voiceAudit.youCount} (minimum 6 — ADD MORE)
-- Banned phrases found: ${voiceAudit.bannedPhrases.length > 0 ? voiceAudit.bannedPhrases.map(p => `"${p}"`).join(", ") : "none"}
+- Sentence length variance: ${voiceAudit.sentenceLengthVariance} (< 4 = monotonous, 5-8 = good, 9+ = dynamic)
+- Micro-sentences (< 5 words): ${voiceAudit.microSentenceCount} (short verdicts that break monotony — 0 is a red flag)
+- Banned phrases found: ${voiceAudit.bannedPhrases.length > 0 ? voiceAudit.bannedPhrases.map(p => `"${p}"`).join(", ") : "none"} (REMOVE ALL)
 - Paragraphs over 3 sentences: ${voiceAudit.paragraphsOver3Sentences} (BREAK THEM UP)
 - Short sentences (< 8 words): ${voiceAudit.shortSentenceCount} total across ${voiceAudit.totalParagraphs} paragraphs (need at least 1 per 3 paragraphs)
 - Rhetorical questions: ${voiceAudit.rhetoricQuestionCount} (max 2)
