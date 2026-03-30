@@ -409,6 +409,15 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
           const brief = editorBrief.brief as Record<string, unknown>;
           brief.structuralNotes = `[EDITOR OVERRIDE — manually queued] ${killNote}. Address these concerns in the article.`;
           if (!editorBrief.topicScore || (editorBrief.topicScore as number) < 5) editorBrief.topicScore = 5;
+          // Editor didn't fill in slug/headline/description because it was killing — generate from topic
+          if (!editorBrief.headline) editorBrief.headline = originalQueuedTopic;
+          if (!editorBrief.slug) {
+            editorBrief.slug = originalQueuedTopic
+              .toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").slice(0, 80);
+          }
+          if (!editorBrief.description) editorBrief.description = `Investigation: ${originalQueuedTopic}.`;
+          if (!editorBrief.archetype) editorBrief.archetype = "deep-investigation";
+          if (!brief.tonePreset) brief.tonePreset = "pointed";
         } else {
           await db
             .from("daily_article_log")
