@@ -834,14 +834,39 @@ Deno.serve(async (req: Request) => {
       const brief = (editorBrief.brief as Record<string, unknown>) || {};
 
       // Format a clean brief that can be pasted directly into Claude Opus
-      const claudePrompt = `You are writing for alumi news — "Evidence. Wherever it leads."
+      const claudePrompt = `You are writing for alumi news -- "Evidence. Wherever it leads."
 
-Write in the style of exceptional, effortless long-form journalism — The Atlantic, Vanity Fair, The New York Times Magazine, The Wall Street Journal — with tonal enrichments from oratory greats like Bill Maher, Christopher Hitchens, and Sam Harris. The writing should feel like the best magazine feature you've ever read: authoritative without being academic, personal without being confessional, sharp without being cruel.
+Your job is to write an article so good that a reader would text a paragraph to a friend. Not competent. Not well-researched. Exceptional. The kind of writing where every sentence earns the next one, where the reader feels smarter and slightly unsettled by the end.
+
+## THE STANDARD
+
+Write like the best magazine journalists alive -- The Atlantic, Vanity Fair, NYT Magazine, WSJ features -- with the moral clarity of Hitchens, the uncomfortable honesty of Bill Maher, and the intellectual precision of Sam Harris. The writing should feel effortless, even though nothing about it is easy.
+
+What makes writing exceptional (not just good):
+- **Rhythm**: Vary sentence length dramatically. A 40-word analytical sentence followed by a 4-word verdict. "That changed nothing." after a complex paragraph. Monotonous sentence length is the #1 sign of mediocre prose.
+- **Gear changes**: The article should not be the same emotional temperature throughout. Shift from calm analysis to controlled anger. From data to a single human detail. From explanation to judgment. If every paragraph sounds the same, rewrite until they don't.
+- **Openings that grip**: The first 2-3 sentences decide everything. A specific, surprising, or tension-creating opening. Never a definition, a broad context-setter, or a procedural fact. Earn the second paragraph.
+- **Specificity over abstraction**: "The medical system failed" is abstract. Name the mechanism. Name the dollar amount. Name the person. Specific details are what make writing feel real.
+- **Positions, not hedges**: State verdicts. "Doctors are undertesting." "The standard of care is outdated." "This industry profits from your confusion." If you can only explain without judging, you are writing an encyclopedia.
+- **Honest, not meek**: Be fair to the evidence, not to institutions. False equivalence -- giving equal weight to a well-supported finding and an industry talking point -- is not fairness. It is cowardice dressed as balance. When the evidence is clear, say so clearly. When it genuinely isn't, say that too.
+
+## SELF-EDITING (do this BEFORE you say "done")
+
+After writing, reread the article as a seasoned editor who has seen ten thousand pitches. Ask yourself:
+1. Is there a paragraph worth texting to a friend? If not, find the strongest claim and rewrite it until it is.
+2. Does the opening earn the second paragraph, or would a busy reader bounce?
+3. Is there at least one moment of genuine surprise, discomfort, or anger? If the article never raises the temperature, it will bore smart readers regardless of accuracy.
+4. Are there 3+ sentences in a row of similar length? Break the pattern. Insert a short verdict. Cut a clause.
+5. Did you follow the money? Name who profits. Not abstractly -- specifically.
+6. Did you take at least 2 clear editorial positions? Not "some experts believe" -- actual verdicts.
+7. Would you be proud to see this published under your name in a major magazine?
+
+Do not submit until you can answer yes to all seven.
 
 ## YOUR ASSIGNMENT
-Working headline (improve if you can — max 10 words, one sentence, no two-part kickers): ${editorBrief.headline || logEntry.title}
+Working headline (improve if you can -- max 10 words, one sentence, no two-part kickers): ${editorBrief.headline || logEntry.title}
 Angle: ${editorBrief.angle || "Follow the research"}
-${editorBrief.description ? `Description (improve if you can): ${editorBrief.description}` : ""}
+${editorBrief.description ? `Description (improve if you can -- 2-3 complete sentences that make a reader stop scrolling): ${editorBrief.description}` : ""}
 ${editorBrief.archetype ? `Form: ${editorBrief.archetype}` : ""}
 
 ### Editorial Direction
@@ -866,15 +891,15 @@ ${researchData.mechanism ? `Mechanism: ${researchData.mechanism}` : ""}
 ${((researchData.counterArguments as string[]) || []).length > 0 ? `Counter-arguments:\n${((researchData.counterArguments as string[]) || []).map((c: string) => `- ${c}`).join("\n")}` : ""}
 
 ## PRINCIPLES
-- Follow the money. Name who profits.
+- Follow the money. Name who profits -- specifically, not abstractly.
 - Take positions. This is journalism, not Wikipedia.
 - Zero fabrication. Only cite studies from the research above.
-- When the evidence is clear, say so. When it's not, say that too.
-- Section headings (h2): do NOT start most with "The". Max 1-2 can. Use questions, imperatives, provocations instead.
+- When the evidence is clear, say so without hedging. When it genuinely isn't, say that too. Never give equal weight to a well-supported finding and an industry talking point.
+- Section headings (h2): specific to THIS article's argument. Not generic labels ("The Science", "Understanding X"). Max 1-2 can start with "The".
 
 ## HTML FORMAT
 <section id="introduction" class="reveal">
-  <p>Opening paragraph (no h2 — CSS drop cap applies automatically).</p>
+  <p>Opening paragraph (no h2 -- CSS drop cap applies automatically).</p>
 </section>
 
 <section id="section-slug" class="reveal">
@@ -883,9 +908,12 @@ ${((researchData.counterArguments as string[]) || []).length > 0 ? `Counter-argu
 </section>
 
 Pull quotes: <aside class="pull-quote reveal"><p>"Quote text."</p></aside>
+Methodology notes / caveats: <div class="data-callout reveal"><p><strong>Title</strong></p><p>Content.</p></div>
+
+CRITICAL: Never use inline style="" attributes or hardcoded colors. All styling comes from CSS classes.
 
 End with a Sources section listing every study cited.
-End with: <div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal"><p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed"><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>`;
+End with: <div class="data-callout reveal"><p><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>`;
 
       return json({
         success: true,

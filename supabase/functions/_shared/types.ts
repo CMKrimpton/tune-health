@@ -21,6 +21,9 @@ export interface VoiceAudit {
   totalParagraphs: number;
   shortSentenceRatio: string;
   rhetoricQuestionCount: number;
+  sentenceLengthVariance: number;
+  microSentenceCount: number;
+  openingSentenceWords: number;
   passed: boolean;
   failures: string[];
 }
