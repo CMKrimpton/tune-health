@@ -274,7 +274,10 @@ Deno.serve(async (req: Request) => {
     if (action === "delete-queue") {
       const queueId = body.queueId as string | undefined;
       if (!queueId) return json({ error: "queueId is required" }, 400);
-      await db.from("topic_queue").delete().eq("id", queueId);
+      // Clear FK references in daily_article_log first (prevents FK constraint violation)
+      await db.from("daily_article_log").update({ queue_id: null }).eq("queue_id", queueId);
+      const { error: delErr } = await db.from("topic_queue").delete().eq("id", queueId);
+      if (delErr) return json({ error: "Delete failed", detail: delErr.message }, 500);
       return json({ success: true, queueId });
     }
 
