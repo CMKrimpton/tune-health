@@ -521,7 +521,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   type PipelineStageKey = StageConfig['key'];
   const stageLogsMap: Record<PipelineStageKey, PipelineLog[]> = {
-    research: [], editor_brief: [], write: [], independence: [], qc: [], voice_rewrite: [], publish: [],
+    research: [], editor_brief: [], write: [], independence: [], qc: [], voice_rewrite: [], copy_edit: [], publish: [],
   };
   const completedLogs: PipelineLog[] = [];
   const editorKills: PipelineLog[] = [];

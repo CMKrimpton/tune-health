@@ -234,7 +234,7 @@ export interface PipelineLog {
 
 // ─── Pipeline Stages ─────────────────────────────────────────────────────────
 
-export type PipelineStage = 'research' | 'editor_brief' | 'write' | 'independence' | 'qc' | 'voice_rewrite' | 'publish';
+export type PipelineStage = 'research' | 'editor_brief' | 'write' | 'independence' | 'qc' | 'voice_rewrite' | 'copy_edit' | 'publish';
 
 export const PIPELINE_STAGES: Record<PipelineStage, string[]> = {
   research:       ['started', 'searching', 'research_done'],
@@ -243,6 +243,7 @@ export const PIPELINE_STAGES: Record<PipelineStage, string[]> = {
   independence:   ['independence_review', 'independence_done'],
   qc:             ['editor_qc', 'qc_approved'],
   voice_rewrite:  ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'],
+  copy_edit:      ['copy_editing', 'copy_edited'],
   publish:        ['publishing', 'published'],
 };
 
@@ -365,8 +366,9 @@ const STAGE_LABELS: Record<string, string> = {
   editor_brief: 'Editor Review',
   write: 'Writing',
   independence: 'Independence Review',
-  qc: 'QC & Publish',
+  qc: 'QC',
   voice_rewrite: 'Voice Polish',
+  copy_edit: 'Copy Edit',
   publish: 'Publishing',
   failed: 'Failed',
 };
