@@ -297,11 +297,6 @@ Review each element. Return null for proposed on anything that doesn't need chan
         // On failure, skip copy edit and dispatch directly to publish
         // Copy edit is a polish step — failure should never block publication
         console.log(`[stage-copy-edit] Recovering — dispatching directly to stage-publish`);
-        await db.from("daily_article_log").update({
-          status: "copy_edited",
-          research_data: undefined, // preserve existing — don't overwrite
-        }).eq("id", parsedLogId);
-        // Actually, we can't set research_data to undefined. Just update status.
         await db.from("daily_article_log").update({ status: "copy_edited" }).eq("id", parsedLogId);
         await dispatchStage("stage-publish", parsedLogId);
       }

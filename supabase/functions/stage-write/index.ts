@@ -139,9 +139,9 @@ Pacing: ${brief?.pacing || "slow-build"}
 ### Writer's Direction
 Tone: ${brief?.tone || "Standard editorial voice"}
 Open with: ${brief?.openWith || "A compelling hook"}
-Emphasize: ${((brief?.emphasize as string[]) || []).map((e: string) => `- ${e}`).join("\n") || "Key findings"}
-Avoid: ${((brief?.avoid as string[]) || []).map((a: string) => `- ${a}`).join("\n") || "Clichés and filler"}
-${((brief?.dogmaWarnings as string[]) || []).length > 0 ? `\n### DOGMA WARNINGS (from the editor — DO NOT IGNORE)\n${((brief?.dogmaWarnings as string[]) || []).map((w: string) => `⚠️ ${w}`).join("\n")}\n` : ""}Closing direction: ${brief?.closingDirection || "End with honest unknowns"}
+Threads: ${brief?.emphasize ? (Array.isArray(brief.emphasize) ? (brief.emphasize as string[]).map((e: string) => `- ${e}`).join("\n") : brief.emphasize) : "Key findings"}
+Avoid: ${brief?.avoid ? (Array.isArray(brief.avoid) ? (brief.avoid as string[]).map((a: string) => `- ${a}`).join("\n") : brief.avoid) : "Clichés and filler"}
+${brief?.dogmaWarnings ? `\n### DOGMA WARNINGS (from the editor — DO NOT IGNORE)\n${Array.isArray(brief.dogmaWarnings) ? (brief.dogmaWarnings as string[]).map((w: string) => `⚠️ ${w}`).join("\n") : `⚠️ ${brief.dogmaWarnings}`}\n` : ""}Closing direction: ${brief?.closingDirection || "End with honest unknowns"}
 Structural notes: ${brief?.structuralNotes || "Use your judgment based on the archetype"}
 
 ## RESEARCH DATA
@@ -173,9 +173,9 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
 
 **FOLLOW THE MONEY**: Before you write a single word, ask yourself: who profits from the current consensus on this topic? Insurance companies? Pharma manufacturers? Supplement brands? Hospital systems? Testing labs? Food industry? Name them in the article. Every health topic has a financial angle — if you can't find one, you haven't looked hard enough. This is not optional.
 
-**TAKE POSITIONS**: This article must contain at least 2 clear editorial opinions — not hedged suggestions, not "some experts believe," but actual verdicts. "Doctors are undertesting." "The standard of care is outdated." "This industry profits from your confusion." If you can only explain without ever judging, you are writing an encyclopedia, not journalism.
+**TAKE POSITIONS**: This article must contain at least 2 clear editorial opinions — not hedged suggestions, not qualifiers, but direct verdicts backed by the evidence you have presented. If you can only explain without ever judging, you are writing an encyclopedia, not journalism.
 
-**EARN THE BILL MAHER MOMENT**: Somewhere in this article, say the thing a hospital pamphlet never would. The uncomfortable observation. The pointed question about who benefits from keeping patients uninformed. The moment where you drop the neutral voice and speak directly. This is what makes our readers come back.
+**SAY THE UNCOMFORTABLE THING**: Somewhere in this article, there must be a moment where you say what a cautious institutional publication never would. The observation that makes a reader stop. The question that names who profits from the status quo. The sentence where you drop the measured tone and speak with moral clarity. This is what makes readers come back.
 
 **DESCRIPTION MUST BE COMPLETE**: The description field must be 2-3 complete, compelling sentences. Never truncate mid-sentence. This appears in search results and social cards — a cut-off description looks broken and unprofessional.`;
 
