@@ -32,5 +32,6 @@
     "plastic pollution"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/microplastics-brain.png",
-  "heroImageAlt": "Editorial illustration for You Are Mostly Plastic Now"
+  "heroImageAlt": "Editorial illustration for You Are Mostly Plastic Now",
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/microplastics-brain.mp3"
 }
