@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v15.0.0 live. ~140 articles. 8-stage pipeline with Copy Edit stage. Admin narration agent panel. QC kill override for manual articles.
+> **Status**: v15.1.0 live. ~140 articles. 8-stage pipeline with Copy Edit stage. Full editorial quality overhaul — craft-first QC, harmonized voice blend (Hitchens/Maher/Harris/60 Minutes/Frontline/Veritasium), no hardcoded examples, no "you" count minimum.
 
 ---
 

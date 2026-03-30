@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.1.0] - 2026-03-29
+
+### Changed — Editorial Quality Overhaul
+- **Craft-first QC**: rewrote QC prompt around craft quality (rhythm, gear changes, "text to a friend" test, "exceptional writer" test) instead of blunt mechanical checks. Removed "you" count minimum as a quality signal
+- **Voice blend updated across all stages**: Hitchens, Maher, Harris, 60 Minutes (investigative accountability), PBS Frontline (deep-build structure, exceptional openings), Veritasium (revelatory curiosity). All 8 stages now share the same blend
+- **Writer brief self-editing checklist**: 7-point craft checklist the writer must pass before submission
+- **Voice audit metrics**: added sentence length variance, micro-sentence count, opening sentence length. Removed "you" count enforcement
+- **Removed all hardcoded examples** from every editorial prompt — replaced with descriptions of principles. Prevents AI parroting of example headlines/sentences
+- **Synced banned phrase lists**: stage-write now matches voice-audit (33 phrases)
+- **Pipeline harmony audit**: all stages now share consistent voice blend, craft standards, metrics, and no hardcoded examples
+
 ## [15.0.0] - 2026-03-29
 
 ### Added — Copy Edit Pipeline Stage
