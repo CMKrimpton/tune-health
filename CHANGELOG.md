@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.2.0] - 2026-03-30
+
+### Added — Triangulated Research
+- **Multi-model research** — directed research now fires Gemini (establishment sources + Google Search), Grok (contrarian evidence, independent investigators, social data), and Claude (primary evidence, funding trails, court documents) in parallel via `Promise.allSettled`. Results merged with `[Contrarian]`, `[Academic]`, `[Establishment]` labels. Raw per-model output preserved in `_researchSources`
+- Contrarian findings appear **first** in merged output — editor reads top-down, forms initial impression from uncomfortable evidence before institutional response
+- Grok gets **6000 maxTokens** (up from 4000) for deeper contrarian investigation
+
+### Changed
+- **Editorial prompt tweaks** (from Opus self-diagnosis): "follow the money in both directions" (product AND narrative), ban meta-commentary sentences, replace 7-point self-editing checklist with two-pass instruction
+- **Narration settings** tuned: stability 0.2, similarity 0.6, style 0.6
+
+### Fixed
+- **Admin crash on expand** — `dogmaWarnings.join()` on string instead of array
+- **Editor kill override** generated null slug/headline/description — now generates from topic text
+- **Queue delete** silently failing — FK constraint on `daily_article_log.queue_id`
+- **Copy Brief** clipboard failure — prefetches from server on mount, copies synchronously on click
+- **Missing imports** in stage-research (`grok`, `ApiResult`)
+
 ## [15.1.1] - 2026-03-30
 
 ### Fixed

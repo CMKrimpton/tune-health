@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v15.1.1 live. ~140 articles. 8-stage pipeline. Editorial quality overhaul complete. Copy Brief, queue delete, and editor kill override all fixed. Single source of truth for writer brief (server-side).
+> **Status**: v15.2.0 live. ~160 articles. 8-stage pipeline. Triangulated research (Gemini + Grok + Claude in parallel). Editorial quality overhaul complete. AI models have fundamental institutional bias on topics considered "settled" — human must direct investigation for sensitive topics.
 
 ---
 
