@@ -65,7 +65,7 @@ Return ONLY valid JSON:
 - NEVER use inline style="" attributes. All styling comes from CSS classes.
 - NEVER use hardcoded colors (hex values, rgb, etc.) in HTML.
 - Only use these CSS classes: "reveal", "pull-quote", "data-callout", "info-card".
-- Tailwind utility classes are allowed only for spacing (mt-12, p-6, etc.).\`;
+- Tailwind utility classes are allowed only for spacing (mt-12, p-6, etc.).`;
 
 // ---------------------------------------------------------------------------
 // Handler
@@ -118,7 +118,7 @@ Deno.serve(async (req: Request) => {
       const wordMin = wordCount?.min || 1800;
       const wordMax = wordCount?.max || 2200;
 
-      const articleUserPrompt = `Write an article following this editorial brief from the Senior Editor. The archetype and voice modulation are critical — they determine the article's form, not just its content.
+      const articleUserPrompt = `Write an article following this editorial brief from the Senior Editor. The archetype and voice modulation are critical -- they determine the article's form, not just its content.
 
 ## EDITORIAL BRIEF
 Working headline (you may improve this — max 10 words, one sentence): ${editorBrief?.headline || researchData.headline_draft}
