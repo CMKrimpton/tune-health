@@ -1330,106 +1330,35 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
   const statusText = isAwaitingWrite ? 'Ready for you to write with Opus' : getStatusText(log.status, modelName);
 
   // Build the Claude prompt client-side from already-loaded research_data (no fetch = no clipboard permission issue)
+  // Prefetch the brief from server when this card mounts (if awaiting write)
+  const [prefetchedBrief, setPrefetchedBrief] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isAwaitingWrite) return;
+    fetch(`${apiBase}/pipeline-admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get-brief', logId: log.id }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.claudePrompt) {
+          const prompt = `CRITICAL OUTPUT RULE: Return ONLY the article body content — the <section> tags. Do NOT return a full HTML page. No <!DOCTYPE>, no <html>, no <head>, no <body>, no <style>, no CSS, no fonts, no layout wrappers. JUST the <section> elements with class="reveal" as shown in the format below. Your output gets inserted into an existing Astro template that already handles all layout, typography, and styling.\n\nSlug for this article: ${data.slug || log.slug || 'auto-generate'}\nCategory: ${data.editorBrief?.categoryOverride || data.researchData?.category || 'Clinical Evidence'}\n\n${data.claudePrompt}`;
+          setPrefetchedBrief(prompt);
+        }
+      })
+      .catch(() => { /* silent — button will show loading state */ });
+  }, [isAwaitingWrite, apiBase, log.id, log.slug]);
+
   const copyBriefForClaude = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const rd = log.research_data || {};
-    const eb = (rd as PipelineResearchData)._editorBrief || {};
-    const brief = (eb as Record<string, unknown>).brief as Record<string, unknown> || {};
-    const arr = (v: unknown) => Array.isArray(v) ? (v as string[]) : v ? [String(v)] : [];
-
-    const prompt = `CRITICAL OUTPUT RULE: Return ONLY the article body content — the <section> tags. Do NOT return a full HTML page. No <!DOCTYPE>, no <html>, no <head>, no <body>, no <style>, no CSS, no fonts, no layout wrappers. JUST the <section> elements with class="reveal" as shown in the format below. Your output gets inserted into an existing Astro template that already handles all layout, typography, and styling.
-
-You are writing for alumi news -- "Evidence. Wherever it leads."
-
-Your job is to write an article so good that a reader would text a paragraph to a friend. Not competent. Not well-researched. Exceptional. The kind of writing where every sentence earns the next one, where the reader feels smarter and slightly unsettled by the end.
-
-## THE STANDARD
-
-Write at the level of the best long-form magazine journalism -- The Atlantic, Vanity Fair, NYT Magazine, WSJ features -- with the moral clarity of Hitchens, the uncomfortable honesty of Bill Maher, the intellectual precision of Sam Harris, the investigative accountability of 60 Minutes (make institutions answer for themselves, ask the question everyone is thinking), the deep-build structure of PBS Frontline (patient, multi-source investigation that constructs an airtight case -- and openings that drop you into the stakes before you know the subject), and the revelatory curiosity of Veritasium (make complex science feel like a discovery, not a lecture -- open with what surprises, not what summarizes). The prose should feel effortless and authoritative -- the kind of writing where a reader forgets they are reading because the sentences carry them forward. Every sentence should earn the next one.
-
-What makes writing exceptional (not just good):
-- **Rhythm**: Vary sentence length dramatically. Follow long analytical sentences with short verdicts that land with force. Monotonous sentence length is the single clearest sign of mediocre prose. Break the pattern constantly.
-- **Gear changes**: The article must not be the same emotional temperature throughout. There must be moments where the writing shifts from calm analysis to something that makes the reader feel -- anger, surprise, discomfort, recognition. If the emotional register never changes, the article will bore smart readers regardless of accuracy.
-- **Openings that grip**: The first 2-3 sentences decide everything. Open with something specific, surprising, or tension-creating. Never a definition, a broad context-setter, or a procedural fact. The opening must earn the second paragraph.
-- **Specificity over abstraction**: Abstract claims are forgettable. Name the mechanism. Name the dollar amount. Name the person. Specific details are what make writing feel real and trustworthy.
-- **Positions, not hedges**: State verdicts directly. If you can only explain without ever passing judgment, you are writing an encyclopedia, not journalism. At least two clear editorial opinions per article -- not hedged with qualifiers, but direct claims backed by the evidence you have presented.
-- **Honest, not meek**: Be fair to the evidence, not to institutions or conventional wisdom. Giving equal weight to a well-supported finding and an industry talking point is not balance -- it is cowardice. When the evidence clearly supports a conclusion, state it without hedging. When it genuinely does not, say that plainly too.
-
-## SELF-EDITING (do this BEFORE you say "done")
-
-After writing, reread the article as a seasoned editor who has seen ten thousand pitches. Ask yourself:
-1. Is there a paragraph worth texting to a friend? If not, find the strongest claim and rewrite it until it is.
-2. Does the opening earn the second paragraph, or would a busy reader bounce?
-3. Is there at least one moment of genuine surprise, discomfort, or anger? If the article never raises the temperature, it will bore smart readers regardless of accuracy.
-4. Are there 3+ sentences in a row of similar length? Break the pattern. Insert a short verdict. Cut a clause.
-5. Did you follow the money? Name who profits. Not abstractly -- specifically.
-6. Did you take at least 2 clear editorial positions? Not "some experts believe" -- actual verdicts.
-7. Would you be proud to see this published under your name in a major magazine?
-
-Do not submit until you can answer yes to all seven.
-
-## YOUR ASSIGNMENT
-Working headline (improve if you can -- max 10 words, one sentence, no two-part kickers): ${eb.headline || log.title || log.topic}
-Angle: ${eb.angle || 'Follow the research'}
-${eb.description ? `Description (improve if you can -- 2-3 complete sentences that make a reader stop scrolling): ${eb.description}` : ''}
-${eb.archetype ? `Form: ${eb.archetype}` : ''}
-
-### Editorial Direction
-${brief.tone ? `Tone: ${brief.tone}` : ''}
-${brief.openWith ? `Open with: ${brief.openWith}` : ''}
-${arr(brief.emphasize).length > 0 ? `Threads to weave through the piece:\n${arr(brief.emphasize).map(e => '- ' + e).join('\n')}` : ''}
-${arr(brief.avoid).length > 0 ? `Avoid:\n${arr(brief.avoid).map(a => '- ' + a).join('\n')}` : ''}
-${arr(brief.dogmaWarnings).length > 0 ? `Dogma warnings:\n${arr(brief.dogmaWarnings).map(w => '- ' + w).join('\n')}` : ''}
-${brief.closingDirection ? `Closing: ${brief.closingDirection}` : ''}
-
-## RESEARCH
-Topic: ${(rd as PipelineResearchData).topic || ''}
-
-Key findings:
-${((rd as PipelineResearchData).keyFindings || []).map((f, i) => (i + 1) + '. ' + f).join('\n')}
-
-Studies:
-${(((rd as PipelineResearchData).studies) || []).map(s => '- "' + s.title + '" (' + s.journal + ', ' + s.year + '): ' + s.finding).join('\n')}
-
-${(rd as PipelineResearchData).mechanism ? `Mechanism: ${(rd as PipelineResearchData).mechanism}` : ''}
-
-${((rd as PipelineResearchData).counterArguments || []).length > 0 ? `Counter-arguments:\n${((rd as PipelineResearchData).counterArguments || []).map(c => '- ' + c).join('\n')}` : ''}
-
-## PRINCIPLES
-- Follow the money. Name who profits -- specifically, not abstractly.
-- Take positions. This is journalism, not Wikipedia.
-- Zero fabrication. Only cite studies from the research above.
-- When the evidence is clear, say so without hedging. When it genuinely isn't, say that too. Never give equal weight to a well-supported finding and an industry talking point.
-- Section headings (h2): every header must be specific to THIS article's argument. Read your headers back to back as a list -- they should feel varied and natural, not like they came from the same template.
-
-## HTML FORMAT
-<section id="introduction" class="reveal">
-  <p>Opening paragraph (no h2 -- CSS drop cap applies automatically).</p>
-</section>
-
-<section id="section-slug" class="reveal">
-  <h2>Section Title</h2>
-  <p>Content...</p>
-</section>
-
-Pull quotes: <aside class="pull-quote reveal"><p>"Quote text."</p></aside>
-Methodology notes / caveats: <div class="data-callout reveal"><p><strong>Title</strong></p><p>Content.</p></div>
-
-CRITICAL: Never use inline style="" attributes or hardcoded colors. All styling comes from CSS classes.
-
-End with a Sources section listing every study cited.
-End with: <div class="data-callout reveal"><p><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>
-
-Slug for this article: ${eb.slug || log.slug || 'auto-generate'}
-Category: ${(eb as Record<string, unknown>).categoryOverride || (rd as PipelineResearchData).category || 'Clinical Evidence'}`;
-
-    navigator.clipboard.writeText(prompt).then(() => {
+    if (!prefetchedBrief) return;
+    navigator.clipboard.writeText(prefetchedBrief).then(() => {
       setBriefCopied(true);
       setTimeout(() => setBriefCopied(false), 3000);
     }).catch(() => {
       const w = window.open('', '_blank');
       if (w) {
-        w.document.write('<pre style="white-space:pre-wrap;font-size:13px;padding:1rem;font-family:monospace">' + prompt.replace(/</g, '&lt;') + '</pre>');
+        w.document.write('<pre style="white-space:pre-wrap;font-size:13px;padding:1rem;font-family:monospace">' + prefetchedBrief.replace(/</g, '&lt;') + '</pre>');
         w.document.title = 'Brief for Claude';
       }
     });
@@ -1615,13 +1544,13 @@ Category: ${(eb as Record<string, unknown>).categoryOverride || (rd as PipelineR
                 <div className="admin-flex admin-gap-md admin-flex-wrap">
                   <button
                     onClick={copyBriefForClaude}
-                    disabled={loadingBrief}
+                    disabled={!prefetchedBrief}
                     className={`pipeline-retry-btn pipeline-btn-padded admin-weight-600 ${briefCopied ? 'admin-action-btn-green' : 'admin-action-btn-purple'}`}
                     style={{
                       background: briefCopied ? 'rgba(34, 197, 94, 0.15)' : 'rgba(168, 85, 247, 0.15)',
                     }}
                   >
-                    {loadingBrief ? 'Loading...' : briefCopied ? 'Copied!' : 'Copy Brief for Claude'}
+                    {briefCopied ? 'Copied!' : !prefetchedBrief ? 'Loading brief...' : 'Copy Brief for Claude'}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowSubmitForm(!showSubmitForm); }}
