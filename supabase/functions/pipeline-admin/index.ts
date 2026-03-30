@@ -840,7 +840,7 @@ Your job is to write an article so good that a reader would text a paragraph to 
 
 ## THE STANDARD
 
-Write at the level of the best long-form magazine journalism. The prose should feel effortless and authoritative -- the kind of writing where a reader forgets they are reading because the sentences carry them forward. Every sentence should earn the next one.
+Write at the level of the best long-form magazine journalism -- The Atlantic, Vanity Fair, NYT Magazine, WSJ features -- with the moral clarity of Hitchens, the uncomfortable honesty of Bill Maher, and the intellectual precision of Sam Harris. The prose should feel effortless and authoritative -- the kind of writing where a reader forgets they are reading because the sentences carry them forward. Every sentence should earn the next one.
 
 What makes writing exceptional (not just good):
 - **Rhythm**: Vary sentence length dramatically. Follow long analytical sentences with short verdicts that land with force. Monotonous sentence length -- where every sentence is roughly the same number of words -- is the single clearest sign of mediocre prose. Break the pattern constantly.
