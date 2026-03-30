@@ -1330,40 +1330,47 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
   const statusText = isAwaitingWrite ? 'Ready for you to write with Opus' : getStatusText(log.status, modelName);
 
   // Build the Claude prompt client-side from already-loaded research_data (no fetch = no clipboard permission issue)
-  const copyBriefForClaude = async (e: React.MouseEvent) => {
+  const copyBriefForClaude = (e: React.MouseEvent) => {
     e.stopPropagation();
     setLoadingBrief(true);
-    try {
-      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get-brief', logId: log.id }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.claudePrompt) throw new Error(data.error || 'No brief returned');
 
-      const prompt = `CRITICAL OUTPUT RULE: Return ONLY the article body content — the <section> tags. Do NOT return a full HTML page. No <!DOCTYPE>, no <html>, no <head>, no <body>, no <style>, no CSS, no fonts, no layout wrappers. JUST the <section> elements with class="reveal" as shown in the format below. Your output gets inserted into an existing Astro template that already handles all layout, typography, and styling.
+    // Use ClipboardItem with a promise — preserves user gesture context across async fetch
+    const briefPromise = fetch(`${apiBase}/pipeline-admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get-brief', logId: log.id }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.claudePrompt) throw new Error(data.error || 'No brief returned');
+        const prompt = `CRITICAL OUTPUT RULE: Return ONLY the article body content — the <section> tags. Do NOT return a full HTML page. No <!DOCTYPE>, no <html>, no <head>, no <body>, no <style>, no CSS, no fonts, no layout wrappers. JUST the <section> elements with class="reveal" as shown in the format below. Your output gets inserted into an existing Astro template that already handles all layout, typography, and styling.
 
 Slug for this article: ${data.slug || log.slug || 'auto-generate'}
 Category: ${data.editorBrief?.categoryOverride || data.researchData?.category || 'Clinical Evidence'}
 
 ${data.claudePrompt}`;
+        return new Blob([prompt], { type: 'text/plain' });
+      });
 
-      await navigator.clipboard.writeText(prompt);
+    navigator.clipboard.write([
+      new ClipboardItem({ 'text/plain': briefPromise }),
+    ]).then(() => {
       setBriefCopied(true);
       setTimeout(() => setBriefCopied(false), 3000);
-    } catch (err) {
-      const msg = (err as Error).message || 'Unknown error';
-      if (msg.includes('clipboard') || msg.includes('permission')) {
-        // Clipboard permission denied — try fallback
+    }).catch(() => {
+      // Fallback: fetch then open in new window for manual copy
+      briefPromise.then(blob => blob.text()).then(text => {
         const w = window.open('', '_blank');
-        if (w) { w.document.write('<pre>Clipboard access denied. Please copy manually.</pre>'); }
-      } else {
-        alert('Failed to load brief: ' + msg);
-      }
-    } finally {
+        if (w) {
+          w.document.write('<pre style="white-space:pre-wrap;font-size:13px;padding:1rem">' + text.replace(/</g, '&lt;') + '</pre>');
+          w.document.title = 'Copy Brief for Claude';
+        }
+      }).catch(err => {
+        alert('Failed to load brief: ' + (err instanceof Error ? err.message : 'unknown'));
+      });
+    }).finally(() => {
       setLoadingBrief(false);
-    }
+    });
   };
 
   // Submit the user's Opus-written article
