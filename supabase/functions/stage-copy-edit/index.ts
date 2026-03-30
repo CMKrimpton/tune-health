@@ -53,11 +53,12 @@ DESCRIPTION:
 SECTION HEADERS (H2/H3):
 - Replace generic labels with specific ones that reflect what the section actually argues
 - Leave headers alone if they're already specific, even if you'd phrase them differently
-- Don't make them all sound the same — variety in structure is good
+- Flag and fix repetitive patterns: if multiple headers start with the same word or share the same syntactic structure, that is a structural defect, not a stylistic choice. Each header should have a distinct form
+- Variety in structure is essential — mix questions, imperatives, noun phrases, provocative statements
 
 FOR HUMAN-WRITTEN ARTICLES (writtenBy = "human-opus"):
-- Only fix clear errors: truncation, grammar, >10 word titles
-- The writer's choices are deliberate. Do not "improve" working prose
+- Only fix clear errors: truncation, grammar, >10 word titles, and repetitive header patterns
+- The writer's choices are deliberate for prose. But repetitive header structure is a pattern the writer likely didn't notice — fix it
 
 ## Output format
 

@@ -34,7 +34,7 @@ Phrases: "let's explore", "let's dive in", "let's break this down", "let's unpac
 Structures: Don't open with scene-setting vignettes (unless storyteller preset). Don't end every article with a paradox. Vary citation style — don't always use "[N] participants, published in [Journal]" format.
 
 ## SECTION HEADINGS (h2)
-Do NOT start most headings with "The". Max 1-2 out of 5-7 headings can begin with "The". Vary structure: use questions, imperatives, noun phrases, provocative statements. Every section header must be specific to THIS article's argument — if you could swap it onto a different article about the same broad topic without anyone noticing, it is too generic. Headers that merely name a category of information (the science, the evidence, the background) should be replaced with headers that name what the section actually argues or reveals.
+No two headers should start with the same word or follow the same syntactic pattern. If you notice headers falling into a repetitive structure — any repeated opener, any repeated grammatical form — rewrite until each one has a distinct structure. Mix questions, imperatives, noun phrases, and provocative statements. Every section header must be specific to THIS article's argument — if you could swap it onto a different article about the same broad topic without anyone noticing, it is too generic. Headers that merely name a category of information should be replaced with headers that name what the section actually argues or reveals.
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON:
