@@ -116,8 +116,8 @@ export const MODELS = {
 
 export const NARRATION_SETTINGS = {
   stability: 0.2,
-  similarity_boost: 0.5,
-  style: 0.8,
+  similarity_boost: 0.6,
+  style: 0.6,
   use_speaker_boost: true,
   speed: 1.0,
 } as const;
