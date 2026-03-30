@@ -1326,74 +1326,40 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
   const statusText = isAwaitingWrite ? 'Ready for you to write with Opus' : getStatusText(log.status, modelName);
 
   // Build the Claude prompt client-side from already-loaded research_data (no fetch = no clipboard permission issue)
-  const copyBriefForClaude = (e: React.MouseEvent) => {
+  const copyBriefForClaude = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const rd = log.research_data || {};
-    const eb = (rd as PipelineResearchData)._editorBrief || {};
-    const brief = (eb as Record<string, unknown>).brief as Record<string, unknown> || {};
+    setLoadingBrief(true);
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get-brief', logId: log.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.claudePrompt) throw new Error(data.error || 'No brief returned');
 
-    const prompt = `Write this article for alumi news. "Evidence. Wherever it leads."
+      const prompt = `CRITICAL OUTPUT RULE: Return ONLY the article body content — the <section> tags. Do NOT return a full HTML page. No <!DOCTYPE>, no <html>, no <head>, no <body>, no <style>, no CSS, no fonts, no layout wrappers. JUST the <section> elements with class="reveal" as shown in the format below. Your output gets inserted into an existing Astro template that already handles all layout, typography, and styling.
 
-CRITICAL OUTPUT RULE: Return ONLY the article body content — the <section> tags. Do NOT return a full HTML page. No <!DOCTYPE>, no <html>, no <head>, no <body>, no <style>, no CSS, no fonts, no layout wrappers, no custom classes. JUST the <section> elements with class="reveal" as shown in the format below. Your output gets inserted into an existing Astro template that already handles all layout, typography, and styling.
+Slug for this article: ${data.slug || log.slug || 'auto-generate'}
+Category: ${data.editorBrief?.categoryOverride || data.researchData?.category || 'Clinical Evidence'}
 
-## THE ASSIGNMENT
-**${eb.headline || log.title || log.topic}**
-${eb.description || ''}
+${data.claudePrompt}`;
 
-Angle: ${eb.angle || 'Follow the research'}
-Archetype: ${eb.archetype || 'deep-investigation'} | Tone: ${brief.tonePreset || 'smart-casual'} | ${brief.density || 'balanced'} density | ${brief.pacing || 'slow-build'} pacing
-${brief.tone ? `Voice note: ${brief.tone}` : ''}
-${brief.openWith ? `Open with: ${brief.openWith}` : ''}
-${((brief.emphasize as string[]) || []).length > 0 ? `Emphasize: ${((brief.emphasize as string[]) || []).join('; ')}` : ''}
-${((brief.avoid as string[]) || []).length > 0 ? `Avoid: ${((brief.avoid as string[]) || []).join('; ')}` : ''}
-${((brief.dogmaWarnings as string[]) || []).length > 0 ? `Dogma warnings: ${((brief.dogmaWarnings as string[]) || []).join('; ')}` : ''}
-${brief.closingDirection ? `Close with: ${brief.closingDirection}` : ''}
-${brief.structuralNotes ? `Structure: ${brief.structuralNotes}` : ''}
-
-## RESEARCH
-${((rd as PipelineResearchData).keyFindings || []).map((f, i) => (i + 1) + '. ' + f).join('\n')}
-
-Studies:
-${(((rd as PipelineResearchData).studies) || []).map(s => '- "' + s.title + '" (' + s.journal + ', ' + s.year + '): ' + s.finding).join('\n')}
-
-${(rd as PipelineResearchData).mechanism ? `Mechanism: ${(rd as PipelineResearchData).mechanism}` : ''}
-
-${((rd as PipelineResearchData).counterArguments || []).length > 0 ? `Counter-arguments:\n${((rd as PipelineResearchData).counterArguments || []).map(c => '- ' + c).join('\n')}` : ''}
-
-## VOICE
-Think The Atlantic meets Bill Maher. Evidence-first, direct, occasionally irreverent. Skeptical of all institutions equally — pharma, government, alternative health. Follow the money. Take positions. Say the thing a hospital pamphlet never would.
-
-Only cite studies from the research above — never fabricate. End with a Sources section.
-
-## HTML FORMAT
-Use this structure:
-
-<section id="introduction" class="reveal">
-  <p>Opening paragraph (no h2 — CSS applies drop cap).</p>
-</section>
-
-<section id="section-slug" class="reveal">
-  <h2>Section Title</h2>
-  <p>Content...</p>
-</section>
-
-Optional: <aside class="pull-quote reveal"><p>"Striking quote."</p></aside>
-
-End with:
-<section id="sources"><h2>Sources</h2><ul><li>Citations...</li></ul></section>
-<div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal"><p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed"><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>
-
-Slug for this article: ${eb.slug || log.slug || 'auto-generate'}
-Category: ${(eb as Record<string, unknown>).categoryOverride || (rd as PipelineResearchData).category || 'Clinical Evidence'}`;
-
-    navigator.clipboard.writeText(prompt).then(() => {
+      await navigator.clipboard.writeText(prompt);
       setBriefCopied(true);
       setTimeout(() => setBriefCopied(false), 3000);
-    }).catch(() => {
-      // Fallback: open in a new window for manual copy
-      const w = window.open('', '_blank');
-      if (w) { w.document.write('<pre>' + prompt.replace(/</g, '&lt;') + '</pre>'); }
-    });
+    } catch (err) {
+      const msg = (err as Error).message || 'Unknown error';
+      if (msg.includes('clipboard') || msg.includes('permission')) {
+        // Clipboard permission denied — try fallback
+        const w = window.open('', '_blank');
+        if (w) { w.document.write('<pre>Clipboard access denied. Please copy manually.</pre>'); }
+      } else {
+        alert('Failed to load brief: ' + msg);
+      }
+    } finally {
+      setLoadingBrief(false);
+    }
   };
 
   // Submit the user's Opus-written article
