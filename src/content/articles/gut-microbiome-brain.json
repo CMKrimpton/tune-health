@@ -30,5 +30,6 @@
     "neurodegeneration"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/gut-microbiome-brain.png",
-  "heroImageAlt": "Editorial illustration for The Second Brain's Second Opinion"
+  "heroImageAlt": "Editorial illustration for The Second Brain's Second Opinion",
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/gut-microbiome-brain.mp3"
 }
