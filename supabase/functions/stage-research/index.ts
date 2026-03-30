@@ -238,7 +238,7 @@ Find: primary studies with funding sources noted, court documents, FOIA records,
           grok({
             system: DIRECTED_RESEARCH_PROMPT,
             user: contrarianPrompt,
-            maxTokens: 4000,
+            maxTokens: 6000,
             temperature: 0.5,
             timeout: RESEARCH_PARALLEL_TIMEOUT,
           }, "research-contrarian"),
@@ -297,36 +297,38 @@ Find: primary studies with funding sources noted, court documents, FOIA records,
         const c = contrarian.data || {};
         const a = academic.data || {};
 
+        // Contrarian first — editor reads top-down, should form initial impression
+        // from the uncomfortable evidence before seeing the institutional response
         research = {
-          topic: (e.topic as string) || (a.topic as string) || (c.topic as string) || topic,
-          headline_draft: (e.headline_draft as string) || (a.headline_draft as string) || (c.headline_draft as string) || topic,
-          why: (e.why as string) || (a.why as string) || (c.why as string) || "",
+          topic: (c.topic as string) || (e.topic as string) || (a.topic as string) || topic,
+          headline_draft: (c.headline_draft as string) || (e.headline_draft as string) || (a.headline_draft as string) || topic,
+          why: (c.why as string) || (e.why as string) || (a.why as string) || "",
           category: (e.category as string) || (a.category as string) || (c.category as string) || "",
           keyFindings: [
-            ...((e.keyFindings as string[]) || []).map((f: string) => `[Establishment] ${f}`),
             ...((c.keyFindings as string[]) || []).map((f: string) => `[Contrarian] ${f}`),
             ...((a.keyFindings as string[]) || []).map((f: string) => `[Academic] ${f}`),
+            ...((e.keyFindings as string[]) || []).map((f: string) => `[Establishment] ${f}`),
           ],
           studies: [
-            ...((e.studies as unknown[]) || []),
             ...((c.studies as unknown[]) || []),
             ...((a.studies as unknown[]) || []),
+            ...((e.studies as unknown[]) || []),
           ],
           counterArguments: [
-            ...((e.counterArguments as string[]) || []),
             ...((c.counterArguments as string[]) || []),
             ...((a.counterArguments as string[]) || []),
+            ...((e.counterArguments as string[]) || []),
           ],
-          mechanism: (a.mechanism as string) || (e.mechanism as string) || (c.mechanism as string) || "",
+          mechanism: (c.mechanism as string) || (a.mechanism as string) || (e.mechanism as string) || "",
           expertQuotes: [
-            ...((e.expertQuotes as string[]) || []),
             ...((c.expertQuotes as string[]) || []),
             ...((a.expertQuotes as string[]) || []),
+            ...((e.expertQuotes as string[]) || []),
           ],
           statistics: [
-            ...((e.statistics as string[]) || []),
             ...((c.statistics as string[]) || []),
             ...((a.statistics as string[]) || []),
+            ...((e.statistics as string[]) || []),
           ],
           // Preserve raw per-model output so editor/writer can see where each finding came from
           _researchSources: {
