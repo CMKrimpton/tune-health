@@ -2,6 +2,7 @@ export const MAX_CONCURRENT = 1;
 export const STALE_MS = 5 * 60 * 1000; // 5 min — must be longer than any single stage API call (75s timeout + overhead)
 export const API_TIMEOUT = 75_000; // 75s per model — allows 2 fallback attempts within ~150s edge function timeout
 export const RESEARCH_TIMEOUT = 120_000; // 120s — research web search needs more time (single model, no fallback chain)
+export const RESEARCH_PARALLEL_TIMEOUT = 90_000; // 90s per model in parallel research (3 models, limited by slowest)
 // Active statuses = currently processing (used by stale detection + concurrency guard)
 export const ACTIVE = ["started","searching","publishing","editor_reviewing","editor_qc","independence_review"];
 // All pipeline statuses (active + waiting + terminal)

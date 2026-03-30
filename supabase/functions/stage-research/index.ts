@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, getExistingArticles, safeStage, dispatchStage } from "../_shared/db.ts";
 import { gemini, claude, parseClaudeJSON } from "../_shared/api-clients.ts";
-import { RESEARCH_TIMEOUT, MODELS } from "../_shared/constants.ts";
+import { RESEARCH_TIMEOUT, RESEARCH_PARALLEL_TIMEOUT, MODELS } from "../_shared/constants.ts";
 import { todayISO } from "../_shared/astro.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
@@ -191,68 +191,152 @@ Deno.serve(async (req: Request) => {
       let research: Record<string, unknown>;
 
       if (topic) {
-        // Directed research — Gemini primary (Google Search grounding is 10x cheaper than Claude web search)
-        // Claude web search inflates input to ~120K tokens ($0.40/call). Gemini Search grounding: ~$0.03/call.
-        const researchPrompt = `Today's date: ${today}
+        // ── TRIANGULATED RESEARCH ──────────────────────────────────────
+        // Three models in parallel, each with a different investigative lens.
+        // No single model's training bias can capture the framing.
 
-## ASSIGNED TOPIC
-${topic}
+        const existingList = titles.map((t) => `- ${t}`).join("\n");
+        const jsonInstruction = `\n\nCRITICAL: Return ONLY a valid JSON object. No markdown, no explanation. Just the JSON object starting with { and ending with }.\nReturn this structure: {"topic":"...","headline_draft":"...","why":"...","category":"...","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","expertQuotes":["..."],"statistics":["..."]}`;
 
-## Existing Articles (DO NOT duplicate):
-${titles.map((t) => `- ${t}`).join("\n")}
+        // 1. ESTABLISHMENT — Gemini + Google Search: institutional positions, mainstream consensus
+        const establishmentPrompt = `You are a research agent finding the MAINSTREAM INSTITUTIONAL POSITION on a topic. Your job is to report what the major news organizations, regulatory bodies, professional associations, and consensus science say. Report this accurately and completely -- this is one important perspective, not the final word.
 
-Deep-research this topic thoroughly. Find the key studies, statistics, expert positions, mechanisms, and counter-arguments. Return structured JSON.`;
+Today's date: ${today}. Topic: ${topic}
 
-        let researchRaw: string;
-        let researchUsage: ApiUsage;
+Existing articles (avoid duplicates): ${existingList}
 
-        try {
-          const gemResult = await gemini({
-            system: DIRECTED_RESEARCH_PROMPT + `\n\nCRITICAL: You MUST return ONLY a valid JSON object. No markdown, no explanation, no preamble. Just the JSON object starting with { and ending with }.`,
-            user: researchPrompt + `\n\nReturn ONLY valid JSON with this structure: {"topic":"...","headline_draft":"...","why":"...","category":"...","keyFindings":["..."],"studies":[{"title":"...","journal":"...","year":"...","finding":"..."}],"counterArguments":["..."],"mechanism":"...","expertQuotes":["..."],"statistics":["..."]}`,
+Find: official positions, major news coverage, institutional statements, consensus studies. Note who funds or sponsors each source.${jsonInstruction}`;
+
+        // 2. CONTRARIAN — Grok: independent investigators, dissenting voices, social evidence
+        const contrarianPrompt = `You are a research agent finding the INDEPENDENT AND CONTRARIAN EVIDENCE on a topic. Your job is to find the people who disagree with the mainstream position -- independent researchers, whistleblowers, social media investigators, legal proceedings, court documents, and evidence that the institutional position may be incomplete, wrong, or captured by financial interests. Lead with the strongest contrarian evidence. Do not dismiss or debunk -- investigate.
+
+Today's date: ${today}. Topic: ${topic}
+
+Find: dissenting researchers, independent investigations, court rulings, social media evidence, whistleblower accounts, financial conflicts of interest in the mainstream position. Note what evidence they cite and whether it has been addressed or merely dismissed.${jsonInstruction}`;
+
+        // 3. ACADEMIC — Claude + web search: primary evidence, mechanisms, funding trails
+        const academicPrompt = `You are a research agent finding the PRIMARY EVIDENCE on a topic. Not what institutions say about the evidence -- the evidence itself. Your job is to find the actual studies, court documents, historical records, financial disclosures, and data. Trace funding sources. Identify conflicts of interest on all sides. Report what the data shows independent of what any institution claims it shows.
+
+Today's date: ${today}. Topic: ${topic}
+
+Existing articles (avoid duplicates): ${existingList}
+
+Find: primary studies with funding sources noted, court documents, FOIA records, financial disclosures, historical documentation. For every claim made by any side, identify who funded the research behind it.${jsonInstruction}`;
+
+        // Fire all three in parallel — Promise.allSettled so one failure doesn't block the others
+        console.log(`[Research] Triangulated research for "${topic}" — firing Gemini + Grok + Claude in parallel`);
+        const [establishmentResult, contrarianResult, academicResult] = await Promise.allSettled([
+          gemini({
+            system: DIRECTED_RESEARCH_PROMPT,
+            user: establishmentPrompt,
             model: MODELS.RESEARCH_PRIMARY,
             maxTokens: 4000,
             temperature: 0.35,
             webSearch: true,
-            timeout: RESEARCH_TIMEOUT,
-          }, "research-gemini");
-          researchRaw = gemResult.text;
-          researchUsage = gemResult.usage;
-        } catch (geminiErr: unknown) {
-          // Fallback to Claude web search if Gemini fails
-          console.log(`[Research fallback] Gemini failed (${geminiErr instanceof Error ? geminiErr.message.slice(0, 50) : "unknown"}), falling back to Claude...`);
-          const result = await claude({
+            timeout: RESEARCH_PARALLEL_TIMEOUT,
+          }, "research-establishment"),
+          grok({
             system: DIRECTED_RESEARCH_PROMPT,
-            user: researchPrompt,
+            user: contrarianPrompt,
+            maxTokens: 4000,
+            temperature: 0.5,
+            timeout: RESEARCH_PARALLEL_TIMEOUT,
+          }, "research-contrarian"),
+          claude({
+            system: DIRECTED_RESEARCH_PROMPT,
+            user: academicPrompt,
             model: MODELS.RESEARCH_FALLBACK,
             maxTokens: 4000,
             webSearch: true,
-            maxSearches: 3,
-            timeout: RESEARCH_TIMEOUT,
-          });
-          researchRaw = result.text;
-          researchUsage = result.usage;
+            maxSearches: 5,
+            timeout: RESEARCH_PARALLEL_TIMEOUT,
+          }),
+        ]);
+
+        // Parse each result — extract what we can from each model
+        function parseResearchResult(result: PromiseSettledResult<ApiResult>, label: string): { data: Record<string, unknown> | null; usage: ApiUsage | null } {
+          if (result.status === "rejected") {
+            console.warn(`[Research] ${label} failed: ${result.reason instanceof Error ? result.reason.message.slice(0, 80) : "unknown"}`);
+            return { data: null, usage: null };
+          }
+          try {
+            const parsed = parseClaudeJSON(result.value.text) as Record<string, unknown>;
+            return { data: parsed, usage: result.value.usage };
+          } catch {
+            console.warn(`[Research] ${label} returned invalid JSON, extracting from plain text...`);
+            const lines = result.value.text.split("\n").filter((l: string) => l.trim().length > 10);
+            return {
+              data: {
+                keyFindings: lines.slice(0, 8).map((l: string) => l.replace(/^[\d\.\-\*]+\s*/, "").trim()),
+                studies: [],
+                counterArguments: [],
+              },
+              usage: result.value.usage,
+            };
+          }
         }
 
-        // Parse research JSON — with fallback to plain text extraction if Gemini didn't return valid JSON
-        try {
-          research = parseClaudeJSON(researchRaw) as Record<string, unknown>;
-        } catch {
-          console.log("[Research] JSON parse failed, extracting from plain text...");
-          // Extract what we can from plain text response
-          const lines = researchRaw.split("\n").filter((l: string) => l.trim().length > 10);
-          research = {
-            topic: topic,
-            keyFindings: lines.slice(0, 8).map((l: string) => l.replace(/^[\d\.\-\*]+\s*/, "").trim()),
-            studies: [],
-            counterArguments: [],
-            mechanism: lines.find((l: string) => l.toLowerCase().includes("mechanism")) || "",
-            statistics: lines.filter((l: string) => /\d+%|\d+\s*(million|billion|thousand)/.test(l)).slice(0, 5),
-          };
+        const establishment = parseResearchResult(establishmentResult, "Establishment (Gemini)");
+        const contrarian = parseResearchResult(contrarianResult, "Contrarian (Grok)");
+        const academic = parseResearchResult(academicResult, "Academic (Claude)");
+
+        // Log costs for each successful call
+        if (establishment.usage) await addCostToLog(db, logId, establishment.usage);
+        if (contrarian.usage) await addCostToLog(db, logId, contrarian.usage);
+        if (academic.usage) await addCostToLog(db, logId, academic.usage);
+
+        const succeeded = [establishment, contrarian, academic].filter(r => r.data).length;
+        console.log(`[Research] ${succeeded}/3 models returned results`);
+
+        if (succeeded === 0) {
+          throw new Error("All three research models failed — no data to work with");
         }
-        research._fromQueue = true;
-        research._queueSource = source || "manual";
-        await addCostToLog(db, logId, researchUsage);
+
+        // Merge results — concatenate findings from all perspectives, clearly attributed
+        const e = establishment.data || {};
+        const c = contrarian.data || {};
+        const a = academic.data || {};
+
+        research = {
+          topic: (e.topic as string) || (a.topic as string) || (c.topic as string) || topic,
+          headline_draft: (e.headline_draft as string) || (a.headline_draft as string) || (c.headline_draft as string) || topic,
+          why: (e.why as string) || (a.why as string) || (c.why as string) || "",
+          category: (e.category as string) || (a.category as string) || (c.category as string) || "",
+          keyFindings: [
+            ...((e.keyFindings as string[]) || []).map((f: string) => `[Establishment] ${f}`),
+            ...((c.keyFindings as string[]) || []).map((f: string) => `[Contrarian] ${f}`),
+            ...((a.keyFindings as string[]) || []).map((f: string) => `[Academic] ${f}`),
+          ],
+          studies: [
+            ...((e.studies as unknown[]) || []),
+            ...((c.studies as unknown[]) || []),
+            ...((a.studies as unknown[]) || []),
+          ],
+          counterArguments: [
+            ...((e.counterArguments as string[]) || []),
+            ...((c.counterArguments as string[]) || []),
+            ...((a.counterArguments as string[]) || []),
+          ],
+          mechanism: (a.mechanism as string) || (e.mechanism as string) || (c.mechanism as string) || "",
+          expertQuotes: [
+            ...((e.expertQuotes as string[]) || []),
+            ...((c.expertQuotes as string[]) || []),
+            ...((a.expertQuotes as string[]) || []),
+          ],
+          statistics: [
+            ...((e.statistics as string[]) || []),
+            ...((c.statistics as string[]) || []),
+            ...((a.statistics as string[]) || []),
+          ],
+          // Preserve raw per-model output so editor/writer can see where each finding came from
+          _researchSources: {
+            establishment: { model: MODELS.RESEARCH_PRIMARY, ...(establishment.data || {}) },
+            contrarian: { model: "grok-4", ...(contrarian.data || {}) },
+            academic: { model: MODELS.RESEARCH_FALLBACK, ...(academic.data || {}) },
+          },
+          _fromQueue: true,
+          _queueSource: source || "manual",
+        };
       }
 
       // Build topic summary for log
