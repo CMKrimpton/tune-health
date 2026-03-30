@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { updateGitHubJson } from "../_shared/github.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -186,6 +187,10 @@ Create an abstract, atmospheric illustration that captures the essence of this a
     // Error is surfaced in the response below
   }
 
+  // Sync to GitHub JSON so the Astro site renders the hero image
+  const heroImageAlt = `Editorial illustration for ${title}`;
+  await updateGitHubJson(slug, { heroImage: publicUrl, heroImageAlt }, `feat: Add hero image — '${slug}'`);
+
   return json({
     success: true,
     slug,
@@ -267,13 +272,17 @@ Create an abstract, atmospheric illustration that captures the essence of this a
         .getPublicUrl(storagePath);
 
       // Update DB
+      const heroImageAlt = `Editorial illustration for ${article.title}`;
       await db
         .from("articles")
         .update({
           hero_image: urlData.publicUrl,
-          hero_image_alt: `Editorial illustration for ${article.title}`,
+          hero_image_alt: heroImageAlt,
         })
         .eq("slug", article.slug);
+
+      // Sync to GitHub JSON
+      await updateGitHubJson(article.slug, { heroImage: urlData.publicUrl, heroImageAlt }, `feat: Add hero image — '${article.slug}'`);
 
       results.push({
         slug: article.slug,

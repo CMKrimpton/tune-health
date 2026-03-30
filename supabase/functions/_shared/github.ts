@@ -107,3 +107,79 @@ export async function publishToGitHub(
 
   throw new Error("Failed to publish after max retries");
 }
+
+/**
+ * Update fields in an existing GitHub JSON file (e.g. add heroImage, narrationUrl).
+ * Fetches the current file, merges new fields, commits, and triggers Vercel rebuild.
+ * Returns true on success, false on failure (never throws — callers log warnings).
+ */
+export async function updateGitHubJson(
+  slug: string,
+  fields: Record<string, unknown>,
+  commitMessage: string,
+): Promise<boolean> {
+  const githubToken = (Deno.env.get("GITHUB_TOKEN") || "").trim();
+  const githubRepo = (Deno.env.get("GITHUB_REPO") || "").trim();
+  if (!githubToken || !githubRepo) return false;
+
+  const jsonPath = `src/content/articles/${slug}.json`;
+  const apiBase = `https://api.github.com/repos/${githubRepo}`;
+  const headers = {
+    Authorization: `Bearer ${githubToken}`,
+    Accept: "application/vnd.github.v3+json",
+    "Content-Type": "application/json",
+  };
+
+  try {
+    // Fetch current JSON from GitHub
+    const fileRes = await fetch(`${apiBase}/contents/${jsonPath}?ref=main`, { headers });
+    if (!fileRes.ok) {
+      console.warn(`[GitHub] Could not fetch ${jsonPath}: ${fileRes.status}`);
+      return false;
+    }
+    const fileData = await fileRes.json();
+
+    // UTF-8-safe Base64 decode
+    const raw = atob(fileData.content.replace(/\n/g, ""));
+    const rawBytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+    const existing = JSON.parse(new TextDecoder().decode(rawBytes));
+
+    // Merge new fields
+    Object.assign(existing, fields);
+
+    // UTF-8-safe Base64 encode
+    const encoded = new TextEncoder().encode(JSON.stringify(existing, null, 2) + "\n");
+    let bin = "";
+    for (const b of encoded) bin += String.fromCharCode(b);
+    const content = btoa(bin);
+
+    // Commit
+    const updateRes = await fetch(`${apiBase}/contents/${jsonPath}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        message: commitMessage,
+        content,
+        sha: fileData.sha,
+        branch: "main",
+      }),
+    });
+
+    if (!updateRes.ok) {
+      console.warn(`[GitHub] Failed to update ${jsonPath}: ${updateRes.status}`);
+      return false;
+    }
+
+    // Trigger Vercel rebuild
+    const deployHook = Deno.env.get("VERCEL_DEPLOY_HOOK");
+    if (deployHook) {
+      fetch(deployHook, { method: "POST" }).catch(() => {});
+    }
+
+    console.log(`[GitHub] Updated ${jsonPath}: ${commitMessage}`);
+    return true;
+  } catch (err) {
+    console.warn(`[GitHub] updateGitHubJson failed for ${slug}: ${err instanceof Error ? err.message : "unknown"}`);
+    return false;
+  }
+}

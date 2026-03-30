@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { MODELS, NARRATION_SETTINGS } from "../_shared/constants.ts";
+import { updateGitHubJson } from "../_shared/github.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -177,6 +178,9 @@ async function handleGenerate(body: Record<string, unknown>) {
     console.warn(`[Narration] DB update failed for ${slug}: ${updateError.message}`);
   }
 
+  // Sync narrationUrl to GitHub JSON so the Astro site can render the audio player
+  await updateGitHubJson(slug, { narrationUrl: publicUrl }, `feat: Add narration — '${slug}'`);
+
   console.log(`[Narration] Generated for ${slug}: ${publicUrl}`);
 
   return json({
@@ -275,6 +279,9 @@ async function handleBatch(body: Record<string, unknown>) {
         .from("articles")
         .update({ narration_url: urlData.publicUrl })
         .eq("slug", article.slug);
+
+      // Sync to GitHub JSON
+      await updateGitHubJson(article.slug, { narrationUrl: urlData.publicUrl }, `feat: Add narration — '${article.slug}'`);
 
       results.push({ slug: article.slug, status: "success", characters: introText.length });
     } catch (err) {

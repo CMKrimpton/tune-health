@@ -201,6 +201,7 @@ Deno.serve(async (req: Request) => {
     // 1. We don't waste GPU time on articles QC kills/revises
     // 2. If the function timed out mid-illustration, retry picks it up here
     // 3. If hero_image already existed (from a previous run), we skip generation
+    // generate-illustration handles DB update + GitHub JSON sync internally
     if (!heroImage && supabaseUrl) {
       console.log(`[Publish] No hero image for ${slug} — generating illustration post-publish.`);
       try {
@@ -216,78 +217,19 @@ Deno.serve(async (req: Request) => {
         if (illRes.ok) {
           const illData = await illRes.json();
           if (illData.success && illData.imageUrl) {
-            heroImage = illData.imageUrl;
-            heroImageAlt = `Editorial illustration for ${finalTitle}`;
-            console.log(`[Publish] Illustration generated for ${slug}: ${heroImage}`);
-
-            // Update the article DB record with the hero image
-            await db.from("articles").update({
-              hero_image: heroImage,
-              hero_image_alt: heroImageAlt,
-            }).eq("slug", slug);
-
-            // Update the GitHub .json file to include heroImage
-            const githubToken = (Deno.env.get("GITHUB_TOKEN") || "").trim();
-            const githubRepo = (Deno.env.get("GITHUB_REPO") || "").trim();
-            if (githubToken && githubRepo) {
-              try {
-                const jsonPath = `src/content/articles/${slug}.json`;
-                const apiBase = `https://api.github.com/repos/${githubRepo}`;
-                const ghHeaders = {
-                  Authorization: `Bearer ${githubToken}`,
-                  Accept: "application/vnd.github.v3+json",
-                  "Content-Type": "application/json",
-                };
-                // Fetch current .json file from GitHub to get its SHA and content
-                const fileRes = await fetch(`${apiBase}/contents/${jsonPath}?ref=main`, { headers: ghHeaders });
-                if (fileRes.ok) {
-                  const fileData = await fileRes.json();
-                  // UTF-8-safe Base64 decode (atob alone corrupts multi-byte chars like em dashes)
-                  const _raw = atob(fileData.content.replace(/\n/g, ""));
-                  const _rawBytes = Uint8Array.from(_raw, c => c.charCodeAt(0));
-                  const existingContent = JSON.parse(new TextDecoder().decode(_rawBytes));
-                  existingContent.heroImage = heroImage;
-                  existingContent.heroImageAlt = heroImageAlt;
-                  // UTF-8-safe base64 (btoa+unescape double-encodes non-ASCII in Deno)
-                  const _bytes = new TextEncoder().encode(JSON.stringify(existingContent, null, 2) + "\n");
-                  let _bin = ""; for (const b of _bytes) _bin += String.fromCharCode(b);
-                  const updatedContent = btoa(_bin);
-                  const updateRes = await fetch(`${apiBase}/contents/${jsonPath}`, {
-                    method: "PUT",
-                    headers: ghHeaders,
-                    body: JSON.stringify({
-                      message: `feat: Add hero image — '${slug}'`,
-                      content: updatedContent,
-                      sha: fileData.sha,
-                      branch: "main",
-                    }),
-                  });
-                  if (updateRes.ok) {
-                    console.log(`[Publish] Updated GitHub .json with hero image for ${slug}`);
-                    // Trigger another Vercel rebuild for the hero image update
-                    const rebuildHook = Deno.env.get("VERCEL_DEPLOY_HOOK");
-                    if (rebuildHook) {
-                      fetch(rebuildHook, { method: "POST" }).catch(() => {});
-                    }
-                  } else {
-                    console.warn(`[Publish] ⚠️ Failed to update GitHub .json with hero image: ${updateRes.status}`);
-                  }
-                }
-              } catch (ghErr) {
-                console.warn(`[Publish] ⚠️ GitHub .json hero image update failed: ${ghErr instanceof Error ? ghErr.message : "unknown"}`);
-              }
-            }
+            console.log(`[Publish] Illustration generated for ${slug}: ${illData.imageUrl}`);
           }
         } else {
-          console.warn(`[Publish] ⚠️ Illustration generation returned ${illRes.status} for ${slug}`);
+          console.warn(`[Publish] Illustration generation returned ${illRes.status} for ${slug}`);
         }
       } catch (illErr) {
-        console.warn(`[Publish] ⚠️ Illustration generation failed for ${slug}: ${illErr instanceof Error ? illErr.message : "unknown"}. Article published without hero image — will recover on next retry.`);
+        console.warn(`[Publish] Illustration generation failed for ${slug}: ${illErr instanceof Error ? illErr.message : "unknown"}. Article published without hero image — will recover on next retry.`);
       }
     }
 
     // ---- POST-PUBLISH NARRATION ----
     // Generate intro narration via ElevenLabs TTS (non-fatal — article publishes without it)
+    // generate-narration handles GitHub JSON sync internally
     if (supabaseUrl) {
       const { data: narrationCheck } = await db
         .from("articles")
@@ -311,53 +253,6 @@ Deno.serve(async (req: Request) => {
             const narData = await narRes.json();
             if (narData.success && narData.narrationUrl) {
               console.log(`[Publish] Narration generated for ${slug}: ${narData.narrationUrl}`);
-
-              // Update the GitHub .json file to include narrationUrl
-              const githubToken = (Deno.env.get("GITHUB_TOKEN") || "").trim();
-              const githubRepo = (Deno.env.get("GITHUB_REPO") || "").trim();
-              if (githubToken && githubRepo) {
-                try {
-                  const jsonPath = `src/content/articles/${slug}.json`;
-                  const apiBase = `https://api.github.com/repos/${githubRepo}`;
-                  const ghHeaders = {
-                    Authorization: `Bearer ${githubToken}`,
-                    Accept: "application/vnd.github.v3+json",
-                    "Content-Type": "application/json",
-                  };
-                  const fileRes = await fetch(`${apiBase}/contents/${jsonPath}?ref=main`, { headers: ghHeaders });
-                  if (fileRes.ok) {
-                    const fileData = await fileRes.json();
-                    const _raw = atob(fileData.content.replace(/\n/g, ""));
-                    const _rawBytes = Uint8Array.from(_raw, c => c.charCodeAt(0));
-                    const existingContent = JSON.parse(new TextDecoder().decode(_rawBytes));
-                    existingContent.narrationUrl = narData.narrationUrl;
-                    const _bytes = new TextEncoder().encode(JSON.stringify(existingContent, null, 2) + "\n");
-                    let _bin = ""; for (const b of _bytes) _bin += String.fromCharCode(b);
-                    const updatedContent = btoa(_bin);
-                    const updateRes = await fetch(`${apiBase}/contents/${jsonPath}`, {
-                      method: "PUT",
-                      headers: ghHeaders,
-                      body: JSON.stringify({
-                        message: `feat: Add narration — '${slug}'`,
-                        content: updatedContent,
-                        sha: fileData.sha,
-                        branch: "main",
-                      }),
-                    });
-                    if (updateRes.ok) {
-                      console.log(`[Publish] Updated GitHub .json with narration for ${slug}`);
-                      const rebuildHook = Deno.env.get("VERCEL_DEPLOY_HOOK");
-                      if (rebuildHook) {
-                        fetch(rebuildHook, { method: "POST" }).catch(() => {});
-                      }
-                    } else {
-                      console.warn(`[Publish] Failed to update GitHub .json with narration: ${updateRes.status}`);
-                    }
-                  }
-                } catch (ghErr) {
-                  console.warn(`[Publish] GitHub .json narration update failed: ${ghErr instanceof Error ? ghErr.message : "unknown"}`);
-                }
-              }
             }
           } else {
             console.warn(`[Publish] Narration generation returned ${narRes.status} for ${slug}`);
