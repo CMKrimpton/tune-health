@@ -1111,8 +1111,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                           <div className="admin-color-secondary">Score: <span className="admin-color-primary admin-weight-600">{brief.topicScore as number}/10</span> | Archetype: {brief.archetype as string || '?'}</div>
                           {brief.angle && <div className="admin-color-secondary admin-italic admin-mt-sm">Angle: {(brief.angle as string).slice(0, 150)}</div>}
                           {briefDetails?.tonePreset && <div className="admin-color-subtle">Tone: {briefDetails.tonePreset as string} | Density: {briefDetails.density as string || '?'} | Pacing: {briefDetails.pacing as string || '?'}</div>}
-                          {(briefDetails?.dogmaWarnings as string[] | undefined)?.length ? (
-                            <div className="admin-color-yellow admin-mt-sm">Dogma warnings: {(briefDetails!.dogmaWarnings as string[]).join('; ')}</div>
+                          {briefDetails?.dogmaWarnings ? (
+                            <div className="admin-color-yellow admin-mt-sm">Dogma warnings: {Array.isArray(briefDetails.dogmaWarnings) ? (briefDetails.dogmaWarnings as string[]).join('; ') : String(briefDetails.dogmaWarnings)}</div>
                           ) : null}
                         </div>
                       )}
