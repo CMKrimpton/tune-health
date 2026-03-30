@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [14.6.1] - 2026-03-29
+
+### Added
+- **Narration Agent panel** — admin AI Agents tab now has a Narration panel (side-by-side with Illustrations) with single-article selector, "Generate Missing" batch button, and "Regenerate All" with styled confirm modal
+
+### Changed
+- **ElevenLabs voice ID** updated to `rmcMTKMrh0yz0C1KMQPs` in centralized constants for all future narrations
+
 ## [14.6.0] - 2026-03-29
 
 ### Added — Admin UX Polish

@@ -116,8 +116,11 @@ export default function AgentsPanel({ apiBase, initialArticleCount }: Props) {
         <ReaderQuestions apiBase={apiBase} />
       </div>
 
-      {/* Row 4: Illustration Agent */}
-      <IllustrationAgent apiBase={apiBase} />
+      {/* Row 4: Illustration + Narration side by side */}
+      <div className="agents-tools-row">
+        <IllustrationAgent apiBase={apiBase} />
+        <NarrationAgent apiBase={apiBase} />
+      </div>
     </div>
   );
 }
@@ -726,6 +729,158 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
         </div>
       )}
       {IllustrationConfirm}
+    </Panel>
+  );
+}
+
+// ─── 3b. Narration Agent ──────────────────────────────────────────────
+
+function NarrationAgent({ apiBase }: { apiBase: string }) {
+  const [articles, setArticles] = useState<Array<{ slug: string; title: string; narration_url: string | null }>>([]);
+  const [selectedSlug, setSelectedSlug] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('');
+  const [result, setResult] = useState<string | null>(null);
+  const { ask, ConfirmDialog: NarrationConfirm } = useConfirm();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchWithTimeout(`${apiBase}/articles-api`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'list' }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setArticles(Array.isArray(data) ? data.map((a: Record<string, unknown>) => ({
+            slug: a.slug as string,
+            title: a.title as string,
+            narration_url: (a.narration_url as string) || null,
+          })) : []);
+        }
+      } catch { /* silent */ }
+    })();
+  }, [apiBase]);
+
+  const withoutNarration = articles.filter(a => !a.narration_url);
+  const withNarration = articles.filter(a => a.narration_url);
+
+  const runBatch = useCallback(async (force: boolean) => {
+    setResult(null);
+    setLoading(true);
+    setLoadingText(force ? 'Regenerating all narrations...' : 'Generating missing narrations...');
+
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/generate-narration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'batch', force }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+      setResult(`${data.generated} narrations generated` + (data.failed > 0 ? `, ${data.failed} failed` : ''));
+    } catch (err) {
+      const msg = (err as Error).message || '';
+      if (msg.includes('timeout') || msg.includes('Failed to fetch')) {
+        setResult('Batch timed out -- use single-article selector above.');
+      } else {
+        setResult('Error: ' + msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [apiBase]);
+
+  const runSingle = useCallback(async () => {
+    if (!selectedSlug) return;
+    setResult(null);
+    setLoading(true);
+    setLoadingText(`Generating narration for "${selectedSlug}"...`);
+
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/generate-narration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', slug: selectedSlug }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+      setResult(data.skipped
+        ? `Narration already exists for "${selectedSlug}"`
+        : `Narration generated for "${selectedSlug}" (${data.characters} chars)`
+      );
+    } catch (err) {
+      setResult('Error: ' + ((err as Error).message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  }, [apiBase, selectedSlug]);
+
+  return (
+    <Panel
+      title="Narrations"
+      badge={
+        <span className={withoutNarration.length > 0 ? 'agents-badge-yellow' : 'agents-badge-green'}>
+          {withNarration.length}/{articles.length} narrated
+        </span>
+      }
+    >
+      {/* Single article selector */}
+      <div className="agents-illust-selector">
+        <label className="agents-illust-label">Single article:</label>
+        <select
+          value={selectedSlug}
+          onChange={e => setSelectedSlug(e.target.value)}
+          className="agents-illust-select"
+        >
+          <option value="">Select article...</option>
+          {articles.map(a => (
+            <option key={a.slug} value={a.slug}>{a.narration_url ? '\uD83D\uDD0A' : '\uD83D\uDD07'} {a.title}</option>
+          ))}
+        </select>
+        <button className="agents-btn admin-nowrap" disabled={loading || !selectedSlug} onClick={runSingle}>
+          Generate
+        </button>
+      </div>
+
+      {/* Batch buttons */}
+      <div className="agents-illust-batch">
+        <button
+          className="agents-btn agents-btn-primary"
+          disabled={loading || withoutNarration.length === 0}
+          onClick={() => runBatch(false)}
+        >
+          Generate Missing ({withoutNarration.length})
+        </button>
+        <button
+          className="agents-btn agents-btn-danger"
+          disabled={loading}
+          onClick={async () => { if (await ask({ title: 'Regenerate all narrations', message: 'Regenerate ALL narrations? This replaces existing ones and uses ElevenLabs credits.', confirmLabel: 'Regenerate All', danger: true })) runBatch(true); }}
+        >
+          Regenerate All
+        </button>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="agents-loading-single">
+          <div className="admin-spinner admin-spinner-lg agents-spinner-block" />
+          <p className="admin-text-base admin-color-secondary">{loadingText}</p>
+        </div>
+      )}
+
+      {/* Results */}
+      {result && !loading && (
+        <p className="admin-text-base agents-result-line-height admin-color-secondary">
+          <span style={{ color: result.startsWith('Error') || result.startsWith('Batch') ? '#fbbf24' : '#4ade80' }}>
+            {result.startsWith('Error') || result.startsWith('Batch') ? '' : '\u2713 '}{result}
+          </span>
+        </p>
+      )}
+      {NarrationConfirm}
     </Panel>
   );
 }
