@@ -108,12 +108,12 @@ Return ONLY valid JSON:
     "tone": "Specific tone guidance for THIS piece beyond the preset — what makes this article's voice unique?",
     "density": "data-heavy | narrative-driven | balanced",
     "pacing": "slow-build | rapid-fire | crescendo",
-    "openWith": "How to open — VARY THIS. 34% of our articles open with narrative vignettes ('Picture someone...', 'In 2019, a 45-year-old...'). Only use narrative openings for storyteller preset. Otherwise choose: a striking statistic, a direct provocative claim, a mechanism description, a historical fact, a contradiction, or the single most important finding. Be SPECIFIC about what the writer should open with.",
-    "emphasize": ["Key point 1", "Key point 2", "Key point 3"],
-    "avoid": ["What NOT to do", "Clichés to avoid"],
-    "dogmaWarnings": ["Specific outdated claims the writer must NOT repeat as fact for this topic — e.g., 'Do not treat omega-3/6 ratio as established science', 'Note that the cited breakfast study was Kellogg-funded'"],
-    "closingDirection": "How to end — NOT always a twist/paradox. Options: quiet observation, direct challenge, unanswered question, call to action, historical echo, clinical implication",
-    "structuralNotes": "Any specific structural choices: should this skip info-cards? Use more/fewer pull-quotes? Open with a scene that returns at the end? Use short rapid-fire sections?"
+    "openWith": "How to open — be SPECIFIC about what the writer should lead with. The opening must earn the second paragraph. Vary across the collection — not every article should open the same way. Match the opening energy to the archetype and subject.",
+    "emphasize": "The 2-3 most important threads the writer should weave through the piece. These are not section titles — they are thematic directions that should shape the argument, not scaffold it into a numbered list.",
+    "avoid": "Specific pitfalls for THIS topic — clichés, false framings, angles that would weaken the piece.",
+    "dogmaWarnings": "Specific outdated claims the writer must NOT repeat as fact for this topic. Only include when relevant — not every topic has dogma traps.",
+    "closingDirection": "How to end — vary this across the collection. Not every article needs a twist, a paradox, or a call to action. Match the closing to the subject's weight.",
+    "structuralNotes": "Any specific structural choices that would serve this particular piece — pacing, pull-quote density, whether to use a framing device. Leave null if standard structure works."
   },
   "seriesCandidate": false,
   "seriesNotes": null,
