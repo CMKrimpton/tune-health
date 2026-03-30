@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.1.1] - 2026-03-30
+
+### Fixed
+- **Copy Brief for Claude** — prefetches from server on card mount, copies synchronously on click. Single source of truth (server's `get-brief` endpoint). Previous versions either used a stale client-side copy or broke clipboard permissions with async fetch
+- **Queue delete silently failing** — FK constraint on `daily_article_log.queue_id` blocked deletes. Now clears FK reference first and checks the delete result
+- **Editor kill override** — was checking `_queueSource === "manual"` but produced topics had `_queueSource: "queue"`. Changed to check `_fromQueue` which is always true for any topic you click Produce on
+- **Array.isArray guards** — brief fields (`emphasize`, `avoid`, `dogmaWarnings`) could be strings or arrays depending on editor model output. Added defensive checks in `stage-write`, `pipeline-admin`, and `stage-copy-edit`
+- **QC voiceCheck type** — frontend type updated to match new craft-focused fields (`craftTest`, `gearChanges`, `textToFriendParagraph`)
+- **Optimistic queue delete** — item disappears from UI immediately on confirm instead of waiting for full 330-item list re-render
+- **Dead code cleanup** in stage-copy-edit error recovery path
+
+### Changed
+- **Editor brief fields** rewritten with editorial voice: `emphasize` → "threads to weave through the piece", `openWith` → "the actual detail that should hit the reader first", etc.
+- **Header variety rule** — softened from rigid "no two headers can share..." to "read them back to back, they should feel varied and natural"
+- **Removed hardcoded examples** from editor headline rules, dogma warnings, stage-write verdicts
+- **stage-write** banned phrase list synced with voice-audit (33 phrases), removed hardcoded dogma trap list
+
 ## [15.1.0] - 2026-03-29
 
 ### Changed — Editorial Quality Overhaul
