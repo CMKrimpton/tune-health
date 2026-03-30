@@ -468,6 +468,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   };
 
   const deleteQueueItem = async (queueId: string) => {
+    // Optimistically remove from local state immediately (prevents "where did it go?" confusion)
+    setQueue(q => q.filter(item => item.id !== queueId));
     try {
       const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
         method: 'POST',
@@ -476,8 +478,10 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       });
       if (!res.ok) throw new Error(`API error ${res.status}`);
       flashFeedback(true, 'Topic removed from queue');
-      setTimeout(fetchStatus, 500);
-    } catch (err) { flashFeedback(false, `Delete failed: ${err instanceof Error ? err.message : 'unknown'}`); }
+    } catch (err) {
+      flashFeedback(false, `Delete failed: ${err instanceof Error ? err.message : 'unknown'}`);
+      setTimeout(fetchStatus, 500); // Re-fetch to restore if delete actually failed
+    }
   };
 
   const killArticle = async (logId: string) => {
