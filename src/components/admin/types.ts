@@ -334,10 +334,12 @@ export interface QCResult {
   headline: string;
   description: string;
   voiceCheck?: {
-    billMaherTest: boolean;
+    craftTest: boolean;
+    gearChanges: boolean;
+    textToFriendParagraph: boolean;
+    openingEarnsSecondParagraph: boolean;
     followsTheMoney: boolean;
-    hasEditorialOpinion: boolean;
-    pullQuotesStrong: boolean;
+    takesPositions: boolean;
     overallVoicePass: boolean;
   };
   edits: QCEdits;

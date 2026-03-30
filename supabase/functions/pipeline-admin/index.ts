@@ -872,9 +872,9 @@ ${editorBrief.archetype ? `Form: ${editorBrief.archetype}` : ""}
 ### Editorial Direction
 ${brief.tone ? `Tone: ${brief.tone}` : ""}
 ${brief.openWith ? `Open with: ${brief.openWith}` : ""}
-${((brief.emphasize as string[]) || []).length > 0 ? `Threads to weave through the piece:\n${((brief.emphasize as string[]) || []).map((e: string) => `- ${e}`).join("\n")}` : ""}
-${((brief.avoid as string[]) || []).length > 0 ? `Avoid:\n${((brief.avoid as string[]) || []).map((a: string) => `- ${a}`).join("\n")}` : ""}
-${((brief.dogmaWarnings as string[]) || []).length > 0 ? `Dogma warnings:\n${((brief.dogmaWarnings as string[]) || []).map((w: string) => `- ${w}`).join("\n")}` : ""}
+${brief.emphasize ? `Threads to weave through the piece:\n${Array.isArray(brief.emphasize) ? (brief.emphasize as string[]).map((e: string) => `- ${e}`).join("\n") : `- ${brief.emphasize}`}` : ""}
+${brief.avoid ? `Avoid:\n${Array.isArray(brief.avoid) ? (brief.avoid as string[]).map((a: string) => `- ${a}`).join("\n") : `- ${brief.avoid}`}` : ""}
+${brief.dogmaWarnings ? `Dogma warnings:\n${Array.isArray(brief.dogmaWarnings) ? (brief.dogmaWarnings as string[]).map((w: string) => `- ${w}`).join("\n") : `- ${brief.dogmaWarnings}`}` : ""}
 ${brief.closingDirection ? `Closing: ${brief.closingDirection}` : ""}
 
 ## RESEARCH
