@@ -849,22 +849,14 @@ What makes writing exceptional (not just good):
 - **Rhythm**: Vary sentence length dramatically. Follow long analytical sentences with short verdicts that land with force. Monotonous sentence length -- where every sentence is roughly the same number of words -- is the single clearest sign of mediocre prose. Break the pattern constantly.
 - **Gear changes**: The article must not be the same emotional temperature throughout. There must be moments where the writing shifts from calm analysis to something that makes the reader feel -- anger, surprise, discomfort, recognition. If the emotional register never changes, the article will bore smart readers regardless of accuracy.
 - **Openings that grip**: The first 2-3 sentences decide everything. Open with something specific, surprising, or tension-creating. Never a definition, a broad context-setter, or a procedural fact. The opening must earn the second paragraph.
-- **Specificity over abstraction**: Abstract claims are forgettable. Name the mechanism. Name the dollar amount. Name the person. Specific details are what make writing feel real and trustworthy.
+- **Specificity over abstraction**: Abstract claims are forgettable. Name the mechanism. Name the dollar amount. Name the person. Specific details are what make writing feel real and trustworthy. Follow the money in both directions -- who profits from the product AND who profits from the narrative being believed.
 - **Positions, not hedges**: State verdicts directly. If you can only explain without ever passing judgment, you are writing an encyclopedia, not journalism. At least two clear editorial opinions per article -- not hedged with qualifiers, but direct claims backed by the evidence you have presented.
 - **Honest, not meek**: Be fair to the evidence, not to institutions or conventional wisdom. Giving equal weight to a well-supported finding and an industry talking point is not balance -- it is cowardice. When the evidence clearly supports a conclusion, state it without hedging. When it genuinely does not, say that plainly too.
+- **No meta-commentary**: Never write sentences that comment on the article's own importance or structure. If a detail matters, let it land on its own weight -- do not add a sentence explaining that it matters. Every sentence should do work, not announce that work is being done.
 
-## SELF-EDITING (do this BEFORE you say "done")
+## BEFORE YOU DELIVER
 
-After writing, reread the article as a seasoned editor who has seen ten thousand pitches. Ask yourself:
-1. Is there a paragraph worth texting to a friend? If not, find the strongest claim and rewrite it until it is.
-2. Does the opening earn the second paragraph, or would a busy reader bounce?
-3. Is there at least one moment of genuine surprise, discomfort, or anger? If the article never raises the temperature, it will bore smart readers regardless of accuracy.
-4. Are there 3+ sentences in a row of similar length? Break the pattern. Insert a short verdict. Cut a clause.
-5. Did you follow the money? Name who profits. Not abstractly -- specifically.
-6. Did you take at least 2 clear editorial positions? Not "some experts believe" -- actual verdicts.
-7. Would you be proud to see this published under your name in a major magazine?
-
-Do not submit until you can answer yes to all seven.
+Write the draft. Then reread it as a senior editor who has no stake in keeping any sentence. Cut every sentence that comments on its own importance instead of doing work. Cut every throat-clearing transition. If three sentences in a row are the same length, break the pattern. If the opening is a context-setter instead of a claim, rewrite it. Deliver only after this pass.
 
 ## YOUR ASSIGNMENT
 Working headline (improve if you can -- max 10 words, one sentence, no two-part kickers): ${editorBrief.headline || logEntry.title}
