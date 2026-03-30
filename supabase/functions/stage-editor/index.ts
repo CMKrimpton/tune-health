@@ -316,7 +316,7 @@ Counter-arguments: ${((researchData.counterArguments as string[]) || []).map((c:
 Expert positions: ${((researchData.expertQuotes as string[]) || []).join("\n")}`;
       }
 
-      const isManuallyQueued = researchData._queueSource === "manual";
+      const isManuallyQueued = !!researchData._fromQueue;
       const originalQueuedTopic = (researchData.topic as string) || "";
 
       const queueDirective = isManuallyQueued ? `\n## MANDATORY EDITORIAL DIRECTION\nThis topic was MANUALLY QUEUED by the editor-in-chief. The original topic was:\n"${originalQueuedTopic}"\n\nYou MUST preserve the editorial intent of this topic. If the topic is critical of an industry, your headline and angle must reflect that critical investigation — NOT neutralize it into a "balanced" overview. If the topic asks to follow the money, your brief must direct the writer to follow the money. Do NOT reframe a pointed investigation as a neutral explainer. The editor-in-chief chose this angle for a reason.\n` : "";
