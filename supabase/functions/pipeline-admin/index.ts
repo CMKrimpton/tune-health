@@ -895,7 +895,7 @@ ${((researchData.counterArguments as string[]) || []).length > 0 ? `Counter-argu
 - Take positions. This is journalism, not Wikipedia.
 - Zero fabrication. Only cite studies from the research above.
 - When the evidence is clear, say so without hedging. When it genuinely isn't, say that too. Never give equal weight to a well-supported finding and an industry talking point.
-- Section headings (h2): every header must be specific to THIS article's argument. No two headers should start with the same word or follow the same syntactic pattern. If you notice any repeated opener or grammatical form across your headers, rewrite until each has a distinct structure.
+- Section headings (h2): every header must be specific to THIS article's argument. Read your headers back to back as a list — they should feel varied and natural, not like they came from the same template.
 
 ## HTML FORMAT
 <section id="introduction" class="reveal">
