@@ -1058,6 +1058,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               const indReview = (rd as PipelineResearchData)._independenceReview as Record<string, unknown> | undefined;
               const pubmed = (rd as PipelineResearchData)._pubmedVerification as { verified?: number; failed?: number; skipped?: number; total?: number; details?: Array<{ title: string; found: boolean; skipped?: boolean; source?: string; pmid?: string; doi?: string; url?: string }> } | undefined;
               const qcResult = (rd as PipelineResearchData)._qcResult as Record<string, unknown> | undefined;
+              const copyEditResult = (rd as Record<string, unknown>)._copyEditResult as { appliedChanges: number; totalProposed: number; summary: string; details: string[] } | undefined;
               const briefDetails = brief?.brief as Record<string, unknown> | undefined;
               const tokenUsage = log.token_usage as Array<{ model: string; stage: string; inputTokens: number; outputTokens: number; costUsd: number }> | null;
 
@@ -1171,7 +1172,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       {/* ── QC Result ── */}
                       {qcResult && (
                         <div className="admin-expanded-block">
-                          <div className="admin-stage-label">6. QC + Publish</div>
+                          <div className="admin-stage-label">6. QC</div>
                           <div className="admin-color-secondary">
                             Decision: <span className="admin-color-green admin-weight-600">{qcResult.decision as string}</span>
                             {' | '}Score: {qcResult.qualityScore as number || '?'}/10
@@ -1181,6 +1182,22 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                           {(qcResult.edits as Record<string, unknown>)?.notes && (
                             <div className="admin-color-subtle admin-italic admin-mt-sm">{((qcResult.edits as Record<string, unknown>).notes as string).slice(0, 150)}</div>
                           )}
+                        </div>
+                      )}
+
+                      {/* ── Copy Edit ── */}
+                      {copyEditResult && (
+                        <div className="admin-expanded-block">
+                          <div className="admin-stage-label">7. Copy Edit</div>
+                          <div className="admin-color-secondary">
+                            {copyEditResult.appliedChanges === 0
+                              ? <span className="admin-color-green">No changes needed</span>
+                              : <span className="admin-color-yellow">{copyEditResult.appliedChanges} change{copyEditResult.appliedChanges !== 1 ? 's' : ''} applied (of {copyEditResult.totalProposed} proposed)</span>
+                            }
+                          </div>
+                          {copyEditResult.details?.map((d, i) => (
+                            <div key={i} className="admin-color-subtle admin-text-sm admin-mt-xs admin-pl-md">{d}</div>
+                          ))}
                         </div>
                       )}
 

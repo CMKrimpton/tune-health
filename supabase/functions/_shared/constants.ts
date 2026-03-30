@@ -88,6 +88,10 @@ export const MODELS = {
   QC_PRIMARY: "gemini-2.5-flash",
   QC_FALLBACK: "claude-sonnet-4-6",
 
+  // Copy edit: editorial judgment needs intelligence — conservative by design
+  COPY_EDIT_PRIMARY: "claude-sonnet-4-6",
+  COPY_EDIT_FALLBACK: "gemini-2.5-pro",
+
   // Scout: real-time trending data
   SCOUT_GEMINI: "gemini-2.5-pro",             // Google Search grounding for trends
   SCOUT_GROK: "grok-4",                       // X/Twitter access for social trends
@@ -123,6 +127,7 @@ export const VOICE_REWRITE_CHAIN = ["claude-sonnet-4-6", "gemini-3.1-pro-preview
 export const EDITOR_CHAIN = [MODELS.EDITOR_PRIMARY, MODELS.EDITOR_FALLBACK];
 export const REVISION_CHAIN = [MODELS.REVISION_PRIMARY, MODELS.REVISION_FALLBACK];
 export const QC_CHAIN = [MODELS.QC_PRIMARY, MODELS.QC_FALLBACK];
+export const COPY_EDIT_CHAIN = [MODELS.COPY_EDIT_PRIMARY, MODELS.COPY_EDIT_FALLBACK];
 
 export const MODEL_BYLINES: Record<string, { name: string; role: string }> = {
   "human-opus":               { name: "Carl Lundin",       role: "Editor-at-Large" },  // Human-written via Opus Max

@@ -1,0 +1,320 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { corsHeaders, json } from "../_shared/cors.ts";
+import { supabase, addCostToLog, dispatchStage } from "../_shared/db.ts";
+import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
+import { COPY_EDIT_CHAIN } from "../_shared/constants.ts";
+
+// ---------------------------------------------------------------------------
+// Copy Editor Prompt — conservative by design
+// ---------------------------------------------------------------------------
+const COPY_EDITOR_PROMPT = `You are a copy editor doing a final headline and section header review for alumi news — a health and wellness magazine for smart, skeptical 20-35 year olds.
+
+YOUR DEFAULT IS TO CHANGE NOTHING. Most articles already have good headlines and headers. You are here to catch the clearly weak ones, not to put your fingerprints on everything.
+
+## What "clearly better" means
+
+A change is justified ONLY when:
+- The original is generic enough to fit on any article about this topic ("The Science Behind X", "Understanding Y", "What You Need to Know")
+- The original is truncated, grammatically broken, or factually misleading
+- The original exceeds 10 words (for the main title only — section headers have no word limit)
+- The original is vague where the article makes a specific, interesting argument
+
+A change is NOT justified when:
+- You simply prefer different phrasing — that's taste, not editing
+- The original has personality you'd write differently — personality is good, even when imperfect
+- The original uses an unusual structure that still works — unusual is often better than polished
+- You want to add cleverness — forced cleverness is worse than plain clarity
+
+## The alumi news voice
+
+Direct. Specific. Evidence-based but never boring. Slightly irreverent — like a smart friend who reads the studies, not a professor or a wellness influencer.
+
+Good headlines state what the article actually argues:
+- "Creatine Works for Depression — Here's the Dose Data"
+- "Your Thyroid Panel Is Missing the Test That Matters"
+- "Ultra-Processed Food Isn't Just Unhealthy — It Rewires Appetite"
+
+Bad headlines are generic, clickbait, or could belong to any article:
+- "Understanding Creatine and Mental Health" (generic textbook)
+- "The Truth About Your Thyroid" (clickbait — implies hidden conspiracy)
+- "What Doctors Won't Tell You About Food" (manufactured drama)
+- "Why Everything You Know About X Is Wrong" (lazy contrarianism)
+- "The Hidden Danger of X" / "X: What You Need to Know" (filler)
+- "The Science of X" / "Exploring X" / "A Deep Dive Into X" (generic)
+
+Good section headers are specific to THIS article's argument:
+- "The Dose Problem" > "Understanding Dosage"
+- "Who Profits from the 'Healthy' Label" > "Industry Perspectives"
+- "What the Finnish Data Actually Shows" > "Research Findings"
+- "The Cortisol Myth, Quantified" > "Debunking the Myth"
+
+## Rules
+
+TITLE (H1):
+- Max 10 words — this is a hard cap. Shorten if it exceeds this
+- Must make a specific claim or ask a specific question
+- If the current title is good, return null for proposed. Don't change for the sake of changing
+
+DESCRIPTION:
+- Must be complete sentences (no truncation mid-thought)
+- 2-3 sentences that make a reader stop scrolling
+- If the current description works, return null
+
+SECTION HEADERS (H2/H3):
+- Replace generic labels with specific ones that reflect what the section actually argues
+- Leave headers alone if they're already specific, even if you'd phrase them differently
+- Don't make them all sound the same — variety in structure is good
+
+FOR HUMAN-WRITTEN ARTICLES (writtenBy = "human-opus"):
+- Only fix clear errors: truncation, grammar, >10 word titles
+- The writer's choices are deliberate. Do not "improve" working prose
+
+## Output format
+
+Return ONLY valid JSON:
+{
+  "title": {
+    "original": "exact original title",
+    "proposed": "your version" or null,
+    "reason": "specific reason this is clearly better, not just different" or null,
+    "confidence": 1-10
+  },
+  "description": {
+    "original": "exact original description",
+    "proposed": "your version" or null,
+    "reason": "specific reason" or null,
+    "confidence": 1-10
+  },
+  "headers": [
+    {
+      "original": "exact original header text",
+      "proposed": "your version" or null,
+      "reason": "specific reason" or null,
+      "confidence": 1-10,
+      "level": "h2" or "h3"
+    }
+  ],
+  "changeCount": 0,
+  "summary": "No changes needed" or brief summary of what you changed and why
+}
+
+CRITICAL RULES:
+- Set "proposed" to null for ANY element that doesn't need changing
+- A confidence of 8+ means you are CERTAIN this is clearly better, not just different
+- If you return more than 3 non-null proposals for a single article, you are almost certainly over-editing. Step back
+- An article with 0 changes is a perfectly valid (and common) outcome`;
+
+// ---------------------------------------------------------------------------
+// Confidence threshold — only apply changes at or above this level
+// ---------------------------------------------------------------------------
+const CONFIDENCE_THRESHOLD = 8;
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  let parsedLogId: string | null = null;
+  try {
+    const { logId } = await req.json();
+    parsedLogId = logId;
+    if (!logId) return json({ error: "logId is required" }, 400);
+
+    const db = supabase();
+
+    // Atomic CAS: claim from qc_approved or voice_rewrite_done
+    let claimed = (await db.from("daily_article_log")
+      .update({ status: "copy_editing", stage_started_at: new Date().toISOString() })
+      .eq("id", logId).eq("status", "qc_approved").select("id").maybeSingle()).data;
+    if (!claimed) {
+      claimed = (await db.from("daily_article_log")
+        .update({ status: "copy_editing", stage_started_at: new Date().toISOString() })
+        .eq("id", logId).eq("status", "voice_rewrite_done").select("id").maybeSingle()).data;
+    }
+    if (!claimed) {
+      return json({ skipped: true, logId, message: "Another instance already claimed this article" });
+    }
+
+    // Fetch log entry
+    const { data: logEntry } = await db.from("daily_article_log")
+      .select("slug, research_data")
+      .eq("id", logId).maybeSingle();
+    if (!logEntry) return json({ error: "Log entry not found" }, 404);
+
+    const researchData = (logEntry.research_data as Record<string, unknown>) || {};
+    const articleData = (researchData._article as Record<string, unknown>) || {};
+    const metadata = (articleData.metadata as Record<string, unknown>) || {};
+    const qcResult = (researchData._qcResult as Record<string, unknown>) || {};
+    const html = (articleData.html as string) || "";
+    const isHumanWritten = researchData._writtenBy === "human-opus" || researchData._writtenBy === "admin-editor";
+
+    // Use QC's polished title/description as the starting point (QC may have already improved these)
+    const currentTitle = (qcResult.headline as string) || (metadata.title as string) || "";
+    const currentDescription = (qcResult.description as string) || (metadata.description as string) || "";
+
+    // Extract H2/H3 headers from article HTML
+    const headers: Array<{ text: string; level: string; fullTag: string }> = [];
+    const headerRegex = /<(h[23])[^>]*>([\s\S]*?)<\/\1>/gi;
+    let match;
+    while ((match = headerRegex.exec(html)) !== null) {
+      const plainText = match[2].replace(/<[^>]+>/g, "").trim();
+      if (plainText) {
+        headers.push({ text: plainText, level: match[1].toLowerCase(), fullTag: match[0] });
+      }
+    }
+
+    // Build the prompt
+    const headerList = headers.length > 0
+      ? headers.map((h, i) => `${i + 1}. [${h.level.toUpperCase()}] ${h.text}`).join("\n")
+      : "(no section headers found)";
+
+    const userPrompt = `Review this article's headlines and section headers.${isHumanWritten ? "\n\nIMPORTANT: This article was written by a human editor. Only fix clear errors (truncation, grammar, >10 word title). Do not rewrite working copy." : ""}
+
+TITLE: ${currentTitle}
+
+DESCRIPTION: ${currentDescription}
+
+SECTION HEADERS:
+${headerList}
+
+ARTICLE CATEGORY: ${metadata.category || "unknown"}
+
+For context, here is the article opening (first ~1500 chars):
+${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 1500)}
+
+Review each element. Return null for proposed on anything that doesn't need changing. Remember: 0 changes is a valid outcome.`;
+
+    const { text: raw, usage } = await generateWithFallback({
+      system: COPY_EDITOR_PROMPT,
+      user: userPrompt,
+      models: COPY_EDIT_CHAIN,
+      maxTokens: 2000,
+      temperature: 0.2,
+      stage: "copy_edit",
+      webSearch: false,
+    });
+    await addCostToLog(db, logId, usage);
+
+    const result = parseClaudeJSON(raw) as Record<string, unknown>;
+
+    // Apply high-confidence changes
+    let appliedChanges = 0;
+    const appliedDetails: string[] = [];
+
+    // Title
+    const titleResult = result.title as Record<string, unknown> | undefined;
+    let finalTitle = currentTitle;
+    if (titleResult?.proposed && (titleResult.confidence as number) >= CONFIDENCE_THRESHOLD) {
+      finalTitle = titleResult.proposed as string;
+      appliedChanges++;
+      appliedDetails.push(`Title: "${currentTitle}" → "${finalTitle}" (confidence ${titleResult.confidence})`);
+    }
+
+    // Description
+    const descResult = result.description as Record<string, unknown> | undefined;
+    let finalDescription = currentDescription;
+    if (descResult?.proposed && (descResult.confidence as number) >= CONFIDENCE_THRESHOLD) {
+      finalDescription = descResult.proposed as string;
+      appliedChanges++;
+      appliedDetails.push(`Description updated (confidence ${descResult.confidence})`);
+    }
+
+    // Section headers — apply to HTML
+    let finalHtml = html;
+    const toc = (articleData.toc as Array<{ id: string; title: string }>) || [];
+    const headerResults = (result.headers as Array<Record<string, unknown>>) || [];
+
+    for (const h of headerResults) {
+      if (!h.proposed || (h.confidence as number) < CONFIDENCE_THRESHOLD) continue;
+
+      const original = h.original as string;
+      const proposed = h.proposed as string;
+
+      // Find and replace in HTML — match the header text within its tag
+      // Use a regex that matches the exact text inside any h2/h3 tag
+      const escapedOriginal = original.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const tagRegex = new RegExp(`(<h[23][^>]*>)((?:<[^>]+>)*?)${escapedOriginal}((?:<[^>]+>)*?)(</h[23]>)`, "i");
+
+      if (tagRegex.test(finalHtml)) {
+        finalHtml = finalHtml.replace(tagRegex, `$1$2${proposed}$3$4`);
+        appliedChanges++;
+        appliedDetails.push(`Header: "${original}" → "${proposed}" (confidence ${h.confidence})`);
+
+        // Update TOC entry if it matches
+        const tocEntry = toc.find(t => t.title === original);
+        if (tocEntry) {
+          tocEntry.title = proposed;
+        }
+      }
+    }
+
+    console.log(`[CopyEdit] ${logEntry.slug}: ${appliedChanges} changes applied out of ${result.changeCount || 0} proposed`);
+    if (appliedDetails.length > 0) {
+      for (const d of appliedDetails) console.log(`[CopyEdit]   ${d}`);
+    }
+
+    // Update research_data with copy edit results and any changes
+    const updatedArticle = {
+      ...articleData,
+      html: finalHtml,
+      toc,
+      metadata: {
+        ...metadata,
+        title: finalTitle,
+        description: finalDescription,
+      },
+    };
+
+    // Also update QC result's headline/description so stage-publish reads the right values
+    const updatedQcResult = {
+      ...qcResult,
+      headline: finalTitle,
+      description: finalDescription,
+    };
+
+    await db.from("daily_article_log").update({
+      status: "copy_edited",
+      research_data: {
+        ...researchData,
+        _article: updatedArticle,
+        _qcResult: updatedQcResult,
+        _copyEditResult: {
+          appliedChanges,
+          totalProposed: result.changeCount || 0,
+          summary: result.summary || "No changes needed",
+          details: appliedDetails,
+          confidenceThreshold: CONFIDENCE_THRESHOLD,
+        },
+      },
+    }).eq("id", logId);
+
+    // Chain-dispatch to publish
+    await dispatchStage("stage-publish", logId);
+
+    return json({
+      success: true,
+      logId,
+      appliedChanges,
+      totalProposed: result.changeCount || 0,
+      summary: result.summary,
+      details: appliedDetails,
+    });
+  } catch (err: unknown) {
+    try {
+      const db = supabase();
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[stage-copy-edit] Error: ${msg}`);
+      if (parsedLogId) {
+        // On failure, skip copy edit and dispatch directly to publish
+        // Copy edit is a polish step — failure should never block publication
+        console.log(`[stage-copy-edit] Recovering — dispatching directly to stage-publish`);
+        await db.from("daily_article_log").update({
+          status: "copy_edited",
+          research_data: undefined, // preserve existing — don't overwrite
+        }).eq("id", parsedLogId);
+        // Actually, we can't set research_data to undefined. Just update status.
+        await db.from("daily_article_log").update({ status: "copy_edited" }).eq("id", parsedLogId);
+        await dispatchStage("stage-publish", parsedLogId);
+      }
+    } catch { /* best effort */ }
+    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+  }
+});

@@ -302,6 +302,29 @@
     @apply text-primary-700 dark:text-primary-300;
   }
 
+  /* Data Callout — methodology notes, caveats, context boxes */
+  .data-callout {
+    @apply p-6 md:p-8 rounded-xl my-8;
+    @apply border-l-[3px] border-stone-400 dark:border-stone-500;
+    background: rgb(28 25 23 / 0.5);
+  }
+
+  :root:not(.dark) .data-callout {
+    background: rgb(250 250 249 / 0.6);
+  }
+
+  .data-callout p {
+    @apply text-stone-600 dark:text-stone-400;
+  }
+
+  .data-callout p:first-child {
+    @apply font-semibold text-stone-700 dark:text-stone-300;
+  }
+
+  .data-callout p:last-child {
+    @apply mb-0;
+  }
+
   /* Animated Counter */
   .counter {
     @apply font-serif tabular-nums;

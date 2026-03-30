@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.0.0] - 2026-03-29
+
+### Added — Copy Edit Pipeline Stage
+- **Stage 8: Copy Edit** — new pipeline stage between QC and Publish. Reviews headline, description, and section headers for quality. Sonnet primary, Gemini Pro fallback. Conservative by design: confidence gate at 8/10 means only clearly better changes are applied. 0 changes is a valid and common outcome
+- **`data-callout` CSS class** — styled methodology notes, caveats, and disclaimers with dark theme support. Replaces inline-styled yellow notepad boxes
+- **Inline style ban in writer prompt** — stage-write now explicitly forbids `style=""` attributes and hardcoded colors in generated HTML
+
+### Changed
+- Pipeline is now 8 stages: Research → Editor → Write → Independence → QC → Copy Edit → Voice Polish → Publish
+- QC stage dispatches to `stage-copy-edit` instead of directly to `stage-publish`
+- `stage-publish` accepts `copy_edited` as entry status (plus existing `qc_approved` and `voice_rewrite_done` for backwards compat)
+- Safety-net SQL dispatch routes `qc_approved` and `voice_rewrite_done` through copy-edit
+- Dashboard pipeline view shows Copy Edit stage column with applied/proposed change details
+
+### Fixed
+- **Yellow notepad bug** — removed hardcoded inline `background: #fef3c7` from medical-error article, replaced with proper `data-callout` class
+- **QC kill override** — manually queued and human-written articles can no longer be killed by QC (force-publishes instead, matching existing revise/voice-rewrite protections)
+
 ## [14.6.1] - 2026-03-29
 
 ### Added

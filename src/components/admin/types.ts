@@ -265,6 +265,7 @@ export const PIPELINE_STAGE_CONFIG: StageConfig[] = [
   { key: 'independence',  icon: '⚖️', label: 'Independence', model: 'Grok 4',                     modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
   { key: 'qc',            icon: '✅', label: 'QC',           model: 'Flash → Sonnet',              modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
   { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Sonnet → Gemini → GPT-5.4',  modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
+  { key: 'copy_edit',     icon: '✏️', label: 'Copy Edit',    model: 'Sonnet → Gemini Pro',         modelColor: '#ec4899', statuses: ['copy_editing', 'copy_edited'] },
   { key: 'publish',       icon: '📡', label: 'Publish',      model: 'GitHub + GPT Image',          modelColor: '#10b981', statuses: ['publishing', 'published'] },
 ];
 
@@ -274,7 +275,7 @@ const TERMINAL_STATUSES = new Set(['published', 'failed']);
 /** Active (in-flight) statuses where a stage is currently processing. */
 const ACTIVE_PROCESSING_STATUSES = new Set([
   'started', 'searching', 'editor_reviewing', 'writing',
-  'independence_review', 'editor_qc', 'rewriting_voice', 'publishing',
+  'independence_review', 'editor_qc', 'rewriting_voice', 'copy_editing', 'publishing',
 ]);
 
 /** Statuses considered "in-flight" by the pipeline monitor. */
@@ -282,7 +283,7 @@ export const ACTIVE_STATUSES = new Set([
   'started', 'searching', 'research_done', 'editor_reviewing', 'editor_approved',
   'writing', 'written', 'independence_review', 'independence_done',
   'editor_qc', 'qc_approved', 'voice_rewrite_pending', 'rewriting_voice',
-  'voice_rewrite_done', 'publishing',
+  'voice_rewrite_done', 'copy_editing', 'copy_edited', 'publishing',
 ]);
 
 // ─── EditorBrief ─────────────────────────────────────────────────────────────

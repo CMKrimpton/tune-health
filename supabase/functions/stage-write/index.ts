@@ -57,8 +57,15 @@ Return ONLY valid JSON:
 <section id="introduction" class="reveal"><p>First paragraph (no h2 — CSS drop cap).</p></section>
 <section id="section-slug" class="reveal"><h2>Section Title</h2><p>Content...</p></section>
 <aside class="pull-quote reveal"><p>"Striking quote."</p></aside>
+<div class="data-callout reveal"><p><strong>Methodology note title</strong></p><p>Context, caveats, or methodology notes go here.</p></div>
 <section id="sources"><h2>Sources</h2><ul><li>Author. "Title." <em>Journal</em>, Year.</li></ul></section>
-<div class="mt-12 p-6 bg-stone-100 dark:bg-stone-800 rounded-xl border-l-4 border-primary-500 reveal"><p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed"><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>`;
+<div class="data-callout reveal"><p><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p></div>
+
+### CRITICAL HTML RULES
+- NEVER use inline style="" attributes. All styling comes from CSS classes.
+- NEVER use hardcoded colors (hex values, rgb, etc.) in HTML.
+- Only use these CSS classes: "reveal", "pull-quote", "data-callout", "info-card".
+- Tailwind utility classes are allowed only for spacing (mt-12, p-6, etc.).\`;
 
 // ---------------------------------------------------------------------------
 // Handler

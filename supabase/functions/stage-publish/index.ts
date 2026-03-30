@@ -16,10 +16,15 @@ Deno.serve(async (req: Request) => {
     const db = supabase();
     const today = todayISO();
 
-    // Atomic CAS: claim this article. Two valid input statuses — try each.
+    // Atomic CAS: claim this article. Three valid input statuses — try each.
     let claimed = (await db.from("daily_article_log")
       .update({ status: "publishing", stage_started_at: new Date().toISOString() })
-      .eq("id", logId).eq("status", "qc_approved").select("id").maybeSingle()).data;
+      .eq("id", logId).eq("status", "copy_edited").select("id").maybeSingle()).data;
+    if (!claimed) {
+      claimed = (await db.from("daily_article_log")
+        .update({ status: "publishing", stage_started_at: new Date().toISOString() })
+        .eq("id", logId).eq("status", "qc_approved").select("id").maybeSingle()).data;
+    }
     if (!claimed) {
       claimed = (await db.from("daily_article_log")
         .update({ status: "publishing", stage_started_at: new Date().toISOString() })
