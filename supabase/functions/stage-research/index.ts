@@ -1,10 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, getExistingArticles, safeStage, dispatchStage } from "../_shared/db.ts";
-import { gemini, claude, parseClaudeJSON } from "../_shared/api-clients.ts";
+import { gemini, claude, grok, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { RESEARCH_TIMEOUT, RESEARCH_PARALLEL_TIMEOUT, MODELS } from "../_shared/constants.ts";
 import { todayISO } from "../_shared/astro.ts";
-import type { ApiUsage } from "../_shared/types.ts";
+import type { ApiUsage, ApiResult } from "../_shared/types.ts";
 
 // ---------------------------------------------------------------------------
 // Research Agent — finds trending topics
