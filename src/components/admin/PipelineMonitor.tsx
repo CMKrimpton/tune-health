@@ -685,7 +685,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const inPipeline = Object.values(stageLogsMap).reduce((n, arr) => n + arr.length, 0);
   const progressPct = Math.min(100, Math.round((articleCount / ARTICLE_GOAL) * 100));
   const statusColors: Record<string, string> = {
-    running: '#16a34a', waiting: '#f59e0b', failed: '#dc2626', idle: '#78716c',
+    running: 'var(--admin-green)', waiting: 'var(--admin-yellow)', failed: 'var(--admin-accent)', idle: 'var(--admin-text-3)',
   };
 
   // ─── Render ─────────────────────────────────────────────────────
@@ -719,7 +719,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         {totalCost > 0 && (
           <div className="pipeline-spend-box">
             <span className="admin-text-sm admin-color-subtle">Total Spend</span>
-            <span className="admin-text-lg admin-weight-600 admin-tabular-nums" style={{ color: totalCost > 50 ? '#f87171' : totalCost > 20 ? '#f59e0b' : '#b5b0a9' }}>
+            <span className="admin-text-lg admin-weight-600 admin-tabular-nums" style={{ color: totalCost > 50 ? 'var(--admin-red-light)' : totalCost > 20 ? 'var(--admin-yellow)' : 'var(--admin-text-2)' }}>
               ${totalCost.toFixed(2)}
             </span>
           </div>
@@ -738,9 +738,9 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           <div className="admin-flex-center admin-gap-xs">
             <span className="admin-text-micro admin-color-muted admin-uppercase admin-weight-600 admin-ml-xs">Scout</span>
             {[
-              { id: 'gemini', label: 'Gemini', color: '#fbbf24' },
-              { id: 'sonnet', label: 'Sonnet', color: '#f97316' },
-              { id: 'grok', label: 'Grok', color: '#3b82f6' },
+              { id: 'gemini', label: 'Gemini', color: 'var(--admin-yellow-light)' },
+              { id: 'sonnet', label: 'Sonnet', color: 'var(--admin-yellow)' },
+              { id: 'grok', label: 'Grok', color: 'var(--admin-blue)' },
             ].map(s => (
               <button
                 key={s.id}
@@ -859,14 +859,14 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               <button
                 onClick={() => setUploadEntry('full')}
                 className="admin-text-md"
-                style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === 'full' ? 'rgba(168,162,158,0.15)' : 'transparent', color: uploadEntry === 'full' ? '#e7e6e3' : '#78716c' }}
+                style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === 'full' ? 'rgba(168,162,158,0.15)' : 'transparent', color: uploadEntry === 'full' ? 'var(--admin-text)' : 'var(--admin-text-3)' }}
               >
                 Full Chain — Research → Editor → Write → QC → Publish
               </button>
               <button
                 onClick={() => setUploadEntry('independence')}
                 className="admin-text-md"
-                style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === 'independence' ? 'rgba(168,162,158,0.15)' : 'transparent', color: uploadEntry === 'independence' ? '#e7e6e3' : '#78716c' }}
+                style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === 'independence' ? 'rgba(168,162,158,0.15)' : 'transparent', color: uploadEntry === 'independence' ? 'var(--admin-text)' : 'var(--admin-text-3)' }}
               >
                 Finished Article — Independence → QC → Publish
               </button>
@@ -878,7 +878,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               value={uploadTitle}
               onChange={e => setUploadTitle(e.target.value)}
               className="pipeline-queue-input"
-              style={{ marginBottom: '0.375rem', borderColor: !uploadTitle.trim() && uploadHtml.trim() ? '#ef4444' : undefined }}
+              style={{ marginBottom: '0.375rem', borderColor: !uploadTitle.trim() && uploadHtml.trim() ? 'var(--admin-accent)' : undefined }}
             />
             <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.375rem' }}>
               <select
@@ -932,10 +932,10 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               onDrop={e => { e.preventDefault(); setUploadDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleUploadFile(f); }}
               rows={4}
               className="pipeline-queue-input"
-              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', resize: 'vertical', minHeight: '80px', borderColor: uploadDragOver ? '#ef4444' : undefined, background: uploadDragOver ? 'rgba(239,68,68,0.05)' : undefined }}
+              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', resize: 'vertical', minHeight: '80px', borderColor: uploadDragOver ? 'var(--admin-accent)' : undefined, background: uploadDragOver ? 'rgba(239,68,68,0.05)' : undefined }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.375rem' }}>
-              <span style={{ fontSize: '0.6875rem', color: '#78716c' }}>
+              <span style={{ fontSize: '0.6875rem', color: 'var(--admin-text-3)' }}>
                 {uploadHtml
                   ? `${uploadHtml.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length} words`
                   : uploadEntry === 'full'
@@ -1015,7 +1015,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               onClick={mergeClusters ? () => setMergePanelOpen(p => !p) : analyzeMerge}
               disabled={mergeAnalyzing || (!mergeClusters && queue.filter(q => q.status === 'queued').length < 5)}
               className="pipeline-trigger-btn admin-text-md"
-              style={{ padding: '0.25rem 0.625rem', background: mergeClusters ? 'rgba(168,85,247,0.2)' : 'rgba(168,85,247,0.1)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.25)', fontWeight: 600, whiteSpace: 'nowrap' }}
+              style={{ padding: '0.25rem 0.625rem', background: mergeClusters ? 'rgba(168,85,247,0.2)' : 'rgba(168,85,247,0.1)', color: 'var(--admin-purple-light)', border: '1px solid rgba(168,85,247,0.25)', fontWeight: 600, whiteSpace: 'nowrap' }}
               title={mergeClusters ? 'Toggle merge panel' : 'AI-powered duplicate detection and merge'}
             >
               {mergeAnalyzing ? 'Scanning\u2026' : mergeClusters ? `${mergeClusters.length} Clusters ${mergePanelOpen ? '▾' : '▸'}` : 'Find Duplicates'}
@@ -1031,7 +1031,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                   key={f}
                   onClick={() => setQueueFilter(f)}
                   className="pipeline-trigger-btn admin-text-md"
-                  style={{ padding: '0.25rem 0.5rem', background: queueFilter === f ? (f === 'merged' ? 'rgba(168,85,247,0.2)' : 'rgba(168,162,158,0.15)') : 'transparent', color: queueFilter === f ? (f === 'merged' ? '#c084fc' : '#e7e6e3') : '#78716c', border: 'none', fontWeight: queueFilter === f ? 600 : 400 }}
+                  style={{ padding: '0.25rem 0.5rem', background: queueFilter === f ? (f === 'merged' ? 'rgba(168,85,247,0.2)' : 'rgba(168,162,158,0.15)') : 'transparent', color: queueFilter === f ? (f === 'merged' ? 'var(--admin-purple-light)' : 'var(--admin-text)') : 'var(--admin-text-3)', border: 'none', fontWeight: queueFilter === f ? 600 : 400 }}
                 >
                   {label} <span style={{ opacity: 0.5, fontSize: '0.6875rem' }}>({count})</span>
                 </button>
@@ -1044,7 +1044,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         {mergeClusters && mergeClusters.length > 0 && mergePanelOpen && (
           <div style={{ marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span className="admin-text-md admin-weight-600" style={{ color: '#c084fc' }}>
+              <span className="admin-text-md admin-weight-600" style={{ color: 'var(--admin-purple-light)' }}>
                 {mergeClusters.length} duplicate cluster{mergeClusters.length !== 1 ? 's' : ''} found
               </span>
               <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
@@ -1060,7 +1060,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                   onClick={analyzeMerge}
                   disabled={mergeAnalyzing || mergingAll || mergingClusterId !== null}
                   className="pipeline-retry-btn admin-text-sm"
-                  style={{ color: '#78716c' }}
+                  style={{ color: 'var(--admin-text-3)' }}
                 >
                   {mergeAnalyzing ? 'Scanning\u2026' : 'Re-scan'}
                 </button>
@@ -1068,7 +1068,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                   onClick={() => { setMergeClusters(null); setAlreadyPublished(null); setMergeResult(null); }}
                   disabled={mergingAll || mergingClusterId !== null}
                   className="pipeline-retry-btn admin-text-sm"
-                  style={{ color: '#78716c' }}
+                  style={{ color: 'var(--admin-text-3)' }}
                 >
                   Dismiss
                 </button>
@@ -1081,8 +1081,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                 <div key={idx} style={{ border: '1px solid rgba(168,85,247,0.25)', borderRadius: '8px', padding: '0.625rem', marginBottom: '0.5rem', background: 'rgba(168,85,247,0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.375rem' }}>
                     <div>
-                      <span className="admin-text-sm admin-weight-600" style={{ color: '#e7e6e3' }}>{cluster.reason}</span>
-                      <span className="admin-text-sm" style={{ marginLeft: '0.5rem', color: cluster.confidence === 'high' ? '#22c55e' : '#eab308', opacity: 0.8 }}>
+                      <span className="admin-text-sm admin-weight-600" style={{ color: 'var(--admin-text)' }}>{cluster.reason}</span>
+                      <span className="admin-text-sm" style={{ marginLeft: '0.5rem', color: cluster.confidence === 'high' ? 'var(--admin-green)' : 'var(--admin-yellow)', opacity: 0.8 }}>
                         {cluster.confidence}
                       </span>
                     </div>
@@ -1101,11 +1101,11 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         type="checkbox"
                         checked={cluster.checked[t.id] ?? true}
                         onChange={() => toggleMergeCheck(idx, t.id)}
-                        style={{ marginTop: '0.2rem', accentColor: '#c084fc' }}
+                        style={{ marginTop: '0.2rem', accentColor: 'var(--admin-purple-light)' }}
                       />
                       <div>
-                        <span className="admin-text-sm" style={{ color: '#e7e6e3' }}>{t.topic.replace(/\*\*/g, '').trim()}</span>
-                        <div className="admin-text-sm" style={{ color: '#78716c', fontSize: '0.6875rem' }}>
+                        <span className="admin-text-sm" style={{ color: 'var(--admin-text)' }}>{t.topic.replace(/\*\*/g, '').trim()}</span>
+                        <div className="admin-text-sm" style={{ color: 'var(--admin-text-3)', fontSize: '0.6875rem' }}>
                           {t.category && <span>{t.category}</span>}
                           {t.source && <span style={{ marginLeft: '0.375rem' }}>{t.source}</span>}
                           <span style={{ marginLeft: '0.375rem' }}>P{t.priority}</span>
@@ -1121,7 +1121,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             {alreadyPublished && alreadyPublished.length > 0 && (
               <div style={{ border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '0.625rem', marginBottom: '0.5rem', background: 'rgba(239,68,68,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                  <span className="admin-text-sm admin-weight-600" style={{ color: '#ef4444' }}>
+                  <span className="admin-text-sm admin-weight-600" style={{ color: 'var(--admin-accent)' }}>
                     {alreadyPublished.length} topic{alreadyPublished.length !== 1 ? 's' : ''} match published articles
                   </span>
                   <button
@@ -1137,7 +1137,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                 </div>
                 {alreadyPublished.map((ap) => (
                   <div key={ap.topicId} style={{ padding: '0.25rem 0' }}>
-                    <span className="admin-text-sm" style={{ color: '#fca5a5' }}>{ap.reason}</span>
+                    <span className="admin-text-sm" style={{ color: 'var(--admin-red-pale)' }}>{ap.reason}</span>
                     <span className="admin-text-sm admin-color-muted" style={{ marginLeft: '0.375rem' }}>
                       (matches: {ap.matchedArticle})
                     </span>
@@ -1172,7 +1172,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                 <div
                   key={item.id}
                   className="pipeline-card"
-                  style={{ borderLeftColor: item.expedite ? '#ef4444' : isActive ? '#22c55e' : 'rgba(255,255,255,0.08)', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85, cursor: 'pointer' }}
+                  style={{ borderLeftColor: item.expedite ? 'var(--admin-accent)' : isActive ? 'var(--admin-green)' : 'rgba(255,255,255,0.08)', borderLeftWidth: '3px', opacity: isActive ? 1 : 0.85, cursor: 'pointer' }}
                   onClick={() => setExpandedQueueId(expandedQueueId === item.id ? null : item.id)}
                 >
                   <div className="admin-flex-between-top admin-gap-md">
@@ -1186,7 +1186,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         {item.source === 'breaking' ? (
                           <span className="admin-status-badge admin-status-breaking">BREAKING</span>
                         ) : item.source === 'merged' ? (
-                          <span className="admin-weight-600" style={{ color: '#c084fc' }}>MERGED</span>
+                          <span className="admin-weight-600" style={{ color: 'var(--admin-purple-light)' }}>MERGED</span>
                         ) : (
                           <span className="admin-color-muted">{item.source}</span>
                         )}
@@ -1207,7 +1207,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         <button
                           className="pipeline-retry-btn"
                           onClick={() => updateQueueItem(item.id, { expedite: !item.expedite })}
-                          style={{ color: item.expedite ? '#dc2626' : '#a8a29e', borderColor: item.expedite ? '#7f1d1d' : '#44403c' }}
+                          style={{ color: item.expedite ? 'var(--admin-accent)' : 'var(--admin-text-2)', borderColor: item.expedite ? 'rgba(239, 68, 68, 0.3)' : 'var(--admin-border-2)' }}
                           title={item.expedite ? 'Remove expedite' : 'Expedite (jump to front)'}
                         >
                           {item.expedite ? '\u2B07 Normal' : '\u26A1 Expedite'}
@@ -1391,12 +1391,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         <div className="admin-expanded-block admin-expanded-highlight">
                           <div className="admin-stage-label">4. Grok Independence Review</div>
                           <div className="admin-color-secondary">
-                            Verdict: <span className="admin-weight-600" style={{ color: (indReview.verdict as string) === 'clean' ? '#4ade80' : (indReview.verdict as string) === 'minor_issues' ? '#fbbf24' : '#f87171' }}>{indReview.verdict as string}</span>
+                            Verdict: <span className="admin-weight-600" style={{ color: (indReview.verdict as string) === 'clean' ? 'var(--admin-green-light)' : (indReview.verdict as string) === 'minor_issues' ? 'var(--admin-yellow-light)' : 'var(--admin-red-light)' }}>{indReview.verdict as string}</span>
                             {' | '}Score: {(indReview.score as number) || '?'}/10
                             {indReview._revisionApplied && <span className="admin-color-purple admin-ml-md">Revisions applied</span>}
                           </div>
                           {(indReview.flags as Array<{ type: string; quote: string; rewrite: string }> | undefined)?.map((f, i) => (
-                            <div key={i} className="admin-mt-sm admin-pl-md" style={{ borderLeft: `2px solid ${f.type === 'fabrication' ? '#f87171' : '#f59e0b'}` }}>
+                            <div key={i} className="admin-mt-sm admin-pl-md" style={{ borderLeft: `2px solid ${f.type === 'fabrication' ? 'var(--admin-red-light)' : 'var(--admin-yellow)'}` }}>
                               <span className="admin-text-micro admin-weight-600 admin-uppercase admin-color-yellow">[{f.type}]</span>
                               <div className="admin-text-sm admin-color-subtle">{(f.quote || '').slice(0, 100)}</div>
                               {f.rewrite && <div className="admin-text-sm admin-color-primary">{'\u2192'} {(f.rewrite || '').slice(0, 100)}</div>}
@@ -1725,7 +1725,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
                 const cScore = candidateScores?.find(cs => cs.rank === (c as Record<string, unknown>).rank);
                 return (
                   <div key={i} className="admin-mt-sm pipeline-research-bar">
-                    <span style={{ color: cScore ? (Number(cScore.score) >= 7 ? '#22c55e' : '#f59e0b') : '#b5b0a9' }}>
+                    <span style={{ color: cScore ? (Number(cScore.score) >= 7 ? 'var(--admin-green)' : 'var(--admin-yellow)') : 'var(--admin-text-2)' }}>
                       #{(c as Record<string, unknown>).rank}: {(c as Record<string, unknown>).headline_draft as string || (c as Record<string, unknown>).topic as string}
                     </span>
                     {cScore && <span className="admin-color-subtle admin-ml-md">({cScore.score}/10) {cScore.note}</span>}
@@ -1747,16 +1747,16 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
             <div className="admin-expanded-highlight admin-mb-md">
               <span className="admin-detail-label">Grok Independence: </span>
               <span style={{
-                color: (indReview as Record<string, unknown>).overallAssessment === 'independent' ? '#16a34a'
-                  : (indReview as Record<string, unknown>).overallAssessment === 'minor_concerns' ? '#f59e0b'
-                  : '#dc2626'
+                color: (indReview as Record<string, unknown>).overallAssessment === 'independent' ? 'var(--admin-green)'
+                  : (indReview as Record<string, unknown>).overallAssessment === 'minor_concerns' ? 'var(--admin-yellow)'
+                  : 'var(--admin-accent)'
               }}>
                 {(indReview as Record<string, unknown>).overallAssessment as string} {((indReview as Record<string, unknown>).independenceScore || indReview.score) ? `(${(indReview as Record<string, unknown>).independenceScore || indReview.score}/10)` : ''}
               </span>
               {(indReview as Record<string, unknown>).annotations && ((indReview as Record<string, unknown>).annotations as Array<{ type: string; severity: string; observation: string }>).length > 0 && (
                 <div className="admin-mt-sm">
                   {((indReview as Record<string, unknown>).annotations as Array<{ type: string; severity: string; observation: string }>).slice(0, 3).map((a, i) => (
-                    <div key={i} className="admin-text-sm" style={{ color: a.severity === 'high' ? '#dc2626' : '#f59e0b', marginTop: '0.125rem' }}>
+                    <div key={i} className="admin-text-sm" style={{ color: a.severity === 'high' ? 'var(--admin-accent)' : 'var(--admin-yellow)', marginTop: '0.125rem' }}>
                       [{a.type}] {a.observation}
                     </div>
                   ))}
@@ -1833,7 +1833,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
                     placeholder="Headline (optional — overrides editor's working headline)"
                     style={{
                       width: '100%', padding: '0.5rem',
-                      background: 'rgba(255,255,255,0.03)', color: '#eae8e4',
+                      background: 'rgba(255,255,255,0.03)', color: 'var(--admin-text)',
                       border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
                       fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.8125rem',
                       marginBottom: '0.5rem',
@@ -1845,7 +1845,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
                     placeholder="Paste the article HTML from Claude here..."
                     style={{
                       width: '100%', minHeight: '120px', padding: '0.5rem',
-                      background: 'rgba(255,255,255,0.03)', color: '#eae8e4',
+                      background: 'rgba(255,255,255,0.03)', color: 'var(--admin-text)',
                       border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
                       fontFamily: 'monospace', fontSize: '0.6875rem', resize: 'vertical',
                     }}

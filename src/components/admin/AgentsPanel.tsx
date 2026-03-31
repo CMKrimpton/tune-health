@@ -63,9 +63,9 @@ type Severity = 'high' | 'medium' | 'low';
 // ─── Helpers ────────────────────────────────────────────────────────
 
 function gradeColor(grade: string): string {
-  if (grade.startsWith('A')) return '#4ade80';
-  if (grade.startsWith('B')) return '#fbbf24';
-  return '#f87171';
+  if (grade.startsWith('A')) return 'var(--admin-green-light)';
+  if (grade.startsWith('B')) return 'var(--admin-yellow-light)';
+  return 'var(--admin-red-light)';
 }
 
 function gradeBg(grade: string): string {
@@ -186,14 +186,14 @@ function ReaderQuestions({ apiBase }: { apiBase: string }) {
       {questions.length > 0 && (
         <div className="agents-question-list">
           {questions.map((q, i) => (
-            <div key={i} className="agents-question-card" style={{ borderLeft: `3px solid ${q.uniqueUsers >= 5 ? '#ef4444' : q.uniqueUsers >= 3 ? '#f59e0b' : 'rgba(255,255,255,0.08)'}` }}>
+            <div key={i} className="agents-question-card" style={{ borderLeft: `3px solid ${q.uniqueUsers >= 5 ? 'var(--admin-accent)' : q.uniqueUsers >= 3 ? 'var(--admin-yellow)' : 'rgba(255,255,255,0.08)'}` }}>
               <div className="admin-flex-between-top admin-gap-md">
                 <div className="admin-flex-1">
                   <div className="agents-question-topic">
                     {q.topic.slice(0, 120)}{q.topic.length > 120 ? '...' : ''}
                   </div>
                   <div className="agents-question-meta">
-                    <span style={{ color: q.uniqueUsers >= 5 ? '#f87171' : q.uniqueUsers >= 3 ? '#fbbf24' : '#a8a29e', fontWeight: 600 }}>{q.uniqueUsers} users</span>
+                    <span style={{ color: q.uniqueUsers >= 5 ? 'var(--admin-red-light)' : q.uniqueUsers >= 3 ? 'var(--admin-yellow-light)' : 'var(--admin-text-2)', fontWeight: 600 }}>{q.uniqueUsers} users</span>
                     <span>{q.totalAsks} times</span>
                     <span className="agents-question-keywords">{q.keywords.slice(0, 5).join(', ')}</span>
                   </div>
@@ -263,11 +263,11 @@ function PingerActivity({ apiBase }: { apiBase: string }) {
 
 function CronSchedule() {
   const jobs = [
-    { name: 'Scout', time: '06:00', color: '#fbbf24' },
-    { name: 'Scout', time: '14:00', color: '#f97316' },
-    { name: 'Scout', time: '22:00', color: '#3b82f6' },
-    { name: 'Dispatch', time: '*/5m', color: '#16a34a' },
-    { name: 'Featured', time: '*/6h', color: '#a78bfa' },
+    { name: 'Scout', time: '06:00', color: 'var(--admin-yellow-light)' },
+    { name: 'Scout', time: '14:00', color: 'var(--admin-yellow)' },
+    { name: 'Scout', time: '22:00', color: 'var(--admin-blue)' },
+    { name: 'Dispatch', time: '*/5m', color: 'var(--admin-green)' },
+    { name: 'Featured', time: '*/6h', color: 'var(--admin-purple)' },
   ];
   return (
     <div className="agents-strip-cell" style={{ flex: '1 1 auto' }}>
@@ -394,7 +394,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
     setFixResults([]);
     setApplied(null);
     setLoading(true);
-    setStatusBadge({ text: 'Running', bg: '#312e81', color: '#a5b4fc' });
+    setStatusBadge({ text: 'Running', bg: 'rgba(167, 139, 250, 0.15)', color: 'var(--admin-purple-light)' });
 
     const labels = { audit: 'Running editorial audit...', dryrun: 'Running dry-run preview...', fix: 'Auditing and applying fixes...' };
     setLoadingText(labels[mode]);
@@ -426,7 +426,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
       const grade = qcReport.summary?.overall_grade || '?';
       setStatusBadge({ text: grade, bg: gradeBg(grade), color: gradeColor(grade) });
     } catch (err) {
-      setStatusBadge({ text: 'Error', bg: '#450a0a', color: '#f87171' });
+      setStatusBadge({ text: 'Error', bg: 'rgba(239, 68, 68, 0.15)', color: 'var(--admin-red-light)' });
       alert('QC error: ' + ((err as Error).message || 'Unknown error'));
     } finally {
       setLoading(false);
@@ -539,7 +539,7 @@ function EditorialQC({ apiBase, articleCount }: { apiBase: string; articleCount:
             {issues.length === 0 ? (
               <div className="agents-issues-empty">No issues found. Collection looks great.</div>
             ) : issues.map((issue, i) => {
-              const color = issue.severity === 'high' ? '#f87171' : issue.severity === 'medium' ? '#fbbf24' : '#78716c';
+              const color = issue.severity === 'high' ? 'var(--admin-red-light)' : issue.severity === 'medium' ? 'var(--admin-yellow-light)' : 'var(--admin-text-3)';
               const fix = fixResults.find(r => r.slug === issue.slug && r.field === issue.field);
               return (
                 <div key={i} className="agents-issue">
@@ -716,11 +716,11 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
       {result && !loading && (
         <div>
           <p className="admin-text-base agents-result-line-height admin-color-secondary">
-            <span style={{ color: result.startsWith('Batch') ? '#fbbf24' : '#4ade80' }}>
+            <span style={{ color: result.startsWith('Batch') ? 'var(--admin-yellow-light)' : 'var(--admin-green-light)' }}>
               {result.startsWith('Batch') ? '' : '\u2713 '}{result}
             </span>
             {resultUrl && (
-              <> <a href={resultUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#6ee7b7', textDecoration: 'underline' }}>View</a></>
+              <> <a href={resultUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--admin-green-light)', textDecoration: 'underline' }}>View</a></>
             )}
           </p>
           <div className="agents-progress-bar">
@@ -875,7 +875,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       {/* Results */}
       {result && !loading && (
         <p className="admin-text-base agents-result-line-height admin-color-secondary">
-          <span style={{ color: result.startsWith('Error') || result.startsWith('Batch') ? '#fbbf24' : '#4ade80' }}>
+          <span style={{ color: result.startsWith('Error') || result.startsWith('Batch') ? 'var(--admin-yellow-light)' : 'var(--admin-green-light)' }}>
             {result.startsWith('Error') || result.startsWith('Batch') ? '' : '\u2713 '}{result}
           </span>
         </p>

@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.6.0] - 2026-03-31
+
+### Improved — Ultra Polish: Performance, Security & Design System (12 files)
+
+#### Performance
+- **22 `transition-all` eliminated** — global.css (12), pages (10). Every transition now targets only the properties that actually animate (box-shadow, border-color, width, opacity, transform, background-color, color)
+- **Hero image CLS fix** — added `width="1200" height="675" decoding="async"` to ArticleLayout hero `<img>`
+- **Asset caching** — `Cache-Control: immutable, max-age=1yr` for `/_astro/` and `/assets/` hashed files via vercel.json
+
+#### Security
+- **HSTS** header — `max-age=31536000; includeSubDomains; preload`
+- **CSP hardened** — added `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`
+- **OG image dimensions** — `og:image:width/height` meta tags for faster social card rendering
+
+#### Accessibility
+- **`focus-visible`** on "See all" category buttons and "Clear all" reading list button
+- **`aria-hidden="true"`** on search magnifier SVG (decorative)
+- **`aria-live="polite"`** on reading list count (screen readers announce changes)
+
+#### Print Stylesheet
+- **Expanded print rules** — page-break-inside avoid for images/quotes/callouts, orphan/widow control on headings, code block background reset, dark mode resets, hide floating UI (TOC, share bar, CTA), skip URL display for internal/anchor links
+
+#### Admin Design System
+- **60+ hardcoded hex → CSS variables** in PipelineMonitor.tsx and AgentsPanel.tsx — zero hex colors remain in either component
+- **5 new shade variables** in admin.css: `--admin-green-light`, `--admin-yellow-light`, `--admin-red-light`, `--admin-red-pale`, `--admin-purple-light`
+
 ## [15.5.1] - 2026-03-31
 
 ### Improved — Performance & Accessibility Polish (17 files)

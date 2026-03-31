@@ -74,7 +74,7 @@
   /* Premium Card */
   .card-premium {
     @apply bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800;
-    @apply shadow-card hover:shadow-card-hover transition-all duration-500 ease-editorial;
+    @apply shadow-card hover:shadow-card-hover transition-[box-shadow,border-color] duration-500 ease-editorial;
   }
 
   /* Glass Morphism */
@@ -135,7 +135,7 @@
 
   .link-underline::after {
     @apply content-[''] absolute bottom-0 left-0 w-0 h-px;
-    @apply bg-current transition-all duration-300 ease-editorial;
+    @apply bg-current transition-[width] duration-300 ease-editorial;
   }
 
   .link-underline:hover::after {
@@ -357,7 +357,7 @@
     @apply bg-white dark:bg-stone-900;
     @apply border border-stone-200 dark:border-stone-800;
     @apply shadow-card hover:shadow-card-hover;
-    @apply transition-all duration-500 ease-editorial;
+    @apply transition-[box-shadow,border-color] duration-500 ease-editorial;
   }
 }
 
@@ -585,7 +585,7 @@ body.menu-open {
 /* Search Overlay */
 .search-overlay {
   @apply fixed inset-0 top-14 md:top-16 z-30;
-  @apply opacity-0 invisible transition-all duration-300;
+  @apply opacity-0 invisible transition-[opacity,visibility] duration-300;
   background-color: theme('colors.stone.50 / 98%');
 }
 
@@ -729,7 +729,7 @@ body.menu-open {
 .category-chip {
   @apply flex-shrink-0 flex items-center gap-2;
   @apply px-5 py-2.5 rounded-full;
-  @apply border transition-all duration-300 ease-editorial;
+  @apply border transition-[border-color,background-color] duration-300 ease-editorial;
   background: theme('colors.stone.900 / 4%');
   border-color: theme('colors.stone.300 / 60%');
 }
@@ -791,7 +791,7 @@ body.menu-open {
   @apply flex gap-6 items-center;
   @apply p-5 md:p-6 bg-white dark:bg-stone-900 rounded-2xl;
   @apply border border-stone-200 dark:border-stone-800;
-  @apply transition-all duration-300 ease-editorial;
+  @apply transition-[border-color,box-shadow] duration-300 ease-editorial;
 }
 
 .deep-dive-card:hover {
@@ -811,7 +811,7 @@ body.menu-open {
 .deep-dive-link {
   @apply w-12 h-12 rounded-full flex items-center justify-center;
   @apply bg-stone-100 dark:bg-stone-800 text-stone-500;
-  @apply transition-all duration-300;
+  @apply transition-[background-color,color] duration-300;
 }
 
 .deep-dive-card:hover .deep-dive-link {
@@ -829,7 +829,7 @@ body.menu-open {
   @apply p-5 rounded-2xl;
   @apply bg-stone-50 dark:bg-stone-800/50;
   @apply border border-stone-200 dark:border-stone-800;
-  @apply transition-all duration-300 ease-editorial;
+  @apply transition-[border-color,box-shadow] duration-300 ease-editorial;
 }
 
 .newsletter-preview-item:hover {
@@ -925,7 +925,7 @@ body.menu-open {
   @apply w-10 h-10 rounded-full flex items-center justify-center;
   @apply bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400;
   @apply hover:bg-primary-600 hover:text-white;
-  @apply transition-all duration-300;
+  @apply transition-[background-color,color] duration-300;
 }
 
 /* Author Card */
@@ -1220,7 +1220,7 @@ textarea:focus-visible {
 .quick-nav {
   @apply fixed bottom-6 left-1/2 -translate-x-1/2 z-40;
   @apply opacity-0 translate-y-4 pointer-events-none;
-  @apply transition-all duration-300 ease-out;
+  @apply transition-[opacity,transform] duration-300 ease-out;
 }
 
 .quick-nav.visible {
@@ -1244,7 +1244,7 @@ textarea:focus-visible {
   @apply px-3 py-2 rounded-full;
   @apply text-stone-400 hover:text-white;
   @apply hover:bg-stone-700/50 dark:hover:bg-stone-600/50;
-  @apply transition-all duration-200;
+  @apply transition-[background-color,color] duration-200;
 }
 
 .quick-nav-label {
@@ -1417,7 +1417,7 @@ textarea:focus-visible {
   @apply mt-auto pt-6 border-t border-stone-200 dark:border-stone-800;
   @apply text-[10px] text-stone-400 dark:text-stone-600 leading-relaxed;
   @apply opacity-0 transform -translate-x-4;
-  @apply transition-all duration-300 delay-300;
+  @apply transition-[opacity,transform] duration-300 delay-300;
 }
 
 .side-nav.open .side-nav-footer {
@@ -1456,7 +1456,15 @@ textarea:focus-visible {
   .mobile-nav,
   .scroll-progress,
   .noise-overlay,
-  .newsletter-visual {
+  .newsletter-visual,
+  .floating-toc,
+  .floating-share-bar,
+  .highlight-share,
+  .share-button,
+  .app-cta,
+  .related-articles,
+  .hero-glow,
+  .hero-pattern {
     display: none !important;
   }
 
@@ -1469,9 +1477,48 @@ textarea:focus-visible {
     max-width: 100% !important;
   }
 
+  /* Show URLs after links */
   a[href]::after {
     content: " (" attr(href) ")";
     font-size: 0.8em;
     color: #666;
+  }
+
+  /* Don't show URL for internal/anchor links */
+  a[href^="#"]::after,
+  a[href^="/"]::after {
+    content: "";
+  }
+
+  /* Prevent page breaks inside key elements */
+  img, svg, figure {
+    page-break-inside: avoid;
+    max-width: 100%;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    orphans: 3;
+    widows: 3;
+  }
+
+  .pull-quote, .info-card, .data-callout {
+    page-break-inside: avoid;
+  }
+
+  blockquote {
+    border-left: 3px solid #000 !important;
+  }
+
+  code {
+    background: #f0f0f0 !important;
+    padding: 2px 4px !important;
+  }
+
+  /* Reset dark mode backgrounds */
+  .article-card, .featured-card, .card-premium {
+    background: white !important;
+    border-color: #ccc !important;
+    box-shadow: none !important;
   }
 }

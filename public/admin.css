@@ -21,12 +21,17 @@
   --admin-accent-dim: rgba(239, 68, 68, 0.15);
   --admin-accent-glow: rgba(239, 68, 68, 0.25);
   --admin-green: #22c55e;
+  --admin-green-light: #4ade80;
   --admin-green-dim: rgba(34, 197, 94, 0.12);
   --admin-yellow: #f59e0b;
+  --admin-yellow-light: #fbbf24;
   --admin-yellow-dim: rgba(245, 158, 11, 0.12);
+  --admin-red-light: #f87171;
+  --admin-red-pale: #fca5a5;
   --admin-blue: #3b82f6;
   --admin-blue-dim: rgba(59, 130, 246, 0.12);
   --admin-purple: #a78bfa;
+  --admin-purple-light: #c084fc;
   --admin-purple-dim: rgba(167, 139, 250, 0.12);
   --admin-glass: rgba(26, 25, 23, 0.6);
   --admin-glass-border: rgba(255, 255, 255, 0.08);

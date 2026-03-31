@@ -150,6 +150,9 @@ const nextArticle = await getNextInCategory(slug);
           alt={currentArticle.heroImageAlt || title}
           class="w-full h-full object-cover"
           loading="eager"
+          decoding="async"
+          width="1200"
+          height="675"
         />
       </div>
     </div>
