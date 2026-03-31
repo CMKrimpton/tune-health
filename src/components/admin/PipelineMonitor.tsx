@@ -511,7 +511,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'merge-analyze' }),
-      }, 120_000);
+        timeout: 120_000,
+      });
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       const clusters = (data.clusters || []).map((c: { topicIds: string[]; reason: string; confidence: string; topics: QueueItem[] }) => ({
@@ -542,7 +543,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'merge-execute', topicIds: checkedIds }),
-      }, 60_000);
+        timeout: 60_000,
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `API error ${res.status}`);

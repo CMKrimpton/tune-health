@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.4.1] - 2026-03-31
+
+### Fixed
+- **Topic merge timeout bug** — `fetchWithTimeout` timeout was passed as a 3rd positional argument (silently ignored by JS) instead of inside the init object. Analyze calls defaulted to 60s instead of 120s, causing client-side abort before GPT-5.4 could finish clustering 130+ topics. Fixed both `analyzeMerge` and `executeMerge` calls
+
 ## [15.4.0] - 2026-03-31
 
 ### Added — Intelligent Topic Merge System
