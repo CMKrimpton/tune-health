@@ -110,7 +110,7 @@ export const MODELS = {
   ILLUSTRATION: "gpt-image-1",
 
   // Narration (ElevenLabs TTS)
-  NARRATION_MODEL: "eleven_v3",
+  NARRATION_MODEL: "eleven_multilingual_v2",
   NARRATION_VOICE: "LkgZkNm7dD8b7nbdptAB",
 } as const;
 
