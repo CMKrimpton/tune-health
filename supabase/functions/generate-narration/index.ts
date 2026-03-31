@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { MODELS, NARRATION_SETTINGS } from "../_shared/constants.ts";
-import { updateGitHubJson } from "../_shared/github.ts";
+import { readGitHubJson, updateGitHubJson } from "../_shared/github.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,7 +90,12 @@ async function handleGenerate(body: Record<string, unknown>) {
     return json({ error: "slug is required" }, 400);
   }
 
-  // Fetch article description (the intro paragraph visible to readers)
+  // Read from GitHub JSON (the deployed page) as primary source.
+  // This guarantees the narration always matches what the reader sees,
+  // even if the DB has a stale or truncated description.
+  const ghJson = await readGitHubJson(slug);
+
+  // DB as fallback for articles not yet on GitHub
   const { data: article, error } = await db
     .from("articles")
     .select("description, title, narration_url")
@@ -98,25 +103,38 @@ async function handleGenerate(body: Record<string, unknown>) {
     .maybeSingle();
 
   if (error) throw error;
-  if (!article) return json({ error: `Article '${slug}' not found` }, 404);
+  if (!article && !ghJson) return json({ error: `Article '${slug}' not found` }, 404);
 
   // Skip if narration already exists (unless force flag)
-  if (article.narration_url && !body.force) {
+  const existingNarration = article?.narration_url || (ghJson?.narrationUrl as string);
+  if (existingNarration && !body.force) {
     return json({
       success: true,
       slug,
-      narrationUrl: article.narration_url,
+      narrationUrl: existingNarration,
       message: "Narration already exists",
       skipped: true,
     });
   }
 
-  if (!article.description) {
+  // GitHub JSON description takes priority — it's what the reader sees
+  const description = (ghJson?.description as string) || article?.description;
+  const title = (ghJson?.title as string) || article?.title;
+
+  if (!description) {
     return json({ error: `Article '${slug}' has no description` }, 400);
   }
 
-  // Use the description — the first thing readers see on the page
-  const introText = article.description.trim();
+  // Self-heal: if GitHub has a different description than the DB, update the DB
+  if (ghJson?.description && article?.description && ghJson.description !== article.description) {
+    console.log(`[Narration] DB/GitHub description drift detected for ${slug} — syncing DB`);
+    await db.from("articles").update({
+      description: ghJson.description as string,
+      title: (ghJson.title as string) || article.title,
+    }).eq("slug", slug);
+  }
+
+  const introText = description.trim();
   if (introText.length < 20) {
     return json({ error: `Description too short for '${slug}'` }, 400);
   }
@@ -188,7 +206,7 @@ async function handleGenerate(body: Record<string, unknown>) {
     slug,
     narrationUrl: publicUrl,
     characters: introText.length,
-    message: `Narration generated for "${article.title}"`,
+    message: `Narration generated for "${title}"`,
   });
 }
 
@@ -231,10 +249,18 @@ async function handleBatch(body: Record<string, unknown>) {
 
   for (const article of articles) {
     try {
-      const introText = (article.description || "").trim();
+      // Read from GitHub JSON (deployed source of truth) with DB fallback
+      const ghJson = await readGitHubJson(article.slug);
+      const description = (ghJson?.description as string) || article.description || "";
+      const introText = description.trim();
       if (!introText || introText.length < 20) {
         results.push({ slug: article.slug, status: "skipped", error: "No description found" });
         continue;
+      }
+
+      // Self-heal DB drift
+      if (ghJson?.description && article.description && ghJson.description !== article.description) {
+        await db.from("articles").update({ description: ghJson.description as string }).eq("slug", article.slug);
       }
 
       const ttsResponse = await fetch(

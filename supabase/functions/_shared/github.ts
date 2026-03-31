@@ -109,6 +109,38 @@ export async function publishToGitHub(
 }
 
 /**
+ * Read an article's JSON metadata from GitHub (the deployed source of truth).
+ * Returns the parsed JSON object, or null on failure (never throws).
+ */
+export async function readGitHubJson(
+  slug: string,
+): Promise<Record<string, unknown> | null> {
+  const githubToken = (Deno.env.get("GITHUB_TOKEN") || "").trim();
+  const githubRepo = (Deno.env.get("GITHUB_REPO") || "").trim();
+  if (!githubToken || !githubRepo) return null;
+
+  const jsonPath = `src/content/articles/${slug}.json`;
+  const apiBase = `https://api.github.com/repos/${githubRepo}`;
+  const headers = {
+    Authorization: `Bearer ${githubToken}`,
+    Accept: "application/vnd.github.v3+json",
+  };
+
+  try {
+    const fileRes = await fetch(`${apiBase}/contents/${jsonPath}?ref=main`, { headers });
+    if (!fileRes.ok) return null;
+    const fileData = await fileRes.json();
+
+    // UTF-8-safe Base64 decode
+    const raw = atob(fileData.content.replace(/\n/g, ""));
+    const rawBytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(rawBytes));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Update fields in an existing GitHub JSON file (e.g. add heroImage, narrationUrl).
  * Fetches the current file, merges new fields, commits, and triggers Vercel rebuild.
  * Returns true on success, false on failure (never throws — callers log warnings).
