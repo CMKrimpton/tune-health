@@ -1,0 +1,20 @@
+{
+  "title": "Your Supplements Weren't Checked Before You Bought Them",
+  "description": "Under a 1994 law, the FDA cannot review dietary supplements for safety or accuracy before they hit shelves. Studies show 88% of melatonin gummies contain a different dose than the label states — one contained no melatonin at all, just undeclared CBD.",
+  "category": "Pharmacology",
+  "publishDate": "2026-03-31",
+  "author": {
+    "name": "Carl Lundin",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 9,
+  "featured": false,
+  "draft": false,
+  "tags": [],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [],
+  "sortOrder": 1774936592075
+}
