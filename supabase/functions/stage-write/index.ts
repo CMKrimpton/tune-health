@@ -41,7 +41,7 @@ Return ONLY valid JSON:
 {
   "html": "<article body sections — see format below>",
   "metadata": {
-    "title": "headline from editorial brief",
+    "title": "your best headline — keep the editor's or beat it",
     "slug": "slug from editorial brief",
     "description": "description from editorial brief — MUST be complete sentences",
     "category": "one of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
@@ -123,7 +123,7 @@ Deno.serve(async (req: Request) => {
       const articleUserPrompt = `Write an article following this editorial brief from the Senior Editor. The archetype and voice modulation are critical -- they determine the article's form, not just its content.
 
 ## EDITORIAL BRIEF
-Working headline (you may improve this — max 10 words, one sentence): ${editorBrief?.headline || researchData.headline_draft}
+Headline (the editor's best — beat it if you can, keep it if you can't): ${editorBrief?.headline || researchData.headline_draft}${editorBrief?.altHeadlines ? `\nAlternate headlines considered: ${Array.isArray(editorBrief.altHeadlines) ? (editorBrief.altHeadlines as string[]).join(" / ") : editorBrief.altHeadlines}` : ""}
 Slug: ${editorBrief?.slug || "auto-generate"}
 Description: ${editorBrief?.description || "Write a compelling 2-3 sentence description"}
 Angle: ${editorBrief?.angle || "Follow the research"}
@@ -165,7 +165,7 @@ ${((researchData.statistics as string[]) || []).join("\n")}
 
 Today's date: ${today}
 
-IMPORTANT: Use the slug from the editorial brief exactly. You may improve the headline (max 10 words, one sentence — no two-part kickers) and description if you can genuinely do better. Return ONLY valid JSON.
+IMPORTANT: Use the slug from the editorial brief exactly. The headline matters as much as the opening paragraph — if you can write a tighter, more compelling version (max 10 words, one sentence, no two-part kickers), do it. If the editor's headline is already strong, keep it. Return ONLY valid JSON.
 
 CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last section should be a conclusion, sign-off, or forward-looking closing — NOT an abrupt stop mid-thought. If you're running low on space, cut a middle section shorter rather than omitting the ending. A missing conclusion is worse than a shorter article. Follow the closing direction from the editorial brief.
 

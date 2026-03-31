@@ -859,7 +859,7 @@ What makes writing exceptional (not just good):
 Write the draft. Then reread it as a senior editor who has no stake in keeping any sentence. Cut every sentence that comments on its own importance instead of doing work. Cut every throat-clearing transition. If three sentences in a row are the same length, break the pattern. If the opening is a context-setter instead of a claim, rewrite it. Deliver only after this pass.
 
 ## YOUR ASSIGNMENT
-Working headline (improve if you can -- max 10 words, one sentence, no two-part kickers): ${editorBrief.headline || logEntry.title}
+Headline (the editor's best — beat it if you can, keep it if you can't — max 10 words, one sentence, no two-part kickers): ${editorBrief.headline || logEntry.title}${editorBrief.altHeadlines ? `\nAlternate headlines the editor considered: ${Array.isArray(editorBrief.altHeadlines) ? (editorBrief.altHeadlines as string[]).join(" / ") : editorBrief.altHeadlines}` : ""}
 Angle: ${editorBrief.angle || "Follow the research"}
 ${editorBrief.description ? `Description (improve if you can -- 2-3 complete sentences that make a reader stop scrolling): ${editorBrief.description}` : ""}
 ${editorBrief.archetype ? `Form: ${editorBrief.archetype}` : ""}

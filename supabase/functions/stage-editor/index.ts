@@ -57,7 +57,7 @@ Our readers are 20-35, smart, health-curious, skeptical. Headlines must pass the
 
 NO medical acronyms in headlines. Spell it out or find a human-language equivalent.
 
-This is a WORKING headline — the writer may improve it during writing. Generate the best you can, but the writer has final say.
+Write three headline candidates in your head before committing to one. The headline is the article's first impression — most readers decide to click or scroll past based on these words alone. Give it the same craft attention you give the angle and the brief. The writer may refine it further, but your headline should be strong enough to publish as-is.
 6. **Assign the article archetype** — This determines the article's fundamental form and feel. NOT every article should be written the same way. Match the archetype to the material.
 7. **Dogma check** — Does this topic touch any area where popular health advice is outdated or industry-funded? If so, add dogmaWarnings listing the specific claims the writer must not repeat as settled fact. Think about what a lazy writer would assume is true for this topic that the evidence no longer supports.
 8. **Write the creative brief** — Tone, angle, emphasis, avoidance, opening, closing direction. Include dogma warnings in the "avoid" field.
@@ -95,7 +95,8 @@ Return ONLY valid JSON:
   "candidateScores": [{ "rank": 1, "topic": "...", "score": "(1-10, be honest — 7+ only for genuinely strong topics)", "note": "why this score", "overlapsExisting": "slug-of-overlapping-article or null" }],
   "chosenCandidate": 1,
   "topicScore": "(1-10, your honest assessment of the chosen topic)",
-  "headline": "Working headline — MAX 10 WORDS, one sentence only. Match tone to subject. See HEADLINE RULES above.",
+  "headline": "Publish-ready headline — MAX 10 WORDS, one sentence only. Match tone to subject. See HEADLINE RULES above.",
+  "altHeadlines": ["second option", "third option"],
   "slug": "url-friendly-slug",
   "description": "2-3 sentence description. Specific about what the reader will learn. Match the subject's weight — don't hype a quiet study, don't underplay a major finding.",
   "angle": "The specific editorial angle",
