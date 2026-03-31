@@ -17,6 +17,7 @@ const { slug, title, class: className = '' } = Astro.props;
   data-bookmark-slug={slug}
   data-bookmark-title={title}
   aria-label={`Save "${title}" to reading list`}
+  aria-pressed="false"
   title="Save to reading list"
 >
   <svg class="bookmark-icon-outline w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -29,15 +30,20 @@ const { slug, title, class: className = '' } = Astro.props;
 
 <style>
   .bookmark-btn {
-    @apply w-9 h-9 rounded-lg flex items-center justify-center;
+    @apply w-10 h-10 rounded-xl flex items-center justify-center;
     @apply text-stone-400 dark:text-stone-500;
     @apply hover:text-primary-600 dark:hover:text-primary-400;
     @apply hover:bg-stone-100 dark:hover:bg-stone-800;
-    @apply transition-colors duration-200;
+    transition: color 0.2s ease-out, background-color 0.2s ease-out, transform 0.15s ease-out;
+  }
+
+  .bookmark-btn:active {
+    transform: scale(0.9);
   }
 
   .bookmark-btn.bookmarked {
     @apply text-primary-600 dark:text-primary-400;
+    @apply bg-primary-50 dark:bg-primary-900/20;
   }
 
   .bookmark-btn.bookmarked .bookmark-icon-outline {
@@ -74,6 +80,7 @@ const { slug, title, class: className = '' } = Astro.props;
       const list = getReadingList();
       if (list.includes(slug)) {
         el.classList.add('bookmarked');
+        el.setAttribute('aria-pressed', 'true');
       }
 
       el.addEventListener('click', (e) => {
@@ -84,9 +91,11 @@ const { slug, title, class: className = '' } = Astro.props;
         if (idx > -1) {
           current.splice(idx, 1);
           el.classList.remove('bookmarked');
+          el.setAttribute('aria-pressed', 'false');
         } else {
           current.push(slug);
           el.classList.add('bookmarked');
+          el.setAttribute('aria-pressed', 'true');
         }
         saveReadingList(current);
       });

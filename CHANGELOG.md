@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.5.0] - 2026-03-31
+
+### Improved — UI Ultra Audit (17 files, 50+ fixes)
+
+#### Accessibility
+- **Universal focus-visible styles** — added explicit focus ring + glow on icon buttons (share, back-to-top, bookmark, narration, footer social, mobile nav)
+- **AudioNarration touch target** — bumped from 32px to 40px with larger 18px icons, meeting 44px minimum with padding
+- **BookmarkButton `aria-pressed`** — screen readers now announce toggle state; JS syncs attribute on click
+- **MobileNav tap feedback** — restored `:active` background highlight (was removed by `-webkit-tap-highlight-color: transparent`)
+
+#### Interaction Polish
+- **Image zoom on card hover** — article cards and featured cards now `scale-105` their images on hover via CSS
+- **ShareButtons scale** — reduced hover scale from 1.1 (too aggressive) to 1.05
+- **BookmarkButton press-scale** — micro-interaction `scale(0.9)` on press, bookmarked state gets subtle primary background
+- **Footer social buttons** — hover lift increased from -1px to -2px with box-shadow depth
+- **MobileNav active state** — current page gets primary background fill + bolder font weight + thicker icon stroke
+- **SeriesNav progress dots** — height increased from 6px to 8px for better visibility and touch targeting
+- **Reading list** — empty state wrapped in card with border, cards get `shadow-card` on hover, title shows 2 lines instead of 1
+
+#### Design Token Consistency
+- **15+ hardcoded RGB/RGBA values → `theme()` functions** in FloatingTOC, MobileNav, FloatingShareBar, HighlightShare, ShareButtons, SideNav, global.css (data-callout, search-overlay, category-chip)
+- **HighlightShare** — button size 36→40px, border-radius 10→12px (matches design system)
+
+#### Transition Consistency
+- **12+ bare `transition-colors` fixed** with explicit `duration-200` across MenuDropdownContent, SideNav, SeriesNav, AppPromo, ArticleCard, FloatingTOC
+- **All transitions use `ease-out`** — replaced browser-default easing in AudioNarration, HighlightShare, ShareButtons, FloatingTOC, Footer
+- **FloatingTOC collapse icon** — SVG rotation now animated (was instant)
+- **Newsletter subscribe button** — multi-property transition instead of flat `transition-colors`
+
+#### Dark Mode Contrast
+- **8 instances of `dark:text-stone-500` bumped to `stone-400`** — labels in MenuDropdownContent, SideNav (meta, hint), SeriesNav (count, link-label) were below WCAG AA contrast on dark backgrounds
+- **SideNav `text-[11px]`** → `text-xs` (12px) for readability
+
 ## [15.4.1] - 2026-03-31
 
 ### Fixed

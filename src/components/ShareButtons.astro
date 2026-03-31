@@ -189,7 +189,7 @@ const isVertical = variant === 'vertical';
     height: 44px;
     border-radius: 9999px;
     color: var(--tw-stone-500, #78716c);
-    transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+    transition: color 0.2s ease-out, background-color 0.2s ease-out, transform 0.2s ease-out;
     cursor: pointer;
     border: none;
     background: transparent;
@@ -199,15 +199,15 @@ const isVertical = variant === 'vertical';
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    background: rgba(245, 245, 244, 0.8);
+    background: theme('colors.stone.100 / 80%');
   }
 
   :global(.dark) .share-buttons--vertical .share-btn {
-    background: rgba(41, 37, 36, 0.8);
+    background: theme('colors.stone.800 / 80%');
   }
 
   .share-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
 
   .share-btn--x:hover { color: #000; }

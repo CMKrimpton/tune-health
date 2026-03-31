@@ -59,15 +59,15 @@ const { title, url, description = '' } = Astro.props;
     gap: 0.5rem;
     padding: 0.75rem 0.5rem;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.9);
+    background: theme('colors.white / 90%');
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(214, 211, 209, 0.5);
+    border: 1px solid theme('colors.stone.300 / 50%');
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   }
 
   :global(.dark) .floating-share-inner {
-    background: rgba(28, 25, 23, 0.9);
-    border-color: rgba(68, 64, 60, 0.5);
+    background: theme('colors.stone.900 / 90%');
+    border-color: theme('colors.stone.600 / 50%');
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
   }
 

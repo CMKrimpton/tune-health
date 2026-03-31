@@ -26,20 +26,20 @@
     transform: translateY(-50%);
     width: 200px;
     max-height: 60vh;
-    background: rgb(250 250 249 / 0.95);
+    background: theme('colors.stone.50 / 95%');
     backdrop-filter: blur(8px);
     border: 1px solid theme('colors.stone.200');
     border-radius: 12px;
     padding: 1rem;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out, transform 0.3s ease-out;
     z-index: 40;
     overflow: hidden;
   }
 
   :global(.dark) .floating-toc {
-    background: rgb(28 25 23 / 0.95);
+    background: theme('colors.stone.900 / 95%');
     border-color: theme('colors.stone.700');
   }
 
@@ -89,7 +89,7 @@
     font-size: 0.75rem;
     color: theme('colors.stone.500');
     border-radius: 6px;
-    transition: all 0.15s;
+    transition: color 0.2s ease-out, background-color 0.2s ease-out;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
@@ -137,7 +137,7 @@
     justify-content: center;
     border-radius: 6px;
     color: theme('colors.stone.400');
-    transition: all 0.15s;
+    transition: color 0.2s ease-out, background-color 0.2s ease-out, transform 0.2s ease-out;
   }
 
   /* Expand touch target on touch devices */
@@ -156,6 +156,10 @@
   :global(.dark) .floating-toc-collapse:hover {
     background: theme('colors.stone.800');
     color: theme('colors.stone.400');
+  }
+
+  .floating-toc-collapse svg {
+    transition: transform 0.2s ease-out;
   }
 
   .floating-toc.collapsed .floating-toc-collapse svg {

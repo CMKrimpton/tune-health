@@ -138,13 +138,13 @@ const publishedSeries = await getAllSeries();
             href="https://tune-sigma.vercel.app?utm_source=alumi-news&utm_medium=sidenav"
             target="_blank"
             rel="noopener noreferrer"
-            class="block p-3 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
+            class="block p-3 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors duration-200"
             aria-label="Try alumi Health — AI-powered health tracking"
           >
             <span class="block text-xs font-semibold text-primary-600 dark:text-primary-400 mb-0.5">
               <span class="font-bold">a</span>lumi Health
             </span>
-            <span class="block text-[11px] text-stone-500 dark:text-stone-400 leading-snug mb-2">
+            <span class="block text-xs text-stone-500 dark:text-stone-400 leading-snug mb-2">
               Track your health with AI. Labs, meals, and experiments.
             </span>
             <span class="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 dark:text-primary-400">
@@ -200,7 +200,7 @@ const publishedSeries = await getAllSeries();
     @apply flex-1 overflow-y-auto overflow-x-hidden;
     @apply -mx-2 px-2;
     scrollbar-width: thin;
-    scrollbar-color: rgb(168 162 158 / 0.3) transparent;
+    scrollbar-color: theme('colors.stone.400 / 30%') transparent;
   }
 
   .side-nav-scroll::-webkit-scrollbar {
@@ -212,12 +212,12 @@ const publishedSeries = await getAllSeries();
   }
 
   .side-nav-scroll::-webkit-scrollbar-thumb {
-    background: rgb(168 162 158 / 0.3);
+    background: theme('colors.stone.400 / 30%');
     border-radius: 2px;
   }
 
   .side-nav-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgb(168 162 158 / 0.5);
+    background: theme('colors.stone.400 / 50%');
   }
 
   .side-nav-badge {
@@ -228,7 +228,7 @@ const publishedSeries = await getAllSeries();
   }
 
   .side-nav-meta {
-    @apply text-[10px] text-stone-400 dark:text-stone-600;
+    @apply text-[10px] text-stone-400 dark:text-stone-500;
   }
 
   .side-nav-actions {
@@ -241,19 +241,19 @@ const publishedSeries = await getAllSeries();
     @apply text-stone-500 dark:text-stone-400;
     @apply hover:bg-stone-100 dark:hover:bg-stone-800;
     @apply hover:text-stone-700 dark:hover:text-stone-200;
-    @apply transition-colors;
+    @apply transition-colors duration-200;
   }
 
   .side-nav-subscribe-btn {
     @apply w-full py-2 px-4 rounded-lg;
     @apply bg-primary-600 text-white text-sm font-medium;
     @apply hover:bg-primary-700;
-    @apply transition-colors text-center;
+    @apply transition-colors duration-200 text-center;
     @apply mb-3;
   }
 
   .side-nav-hint {
-    @apply text-[10px] text-stone-400 dark:text-stone-500 text-center;
+    @apply text-[10px] text-stone-400 dark:text-stone-400 text-center;
   }
 </style>
 

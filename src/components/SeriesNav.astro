@@ -90,11 +90,11 @@ const totalParts = seriesArticles.length;
     @apply inline-flex items-center gap-2;
     @apply text-xs font-semibold uppercase tracking-widest;
     @apply text-primary-600 dark:text-primary-400;
-    @apply hover:text-primary-700 dark:hover:text-primary-300 transition-colors;
+    @apply hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200;
   }
 
   .series-nav-count {
-    @apply text-xs font-medium text-stone-400 dark:text-stone-500;
+    @apply text-xs font-medium text-stone-400 dark:text-stone-400;
   }
 
   .series-nav-progress {
@@ -102,7 +102,7 @@ const totalParts = seriesArticles.length;
   }
 
   .series-nav-dot {
-    @apply flex-1 h-1.5 rounded-full;
+    @apply flex-1 h-2 rounded-full;
     @apply bg-stone-200 dark:bg-stone-700;
     @apply transition-colors duration-200;
   }
@@ -127,11 +127,11 @@ const totalParts = seriesArticles.length;
     @apply flex items-center gap-3 p-3 rounded-xl;
     @apply text-stone-600 dark:text-stone-400;
     @apply hover:bg-stone-100 dark:hover:bg-stone-800;
-    @apply transition-colors;
+    @apply transition-colors duration-200;
   }
 
   .series-nav-link-label {
-    @apply block text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500;
+    @apply block text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-400;
   }
 
   .series-nav-link-title {

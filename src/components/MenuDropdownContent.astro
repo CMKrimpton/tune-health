@@ -112,7 +112,7 @@ const latestArticles: Article[] = showLatest ? (await getArticles()).slice(0, 3)
 
   .menu-section-label {
     @apply block text-[10px] font-semibold uppercase tracking-widest;
-    @apply text-stone-400 dark:text-stone-500 mb-3;
+    @apply text-stone-400 dark:text-stone-400 mb-3;
   }
 
   /* Menu Grid */
@@ -125,7 +125,7 @@ const latestArticles: Article[] = showLatest ? (await getArticles()).slice(0, 3)
     @apply px-4 py-4 rounded-xl;
     @apply bg-stone-50 dark:bg-stone-800/50;
     @apply hover:bg-stone-100 dark:hover:bg-stone-800;
-    @apply transition-colors;
+    @apply transition-colors duration-200;
   }
 
   .menu-item-icon {
@@ -133,7 +133,6 @@ const latestArticles: Article[] = showLatest ? (await getArticles()).slice(0, 3)
     @apply bg-white dark:bg-stone-700;
     @apply flex items-center justify-center;
     @apply text-stone-500 dark:text-stone-400;
-    @apply shadow-sm;
   }
 
   .menu-item-text {
@@ -165,7 +164,7 @@ const latestArticles: Article[] = showLatest ? (await getArticles()).slice(0, 3)
     @apply text-stone-600 dark:text-stone-400;
     @apply hover:bg-primary-100 hover:text-primary-700;
     @apply dark:hover:bg-primary-900/30 dark:hover:text-primary-400;
-    @apply transition-colors;
+    @apply transition-colors duration-200;
   }
 
   /* Featured */
@@ -179,7 +178,7 @@ const latestArticles: Article[] = showLatest ? (await getArticles()).slice(0, 3)
     @apply bg-gradient-to-r from-stone-50 to-transparent;
     @apply dark:from-stone-800/50 dark:to-transparent;
     @apply hover:from-primary-50 dark:hover:from-primary-900/20;
-    @apply transition-colors;
+    @apply transition-colors duration-200;
   }
 
   .menu-featured-badge {
