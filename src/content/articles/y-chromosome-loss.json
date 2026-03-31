@@ -32,5 +32,6 @@
     "cancer"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/y-chromosome-loss.png",
-  "heroImageAlt": "Editorial illustration for Men Are Losing a Chromosome and It Might Kill Them"
+  "heroImageAlt": "Editorial illustration for Men Are Losing a Chromosome and It Might Kill Them",
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/y-chromosome-loss.mp3"
 }
