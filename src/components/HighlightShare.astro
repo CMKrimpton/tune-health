@@ -87,9 +87,21 @@ const fullUrl = `${siteUrl}${articleUrl}`;
     background: theme('colors.white / 10%');
   }
 
+  .hs-btn:focus-visible {
+    outline: 2px solid theme('colors.primary.400');
+    outline-offset: 1px;
+  }
+
   .hs-btn[data-hs-action="twitter"]:hover { color: #fff; }
   .hs-btn[data-hs-action="bluesky"]:hover { color: #0085ff; }
   .hs-btn.copied { color: #4ade80; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .highlight-share,
+    .hs-btn {
+      transition: none;
+    }
+  }
 
   .hs-divider {
     width: 1px;

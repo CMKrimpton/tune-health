@@ -134,7 +134,7 @@ const currentPath = Astro.url.pathname;
     @apply px-2 py-2 lg:px-3 lg:py-2;
     @apply rounded-lg;
     @apply hover:bg-stone-100 dark:hover:bg-stone-800;
-    @apply transition-all duration-200;
+    @apply transition-colors duration-200;
   }
 
   .menu-icon {
@@ -143,7 +143,8 @@ const currentPath = Astro.url.pathname;
 
   .menu-icon-line {
     @apply w-full h-0.5 bg-stone-600 dark:bg-stone-400;
-    @apply transition-all duration-300 origin-center;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    transform-origin: center;
   }
 
   .menu-toggle-btn[aria-expanded="true"] .menu-icon-line:nth-child(1) {
@@ -156,6 +157,13 @@ const currentPath = Astro.url.pathname;
 
   .menu-toggle-btn[aria-expanded="true"] .menu-icon-line:nth-child(3) {
     @apply -translate-y-[6px] -rotate-45;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu-toggle-btn,
+    .menu-icon-line {
+      transition: none;
+    }
   }
 
   /* Dropdown Menu */

@@ -71,6 +71,12 @@ const { title, url, description = '' } = Astro.props;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .floating-share-bar {
+      transition: none;
+    }
+  }
+
   .floating-share-label {
     font-size: 0.625rem;
     font-weight: 600;

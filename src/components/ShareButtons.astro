@@ -210,6 +210,11 @@ const isVertical = variant === 'vertical';
     transform: scale(1.05);
   }
 
+  .share-btn:focus-visible {
+    outline: 2px solid theme('colors.primary.500');
+    outline-offset: 2px;
+  }
+
   .share-btn--x:hover { color: #000; }
   :global(.dark) .share-btn--x:hover { color: #fff; }
 

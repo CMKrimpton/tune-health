@@ -1370,7 +1370,8 @@
   height: 100%;
   border-radius: 3px;
   background: linear-gradient(90deg, var(--admin-accent), #f97316);
-  transition: width 0.6s var(--admin-ease);
+  transform-origin: left;
+  transition: transform 0.6s var(--admin-ease);
 }
 
 .pipeline-progress-count {
@@ -2394,7 +2395,7 @@
 }
 .agents-illust-batch { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
 .agents-progress-bar { margin-top: 0.5rem; height: 4px; background: #292524; border-radius: 2px; overflow: hidden; }
-.agents-progress-fill { height: 100%; background: #059669; transition: width 0.3s; }
+.agents-progress-fill { height: 100%; background: #059669; transform-origin: left; transition: transform 0.3s; }
 
 /* ─── Agents: Database Section ─── */
 .agents-db-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }

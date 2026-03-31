@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v15.5.0 live. ~168 articles. 8-stage pipeline + topic merge system. UI ultra-audited (50+ design fixes across 17 files).
+> **Status**: v15.5.1 live. ~168 articles. 8-stage pipeline + topic merge system. UI ultra-audited + perf/a11y polish (70+ fixes across 17+17 files).
 
 ---
 
@@ -19,14 +19,13 @@
 
 ## What Was Done This Session
 
-1. **UI ultra audit + systematic fixes** — 50+ design issues fixed across 17 component/page files:
-   - Accessibility: focus-visible on icon buttons, aria-pressed on BookmarkButton, touch targets fixed (AudioNarration 32→40px, HighlightShare 36→40px)
-   - Interaction: image zoom on card hover, MobileNav tap feedback + active state, BookmarkButton press-scale, footer social lift
-   - Tokens: 15+ hardcoded RGB/RGBA values replaced with `theme()` functions
-   - Transitions: 12+ bare `transition-colors` given explicit `duration-200`, all easings standardized to `ease-out`
-   - Dark mode: 8 contrast fixes (`stone-500` → `stone-400` on dark backgrounds)
-   - Reading list: empty state card treatment, hover shadow, title line-clamp-2
-   - SeriesNav: progress dots 6→8px, ShareButtons scale 1.1→1.05
+1. **Performance & accessibility polish** — 17 files changed, systematic improvements:
+   - Performance: CommandPalette `client:load` → `client:idle`, `transition-all` eliminated, `backdrop-blur-xl` → `md`, progress bars use `scaleX()` instead of `width`
+   - Accessibility: `:focus-visible` on 6 components, `aria-current="page"` on MobileNav, BookmarkButton touch target 40→44px
+   - Motion sensitivity: `prefers-reduced-motion` on Header, FloatingTOC, FloatingShareBar, HighlightShare
+   - Vertical rhythm: reading-list and articles CTA normalized to standard spacing scale
+
+2. **Previous session: UI ultra audit** — 50+ design issues fixed across 17 component/page files (v15.5.0)
 
 ## Priority for Next Session
 
@@ -43,12 +42,12 @@
 
 ### 3. Visual Verification of UI Changes
 - Spot-check the live site in light + dark mode after deploy
-- Check: card hover zoom, mobile nav active states, bookmark button feedback, share button scale
+- Check: card hover zoom, mobile nav active states, bookmark button feedback, share button scale, focus rings
 - Test on real device (iPhone) if possible — tap feedback, touch targets, safe areas
+- Verify reduced motion preference works (System Preferences → Accessibility → Reduce Motion)
 
-### 4. Further Polish (if needed after visual check)
-- Vertical rhythm normalization between page sections (some use same py-16/py-24 regardless of hierarchy)
-- Performance audit — Lighthouse scores, image optimization
+### 4. Further Polish (if time)
+- Lighthouse scores — run audit, optimize any flagged items
 - Tune Copy Edit confidence threshold if it's over/under-editing
 - Monitor ElevenLabs credit usage
 

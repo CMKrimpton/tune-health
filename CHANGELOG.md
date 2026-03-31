@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.5.1] - 2026-03-31
+
+### Improved — Performance & Accessibility Polish (17 files)
+
+#### Performance
+- **CommandPalette deferred hydration** — `client:load` → `client:idle`, React bundle no longer blocks initial page load
+- **`transition-all` eliminated** — Header menu toggle and articles lead card now animate only specific properties (color, transform, box-shadow)
+- **Backdrop blur reduced** — MenuDropdown `backdrop-blur-xl` (24px) → `backdrop-blur-md` (12px), less GPU work
+- **Progress bar layout thrashing fixed** — admin pipeline + agents progress bars now use `transform: scaleX()` instead of animating `width` (avoids per-frame layout recalculation)
+
+#### Accessibility
+- **`focus-visible` rings** on 6 components: ShareButtons, HighlightShare, BookmarkButton, AudioNarration, FloatingTOC collapse, Breadcrumbs links
+- **`aria-current="page"`** on MobileNav active item — screen readers now announce current page
+- **BookmarkButton touch target** — 40px → 44px (meets WCAG minimum)
+
+#### Motion Sensitivity
+- **`prefers-reduced-motion`** media queries added to Header, FloatingTOC, FloatingShareBar, HighlightShare — disables transitions for users with vestibular sensitivity
+- **FloatingTOC smooth scroll** respects reduced motion (falls back to instant jump)
+
+#### Vertical Rhythm
+- **Reading list** — non-standard `py-14 md:py-20` normalized to `py-16 md:py-24`
+- **Articles App CTA** — `py-16 md:py-24` normalized to `py-12 md:py-16` (matches articles page section scale)
+
 ## [15.5.0] - 2026-03-31
 
 ### Improved — UI Ultra Audit (17 files, 50+ fixes)

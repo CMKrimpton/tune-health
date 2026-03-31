@@ -712,7 +712,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         <div className="pipeline-progress-wrap">
           <span className="pipeline-progress-count">{articleCount} / {ARTICLE_GOAL}</span>
           <div className="pipeline-progress-bar">
-            <div className="pipeline-progress-fill" style={{ width: `${progressPct}%` }} />
+            <div className="pipeline-progress-fill" style={{ transform: `scaleX(${progressPct / 100})` }} />
           </div>
         </div>
 

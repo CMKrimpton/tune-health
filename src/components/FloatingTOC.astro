@@ -148,6 +148,11 @@
     }
   }
 
+  .floating-toc-collapse:focus-visible {
+    outline: 2px solid theme('colors.primary.500');
+    outline-offset: 1px;
+  }
+
   .floating-toc-collapse:hover {
     background: theme('colors.stone.100');
     color: theme('colors.stone.600');
@@ -164,6 +169,15 @@
 
   .floating-toc.collapsed .floating-toc-collapse svg {
     transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .floating-toc,
+    .floating-toc-list a,
+    .floating-toc-collapse,
+    .floating-toc-collapse svg {
+      transition: none;
+    }
   }
 
   /* Mobile: show as a pill */
@@ -248,7 +262,8 @@
       }
       a.addEventListener('click', (e) => {
         e.preventDefault();
-        heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        heading.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
       });
       li.appendChild(a);
       tocList.appendChild(li);

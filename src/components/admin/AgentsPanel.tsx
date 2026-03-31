@@ -724,7 +724,7 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
             )}
           </p>
           <div className="agents-progress-bar">
-            <div className="agents-progress-fill" style={{ width: `${progress}%` }} />
+            <div className="agents-progress-fill" style={{ transform: `scaleX(${progress / 100})` }} />
           </div>
         </div>
       )}

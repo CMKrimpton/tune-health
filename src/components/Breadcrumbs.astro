@@ -51,6 +51,12 @@ const { items, class: className = '' } = Astro.props;
     container-type: inline-size;
   }
 
+  .breadcrumbs a:focus-visible {
+    outline: 2px solid theme('colors.primary.500');
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   /* On very small screens, truncate long labels */
   @container (max-width: 400px) {
     .breadcrumbs span[aria-current="page"] {

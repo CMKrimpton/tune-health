@@ -160,12 +160,18 @@
     const currentPath = window.location.pathname;
     nav.querySelectorAll('.mobile-nav-item[data-nav]').forEach(item => {
       item.classList.remove('active');
+      item.removeAttribute('aria-current');
       const target = (item as HTMLElement).dataset.nav;
       if (!target) return;
-      if (target === 'home' && currentPath === '/') item.classList.add('active');
-      else if (target === 'articles' && currentPath.startsWith('/articles')) item.classList.add('active');
-      else if (target === 'reading-list' && currentPath === '/reading-list') item.classList.add('active');
-      else if (target === 'deep-dives' && currentPath === '/deep-dives') item.classList.add('active');
+      let isActive = false;
+      if (target === 'home' && currentPath === '/') isActive = true;
+      else if (target === 'articles' && currentPath.startsWith('/articles')) isActive = true;
+      else if (target === 'reading-list' && currentPath === '/reading-list') isActive = true;
+      else if (target === 'deep-dives' && currentPath === '/deep-dives') isActive = true;
+      if (isActive) {
+        item.classList.add('active');
+        item.setAttribute('aria-current', 'page');
+      }
     });
 
     // Search triggers command palette
