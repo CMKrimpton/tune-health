@@ -11,6 +11,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - **Topic merge timeout bug** — `fetchWithTimeout` timeout was passed as a 3rd positional argument (silently ignored by JS) instead of inside the init object. Analyze calls defaulted to 60s instead of 120s, causing client-side abort before GPT-5.4 could finish clustering 130+ topics. Fixed both `analyzeMerge` and `executeMerge` calls
 
+### Improved — Topic Merge UX
+- **"Merge All" button** — one-click sequential merge of all clusters with confirmation dialog, progress indicator, and failure count
+- **"Clusters ▾" toggle** — button now toggles panel open/closed instead of re-running analysis. Shows ▾/▸ indicator
+- **"Re-scan" button** — moved re-analysis to explicit button inside panel header
+- **Safe guards** — Re-scan and Dismiss buttons disabled during active merge operations
+
 ## [15.4.0] - 2026-03-31
 
 ### Added — Intelligent Topic Merge System

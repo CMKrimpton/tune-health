@@ -129,7 +129,9 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     reason: string;
   }> | null>(null);
   const [mergingClusterId, setMergingClusterId] = useState<number | null>(null);
+  const [mergingAll, setMergingAll] = useState(false);
   const [mergeResult, setMergeResult] = useState<string | null>(null);
+  const [mergePanelOpen, setMergePanelOpen] = useState(true);
   const [actionFeedback, setActionFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -562,6 +564,38 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     }
   };
 
+  const mergeAll = async () => {
+    if (!mergeClusters || mergeClusters.length === 0) return;
+    const ok = await ask({ title: 'Merge all clusters', message: `Merge all ${mergeClusters.length} duplicate clusters sequentially? Each cluster will be combined into one super-topic.`, confirmLabel: `Merge All ${mergeClusters.length}`, danger: false });
+    if (!ok) return;
+    setMergingAll(true);
+    let merged = 0;
+    let failed = 0;
+    // Process from last to first so index removal stays stable
+    for (let idx = mergeClusters.length - 1; idx >= 0; idx--) {
+      const cluster = mergeClusters[idx];
+      const checkedIds = Object.entries(cluster.checked).filter(([, v]) => v).map(([k]) => k);
+      if (checkedIds.length < 2) continue;
+      setMergingClusterId(idx);
+      try {
+        const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'merge-execute', topicIds: checkedIds }),
+          timeout: 60_000,
+        });
+        if (!res.ok) { failed++; continue; }
+        await res.json();
+        merged++;
+        setMergeClusters(prev => prev ? prev.filter((_, i) => i !== idx) : null);
+      } catch { failed++; }
+      setMergingClusterId(null);
+    }
+    setMergingAll(false);
+    flashFeedback(failed === 0, `Merged ${merged} cluster${merged !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}`);
+    setTimeout(fetchStatus, 500);
+  };
+
   const removePublishedDupes = async (topicIds: string[]) => {
     for (const id of topicIds) {
       try {
@@ -978,13 +1012,13 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               style={{ flex: 1 }}
             />
             <button
-              onClick={analyzeMerge}
-              disabled={mergeAnalyzing || queue.filter(q => q.status === 'queued').length < 5}
+              onClick={mergeClusters ? () => setMergePanelOpen(p => !p) : analyzeMerge}
+              disabled={mergeAnalyzing || (!mergeClusters && queue.filter(q => q.status === 'queued').length < 5)}
               className="pipeline-trigger-btn admin-text-md"
               style={{ padding: '0.25rem 0.625rem', background: mergeClusters ? 'rgba(168,85,247,0.2)' : 'rgba(168,85,247,0.1)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.25)', fontWeight: 600, whiteSpace: 'nowrap' }}
-              title="AI-powered duplicate detection and merge"
+              title={mergeClusters ? 'Toggle merge panel' : 'AI-powered duplicate detection and merge'}
             >
-              {mergeAnalyzing ? 'Scanning\u2026' : mergeClusters ? `${mergeClusters.length} Clusters` : 'Find Duplicates'}
+              {mergeAnalyzing ? 'Scanning\u2026' : mergeClusters ? `${mergeClusters.length} Clusters ${mergePanelOpen ? '▾' : '▸'}` : 'Find Duplicates'}
             </button>
             {(['queued', 'all', 'merged', 'completed', 'in_progress'] as const).map(f => {
               const count = f === 'all' ? queue.length
@@ -1007,19 +1041,38 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         )}
 
         {/* ── Merge Review Panel ── */}
-        {mergeClusters && mergeClusters.length > 0 && (
+        {mergeClusters && mergeClusters.length > 0 && mergePanelOpen && (
           <div style={{ marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <span className="admin-text-md admin-weight-600" style={{ color: '#c084fc' }}>
                 {mergeClusters.length} duplicate cluster{mergeClusters.length !== 1 ? 's' : ''} found
               </span>
-              <button
-                onClick={() => { setMergeClusters(null); setAlreadyPublished(null); setMergeResult(null); }}
-                className="pipeline-retry-btn admin-text-sm"
-                style={{ color: '#78716c' }}
-              >
-                Dismiss
-              </button>
+              <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+                <button
+                  onClick={mergeAll}
+                  disabled={mergingAll || mergingClusterId !== null}
+                  className="pipeline-retry-btn admin-action-btn-green admin-weight-600 admin-text-sm"
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  {mergingAll ? `Merging\u2026` : `Merge All ${mergeClusters.length}`}
+                </button>
+                <button
+                  onClick={analyzeMerge}
+                  disabled={mergeAnalyzing || mergingAll || mergingClusterId !== null}
+                  className="pipeline-retry-btn admin-text-sm"
+                  style={{ color: '#78716c' }}
+                >
+                  {mergeAnalyzing ? 'Scanning\u2026' : 'Re-scan'}
+                </button>
+                <button
+                  onClick={() => { setMergeClusters(null); setAlreadyPublished(null); setMergeResult(null); }}
+                  disabled={mergingAll || mergingClusterId !== null}
+                  className="pipeline-retry-btn admin-text-sm"
+                  style={{ color: '#78716c' }}
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
 
             {mergeClusters.map((cluster, idx) => {
