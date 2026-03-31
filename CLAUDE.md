@@ -135,7 +135,9 @@ supabase/
     ├── stage-publish/                    # Stage 7: GitHub commit + Vercel hook + GPT Image illustration + ElevenLabs narration
     ├── pipeline-scout/                   # Scout — 3x/day topic discovery (all Gemini + Google Search)
     ├── pipeline-pinger/                  # Pinger — 4x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
-    ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article
+    ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article, merge
+    │
+    ├── topic-merge/                      # AI topic deduplication + merge (GPT-5.4 analyze, Sonnet merge)
     │
     ├── articles-api/                     # (existing) CRUD for articles table
     ├── process-article/                  # (existing) manual article generation
@@ -329,7 +331,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `stage-publish` | Stage 7: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
 | `pipeline-scout` | 3x/day topic discovery — all Gemini + Google Search grounding. Trending signals, search demand, "why now" | None (called by pg_cron) |
 | `pipeline-pinger` | 4x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
-| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured` | None (rate-limited internally) |
+| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `merge-analyze`, `merge-execute` | None (rate-limited internally) |
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |
@@ -339,13 +341,14 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `generate-narration` | ElevenLabs TTS narration of article description → Supabase Storage | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
+| `topic-merge` | AI-powered topic deduplication: `analyze` (GPT-5.4 clusters queue semantically) + `merge` (Sonnet synthesizes super-brief) | None (proxied via pipeline-admin) |
 
 **Deploy commands:**
 ```bash
 supabase functions deploy <function-name> --no-verify-jwt
 
 # Deploy all pipeline functions at once
-for fn in stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-publish pipeline-scout pipeline-pinger pipeline-admin; do
+for fn in stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-publish pipeline-scout pipeline-pinger pipeline-admin topic-merge; do
   supabase functions deploy $fn --no-verify-jwt
 done
 ```

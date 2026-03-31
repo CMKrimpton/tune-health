@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.4.0] - 2026-03-31
+
+### Added — Intelligent Topic Merge System
+- **AI-powered duplicate detection** — "Find Duplicates" button in Topic Queue uses GPT-5.4 to semantically cluster duplicate topics across the entire queue (~157 topics analyzed, 29 clusters found in first run). Catches conceptual duplicates that word-overlap dedup misses (e.g., "Ozempic side effects" vs "GLP-1 adverse events")
+- **One-click merge** — each cluster shows per-topic checkboxes, AI reason, and confidence badge. Merge uses Sonnet to synthesize the best framing, all unique angles, and combined research from all versions into one "super-topic" brief (~$0.01/merge)
+- **Already-published detection** — flags queued topics that duplicate existing articles (51 flagged in first run) with batch-remove
+- **"Merged" filter tab** — purple badge in queue filters, only appears when merged topics exist. Merged topics show purple "MERGED" source badge
+- **New edge function**: `topic-merge` with `analyze` and `merge` actions, proxied through `pipeline-admin`
+- **DB migration**: extended `topic_queue.source` check constraint to include `'merged'` and `'breaking'`
+
+### Fixed
+- **Batch narration force-regen bug** — `force: true` was re-narrating the same 20 newest articles repeatedly. Now orders by `updated_at ASC` (oldest-updated first) and explicitly bumps `updated_at` after each narration, so each batch makes progress through the full catalog
+- **16 legacy articles backfilled** — articles that existed on GitHub but had no DB record are now seeded (boredom-is-a-superpower, thyroid series, free-will series, etc.)
+
 ## [15.3.0] - 2026-03-31
 
 ### Fixed — Narration/Illustration GitHub Sync

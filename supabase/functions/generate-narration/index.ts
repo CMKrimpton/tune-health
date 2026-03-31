@@ -223,15 +223,19 @@ async function handleBatch(body: Record<string, unknown>) {
   const db = supabase();
   const limit = (body.limit as number) || 20;
 
-  // Get published articles missing narration
+  // Get published articles needing narration
   let query = db
     .from("articles")
-    .select("slug, title, description, narration_url")
-    .eq("status", "published")
-    .order("publish_date", { ascending: false });
+    .select("slug, title, description, narration_url, updated_at")
+    .eq("status", "published");
 
-  if (!body.force) {
-    query = query.is("narration_url", null);
+  if (body.force) {
+    // Force-regen: oldest-updated first so each batch makes progress
+    query = query.order("updated_at", { ascending: true, nullsFirst: true });
+  } else {
+    // Normal: only articles missing narration, newest first
+    query = query.is("narration_url", null)
+      .order("publish_date", { ascending: false });
   }
 
   const { data: articles, error } = await query.limit(limit);
@@ -303,7 +307,7 @@ async function handleBatch(body: Record<string, unknown>) {
 
       await db
         .from("articles")
-        .update({ narration_url: urlData.publicUrl })
+        .update({ narration_url: urlData.publicUrl, updated_at: new Date().toISOString() })
         .eq("slug", article.slug);
 
       // Sync to GitHub JSON

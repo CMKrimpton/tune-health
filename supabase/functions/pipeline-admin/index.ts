@@ -997,6 +997,26 @@ End with: <div class="data-callout reveal"><p><strong>Disclaimer:</strong> This 
       return json({ success: true, action: "scout", scoutModel, result });
     }
 
+    // ------ MERGE — proxy to topic-merge function ------
+    if (action === "merge-analyze" || action === "merge-execute") {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+      const mergeAction = action === "merge-analyze" ? "analyze" : "merge";
+      const mergeBody: Record<string, unknown> = { action: mergeAction };
+      if (body.topicIds) mergeBody.topicIds = body.topicIds;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/topic-merge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+        body: JSON.stringify(mergeBody),
+      });
+
+      const result = await res.json();
+      if (!res.ok) return json(result, res.status);
+      return json(result);
+    }
+
     // ------ PINGER-STATUS — recent signals for dashboard ------
     if (action === "pinger-status") {
       const { data: signals } = await db

@@ -108,12 +108,28 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [uploadDragOver, setUploadDragOver] = useState(false);
   const [uploadUrl, setUploadUrl] = useState('');
   const [queueSearch, setQueueSearch] = useState('');
-  const [queueFilter, setQueueFilter] = useState<'all' | 'queued' | 'completed' | 'in_progress'>('queued');
+  const [queueFilter, setQueueFilter] = useState<'all' | 'queued' | 'completed' | 'in_progress' | 'merged'>('queued');
   const uploadFileRef = useRef<HTMLInputElement>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
   const [scouting, setScouting] = useState<string | null>(null);
   const [scoutResult, setScoutResult] = useState<string | null>(null);
+  // Merge state
+  const [mergeAnalyzing, setMergeAnalyzing] = useState(false);
+  const [mergeClusters, setMergeClusters] = useState<Array<{
+    topicIds: string[];
+    reason: string;
+    confidence: string;
+    topics: QueueItem[];
+    checked: Record<string, boolean>;
+  }> | null>(null);
+  const [alreadyPublished, setAlreadyPublished] = useState<Array<{
+    topicId: string;
+    matchedArticle: string;
+    reason: string;
+  }> | null>(null);
+  const [mergingClusterId, setMergingClusterId] = useState<number | null>(null);
+  const [mergeResult, setMergeResult] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -482,6 +498,90 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       flashFeedback(false, `Delete failed: ${err instanceof Error ? err.message : 'unknown'}`);
       setTimeout(fetchStatus, 500); // Re-fetch to restore if delete actually failed
     }
+  };
+
+  // ── Merge functions ──
+  const analyzeMerge = async () => {
+    setMergeAnalyzing(true);
+    setMergeClusters(null);
+    setAlreadyPublished(null);
+    setMergeResult(null);
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'merge-analyze' }),
+      }, 120_000);
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      const data = await res.json();
+      const clusters = (data.clusters || []).map((c: { topicIds: string[]; reason: string; confidence: string; topics: QueueItem[] }) => ({
+        ...c,
+        checked: Object.fromEntries(c.topicIds.map((id: string) => [id, true])),
+      }));
+      setMergeClusters(clusters);
+      setAlreadyPublished(data.alreadyPublished || []);
+      if (clusters.length === 0 && (!data.alreadyPublished || data.alreadyPublished.length === 0)) {
+        flashFeedback(true, `Analyzed ${data.totalAnalyzed} topics — no duplicates found`);
+      }
+    } catch (err) {
+      flashFeedback(false, `Merge analysis failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    } finally {
+      setMergeAnalyzing(false);
+    }
+  };
+
+  const executeMerge = async (clusterIdx: number) => {
+    if (!mergeClusters) return;
+    const cluster = mergeClusters[clusterIdx];
+    const checkedIds = Object.entries(cluster.checked).filter(([, v]) => v).map(([k]) => k);
+    if (checkedIds.length < 2) { flashFeedback(false, 'Need at least 2 topics to merge'); return; }
+
+    setMergingClusterId(clusterIdx);
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'merge-execute', topicIds: checkedIds }),
+      }, 60_000);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `API error ${res.status}`);
+      }
+      const data = await res.json();
+      flashFeedback(true, `Merged ${data.deletedCount} topics into: "${data.merged?.topic?.slice(0, 60)}..."`);
+      // Remove merged cluster from list
+      setMergeClusters(prev => prev ? prev.filter((_, i) => i !== clusterIdx) : null);
+      // Refresh queue
+      setTimeout(fetchStatus, 500);
+    } catch (err) {
+      flashFeedback(false, `Merge failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    } finally {
+      setMergingClusterId(null);
+    }
+  };
+
+  const removePublishedDupes = async (topicIds: string[]) => {
+    for (const id of topicIds) {
+      try {
+        await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+          body: JSON.stringify({ action: 'delete-queue', queueId: id }),
+        });
+      } catch { /* continue */ }
+    }
+    setAlreadyPublished(prev => prev ? prev.filter(ap => !topicIds.includes(ap.topicId)) : null);
+    flashFeedback(true, `Removed ${topicIds.length} already-published topics from queue`);
+    setTimeout(fetchStatus, 500);
+  };
+
+  const toggleMergeCheck = (clusterIdx: number, topicId: string) => {
+    setMergeClusters(prev => {
+      if (!prev) return prev;
+      const updated = [...prev];
+      updated[clusterIdx] = { ...updated[clusterIdx], checked: { ...updated[clusterIdx].checked, [topicId]: !updated[clusterIdx].checked[topicId] } };
+      return updated;
+    });
   };
 
   const killArticle = async (logId: string) => {
@@ -875,15 +975,27 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               className="pipeline-queue-input"
               style={{ flex: 1 }}
             />
-            {(['queued', 'all', 'completed', 'in_progress'] as const).map(f => {
-              const count = f === 'all' ? queue.length : queue.filter(q => q.status === f).length;
+            <button
+              onClick={analyzeMerge}
+              disabled={mergeAnalyzing || queue.filter(q => q.status === 'queued').length < 5}
+              className="pipeline-trigger-btn admin-text-md"
+              style={{ padding: '0.25rem 0.625rem', background: mergeClusters ? 'rgba(168,85,247,0.2)' : 'rgba(168,85,247,0.1)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.25)', fontWeight: 600, whiteSpace: 'nowrap' }}
+              title="AI-powered duplicate detection and merge"
+            >
+              {mergeAnalyzing ? 'Scanning\u2026' : mergeClusters ? `${mergeClusters.length} Clusters` : 'Find Duplicates'}
+            </button>
+            {(['queued', 'all', 'merged', 'completed', 'in_progress'] as const).map(f => {
+              const count = f === 'all' ? queue.length
+                : f === 'merged' ? queue.filter(q => q.source === 'merged' && q.status === 'queued').length
+                : queue.filter(q => q.status === f).length;
               const label = f === 'in_progress' ? 'Active' : f.charAt(0).toUpperCase() + f.slice(1);
+              if (f === 'merged' && count === 0) return null;
               return (
                 <button
                   key={f}
                   onClick={() => setQueueFilter(f)}
                   className="pipeline-trigger-btn admin-text-md"
-                  style={{ padding: '0.25rem 0.5rem', background: queueFilter === f ? 'rgba(168,162,158,0.15)' : 'transparent', color: queueFilter === f ? '#e7e6e3' : '#78716c', border: 'none', fontWeight: queueFilter === f ? 600 : 400 }}
+                  style={{ padding: '0.25rem 0.5rem', background: queueFilter === f ? (f === 'merged' ? 'rgba(168,85,247,0.2)' : 'rgba(168,162,158,0.15)') : 'transparent', color: queueFilter === f ? (f === 'merged' ? '#c084fc' : '#e7e6e3') : '#78716c', border: 'none', fontWeight: queueFilter === f ? 600 : 400 }}
                 >
                   {label} <span style={{ opacity: 0.5, fontSize: '0.6875rem' }}>({count})</span>
                 </button>
@@ -892,11 +1004,105 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           </div>
         )}
 
+        {/* ── Merge Review Panel ── */}
+        {mergeClusters && mergeClusters.length > 0 && (
+          <div style={{ marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span className="admin-text-md admin-weight-600" style={{ color: '#c084fc' }}>
+                {mergeClusters.length} duplicate cluster{mergeClusters.length !== 1 ? 's' : ''} found
+              </span>
+              <button
+                onClick={() => { setMergeClusters(null); setAlreadyPublished(null); setMergeResult(null); }}
+                className="pipeline-retry-btn admin-text-sm"
+                style={{ color: '#78716c' }}
+              >
+                Dismiss
+              </button>
+            </div>
+
+            {mergeClusters.map((cluster, idx) => {
+              const checkedCount = Object.values(cluster.checked).filter(Boolean).length;
+              return (
+                <div key={idx} style={{ border: '1px solid rgba(168,85,247,0.25)', borderRadius: '8px', padding: '0.625rem', marginBottom: '0.5rem', background: 'rgba(168,85,247,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.375rem' }}>
+                    <div>
+                      <span className="admin-text-sm admin-weight-600" style={{ color: '#e7e6e3' }}>{cluster.reason}</span>
+                      <span className="admin-text-sm" style={{ marginLeft: '0.5rem', color: cluster.confidence === 'high' ? '#22c55e' : '#eab308', opacity: 0.8 }}>
+                        {cluster.confidence}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => executeMerge(idx)}
+                      disabled={mergingClusterId !== null || checkedCount < 2}
+                      className="pipeline-retry-btn admin-action-btn-green admin-weight-600 admin-text-sm"
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      {mergingClusterId === idx ? 'Merging\u2026' : `Merge ${checkedCount}`}
+                    </button>
+                  </div>
+                  {cluster.topics.map((t) => (
+                    <label key={t.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.375rem', padding: '0.25rem 0', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={cluster.checked[t.id] ?? true}
+                        onChange={() => toggleMergeCheck(idx, t.id)}
+                        style={{ marginTop: '0.2rem', accentColor: '#c084fc' }}
+                      />
+                      <div>
+                        <span className="admin-text-sm" style={{ color: '#e7e6e3' }}>{t.topic.replace(/\*\*/g, '').trim()}</span>
+                        <div className="admin-text-sm" style={{ color: '#78716c', fontSize: '0.6875rem' }}>
+                          {t.category && <span>{t.category}</span>}
+                          {t.source && <span style={{ marginLeft: '0.375rem' }}>{t.source}</span>}
+                          <span style={{ marginLeft: '0.375rem' }}>P{t.priority}</span>
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              );
+            })}
+
+            {/* Already Published section */}
+            {alreadyPublished && alreadyPublished.length > 0 && (
+              <div style={{ border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '0.625rem', marginBottom: '0.5rem', background: 'rgba(239,68,68,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                  <span className="admin-text-sm admin-weight-600" style={{ color: '#ef4444' }}>
+                    {alreadyPublished.length} topic{alreadyPublished.length !== 1 ? 's' : ''} match published articles
+                  </span>
+                  <button
+                    onClick={async () => {
+                      if (await ask({ title: 'Remove published duplicates', message: `Remove ${alreadyPublished.length} topics that duplicate already-published articles?`, confirmLabel: 'Remove All', danger: true })) {
+                        removePublishedDupes(alreadyPublished.map(ap => ap.topicId));
+                      }
+                    }}
+                    className="pipeline-retry-btn admin-action-btn-danger-subtle admin-text-sm"
+                  >
+                    Remove All
+                  </button>
+                </div>
+                {alreadyPublished.map((ap) => (
+                  <div key={ap.topicId} style={{ padding: '0.25rem 0' }}>
+                    <span className="admin-text-sm" style={{ color: '#fca5a5' }}>{ap.reason}</span>
+                    <span className="admin-text-sm admin-color-muted" style={{ marginLeft: '0.375rem' }}>
+                      (matches: {ap.matchedArticle})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {mergeResult && (
+              <div className="admin-toast admin-toast-success admin-mb-sm">{mergeResult}</div>
+            )}
+          </div>
+        )}
+
         {queue.length > 0 && (
           <div className="pipeline-completed-list">
             {queue.filter(item => {
               const hasSearch = queueSearch.trim().length > 0;
               // When searching, show all statuses so results aren't hidden
+              if (!hasSearch && queueFilter === 'merged') return item.source === 'merged' && item.status === 'queued';
               if (!hasSearch && queueFilter !== 'all' && item.status !== queueFilter) return false;
               if (hasSearch) {
                 const s = queueSearch.toLowerCase();
@@ -924,6 +1130,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                         <span className="admin-color-muted">P{item.priority}</span>
                         {item.source === 'breaking' ? (
                           <span className="admin-status-badge admin-status-breaking">BREAKING</span>
+                        ) : item.source === 'merged' ? (
+                          <span className="admin-weight-600" style={{ color: '#c084fc' }}>MERGED</span>
                         ) : (
                           <span className="admin-color-muted">{item.source}</span>
                         )}
