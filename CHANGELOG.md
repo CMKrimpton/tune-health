@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.6.1] - 2026-03-31
+
+### Fixed — Merge All loops until queue is clean
+- **Multi-pass merge**: "Merge All" now automatically re-analyzes after merging, repeating until no more duplicate clusters are found (max 5 passes). Eliminates the manual reload-and-rescan cycle
+- **Auto-removes already-published dupes** found in each pass
+- **Extracted `runMergeAnalysis()` helper** — shared between single-scan and loop, no code duplication
+- **Pass-by-pass progress feedback**: "Pass 2: re-scanning for new duplicates…" shown during each re-analysis
+- **Summary message**: "Merged 12 clusters · across 3 passes · removed 4 already-published"
+
 ## [15.6.0] - 2026-03-31
 
 ### Improved — Ultra Polish: Performance, Security & Design System (12 files)

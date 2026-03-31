@@ -503,28 +503,44 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   };
 
   // ── Merge functions ──
+
+  // Shared helper: runs merge-analyze API and returns parsed result (no state changes)
+  const runMergeAnalysis = async (): Promise<{
+    clusters: Array<{ topicIds: string[]; reason: string; confidence: string; topics: QueueItem[]; checked: Record<string, boolean> }>;
+    alreadyPublished: Array<{ topicId: string; matchedArticle: string; reason: string }>;
+    totalAnalyzed: number;
+  } | null> => {
+    const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'merge-analyze' }),
+      timeout: 120_000,
+    });
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    const data = await res.json();
+    const clusters = (data.clusters || []).map((c: { topicIds: string[]; reason: string; confidence: string; topics: QueueItem[] }) => ({
+      ...c,
+      checked: Object.fromEntries(c.topicIds.map((id: string) => [id, true])),
+    }));
+    return {
+      clusters,
+      alreadyPublished: data.alreadyPublished || [],
+      totalAnalyzed: data.totalAnalyzed ?? 0,
+    };
+  };
+
   const analyzeMerge = async () => {
     setMergeAnalyzing(true);
     setMergeClusters(null);
     setAlreadyPublished(null);
     setMergeResult(null);
     try {
-      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'merge-analyze' }),
-        timeout: 120_000,
-      });
-      if (!res.ok) throw new Error(`API error ${res.status}`);
-      const data = await res.json();
-      const clusters = (data.clusters || []).map((c: { topicIds: string[]; reason: string; confidence: string; topics: QueueItem[] }) => ({
-        ...c,
-        checked: Object.fromEntries(c.topicIds.map((id: string) => [id, true])),
-      }));
-      setMergeClusters(clusters);
-      setAlreadyPublished(data.alreadyPublished || []);
-      if (clusters.length === 0 && (!data.alreadyPublished || data.alreadyPublished.length === 0)) {
-        flashFeedback(true, `Analyzed ${data.totalAnalyzed} topics — no duplicates found`);
+      const result = await runMergeAnalysis();
+      if (!result) return;
+      setMergeClusters(result.clusters);
+      setAlreadyPublished(result.alreadyPublished);
+      if (result.clusters.length === 0 && result.alreadyPublished.length === 0) {
+        flashFeedback(true, `Analyzed ${result.totalAnalyzed} topics — no duplicates found`);
       }
     } catch (err) {
       flashFeedback(false, `Merge analysis failed: ${err instanceof Error ? err.message : 'unknown'}`);
@@ -566,33 +582,111 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const mergeAll = async () => {
     if (!mergeClusters || mergeClusters.length === 0) return;
-    const ok = await ask({ title: 'Merge all clusters', message: `Merge all ${mergeClusters.length} duplicate clusters sequentially? Each cluster will be combined into one super-topic.`, confirmLabel: `Merge All ${mergeClusters.length}`, danger: false });
+    const ok = await ask({ title: 'Merge all clusters', message: `Merge all ${mergeClusters.length} duplicate clusters sequentially, then re-scan until the queue is clean?`, confirmLabel: `Merge All ${mergeClusters.length}`, danger: false });
     if (!ok) return;
     setMergingAll(true);
-    let merged = 0;
-    let failed = 0;
-    // Process from last to first so index removal stays stable
-    for (let idx = mergeClusters.length - 1; idx >= 0; idx--) {
-      const cluster = mergeClusters[idx];
-      const checkedIds = Object.entries(cluster.checked).filter(([, v]) => v).map(([k]) => k);
-      if (checkedIds.length < 2) continue;
-      setMergingClusterId(idx);
-      try {
-        const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'merge-execute', topicIds: checkedIds }),
-          timeout: 60_000,
-        });
-        if (!res.ok) { failed++; continue; }
-        await res.json();
-        merged++;
-        setMergeClusters(prev => prev ? prev.filter((_, i) => i !== idx) : null);
-      } catch { failed++; }
-      setMergingClusterId(null);
+
+    const MAX_PASSES = 5;
+    let totalMerged = 0;
+    let totalFailed = 0;
+    let totalPublishedRemoved = 0;
+    let pass = 0;
+    let currentClusters = mergeClusters;
+    let currentPublished = alreadyPublished;
+
+    while (pass < MAX_PASSES) {
+      pass++;
+
+      // Re-analyze on subsequent passes
+      if (pass > 1) {
+        setMergeAnalyzing(true);
+        flashFeedback(true, `Pass ${pass}: re-scanning for new duplicates…`);
+        try {
+          const result = await runMergeAnalysis();
+          if (!result || result.clusters.length === 0) {
+            // Auto-remove any published dupes found in this pass
+            if (result?.alreadyPublished?.length) {
+              const pubIds = result.alreadyPublished.map(ap => ap.topicId);
+              for (const id of pubIds) {
+                try {
+                  await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+                    body: JSON.stringify({ action: 'delete-queue', queueId: id }),
+                  });
+                  totalPublishedRemoved++;
+                } catch { /* continue */ }
+              }
+            }
+            setMergeAnalyzing(false);
+            break; // Clean — no more duplicates
+          }
+          currentClusters = result.clusters;
+          currentPublished = result.alreadyPublished;
+          setMergeClusters(result.clusters);
+          setAlreadyPublished(result.alreadyPublished);
+        } catch {
+          setMergeAnalyzing(false);
+          break; // Analysis failed — stop looping
+        }
+        setMergeAnalyzing(false);
+      }
+
+      // Auto-remove already-published dupes this pass
+      if (currentPublished && currentPublished.length > 0) {
+        const pubIds = currentPublished.map(ap => ap.topicId);
+        for (const id of pubIds) {
+          try {
+            await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+              body: JSON.stringify({ action: 'delete-queue', queueId: id }),
+            });
+            totalPublishedRemoved++;
+          } catch { /* continue */ }
+        }
+        setAlreadyPublished(null);
+        currentPublished = null;
+      }
+
+      // Merge all clusters in this pass
+      let passMerged = 0;
+      for (let idx = currentClusters.length - 1; idx >= 0; idx--) {
+        const cluster = currentClusters[idx];
+        const checkedIds = Object.entries(cluster.checked).filter(([, v]) => v).map(([k]) => k);
+        if (checkedIds.length < 2) continue;
+        setMergingClusterId(idx);
+        try {
+          const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'merge-execute', topicIds: checkedIds }),
+            timeout: 60_000,
+          });
+          if (!res.ok) { totalFailed++; continue; }
+          await res.json();
+          passMerged++;
+          totalMerged++;
+          setMergeClusters(prev => prev ? prev.filter((_, i) => i !== idx) : null);
+        } catch { totalFailed++; }
+        setMergingClusterId(null);
+      }
+
+      // If zero successful merges this pass, stop (avoid retrying failures forever)
+      if (passMerged === 0) break;
     }
+
     setMergingAll(false);
-    flashFeedback(failed === 0, `Merged ${merged} cluster${merged !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}`);
+    setMergeClusters(null);
+    setAlreadyPublished(null);
+
+    // Build summary message
+    const parts: string[] = [`Merged ${totalMerged} cluster${totalMerged !== 1 ? 's' : ''}`];
+    if (pass > 1) parts.push(`across ${pass} pass${pass !== 1 ? 'es' : ''}`);
+    if (totalPublishedRemoved > 0) parts.push(`removed ${totalPublishedRemoved} already-published`);
+    if (totalFailed > 0) parts.push(`${totalFailed} failed`);
+    if (pass >= MAX_PASSES) parts.push(`hit ${MAX_PASSES}-pass limit`);
+    flashFeedback(totalFailed === 0, parts.join(' · '));
     setTimeout(fetchStatus, 500);
   };
 
