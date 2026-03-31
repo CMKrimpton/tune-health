@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.3.0] - 2026-03-31
+
+### Fixed — Narration/Illustration GitHub Sync
+- **Admin-generated narrations now appear on the live site** — `generate-narration` was only saving to DB + Storage, never syncing `narrationUrl` to the GitHub JSON file. Since the Astro site reads from JSON, narrations generated via the admin panel were invisible to readers
+- **Same fix applied to `generate-illustration`** — illustrations generated from the admin panel now sync `heroImage` to GitHub JSON automatically
+- **Shared `updateGitHubJson()` utility** — extracted duplicated GitHub JSON update code (~110 lines) from `stage-publish` into a reusable function in `_shared/github.ts`. Both `generate-narration` and `generate-illustration` use it
+- **Admin CSS overflow fix** — narration "Generate" button was getting pushed off-screen by long article titles. Added `min-width: 0` on select + `flex-shrink: 0` on `.admin-nowrap`
+
+### Changed
+- **Narration voice** updated to `LkgZkNm7dD8b7nbdptAB`
+- **Narration model** switched from `eleven_v3` to `eleven_multilingual_v2`
+- **Narration settings** tuned: stability 0.3, similarity 0.6, style 0.4
+- **Regenerated all narrations** (~166 articles) with new voice/model/settings
+
+### Known Issues
+- **Batch force-regen repeats same articles** — `force: true` re-narrates already-narrated articles ordered by publish date, so the same recent articles get re-narrated each batch instead of progressing through the full list. Needs a "last regenerated" timestamp or batch offset
+- **16 legacy articles not in DB** — older articles exist as GitHub files but have no DB record, so `generate-narration` can't find their descriptions. Need DB backfill or file-based fallback
+
 ## [15.2.0] - 2026-03-30
 
 ### Added — Triangulated Research

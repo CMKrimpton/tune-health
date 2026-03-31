@@ -352,7 +352,7 @@ done
 
 **Required secrets** (set via `supabase secrets set`):
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
-- `ELEVENLABS_API_KEY` (ElevenLabs TTS for article narrations — "Frontline" voice)
+- `ELEVENLABS_API_KEY` (ElevenLabs TTS for article narrations — voice `LkgZkNm7dD8b7nbdptAB`, model `eleven_multilingual_v2`)
 - `XAI_API_KEY` (Grok 3 for independence review + pinger social trending), `GOOGLE_API_KEY` (Gemini for research, scouts, pinger)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
 
