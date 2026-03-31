@@ -31,5 +31,6 @@
     "neuroscience"
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/creativity.png",
-  "heroImageAlt": "Editorial illustration for The Switching Brain: What Creativity Actually Is"
+  "heroImageAlt": "Editorial illustration for The Switching Brain: What Creativity Actually Is",
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/creativity.mp3"
 }
