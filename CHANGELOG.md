@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.1.0] - 2026-04-01
+
+### Added
+- **TopicNav hover dropdowns** — each category pill shows a glass dropdown on hover with tagline, 4 latest articles, "New" badges, and "View all" link. Panels rendered outside scroll container to avoid overflow clipping, positioned via JS
+- **Voice settings panel** for narration (admin → AI Agents → Narrations) — 6 presets (Default, Anchor, Podcast, Dramatic, Clinical, Storyteller) + 4 custom sliders (Stability, Similarity Boost, Style Exaggeration, Speed). Settings pass through to ElevenLabs API
+- **Author unification** — all 153 articles + all pipeline bylines now use "Max Lundin" as author name
+
+### Fixed
+- **Title/heading word limits tightened** across 7 pipeline prompts — "target 5-8, hard cap 10, count before submitting" replaces soft "max 10". Section headings: "4-8 words hard range, 9 is a failure." Added missing constraints to `process-article`
+- **Batch narration timeout** — replaced sequential processing (guaranteed timeout for >5 articles) with fire-and-forget dispatch. Each article generates in its own function invocation
+- **Narration "missing" count** was including draft/archived articles — now filters to published only, matching batch query logic
+- **Narration result messages** now show article title instead of slug
+
 ## [16.0.1] - 2026-03-31
 
 ### Improved — Section Heading Prompts Across Pipeline
