@@ -104,13 +104,19 @@ const relatedTopics = domain
             <span class="section-label">All Articles</span>
             <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
           </div>
-          <select id="topicSort" class="px-4 py-2 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-sm focus:outline-none focus:border-primary-500 transition-[border-color,box-shadow] cursor-pointer" aria-label="Sort articles">
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="shortest">Shortest</option>
-            <option value="longest">Longest</option>
-            <option value="az">A — Z</option>
-          </select>
+          <div class="sort-dropdown" id="topicSortDropdown">
+            <button class="sort-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Sort articles">
+              <span class="sort-dropdown-label">Newest</span>
+              <svg class="sort-dropdown-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <ul class="sort-dropdown-menu" role="listbox">
+              <li role="option" data-value="newest" class="sort-dropdown-option active">Newest</li>
+              <li role="option" data-value="oldest" class="sort-dropdown-option">Oldest</li>
+              <li role="option" data-value="shortest" class="sort-dropdown-option">Shortest</li>
+              <li role="option" data-value="longest" class="sort-dropdown-option">Longest</li>
+              <li role="option" data-value="az" class="sort-dropdown-option">A — Z</li>
+            </ul>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="topicGrid">
@@ -155,10 +161,11 @@ const relatedTopics = domain
           <span class="section-label">Related Topics</span>
           <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-3 max-w-2xl">
           {relatedTopics.map((topic) => (
-            <a href={`/topics/${getCategorySlug(topic)}`} class="px-5 py-2.5 rounded-full border border-stone-200 dark:border-stone-700 text-sm font-medium text-stone-600 dark:text-stone-400 hover:border-primary-300 hover:text-primary-600 dark:hover:border-primary-700 dark:hover:text-primary-400 transition-colors duration-200">
+            <a href={`/topics/${getCategorySlug(topic)}`} class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 dark:border-stone-700 text-sm font-medium text-stone-600 dark:text-stone-400 hover:border-primary-300 hover:text-primary-600 dark:hover:border-primary-700 dark:hover:text-primary-400 transition-colors duration-200 bg-white dark:bg-stone-900">
               {topic}
+              <svg class="w-3.5 h-3.5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
           ))}
         </div>
@@ -183,19 +190,86 @@ const relatedTopics = domain
     @apply absolute inset-0;
     background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%);
   }
+
+  /* ─── Glass Sort Dropdown ─── */
+  .sort-dropdown {
+    position: relative;
+  }
+
+  .sort-dropdown-trigger {
+    @apply flex items-center gap-2 px-4 py-2 text-sm font-medium;
+    @apply bg-white dark:bg-stone-800;
+    @apply border border-stone-200 dark:border-stone-700;
+    @apply rounded-full cursor-pointer;
+    @apply text-stone-700 dark:text-stone-300;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .sort-dropdown-trigger:hover {
+    @apply border-stone-300 dark:border-stone-600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .sort-dropdown-chevron {
+    @apply w-4 h-4 text-stone-400;
+    transition: transform 0.2s ease;
+  }
+
+  .sort-dropdown.open .sort-dropdown-chevron {
+    transform: rotate(180deg);
+  }
+
+  .sort-dropdown-menu {
+    @apply absolute right-0 mt-2 z-50;
+    @apply bg-white/95 dark:bg-stone-900/95 backdrop-blur-md;
+    @apply border border-stone-200/60 dark:border-stone-700/60;
+    @apply rounded-xl overflow-hidden;
+    @apply opacity-0 invisible;
+    min-width: 160px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    list-style: none;
+    padding: 0.25rem;
+    margin: 0;
+  }
+
+  :global(.dark) .sort-dropdown-menu {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .sort-dropdown.open .sort-dropdown-menu {
+    @apply opacity-100 visible;
+    transform: translateY(0);
+  }
+
+  .sort-dropdown-option {
+    @apply px-3 py-2 text-sm cursor-pointer;
+    @apply text-stone-600 dark:text-stone-400;
+    @apply rounded-lg;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .sort-dropdown-option:hover {
+    @apply bg-stone-100 dark:bg-stone-800;
+    @apply text-stone-900 dark:text-white;
+  }
+
+  .sort-dropdown-option.active {
+    @apply text-primary-600 dark:text-primary-400 font-medium;
+  }
 </style>
 
 <script>
   function initTopicPage() {
-    const sortSelect = document.getElementById('topicSort') as HTMLSelectElement;
     const grid = document.getElementById('topicGrid');
-    if (!sortSelect || !grid) return;
+    const dropdown = document.getElementById('topicSortDropdown');
+    if (!grid || !dropdown) return;
 
     const cards = Array.from(grid.querySelectorAll('.topic-grid-card')) as HTMLElement[];
-
-    sortSelect.addEventListener('change', () => {
+    initSortDropdown(dropdown, (value) => {
       cards.sort((a, b) => {
-        switch (sortSelect.value) {
+        switch (value) {
           case 'oldest': return Number(a.dataset.date || 0) - Number(b.dataset.date || 0);
           case 'shortest': return Number(a.dataset.readTime || 0) - Number(b.dataset.readTime || 0);
           case 'longest': return Number(b.dataset.readTime || 0) - Number(a.dataset.readTime || 0);
@@ -204,6 +278,47 @@ const relatedTopics = domain
         }
       });
       cards.forEach(card => grid.appendChild(card));
+    });
+  }
+
+  function initSortDropdown(dropdown: HTMLElement, onChange: (value: string) => void) {
+    const trigger = dropdown.querySelector('.sort-dropdown-trigger') as HTMLButtonElement;
+    const menu = dropdown.querySelector('.sort-dropdown-menu') as HTMLElement;
+    const label = dropdown.querySelector('.sort-dropdown-label') as HTMLElement;
+    const options = dropdown.querySelectorAll('.sort-dropdown-option');
+    if (!trigger || !menu || !label) return;
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = dropdown.classList.toggle('open');
+      trigger.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    options.forEach(option => {
+      option.addEventListener('click', () => {
+        const value = (option as HTMLElement).dataset.value || 'newest';
+        label.textContent = option.textContent;
+        options.forEach(o => o.classList.remove('active'));
+        option.classList.add('active');
+        dropdown.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        onChange(value);
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target as Node)) {
+        dropdown.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && dropdown.classList.contains('open')) {
+        dropdown.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.focus();
+      }
     });
   }
 

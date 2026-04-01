@@ -5,7 +5,7 @@
  */
 ---
 
-<section id="continueReading" class="py-12 md:py-16" style="display: none;">
+<section id="continueReading" class="continue-reading-section">
   <div class="container-editorial">
     <div class="flex items-center gap-6 mb-8">
       <span class="section-label">Continue Reading</span>
@@ -14,6 +14,31 @@
     <div id="continueReadingCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
 </section>
+
+<style>
+  .continue-reading-section {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: opacity 0.4s ease, max-height 0.5s ease, padding 0.5s ease;
+  }
+
+  .continue-reading-section.visible {
+    opacity: 1;
+    max-height: 500px;
+    padding-top: 3rem;
+    padding-bottom: 4rem;
+  }
+
+  @media (min-width: 768px) {
+    .continue-reading-section.visible {
+      padding-top: 4rem;
+      padding-bottom: 4rem;
+    }
+  }
+</style>
 
 <script>
   function initContinueReading() {
@@ -30,11 +55,9 @@
         .slice(0, 3);
 
       if (inProgress.length === 0) {
-        section.style.display = 'none';
+        section.classList.remove('visible');
         return;
       }
-
-      section.style.display = '';
       container.innerHTML = '';
 
       inProgress.forEach((p: any) => {
@@ -59,8 +82,11 @@
         `;
         container.appendChild(card);
       });
+
+      // Trigger fade-in on next frame so transition fires
+      requestAnimationFrame(() => section.classList.add('visible'));
     } catch {
-      section.style.display = 'none';
+      section.classList.remove('visible');
     }
   }
 

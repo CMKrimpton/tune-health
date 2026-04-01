@@ -135,7 +135,7 @@ categoriesWithCounts.forEach(({ name }) => {
     @apply opacity-0 invisible;
     top: 100%;
     left: 0;
-    width: 320px;
+    width: min(320px, calc(100vw - 16px));
     @apply z-50;
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
     pointer-events: none;
@@ -252,16 +252,25 @@ categoriesWithCounts.forEach(({ name }) => {
     function positionPanel(trigger: HTMLElement, panel: HTMLElement) {
       const triggerRect = trigger.getBoundingClientRect();
       const navRect = nav!.getBoundingClientRect();
-      const panelWidth = 320;
+      const panelWidth = Math.min(320, window.innerWidth - 16);
 
       // Center the panel under the trigger pill
       let left = triggerRect.left - navRect.left + (triggerRect.width / 2) - (panelWidth / 2);
 
-      // Clamp within viewport
+      // Clamp horizontally within viewport
       const maxLeft = navRect.width - panelWidth - 8;
       left = Math.max(8, Math.min(left, maxLeft));
 
       panel.style.left = `${left}px`;
+      panel.style.width = `${panelWidth}px`;
+
+      // Clamp vertically — ensure dropdown doesn't overflow below viewport
+      const panelInner = panel.querySelector('.topic-dropdown-inner') as HTMLElement;
+      if (panelInner) {
+        const availableHeight = window.innerHeight - navRect.bottom - 16;
+        panelInner.style.maxHeight = `${Math.max(200, availableHeight)}px`;
+        panelInner.style.overflowY = 'auto';
+      }
     }
 
     function openPanel(trigger: HTMLElement) {

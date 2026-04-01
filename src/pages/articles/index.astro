@@ -64,17 +64,19 @@ const sortedCategories = [...articlesByCategory.entries()]
               aria-label="Search articles"
             />
           </div>
-          <select
-            id="articleSort"
-            class="px-4 py-3 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-[border-color,box-shadow] cursor-pointer"
-            aria-label="Sort articles"
-          >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="shortest">Shortest</option>
-            <option value="longest">Longest</option>
-            <option value="az">A — Z</option>
-          </select>
+          <div class="sort-dropdown" id="articleSortDropdown">
+            <button class="sort-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Sort articles">
+              <span class="sort-dropdown-label">Newest</span>
+              <svg class="sort-dropdown-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <ul class="sort-dropdown-menu" role="listbox">
+              <li role="option" data-value="newest" class="sort-dropdown-option active">Newest</li>
+              <li role="option" data-value="oldest" class="sort-dropdown-option">Oldest</li>
+              <li role="option" data-value="shortest" class="sort-dropdown-option">Shortest</li>
+              <li role="option" data-value="longest" class="sort-dropdown-option">Longest</li>
+              <li role="option" data-value="az" class="sort-dropdown-option">A — Z</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -339,7 +341,8 @@ const sortedCategories = [...articlesByCategory.entries()]
 <script>
   function initArticlesPage() {
     const searchInput = document.getElementById('articleSearch') as HTMLInputElement;
-    const sortSelect = document.getElementById('articleSort') as HTMLSelectElement;
+    const sortDropdown = document.getElementById('articleSortDropdown');
+    let currentSortValue = 'newest';
     const categoryOverview = document.getElementById('categoryOverview');
     const filteredView = document.getElementById('filteredView');
     const featuredRow = document.getElementById('featuredRow');
@@ -398,7 +401,7 @@ const sortedCategories = [...articlesByCategory.entries()]
     }
 
     function sortCards() {
-      const sortBy = sortSelect?.value || 'newest';
+      const sortBy = currentSortValue || 'newest';
       allCards.sort((a, b) => {
         switch (sortBy) {
           case 'oldest':
@@ -431,7 +434,7 @@ const sortedCategories = [...articlesByCategory.entries()]
         if (activeTagLabel) activeTagLabel.textContent = activeTag;
       }
 
-      if (!hasAnyFilter && sortSelect?.value === 'newest') {
+      if (!hasAnyFilter && currentSortValue === 'newest') {
         showView('overview');
         return;
       }
@@ -526,17 +529,19 @@ const sortedCategories = [...articlesByCategory.entries()]
       setCategory('all');
     });
 
-    // Sort change
-    sortSelect?.addEventListener('change', () => {
-      sortCards();
-      // If sorted non-default, switch to filtered view to show sorted results
-      if (sortSelect.value !== 'newest') {
-        showView('filtered');
-        filterArticles();
-      } else {
-        filterArticles();
-      }
-    });
+    // Sort dropdown (custom glass dropdown)
+    if (sortDropdown) {
+      initSortDropdown(sortDropdown, (value) => {
+        currentSortValue = value;
+        sortCards();
+        if (value !== 'newest') {
+          showView('filtered');
+          filterArticles();
+        } else {
+          filterArticles();
+        }
+      });
+    }
 
     // Debounced search
     let searchTimer: ReturnType<typeof setTimeout>;
@@ -557,6 +562,47 @@ const sortedCategories = [...articlesByCategory.entries()]
     filterArticles();
   }
 
+  function initSortDropdown(dropdown: HTMLElement, onChange: (value: string) => void) {
+    const trigger = dropdown.querySelector('.sort-dropdown-trigger') as HTMLButtonElement;
+    const menu = dropdown.querySelector('.sort-dropdown-menu') as HTMLElement;
+    const label = dropdown.querySelector('.sort-dropdown-label') as HTMLElement;
+    const options = dropdown.querySelectorAll('.sort-dropdown-option');
+    if (!trigger || !menu || !label) return;
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = dropdown.classList.toggle('open');
+      trigger.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    options.forEach(option => {
+      option.addEventListener('click', () => {
+        const value = (option as HTMLElement).dataset.value || 'newest';
+        label.textContent = option.textContent;
+        options.forEach(o => o.classList.remove('active'));
+        option.classList.add('active');
+        dropdown.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        onChange(value);
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target as Node)) {
+        dropdown.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && dropdown.classList.contains('open')) {
+        dropdown.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.focus();
+      }
+    });
+  }
+
   initArticlesPage();
   document.addEventListener('astro:after-swap', initArticlesPage);
 </script>
@@ -574,6 +620,74 @@ const sortedCategories = [...articlesByCategory.entries()]
 
   .article-lead-card:hover {
     @apply shadow-2xl;
+  }
+
+  /* ─── Glass Sort Dropdown ─── */
+  .sort-dropdown {
+    position: relative;
+  }
+
+  .sort-dropdown-trigger {
+    @apply flex items-center gap-2 px-4 py-3 text-sm font-medium;
+    @apply bg-white dark:bg-stone-800;
+    @apply border border-stone-200 dark:border-stone-700;
+    @apply rounded-full cursor-pointer;
+    @apply text-stone-700 dark:text-stone-300;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .sort-dropdown-trigger:hover {
+    @apply border-stone-300 dark:border-stone-600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .sort-dropdown-chevron {
+    @apply w-4 h-4 text-stone-400;
+    transition: transform 0.2s ease;
+  }
+
+  .sort-dropdown.open .sort-dropdown-chevron {
+    transform: rotate(180deg);
+  }
+
+  .sort-dropdown-menu {
+    @apply absolute right-0 mt-2 z-50;
+    @apply bg-white/95 dark:bg-stone-900/95 backdrop-blur-md;
+    @apply border border-stone-200/60 dark:border-stone-700/60;
+    @apply rounded-xl overflow-hidden;
+    @apply opacity-0 invisible;
+    min-width: 160px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    list-style: none;
+    padding: 0.25rem;
+    margin: 0;
+  }
+
+  :global(.dark) .sort-dropdown-menu {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .sort-dropdown.open .sort-dropdown-menu {
+    @apply opacity-100 visible;
+    transform: translateY(0);
+  }
+
+  .sort-dropdown-option {
+    @apply px-3 py-2 text-sm cursor-pointer;
+    @apply text-stone-600 dark:text-stone-400;
+    @apply rounded-lg;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .sort-dropdown-option:hover {
+    @apply bg-stone-100 dark:bg-stone-800;
+    @apply text-stone-900 dark:text-white;
+  }
+
+  .sort-dropdown-option.active {
+    @apply text-primary-600 dark:text-primary-400 font-medium;
   }
 
 </style>

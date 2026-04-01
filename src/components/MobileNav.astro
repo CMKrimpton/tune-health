@@ -223,7 +223,11 @@
     // Scroll hide/show with dead zone to prevent iOS momentum jitter
     let lastScrollY = window.scrollY;
     let ticking = false;
-    const SCROLL_DEAD_ZONE = 8; // Ignore scroll deltas smaller than this
+    let lastDirection: 'up' | 'down' | null = null;
+    let directionLockY = window.scrollY;
+    const SCROLL_DEAD_ZONE = 15; // Ignore scroll deltas smaller than this
+    const SCROLL_THRESHOLD = 300; // Don't hide until scrolled past this point
+    const DIRECTION_LOCK = 40; // Must scroll 40px in one direction to trigger change
 
     window.addEventListener('scroll', () => {
       if (!ticking) {
@@ -233,11 +237,25 @@
 
           // Ignore tiny movements (momentum scroll oscillation)
           if (Math.abs(delta) > SCROLL_DEAD_ZONE) {
-            if (delta > 0 && currentScrollY > 200) {
-              nav.style.transform = 'translateY(100%)';
-            } else {
-              nav.style.transform = 'translateY(0)';
+            const direction = delta > 0 ? 'down' : 'up';
+
+            // If direction changed, reset the lock point
+            if (direction !== lastDirection) {
+              directionLockY = lastScrollY;
+              lastDirection = direction;
             }
+
+            // Only trigger hide/show after sustained movement in one direction
+            const sustained = Math.abs(currentScrollY - directionLockY) > DIRECTION_LOCK;
+
+            if (sustained) {
+              if (direction === 'down' && currentScrollY > SCROLL_THRESHOLD) {
+                nav.style.transform = 'translateY(100%)';
+              } else if (direction === 'up') {
+                nav.style.transform = 'translateY(0)';
+              }
+            }
+
             lastScrollY = currentScrollY;
           }
           ticking = false;

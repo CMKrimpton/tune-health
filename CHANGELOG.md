@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.6.0] - 2026-04-01
+
+### Improved — UX Polish Pass (6 files)
+
+#### Navigation Fixes
+- **TopicNav dropdown vertical clamping** — panels now constrain to viewport height with `maxHeight` + scrollable inner container. Width clamps to `min(320px, 100vw - 16px)` for small screens
+- **MobileNav scroll sensitivity** — increased hide threshold (200→300px), widened dead zone (8→15px), added directional lock requiring 40px sustained movement before toggling. Prevents iOS momentum jitter
+
+#### Sort Dropdown Redesign
+- **Custom glass sort dropdown** — replaced native `<select>` on articles index and category landing pages with styled glass dropdown (backdrop-blur, rounded-xl, animated chevron rotation, active state highlighting, keyboard accessible with Escape-to-close)
+
+#### Transitions & Polish
+- **Continue Reading fade transition** — smooth opacity + max-height CSS animation replaces instant display toggle
+- **Related topics section** — added `max-w-2xl` containment, white card backgrounds, subtle chevron arrows for visual refinement
+
+#### Admin Dashboard Polish
+- **Pipeline grid gaps** — 6px → 8px, standardized card padding to 0.625rem, increased stage header/body padding
+- **Agent panel typography** — headers 0.6875rem → 0.75rem with increased padding for breathing room
+- **Snappier animations** — tightened 0.3s → 0.2s across pipeline stages, cards, count badges, tab navigation
+
 ## [16.5.0] - 2026-04-01
 
 ### Added — Complete Cost Tracking
