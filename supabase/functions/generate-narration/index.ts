@@ -141,6 +141,11 @@ async function handleGenerate(body: Record<string, unknown>) {
 
   console.log(`[Narration] Generating for ${slug} (${introText.length} chars)`);
 
+  // Merge caller-provided voice settings over defaults
+  const voiceSettings = body.voiceSettings
+    ? { ...NARRATION_SETTINGS, ...(body.voiceSettings as Record<string, unknown>) }
+    : { ...NARRATION_SETTINGS };
+
   // Call ElevenLabs TTS API
   const ttsResponse = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${MODELS.NARRATION_VOICE}`,
@@ -153,7 +158,7 @@ async function handleGenerate(body: Record<string, unknown>) {
       body: JSON.stringify({
         text: introText,
         model_id: MODELS.NARRATION_MODEL,
-        voice_settings: { ...NARRATION_SETTINGS },
+        voice_settings: voiceSettings,
         output_format: "mp3_44100_128",
       }),
     }
@@ -223,6 +228,11 @@ async function handleBatch(body: Record<string, unknown>) {
   const db = supabase();
   const limit = (body.limit as number) || 20;
 
+  // Merge caller-provided voice settings over defaults
+  const voiceSettings = body.voiceSettings
+    ? { ...NARRATION_SETTINGS, ...(body.voiceSettings as Record<string, unknown>) }
+    : { ...NARRATION_SETTINGS };
+
   // Get published articles needing narration
   let query = db
     .from("articles")
@@ -278,7 +288,7 @@ async function handleBatch(body: Record<string, unknown>) {
           body: JSON.stringify({
             text: introText,
             model_id: MODELS.NARRATION_MODEL,
-            voice_settings: { ...NARRATION_SETTINGS },
+            voice_settings: voiceSettings,
             output_format: "mp3_44100_128",
           }),
         }

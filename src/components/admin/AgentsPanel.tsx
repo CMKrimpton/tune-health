@@ -735,12 +735,25 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
 
 // ─── 3b. Narration Agent ──────────────────────────────────────────────
 
+// Voice setting presets for ElevenLabs narrations
+const VOICE_PRESETS: Record<string, { label: string; desc: string; settings: { stability: number; similarity_boost: number; style: number; speed: number } }> = {
+  default:   { label: 'Default',   desc: 'Current production settings', settings: { stability: 0.3, similarity_boost: 0.6, style: 0.4, speed: 1.0 } },
+  anchor:    { label: 'Anchor',    desc: 'Steady, authoritative — NPR evening news', settings: { stability: 0.65, similarity_boost: 0.7, style: 0.2, speed: 0.95 } },
+  podcast:   { label: 'Podcast',   desc: 'Warm, conversational — like talking to a friend', settings: { stability: 0.35, similarity_boost: 0.55, style: 0.5, speed: 1.0 } },
+  dramatic:  { label: 'Dramatic',  desc: 'Expressive, cinematic — documentary narrator', settings: { stability: 0.2, similarity_boost: 0.5, style: 0.7, speed: 0.9 } },
+  clinical:  { label: 'Clinical',  desc: 'Measured, precise — medical journal review', settings: { stability: 0.75, similarity_boost: 0.8, style: 0.1, speed: 0.95 } },
+  storyteller: { label: 'Storyteller', desc: 'Engaging, varied pacing — longform narrative', settings: { stability: 0.25, similarity_boost: 0.6, style: 0.6, speed: 0.95 } },
+};
+
 function NarrationAgent({ apiBase }: { apiBase: string }) {
   const [articles, setArticles] = useState<Array<{ slug: string; title: string; narration_url: string | null }>>([]);
   const [selectedSlug, setSelectedSlug] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
   const [result, setResult] = useState<string | null>(null);
+  const [preset, setPreset] = useState('default');
+  const [voiceSettings, setVoiceSettings] = useState(VOICE_PRESETS.default.settings);
+  const [showSettings, setShowSettings] = useState(false);
   const { ask, ConfirmDialog: NarrationConfirm } = useConfirm();
 
   useEffect(() => {
@@ -775,7 +788,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       const res = await fetchWithTimeout(`${apiBase}/generate-narration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'batch', force }),
+        body: JSON.stringify({ action: 'batch', force, voiceSettings }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -791,7 +804,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
     } finally {
       setLoading(false);
     }
-  }, [apiBase]);
+  }, [apiBase, voiceSettings]);
 
   const runSingle = useCallback(async () => {
     if (!selectedSlug) return;
@@ -803,7 +816,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       const res = await fetchWithTimeout(`${apiBase}/generate-narration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', slug: selectedSlug }),
+        body: JSON.stringify({ action: 'generate', slug: selectedSlug, voiceSettings }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -817,7 +830,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
     } finally {
       setLoading(false);
     }
-  }, [apiBase, selectedSlug]);
+  }, [apiBase, selectedSlug, voiceSettings]);
 
   return (
     <Panel
@@ -844,6 +857,83 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
         <button className="agents-btn admin-nowrap" disabled={loading || !selectedSlug} onClick={runSingle}>
           Generate
         </button>
+      </div>
+
+      {/* Voice Settings */}
+      <div style={{ marginTop: 12 }}>
+        <button
+          className="agents-btn"
+          onClick={() => setShowSettings(!showSettings)}
+          style={{ fontSize: 12, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <span style={{ transform: showSettings ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.15s', display: 'inline-block' }}>&#9654;</span>
+          Voice Settings
+          <span style={{ fontSize: 10, opacity: 0.6, fontWeight: 400 }}>({VOICE_PRESETS[preset]?.label})</span>
+        </button>
+        {showSettings && (
+          <div style={{ marginTop: 10, padding: 14, borderRadius: 10, background: 'var(--admin-surface)', border: '1px solid var(--admin-border)' }}>
+            {/* Presets */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+              {Object.entries(VOICE_PRESETS).map(([key, p]) => (
+                <button
+                  key={key}
+                  className="agents-btn"
+                  onClick={() => { setPreset(key); setVoiceSettings(p.settings); }}
+                  style={{
+                    fontSize: 11,
+                    padding: '5px 10px',
+                    background: preset === key ? 'var(--admin-accent)' : 'var(--admin-surface-hover)',
+                    color: preset === key ? '#fff' : 'var(--admin-text-secondary)',
+                    borderRadius: 6,
+                    border: preset === key ? '1px solid var(--admin-accent)' : '1px solid var(--admin-border)',
+                  }}
+                  title={p.desc}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--admin-text-secondary)', marginBottom: 12, fontStyle: 'italic' }}>
+              {VOICE_PRESETS[preset]?.desc}
+            </p>
+
+            {/* Sliders */}
+            {([
+              { key: 'stability', label: 'Stability', desc: 'Low = expressive, varied. High = steady, consistent' },
+              { key: 'similarity_boost', label: 'Clarity', desc: 'Low = softer, ambient. High = crisp, close-mic' },
+              { key: 'style', label: 'Style', desc: 'Low = neutral read. High = dramatic performance' },
+              { key: 'speed', label: 'Speed', desc: '0.7 = deliberate. 1.0 = natural. 1.2 = brisk' },
+            ] as const).map(({ key, label, desc }) => (
+              <div key={key} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                  <label style={{ fontSize: 11, color: 'var(--admin-text-secondary)' }}>{label}</label>
+                  <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--admin-text-primary)', minWidth: 32, textAlign: 'right' }}>
+                    {voiceSettings[key].toFixed(2)}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={key === 'speed' ? 0.7 : 0}
+                  max={key === 'speed' ? 1.2 : 1}
+                  step={0.05}
+                  value={voiceSettings[key]}
+                  onChange={e => {
+                    const val = parseFloat(e.target.value);
+                    setVoiceSettings(prev => ({ ...prev, [key]: val }));
+                    setPreset('custom');
+                  }}
+                  style={{ width: '100%', accentColor: 'var(--admin-accent)' }}
+                  title={desc}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--admin-text-secondary)', opacity: 0.5, marginTop: 1 }}>
+                  <span>{key === 'speed' ? '0.70' : '0.00'}</span>
+                  <span style={{ fontStyle: 'italic' }}>{desc}</span>
+                  <span>{key === 'speed' ? '1.20' : '1.00'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Batch buttons */}
