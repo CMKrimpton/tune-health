@@ -808,9 +808,10 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
 
   const runSingle = useCallback(async () => {
     if (!selectedSlug) return;
+    const selectedTitle = articles.find(a => a.slug === selectedSlug)?.title || selectedSlug;
     setResult(null);
     setLoading(true);
-    setLoadingText(`Generating narration for "${selectedSlug}"...`);
+    setLoadingText(`Generating narration for "${selectedTitle}"...`);
 
     try {
       const res = await fetchWithTimeout(`${apiBase}/generate-narration`, {
@@ -822,8 +823,8 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       if (!res.ok) throw new Error(data.error || 'Generation failed');
 
       setResult(data.skipped
-        ? `Narration already exists for "${selectedSlug}"`
-        : `Narration generated for "${selectedSlug}" (${data.characters} chars)`
+        ? `Narration already exists for "${selectedTitle}"`
+        : `Narration generated for "${selectedTitle}" (${data.characters} chars)`
       );
     } catch (err) {
       setResult('Error: ' + ((err as Error).message || 'Unknown error'));
