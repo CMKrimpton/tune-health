@@ -897,11 +897,11 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
               {VOICE_PRESETS[preset]?.desc}
             </p>
 
-            {/* Sliders */}
+            {/* Sliders — ElevenLabs API parameter names */}
             {([
-              { key: 'stability', label: 'Stability', desc: 'Low = expressive, varied. High = steady, consistent' },
-              { key: 'similarity_boost', label: 'Clarity', desc: 'Low = softer, ambient. High = crisp, close-mic' },
-              { key: 'style', label: 'Style', desc: 'Low = neutral read. High = dramatic performance' },
+              { key: 'stability', label: 'Stability', desc: 'Low = broader emotional range. High = consistent, monotone' },
+              { key: 'similarity_boost', label: 'Similarity Boost', desc: 'Low = more variation. High = closer to original voice' },
+              { key: 'style', label: 'Style Exaggeration', desc: 'Low = neutral delivery. High = amplified speaker style' },
               { key: 'speed', label: 'Speed', desc: '0.7 = deliberate. 1.0 = natural. 1.2 = brisk' },
             ] as const).map(({ key, label, desc }) => (
               <div key={key} style={{ marginBottom: 10 }}>
