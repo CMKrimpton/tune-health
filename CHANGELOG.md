@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.3.1] - 2026-04-01
+
+### Fixed
+- **Admin narration regeneration** — single-article "Generate" now sends `force: true`, allowing admins to regenerate narration for articles that already have one
+
 ## [16.3.0] - 2026-04-01
 
 ### Improved — Admin Pipeline Layout Redesign

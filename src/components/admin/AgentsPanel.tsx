@@ -821,15 +821,12 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       const res = await fetchWithTimeout(`${apiBase}/generate-narration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', slug: selectedSlug, voiceSettings }),
+        body: JSON.stringify({ action: 'generate', slug: selectedSlug, force: true, voiceSettings }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
 
-      setResult(data.skipped
-        ? `Narration already exists for "${selectedTitle}"`
-        : `Narration generated for "${selectedTitle}" (${data.characters} chars)`
-      );
+      setResult(`Narration generated for "${selectedTitle}" (${data.characters} chars)`);
     } catch (err) {
       setResult('Error: ' + ((err as Error).message || 'Unknown error'));
     } finally {
