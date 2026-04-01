@@ -1,0 +1,122 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import Newsletter from '../../components/Newsletter.astro';
+import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
+import SideNav from '../../components/SideNav.astro';
+import { getAllCollections, type CuratedCollection } from '../../utils/collections';
+import { getArticles, getArticleGradientStyle, formatPublishDateShort } from '../../utils/articles';
+
+export async function getStaticPaths() {
+  const collections = getAllCollections();
+  return collections.map(c => ({
+    params: { slug: c.slug },
+    props: { collection: c },
+  }));
+}
+
+const { collection } = Astro.props as { collection: CuratedCollection };
+const allArticles = await getArticles();
+const articleMap = new Map(allArticles.map(a => [a.slug, a]));
+
+// Resolve articles in editorial order, filtering out any missing/drafted ones
+const articles = collection.articleSlugs
+  .map(slug => articleMap.get(slug))
+  .filter(Boolean);
+
+const totalReadTime = articles.reduce((sum, a) => sum + (a?.readTime || 0), 0);
+
+// Other collections for "More Collections" footer
+const allCollections = getAllCollections().filter(c => c.slug !== collection.slug);
+---
+
+<BaseLayout
+  title={`${collection.title} | Collections | alumi news`}
+  description={collection.description}
+>
+  <Header slot="header" />
+
+  <!-- Hero -->
+  <section class="collection-hero" style={`background: ${collection.gradient.pattern}, ${collection.gradient.bg};`}>
+    <div class="container-editorial relative z-10">
+      <div class="max-w-2xl">
+        <a href="/collections" class="inline-flex items-center gap-1 text-white/60 text-xs font-medium uppercase tracking-widest mb-4 hover:text-white/80 transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke-width="2"/></svg>
+          Collections
+        </a>
+        <h1 class="font-serif text-display-2 font-semibold text-white mb-4 leading-tight">{collection.title}</h1>
+        <p class="font-body text-white/80 leading-relaxed max-w-lg mb-6">{collection.longDescription}</p>
+        <div class="flex items-center gap-4 text-sm text-white/50">
+          <span>{articles.length} articles</span>
+          <span>·</span>
+          <span>{totalReadTime} min total</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Article List (ordered, numbered) -->
+  <section class="py-12 md:py-16">
+    <div class="container-editorial">
+      <div class="max-w-3xl mx-auto space-y-4">
+        {articles.map((article, i) => article && (
+          <a href={article.href} class="group flex gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-lg transition-[border-color,box-shadow] duration-300 reveal">
+            <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500 font-serif font-semibold text-lg flex items-center justify-center">{i + 1}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 text-xs mb-1">
+                <span class="font-semibold uppercase tracking-wide text-primary-600">{article.category}</span>
+                <span class="text-stone-400">{article.readTime} min</span>
+              </div>
+              <h3 class="font-serif text-lg font-semibold group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">{article.title}</h3>
+              <p class="text-sm text-stone-500 dark:text-stone-400 line-clamp-1 mt-1 hidden sm:block">{article.description}</p>
+            </div>
+            <div class="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden hidden sm:block" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+              {article.heroImage && (
+                <img src={article.heroImage} alt="" class="w-full h-full object-cover" loading="lazy" />
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- More Collections -->
+  {allCollections.length > 0 && (
+    <section class="py-12 md:py-16 bg-stone-50 dark:bg-stone-900/30">
+      <div class="container-editorial">
+        <div class="flex items-center gap-6 mb-8">
+          <span class="section-label">More Collections</span>
+          <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {allCollections.slice(0, 3).map((c) => (
+            <a href={`/collections/${c.slug}`} class="group block p-5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-lg transition-[border-color,box-shadow] duration-300">
+              <h3 class="font-serif text-base font-semibold mb-1 group-hover:text-primary-600 transition-colors">{c.title}</h3>
+              <p class="text-sm text-stone-500 dark:text-stone-400 line-clamp-2">{c.description}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <Newsletter variant="compact" />
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+  <SideNav />
+</BaseLayout>
+
+<style>
+  .collection-hero {
+    @apply pt-32 md:pt-36 pb-12 md:pb-16 relative;
+  }
+
+  .collection-hero::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%);
+  }
+</style>

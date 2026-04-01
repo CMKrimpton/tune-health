@@ -24,6 +24,7 @@ export interface Article {
   sortOrder?: number;
   series?: string;
   seriesOrder?: number;
+  author: { name: string; role: string };
 }
 
 function mapArticle(article: CollectionEntry<'articles'>): Article {
@@ -47,6 +48,7 @@ function mapArticle(article: CollectionEntry<'articles'>): Article {
     href: `/articles/${article.id.replace('.json', '')}`,
     series: article.data.series,
     seriesOrder: article.data.seriesOrder,
+    author: article.data.author,
   };
 }
 
@@ -266,6 +268,23 @@ export async function getAllTags(): Promise<{ tag: string; count: number }[]> {
 export async function getSeriesTotal(seriesName: string): Promise<number> {
   const articles = await getSeriesArticles(seriesName);
   return articles.length;
+}
+
+/**
+ * Get author initials for avatar display (e.g. "Linda Carnes" → "lc")
+ */
+export function getAuthorInitials(name: string): string {
+  const parts = name.split(' ').filter(Boolean);
+  if (parts.length === 0) return 'an';
+  return parts.map((p) => p[0]).join('').toLowerCase().slice(0, 2);
+}
+
+/**
+ * Get all published articles for a specific category
+ */
+export async function getArticlesForCategory(category: string): Promise<Article[]> {
+  const articles = await getArticles();
+  return articles.filter((a) => a.category === category);
 }
 
 /**

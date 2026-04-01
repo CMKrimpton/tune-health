@@ -1,27 +1,32 @@
 ---
 import { getCategoriesWithCounts } from '../utils/articles';
+import { getCategorySlug } from '../utils/category-domains';
 
 const categoriesWithCounts = await getCategoriesWithCounts();
 const currentPath = Astro.url.pathname;
-const currentTopic = Astro.url.searchParams.get('topic');
 const isHome = currentPath === '/' || currentPath === '/index.html';
 
 // Determine active state
 const isArticlesPage = currentPath.startsWith('/articles');
+const isTopicsPage = currentPath.startsWith('/topics/');
+const currentTopicSlug = isTopicsPage ? currentPath.split('/').pop() : null;
 ---
 
 <nav class:list={['topic-nav', { 'topic-nav-hidden': isHome }]} id="topicNav" aria-label="Topics">
   <div class="topic-nav-inner container-editorial">
     <a
       href="/articles"
-      class:list={['topic-nav-link', { active: isArticlesPage && !currentTopic }]}
+      class:list={['topic-nav-link', { active: isArticlesPage && !isTopicsPage }]}
     >All</a>
-    {categoriesWithCounts.map(({ name }) => (
-      <a
-        href={`/articles?topic=${encodeURIComponent(name)}`}
-        class:list={['topic-nav-link', { active: currentTopic === name }]}
-      >{name}</a>
-    ))}
+    {categoriesWithCounts.map(({ name }) => {
+      const slug = getCategorySlug(name);
+      return (
+        <a
+          href={`/topics/${slug}`}
+          class:list={['topic-nav-link', { active: currentTopicSlug === slug }]}
+        >{name}</a>
+      );
+    })}
   </div>
 </nav>
 

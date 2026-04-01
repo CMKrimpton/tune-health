@@ -3,11 +3,13 @@
  * SideNav - Glass sidebar that reveals on left edge hover
  * Premium editorial navigation experience
  */
-import { getArticles, getCategories, getAllSeries, truncate, isNewArticle } from '../utils/articles';
+import { getArticles, getCategories, getCategoriesWithCounts, getAllSeries, truncate, isNewArticle } from '../utils/articles';
+import { CATEGORY_DOMAINS, getCategorySlug } from '../utils/category-domains';
 
 const articles = await getArticles();
 const featuredArticles = articles.slice(0, 5);
-const categories = await getCategories();
+const categoriesWithCounts = await getCategoriesWithCounts();
+const countMap = new Map(categoriesWithCounts.map(c => [c.name, c.count]));
 const publishedSeries = await getAllSeries();
 ---
 
@@ -44,22 +46,39 @@ const publishedSeries = await getAllSeries();
                 <span class="side-nav-link-text">Deep Dives</span>
               </a>
             </li>
+            <li>
+              <a href="/start-here" class="side-nav-link">
+                <span class="side-nav-link-text">Start Here</span>
+              </a>
+            </li>
+            <li>
+              <a href="/collections" class="side-nav-link">
+                <span class="side-nav-link-text">Collections</span>
+              </a>
+            </li>
           </ul>
         </div>
 
-        <!-- Topics -->
-        <div class="side-nav-section">
-          <span class="side-nav-label">Topics</span>
-          <ul class="side-nav-links">
-            {categories.map((cat) => (
-              <li>
-                <a href={`/articles?topic=${cat.toLowerCase().replace(/\s+/g, '-')}`} class="side-nav-link">
-                  <span class="side-nav-link-text">{cat}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <!-- Topics — grouped by domain -->
+        {CATEGORY_DOMAINS.map((domain) => {
+          const activeCats = domain.categories.filter(c => (countMap.get(c) || 0) > 0);
+          if (activeCats.length === 0) return null;
+          return (
+            <div class="side-nav-section">
+              <span class="side-nav-label">{domain.label}</span>
+              <ul class="side-nav-links">
+                {activeCats.map((cat) => (
+                  <li>
+                    <a href={`/topics/${getCategorySlug(cat)}`} class="side-nav-link">
+                      <span class="side-nav-link-text">{cat}</span>
+                      <span class="side-nav-meta">{countMap.get(cat)}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
 
         <!-- Featured -->
         <div class="side-nav-section">

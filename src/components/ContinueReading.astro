@@ -1,0 +1,69 @@
+---
+/**
+ * ContinueReading — shows in-progress articles on the homepage.
+ * Entirely client-side (reads localStorage). Hidden if no articles in progress.
+ */
+---
+
+<section id="continueReading" class="py-12 md:py-16" style="display: none;">
+  <div class="container-editorial">
+    <div class="flex items-center gap-6 mb-8">
+      <span class="section-label">Continue Reading</span>
+      <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
+    </div>
+    <div id="continueReadingCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </div>
+</section>
+
+<script>
+  function initContinueReading() {
+    const STORAGE_KEY = 'alumi-reading-progress';
+    const section = document.getElementById('continueReading');
+    const container = document.getElementById('continueReadingCards');
+    if (!section || !container) return;
+
+    try {
+      const progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const inProgress = Object.values(progress)
+        .filter((p: any) => p.scrollPercent >= 5 && p.scrollPercent < 90)
+        .sort((a: any, b: any) => b.lastRead - a.lastRead)
+        .slice(0, 3);
+
+      if (inProgress.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = '';
+      container.innerHTML = '';
+
+      inProgress.forEach((p: any) => {
+        const card = document.createElement('a');
+        card.href = `/articles/${p.slug}`;
+        card.className = 'group flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-card transition-[border-color,box-shadow] duration-200';
+        card.innerHTML = `
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">${p.category}</span>
+              <span class="text-xs text-stone-400">${p.readTime} min</span>
+            </div>
+            <h3 class="font-serif text-base font-semibold group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">${p.title}</h3>
+            <div class="mt-2 h-1 rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
+              <div class="h-full rounded-full bg-primary-500 transition-[width]" style="width: ${p.scrollPercent}%"></div>
+            </div>
+            <span class="text-[10px] text-stone-400 mt-1 block">${p.scrollPercent}% read</span>
+          </div>
+          <svg class="w-5 h-5 text-stone-300 dark:text-stone-600 group-hover:text-primary-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/>
+          </svg>
+        `;
+        container.appendChild(card);
+      });
+    } catch {
+      section.style.display = 'none';
+    }
+  }
+
+  initContinueReading();
+  document.addEventListener('astro:after-swap', initContinueReading);
+</script>

@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SideNav from '../components/SideNav.astro';
 import AppPromo from '../components/AppPromo.astro';
+import ContinueReading from '../components/ContinueReading.astro';
 import { getArticles, getComingSoonArticles, getFeaturedArticles, formatPublishDateShort, getArticleGradientStyle, getAllSeries, getCategoriesWithCounts, isNewArticle } from '../utils/articles';
 
 const allArticles = await getArticles();
@@ -146,6 +147,9 @@ const featuredLabel = heroArticle ? (FEATURED_LABELS[heroArticle.category] || "E
       </div>
     </section>
   )}
+
+  <!-- Continue Reading (client-side, hidden if no in-progress articles) -->
+  <ContinueReading />
 
   <!-- Latest Articles Grid -->
   <section class="py-16 md:py-24" id="latest">

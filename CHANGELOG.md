@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.0.0] - 2026-03-31
+
+### Added — Ultra UX Overhaul: Categories, Navigation, Discovery (17 files: 9 new, 8 modified)
+
+#### Category Domain System
+- **4 editorial domains** group 9 categories: Mind (Neuroscience, Mental Health, Sleep Science), Body (Nutrition, Fitness, Longevity), Medicine (Clinical Evidence, Pharmacology), Environment (Environmental Health)
+- **Per-category editorial metadata** — tagline + description for landing pages and navigation
+- **Domain helpers** — `getDomainForCategory()`, `getCategorySlug()`, `getCategoryFromSlug()`
+
+#### Category Landing Pages (`/topics/[slug]`)
+- **9 category pages** generated via Astro dynamic routes — each with gradient hero, editorial tagline/description, article count, featured article lead card, sorted article grid, related topics footer
+- **Sort dropdown** on each category page (Newest, Oldest, Shortest, Longest, A–Z)
+- **"New" + narration badges** on all category page cards
+
+#### Navigation Redesign
+- **Dropdown menu** — flat topic pills replaced with 4-column domain-grouped layout, each category shows article count badge. Added "Start Here" + "Collections" to sections grid (6 items total). Widened to `max-w-3xl`
+- **SideNav** — topics grouped by domain with article counts, "Start Here" + "Collections" links added
+- **TopicNav** — links now point to `/topics/[slug]` routes instead of `?topic=` query params
+- **Breadcrumbs** — article pages link to `/topics/[slug]` instead of `?topic=`
+
+#### Start Here Page (`/start-here`)
+- **Curated onboarding** for new readers — 5 handpicked articles, numbered, with editorial intro
+- **"How We Work"** section linking to editorial standards
+- **Browse by Interest** — 4 domain cards with icons and category listings
+- **"Ready to dig in?"** CTA to articles + collections
+
+#### Curated Collections (`/collections`, `/collections/[slug]`)
+- **5 themed collections**: "Your Body Is Lying to You", "The Invisible Exposures", "Follow the Money", "Brain Deep Cuts", "The Sleep Files"
+- **Collections index** — gradient cards with article count + total read time
+- **Collection detail** — numbered article list in editorial order, gradient hero, related collections footer
+
+#### Author Bylines
+- **Dynamic author names** — article hero and footer card now show `author.name` and `author.role` from article JSON (previously hardcoded "alumi news Editorial")
+- **Author initials** in avatar circle (e.g., "lc" for Linda Carnes instead of generic "an")
+- **`getAuthorInitials()` helper** added to articles.ts
+
+#### Reading Progress
+- **Scroll tracking** — `ReadingProgressTracker` component saves scroll position per article to localStorage (throttled via rAF, records after 5%, marks complete at 90%)
+- **"Continue Reading" on homepage** — shows up to 3 in-progress articles with progress bar and percentage, auto-hidden when empty
+
 ## [15.7.0] - 2026-03-31
 
 ### Added — Content Discovery & Article Presentation UX (10 files)

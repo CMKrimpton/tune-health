@@ -1,0 +1,152 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Newsletter from '../components/Newsletter.astro';
+import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
+import SideNav from '../components/SideNav.astro';
+import { getArticles, getArticleGradientStyle, formatPublishDateShort } from '../utils/articles';
+import { CATEGORY_DOMAINS, getCategorySlug } from '../utils/category-domains';
+
+const allArticles = await getArticles();
+
+// Editorially curated picks that represent the voice of alumi news
+const CURATED_SLUGS = [
+  'your-doctor-cant-answer-that',
+  'vagus-nerve',
+  'fluoride-debate-science-lost',
+  'serotonin-myth-depression-ssri',
+  'microplastics-brain',
+];
+
+const curatedArticles = CURATED_SLUGS
+  .map(slug => allArticles.find(a => a.slug === slug))
+  .filter(Boolean);
+---
+
+<BaseLayout
+  title="Start Here | alumi news"
+  description="New to alumi news? Start with these articles to understand what we do and why we do it."
+>
+  <Header slot="header" />
+
+  <!-- Hero -->
+  <section class="pt-32 md:pt-36 pb-12 md:pb-16 bg-stone-50 dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800">
+    <div class="container-editorial">
+      <div class="max-w-2xl">
+        <span class="section-label mb-4 block">Welcome</span>
+        <h1 class="font-serif text-display-2 font-semibold mb-4 leading-tight">
+          New here?<br/>
+          <span class="italic font-normal text-primary-600">Start with these.</span>
+        </h1>
+        <p class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-lg">
+          We're alumi news — an independent health journalism site. No sponsors, no supplements to sell, no sacred cows.
+          Just evidence, wherever it leads.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Curated Picks -->
+  <section class="py-12 md:py-16">
+    <div class="container-editorial">
+      <div class="flex items-center gap-6 mb-8">
+        <span class="section-label">The Five-Minute Intro</span>
+        <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
+      </div>
+      <p class="font-body text-stone-600 dark:text-stone-400 mb-10 max-w-2xl">
+        These five articles represent what alumi news is about — challenging assumptions, following evidence,
+        and asking the questions that don't get asked enough.
+      </p>
+
+      <div class="space-y-6">
+        {curatedArticles.map((article, i) => article && (
+          <a href={article.href} class="group block reveal">
+            <div class="grid sm:grid-cols-[200px_1fr] gap-5 bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-[border-color,box-shadow] duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700">
+              <div class="relative aspect-[16/10] sm:aspect-auto overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+                {article.heroImage && (
+                  <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading={i < 2 ? 'eager' : 'lazy'} />
+                )}
+                <span class="absolute top-3 left-3 w-8 h-8 rounded-full bg-primary-600 text-white text-sm font-bold flex items-center justify-center">{i + 1}</span>
+              </div>
+              <div class="p-5 sm:py-6 flex flex-col justify-center">
+                <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-widest mb-2">
+                  <span class="text-primary-600">{article.category}</span>
+                  <span class="text-stone-300 dark:text-stone-600">/</span>
+                  <span class="text-stone-500">{article.readTime} min read</span>
+                </div>
+                <h3 class="font-serif text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors leading-snug">{article.title}</h3>
+                <p class="font-body text-sm text-stone-500 dark:text-stone-400 line-clamp-2">{article.description}</p>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- How We Work -->
+  <section class="py-12 md:py-16 bg-stone-900 dark:bg-stone-950 text-white">
+    <div class="container-editorial">
+      <div class="max-w-2xl mx-auto text-center">
+        <span class="section-label !text-primary-400 mb-4 block">How We Work</span>
+        <h2 class="font-serif text-heading-2 font-semibold mb-6">Evidence Over Allegiance</h2>
+        <p class="font-body text-stone-300 mb-8 leading-relaxed">
+          Every article is researched with primary sources, reviewed for independence by an adversarial AI system,
+          and held to the same standard whether the claim comes from a peer-reviewed journal or a naturopathic clinic.
+          We don't do "balanced for the sake of balance" — we follow the data.
+        </p>
+        <a href="/howwewrite" class="inline-flex items-center gap-2 text-sm font-semibold text-primary-400 hover:text-primary-300 transition-colors">
+          Read our editorial standards
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Browse by Domain -->
+  <section class="py-12 md:py-16">
+    <div class="container-editorial">
+      <div class="flex items-center gap-6 mb-8">
+        <span class="section-label">Browse by Interest</span>
+        <div class="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {CATEGORY_DOMAINS.map((domain) => (
+          <a href={`/topics/${getCategorySlug(domain.categories[0])}`} class="group block p-6 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-lg transition-[border-color,box-shadow] duration-300">
+            <svg class="w-6 h-6 text-primary-600 dark:text-primary-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d={domain.iconPath} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h3 class="font-serif text-lg font-semibold mb-1 group-hover:text-primary-600 transition-colors">{domain.label}</h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 mb-3">{domain.description}</p>
+            <span class="text-xs text-stone-400">{domain.categories.join(' · ')}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-12 md:py-16 bg-stone-50 dark:bg-stone-900/30">
+    <div class="container-editorial text-center">
+      <h2 class="font-serif text-heading-2 font-semibold mb-4">Ready to dig in?</h2>
+      <p class="font-body text-stone-600 dark:text-stone-400 mb-8 max-w-md mx-auto">
+        Browse all {allArticles.length} articles, explore curated collections, or subscribe for weekly insights.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="/articles" class="btn-primary">
+          <span>Browse All Articles</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/></svg>
+        </a>
+        <a href="/collections" class="btn-secondary">Collections</a>
+      </div>
+    </div>
+  </section>
+
+  <Newsletter variant="compact" />
+
+  <Footer slot="footer" />
+  <CommandPaletteWrapper />
+  <SideNav />
+</BaseLayout>

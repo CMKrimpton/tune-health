@@ -15,8 +15,10 @@ import FloatingShareBar from '../components/FloatingShareBar.astro';
 import HighlightShare from '../components/HighlightShare.astro';
 import SideNav from '../components/SideNav.astro';
 import AudioNarration from '../components/AudioNarration.astro';
+import ReadingProgressTracker from '../components/ReadingProgressTracker.astro';
 import { fade, slide } from 'astro:transitions';
-import { getRelatedArticles, getArticleGradientStyle, getArticles, getNextInCategory, formatPublishDateShort } from '../utils/articles';
+import { getRelatedArticles, getArticleGradientStyle, getArticles, getNextInCategory, formatPublishDateShort, getAuthorInitials } from '../utils/articles';
+import { getCategorySlug } from '../utils/category-domains';
 
 interface Props {
   title: string;
@@ -50,6 +52,9 @@ const narrationUrl = currentArticle?.narrationUrl;
 const articleSeries = currentArticle?.series;
 const updatedDate = currentArticle?.updatedDate;
 const hasBeenUpdated = updatedDate && updatedDate !== currentArticle?.publishDate;
+const authorName = currentArticle?.author?.name || 'alumi news Editorial';
+const authorRole = currentArticle?.author?.role || 'Medical Review Board';
+const authorInitials = getAuthorInitials(authorName);
 const nextArticle = await getNextInCategory(slug);
 ---
 
@@ -87,7 +92,7 @@ const nextArticle = await getNextInCategory(slug);
         items={[
           { label: 'Home', href: '/' },
           { label: 'Articles', href: '/articles' },
-          { label: category, href: `/articles?topic=${category.toLowerCase().replace(/\s+/g, '-')}` },
+          { label: category, href: `/topics/${getCategorySlug(category)}` },
         ]}
         class="mb-8 justify-center"
       />
@@ -134,11 +139,11 @@ const nextArticle = await getNextInCategory(slug);
 
         <div class="flex items-center justify-center gap-3">
           <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-semibold">
-            an
+            {authorInitials}
           </div>
           <div class="text-left">
-            <span class="block text-sm font-semibold">alumi news Editorial</span>
-            <span class="block text-xs text-stone-500">Medical Review Board</span>
+            <span class="block text-sm font-semibold">{authorName}</span>
+            <span class="block text-xs text-stone-500">{authorRole}</span>
           </div>
         </div>
       </div>
@@ -206,12 +211,12 @@ const nextArticle = await getNextInCategory(slug);
 
         <!-- Author Card -->
         <div class="author-card mt-10 reveal">
-          <div class="author-avatar">an</div>
+          <div class="author-avatar">{authorInitials}</div>
           <div class="flex-1">
-            <span class="block font-semibold mb-1">alumi news Editorial</span>
+            <span class="block font-semibold mb-1">{authorName}</span>
+            <span class="block text-xs text-stone-500 mb-1">{authorRole}</span>
             <p class="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              Our editorial team reviews the latest research across health and medicine,
-              synthesizing evidence into accessible, actionable insights.
+              Reviewed by the alumi news editorial team. Every article is independently verified.
             </p>
           </div>
         </div>
@@ -278,7 +283,7 @@ const nextArticle = await getNextInCategory(slug);
         <!-- Browse category CTA -->
         <div class="mt-8 text-center reveal">
           <a
-            href={`/articles?topic=${category.toLowerCase().replace(/\s+/g, '-')}`}
+            href={`/topics/${getCategorySlug(category)}`}
             class="inline-flex items-center gap-2 text-sm font-medium text-stone-500 dark:text-stone-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             <span>More in {category}</span>
@@ -298,6 +303,7 @@ const nextArticle = await getNextInCategory(slug);
   <FloatingTOC />
   <FloatingShareBar title={title} url={`/articles/${slug}`} description={description} />
   <HighlightShare articleUrl={`/articles/${slug}`} />
+  <ReadingProgressTracker slug={slug} title={title} category={category} readTime={currentArticle?.readTime || 0} />
   <CommandPaletteWrapper />
   <SideNav />
 </BaseLayout>
