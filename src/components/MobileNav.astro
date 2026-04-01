@@ -26,10 +26,13 @@
     </svg>
     <span class="mobile-nav-label">Search</span>
   </button>
-  <a href="/reading-list" class="mobile-nav-item" data-nav="reading-list">
-    <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+  <a href="/reading-list" class="mobile-nav-item" data-nav="reading-list" id="mobileNavSaved">
+    <span class="mobile-nav-icon-wrap">
+      <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="mobile-nav-count" id="mobileNavReadingCount" style="display: none;"></span>
+    </span>
     <span class="mobile-nav-label">Saved</span>
   </a>
   <a href="/deep-dives" class="mobile-nav-item" data-nav="deep-dives">
@@ -125,6 +128,27 @@
     background: theme('colors.primary.900 / 30%');
   }
 
+  .mobile-nav-icon-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .mobile-nav-count {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    background: theme('colors.primary.600');
+    color: white;
+  }
+
   .mobile-nav-icon {
     width: 22px;
     height: 22px;
@@ -173,6 +197,23 @@
         item.setAttribute('aria-current', 'page');
       }
     });
+
+    // Reading list count badge
+    function updateMobileReadingCount() {
+      const countEl = document.getElementById('mobileNavReadingCount');
+      if (!countEl) return;
+      try {
+        const list = JSON.parse(localStorage.getItem('alumi-reading-list') || '[]');
+        if (list.length > 0) {
+          countEl.textContent = String(list.length);
+          countEl.style.display = '';
+        } else {
+          countEl.style.display = 'none';
+        }
+      } catch { countEl.style.display = 'none'; }
+    }
+    updateMobileReadingCount();
+    window.addEventListener('storage', updateMobileReadingCount, { signal });
 
     // Search triggers command palette
     document.getElementById('mobileSearchBtn')?.addEventListener('click', () => {

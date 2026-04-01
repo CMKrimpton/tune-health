@@ -3,7 +3,7 @@
  * SideNav - Glass sidebar that reveals on left edge hover
  * Premium editorial navigation experience
  */
-import { getArticles, getCategories, getAllSeries, truncate } from '../utils/articles';
+import { getArticles, getCategories, getAllSeries, truncate, isNewArticle } from '../utils/articles';
 
 const articles = await getArticles();
 const featuredArticles = articles.slice(0, 5);
@@ -69,7 +69,9 @@ const publishedSeries = await getAllSeries();
               <li>
                 <a href={article.href} class="side-nav-link">
                   <span class="side-nav-link-text">{truncate(article.title, 30)}</span>
-                  <span class="side-nav-badge">New</span>
+                  {isNewArticle(article.publishDate) && (
+                    <span class="side-nav-badge">New</span>
+                  )}
                 </a>
               </li>
             ))}
@@ -103,11 +105,12 @@ const publishedSeries = await getAllSeries();
           <span class="side-nav-label">More</span>
           <ul class="side-nav-links">
             <li>
-              <a href="/reading-list" class="side-nav-link">
+              <a href="/reading-list" class="side-nav-link" id="sideNavReadingList">
                 <svg class="w-3.5 h-3.5 flex-shrink-0 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <span class="side-nav-link-text">Reading List</span>
+                <span class="side-nav-reading-count" id="sideNavReadingCount" style="display: none;"></span>
               </a>
             </li>
             <li>
@@ -231,6 +234,14 @@ const publishedSeries = await getAllSeries();
     @apply text-[10px] text-stone-400 dark:text-stone-500;
   }
 
+  .side-nav-reading-count {
+    @apply text-[10px] font-semibold;
+    @apply min-w-[18px] h-[18px] px-1 rounded-full;
+    @apply bg-primary-100 text-primary-700;
+    @apply dark:bg-primary-900/30 dark:text-primary-400;
+    @apply inline-flex items-center justify-center;
+  }
+
   .side-nav-actions {
     @apply flex items-center gap-2 mb-3;
   }
@@ -305,6 +316,23 @@ const publishedSeries = await getAllSeries();
     document.getElementById('sideNavTheme')?.addEventListener('click', () => {
       (window as unknown as { toggleTheme?: () => void }).toggleTheme?.();
     }, { signal });
+
+    // Reading list count badge
+    function updateReadingCount() {
+      const countEl = document.getElementById('sideNavReadingCount');
+      if (!countEl) return;
+      try {
+        const list = JSON.parse(localStorage.getItem('alumi-reading-list') || '[]');
+        if (list.length > 0) {
+          countEl.textContent = String(list.length);
+          countEl.style.display = '';
+        } else {
+          countEl.style.display = 'none';
+        }
+      } catch { countEl.style.display = 'none'; }
+    }
+    updateReadingCount();
+    window.addEventListener('storage', updateReadingCount, { signal });
 
     // Active page tracking — cleaner matching logic
     const currentPath = window.location.pathname;

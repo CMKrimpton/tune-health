@@ -71,11 +71,20 @@ const articleMap = Object.fromEntries(
 
         <!-- Article list -->
         <div id="readingListArticles" class="space-y-4 hidden">
-          <div class="flex items-center justify-between mb-2">
-            <span id="readingListCount" class="text-sm text-stone-500 dark:text-stone-400" aria-live="polite"></span>
-            <button id="clearReadingList" class="text-xs font-medium text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2 rounded">
-              Clear all
-            </button>
+          <div class="flex items-center justify-between mb-2 gap-4">
+            <span id="readingListCount" class="text-sm text-stone-500 dark:text-stone-400 whitespace-nowrap" aria-live="polite"></span>
+            <div class="flex items-center gap-3">
+              <select id="readingListSort" class="px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-xs focus:outline-none focus:border-primary-500 transition-[border-color,box-shadow] cursor-pointer" aria-label="Sort reading list">
+                <option value="saved">Date Saved</option>
+                <option value="readtime-asc">Shortest First</option>
+                <option value="readtime-desc">Longest First</option>
+                <option value="category">By Category</option>
+                <option value="az">A — Z</option>
+              </select>
+              <button id="clearReadingList" class="text-xs font-medium text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2 rounded whitespace-nowrap">
+                Clear all
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -90,6 +99,7 @@ const articleMap = Object.fromEntries(
       const listContainer = document.getElementById('readingListArticles');
       const countEl = document.getElementById('readingListCount');
       const clearBtn = document.getElementById('clearReadingList');
+      const sortSelect = document.getElementById('readingListSort');
 
       if (!loading || !empty || !listContainer) return;
 
@@ -106,7 +116,7 @@ const articleMap = Object.fromEntries(
       }
 
       function renderList() {
-        const slugs = getReadingList();
+        let slugs = getReadingList();
         loading.classList.add('hidden');
 
         if (slugs.length === 0) {
@@ -117,7 +127,30 @@ const articleMap = Object.fromEntries(
 
         empty.classList.add('hidden');
         listContainer.classList.remove('hidden');
-        countEl.textContent = `${slugs.length} saved article${slugs.length !== 1 ? 's' : ''}`;
+
+        // Calculate total read time
+        const totalMinutes = slugs.reduce((sum, slug) => {
+          const a = articleMap[slug];
+          return sum + (a ? a.readTime : 0);
+        }, 0);
+        countEl.textContent = `${slugs.length} saved · ${totalMinutes} min total`;
+
+        // Sort slugs based on selected option
+        const sortBy = sortSelect?.value || 'saved';
+        if (sortBy !== 'saved') {
+          slugs = [...slugs].sort((a, b) => {
+            const artA = articleMap[a];
+            const artB = articleMap[b];
+            if (!artA || !artB) return 0;
+            switch (sortBy) {
+              case 'readtime-asc': return artA.readTime - artB.readTime;
+              case 'readtime-desc': return artB.readTime - artA.readTime;
+              case 'category': return artA.category.localeCompare(artB.category);
+              case 'az': return artA.title.localeCompare(artB.title);
+              default: return 0;
+            }
+          });
+        }
 
         // Clear existing cards (keep header)
         const existingCards = listContainer.querySelectorAll('.reading-list-card');
@@ -168,6 +201,9 @@ const articleMap = Object.fromEntries(
           });
         });
       }
+
+      // Sort change handler
+      sortSelect?.addEventListener('change', renderList);
 
       // Clear all handler
       clearBtn?.addEventListener('click', () => {

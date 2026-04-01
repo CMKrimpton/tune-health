@@ -714,6 +714,28 @@ body.menu-open {
   @apply p-4 md:p-5 flex flex-col flex-1;
 }
 
+/* Discovery badges on article cards */
+.card-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded;
+  @apply leading-tight;
+}
+
+.card-badge-new {
+  @apply bg-primary-600 text-white;
+}
+
+.card-badge-series {
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(4px);
+  @apply text-white;
+}
+
+.card-badge-narration {
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(4px);
+  @apply text-white;
+}
+
 /* Large Card Variant — wider card, same height as others */
 .article-card-large {
   @apply lg:col-span-2 relative;

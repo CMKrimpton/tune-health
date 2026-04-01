@@ -10,8 +10,10 @@ export interface Article {
   description: string;
   category: string;
   publishDate: string;
+  updatedDate?: string;
   readTime: number;
   tags: string[];
+  keywords: string[];
   gradient: { from: string; to: string };
   featured: boolean;
   heroImage?: string;
@@ -31,8 +33,10 @@ function mapArticle(article: CollectionEntry<'articles'>): Article {
     description: article.data.description,
     category: article.data.category,
     publishDate: article.data.publishDate,
+    updatedDate: article.data.updatedDate,
     readTime: article.data.readTime,
     tags: article.data.tags,
+    keywords: article.data.keywords ?? [],
     gradient: article.data.gradient,
     featured: article.data.featured,
     heroImage: article.data.heroImage,
@@ -230,6 +234,38 @@ export async function getNextInCategory(currentSlug: string): Promise<Article | 
 export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
   return str.slice(0, maxLength) + '...';
+}
+
+/**
+ * Check if an article was published within the last N days
+ */
+export function isNewArticle(publishDate: string, days = 7): boolean {
+  const published = new Date(publishDate);
+  const now = new Date();
+  const diffMs = now.getTime() - published.getTime();
+  return diffMs < days * 24 * 60 * 60 * 1000;
+}
+
+/**
+ * Get all unique tags across published articles, sorted by frequency
+ */
+export async function getAllTags(): Promise<{ tag: string; count: number }[]> {
+  const articles = await getArticles();
+  const tagCount = new Map<string, number>();
+  articles.forEach((a) => {
+    a.tags.forEach((t) => tagCount.set(t, (tagCount.get(t) || 0) + 1));
+  });
+  return Array.from(tagCount.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Get total article count for a series
+ */
+export async function getSeriesTotal(seriesName: string): Promise<number> {
+  const articles = await getSeriesArticles(seriesName);
+  return articles.length;
 }
 
 /**

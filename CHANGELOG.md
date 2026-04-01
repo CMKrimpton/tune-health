@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [15.7.0] - 2026-03-31
+
+### Added — Content Discovery & Article Presentation UX (10 files)
+
+#### Clickable Tags & Tag Filtering
+- **Article tags are now links** — every tag on article pages links to `/articles?tag=X`, replacing static spans
+- **Tag filtering on articles index** — `?tag=` URL param filters articles by tag with active filter pill and clear button
+- **Keywords in search** — article search now matches against the `keywords` metadata field (previously title + tags only)
+
+#### Discovery Badges
+- **"New" badge** — red pill badge on article cards for articles published within 7 days (homepage, articles index, category overview)
+- **Audio narration badge** — speaker icon on cards with `narrationUrl` (homepage, articles index, category overview)
+- **Series indicator** — "Part X of Y" badge on ArticleCard component when article belongs to a series
+- **"Updated" indicator** — article hero shows "Updated {date}" when `updatedDate` differs from `publishDate`
+
+#### Sort & Filter Controls
+- **Sort dropdown on articles index** — Newest, Oldest, Shortest, Longest, A–Z (client-side reordering)
+- **Active filters bar** — shows current tag filter with dismiss button, "Clear all" action
+- **Sort changes auto-switch to filtered view** for sorted results
+
+#### Reading List Enhancements
+- **Total read time** — reading list page shows "X saved · Y min total"
+- **Sort options** — Date Saved, Shortest First, Longest First, By Category, A–Z
+- **Reading list count badge** — numeric badge on SideNav and MobileNav (reads localStorage, updates on storage events)
+
+#### SideNav Fix
+- **"New" badge logic corrected** — SideNav featured articles only show "New" if published within 7 days (was showing for all 5 featured articles regardless of age)
+
+#### Utility Layer
+- `Article` interface: added `updatedDate`, `keywords` fields
+- New helpers: `isNewArticle()`, `getAllTags()`, `getSeriesTotal()`
+
 ## [15.6.1] - 2026-03-31
 
 ### Fixed — Merge All loops until queue is clean

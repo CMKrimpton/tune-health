@@ -16,7 +16,7 @@ import HighlightShare from '../components/HighlightShare.astro';
 import SideNav from '../components/SideNav.astro';
 import AudioNarration from '../components/AudioNarration.astro';
 import { fade, slide } from 'astro:transitions';
-import { getRelatedArticles, getArticleGradientStyle, getArticles, getNextInCategory } from '../utils/articles';
+import { getRelatedArticles, getArticleGradientStyle, getArticles, getNextInCategory, formatPublishDateShort } from '../utils/articles';
 
 interface Props {
   title: string;
@@ -48,6 +48,8 @@ const currentArticle = allArticles.find((a) => a.slug === slug);
 const resolvedOgImage = ogImage || currentArticle?.heroImage || '/assets/og-image.png';
 const narrationUrl = currentArticle?.narrationUrl;
 const articleSeries = currentArticle?.series;
+const updatedDate = currentArticle?.updatedDate;
+const hasBeenUpdated = updatedDate && updatedDate !== currentArticle?.publishDate;
 const nextArticle = await getNextInCategory(slug);
 ---
 
@@ -99,6 +101,12 @@ const nextArticle = await getNextInCategory(slug);
           </span>
           <span class="text-stone-300 dark:text-stone-700">/</span>
           <span class="text-xs text-stone-500 uppercase tracking-wide">{publishDate}</span>
+          {hasBeenUpdated && (
+            <>
+              <span class="text-stone-300 dark:text-stone-700">/</span>
+              <span class="text-xs text-primary-600 dark:text-primary-400 font-medium uppercase tracking-wide">Updated {formatPublishDateShort(updatedDate)}</span>
+            </>
+          )}
           <span class="text-stone-300 dark:text-stone-700">/</span>
           <span class="text-xs text-stone-500 uppercase tracking-wide">{readTime}</span>
           {narrationUrl && (
@@ -185,7 +193,14 @@ const nextArticle = await getNextInCategory(slug);
             <BookmarkButton slug={slug} title={title} />
           </div>
           <div class="flex flex-wrap gap-2">
-            <slot name="tags" />
+            {(currentArticle?.tags ?? tags).map((tag) => (
+              <a
+                href={`/articles?tag=${encodeURIComponent(tag)}`}
+                class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 transition-colors duration-200"
+              >
+                {tag}
+              </a>
+            ))}
           </div>
         </div>
 
