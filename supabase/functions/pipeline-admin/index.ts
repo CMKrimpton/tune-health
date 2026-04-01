@@ -516,6 +516,16 @@ Deno.serve(async (req: Request) => {
       return json({ logs: cronLogs });
     }
 
+    // ------ GET-LOG — fetch a single pipeline log by ID ------
+    if (action === "get-log") {
+      const logId = body.logId as string;
+      if (!logId) return json({ error: "logId is required" }, 400);
+      const { data, error: logErr } = await db.from("daily_article_log").select("*").eq("id", logId).maybeSingle();
+      if (logErr) return json({ error: logErr.message }, 500);
+      if (!data) return json({ error: "Log not found" }, 404);
+      return json(data);
+    }
+
     // ------ SUBMIT-ARTICLE — user wrote article with Opus, resume pipeline from "written" ------
     if (action === "submit-article") {
       const logId = body.logId as string;

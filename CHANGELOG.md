@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - **Improve button → full pipeline re-run** — "Improve" on any published article sends it back through research → editor → write → independence → QC → publish, keeping the same slug so it overwrites the old version. Replaces the previous lightweight AI-review behavior. Confirmation dialog prevents accidental triggers. Stage-editor preserves the original slug for improve runs (`source: "improve"`). Narration is regenerated on publish for improved articles
+- **Expandable article detail panel** — clicking any article row in the Articles tab expands a full-info panel: metadata (slug, dates, tags, keywords, word count), scores (independence/editor/QC with color coding), pipeline log (source, model, cost, token usage table), editor brief (archetype, tone, emphasis/avoid), independence review (verdict, flags with quotes/rewrites, strengths), QC result (decision, voice check grid), PubMed verification (citation details), audio narration player, illustration preview, and TOC. Pipeline log fetched on-demand via new `get-log` action
+- **Text action labels** — replaced cryptic SVG icons with readable text: Improve, View, Edit, Delete
 
 ## [16.1.0] - 2026-04-01
 

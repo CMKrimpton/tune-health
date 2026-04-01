@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
-import { type ArticleRecord, getAdminToken, getCategoryColor, getGradientHex, getScoreColor, fetchWithTimeout } from './types';
+import { type ArticleRecord, type PipelineLog, type PipelineResearchData, getAdminToken, getCategoryColor, getGradientHex, getScoreColor, getPenName, fetchWithTimeout } from './types';
 import ConfirmModal from './ConfirmModal';
 
 // Extended article with scores (returned by DB but not in base type)
@@ -41,6 +41,307 @@ function scoreClassName(score: number): string {
   return 'admin-score-low';
 }
 
+// ─── Detail Panel (shown when article row is expanded) ─────────────
+
+function ArticleDetailPanel({ article, pipelineLog, loading }: {
+  article: ArticleWithScores;
+  pipelineLog: PipelineLog | null;
+  loading: boolean;
+}) {
+  const rd = (pipelineLog?.research_data || {}) as PipelineResearchData;
+  const indReview = rd._independenceReview;
+  const qcResult = rd._qcResult;
+  const pubmed = rd._pubmedVerification;
+  const editorBrief = rd._editorBrief;
+  const tokenUsage = pipelineLog?.token_usage;
+  const wordCount = useMemo(() => {
+    if (!article.article_html) return 0;
+    return article.article_html.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length;
+  }, [article.article_html]);
+
+  return (
+    <div className="articles-detail-panel">
+      {/* ── Metadata ── */}
+      <div className="articles-detail-section">
+        <div className="articles-detail-heading">Metadata</div>
+        <div className="articles-detail-kv">
+          <span className="articles-detail-key">Slug</span>
+          <span>{article.slug}</span>
+          <span className="articles-detail-key">Category</span>
+          <span>{article.category}</span>
+          <span className="articles-detail-key">Status</span>
+          <span>{article.status}{article.featured ? ' \u2605 Featured' : ''}{article.draft ? ' (Draft)' : ''}{article.coming_soon ? ' (Coming Soon)' : ''}</span>
+          <span className="articles-detail-key">Published</span>
+          <span>{article.published_at ? new Date(article.published_at).toLocaleString() : '\u2014'}</span>
+          <span className="articles-detail-key">Created</span>
+          <span>{new Date(article.created_at).toLocaleString()}</span>
+          <span className="articles-detail-key">Updated</span>
+          <span>{new Date(article.updated_at).toLocaleString()}</span>
+          <span className="articles-detail-key">Read Time</span>
+          <span>{article.read_time} min ({wordCount.toLocaleString()} words)</span>
+          <span className="articles-detail-key">Tags</span>
+          <span>{(article.tags || []).join(', ') || '\u2014'}</span>
+          <span className="articles-detail-key">Keywords</span>
+          <span>{(article.keywords || []).join(', ') || '\u2014'}</span>
+        </div>
+      </div>
+
+      {/* ── Scores ── */}
+      {(article.independence_score != null || article.editor_score != null || qcResult) && (
+        <div className="articles-detail-section">
+          <div className="articles-detail-heading">Scores</div>
+          <div className="articles-score-cards">
+            {article.independence_score != null && (
+              <div className="articles-score-card">
+                <div className="articles-score-label">Independence</div>
+                <div className="articles-score-value" style={{ color: getScoreColor(article.independence_score) }}>
+                  {article.independence_score}/10
+                </div>
+              </div>
+            )}
+            {article.editor_score != null && (
+              <div className="articles-score-card">
+                <div className="articles-score-label">Editor</div>
+                <div className="articles-score-value" style={{ color: getScoreColor(article.editor_score) }}>
+                  {article.editor_score}/10
+                </div>
+              </div>
+            )}
+            {qcResult?.qualityScore != null && (
+              <div className="articles-score-card">
+                <div className="articles-score-label">QC Quality</div>
+                <div className="articles-score-value" style={{ color: getScoreColor(qcResult.qualityScore) }}>
+                  {qcResult.qualityScore}/10
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Pipeline ── */}
+      <div className="articles-detail-section">
+        <div className="articles-detail-heading">Pipeline</div>
+        {loading ? (
+          <div className="articles-detail-loading">Loading pipeline data\u2026</div>
+        ) : pipelineLog ? (
+          <div className="articles-detail-kv">
+            <span className="articles-detail-key">Source</span>
+            <span>{pipelineLog.source || '\u2014'}</span>
+            <span className="articles-detail-key">Model</span>
+            <span>{pipelineLog.model_used ? `${pipelineLog.model_used} (${getPenName(pipelineLog.model_used)})` : '\u2014'}</span>
+            <span className="articles-detail-key">Status</span>
+            <span>{pipelineLog.status}</span>
+            <span className="articles-detail-key">Cost</span>
+            <span>${typeof pipelineLog.cost_usd === 'number' ? pipelineLog.cost_usd.toFixed(4) : pipelineLog.cost_usd || '0.0000'}</span>
+            <span className="articles-detail-key">Revisions</span>
+            <span>{pipelineLog.revision_count ?? 0}</span>
+            <span className="articles-detail-key">Started</span>
+            <span>{pipelineLog.created_at ? new Date(pipelineLog.created_at).toLocaleString() : '\u2014'}</span>
+            <span className="articles-detail-key">Completed</span>
+            <span>{pipelineLog.completed_at ? new Date(pipelineLog.completed_at).toLocaleString() : '\u2014'}</span>
+          </div>
+        ) : (
+          <div className="articles-detail-muted">No pipeline data available</div>
+        )}
+        {/* Token usage breakdown */}
+        {tokenUsage && tokenUsage.length > 0 && (
+          <div className="articles-detail-subsection">
+            <div className="articles-detail-subheading">Token Usage</div>
+            <table className="articles-detail-table">
+              <thead>
+                <tr><th>Stage</th><th>Model</th><th>In</th><th>Out</th><th>Cost</th></tr>
+              </thead>
+              <tbody>
+                {tokenUsage.map((t, i) => (
+                  <tr key={i}>
+                    <td>{t.stage}</td>
+                    <td>{t.model}</td>
+                    <td className="admin-tabular-nums">{t.inputTokens.toLocaleString()}</td>
+                    <td className="admin-tabular-nums">{t.outputTokens.toLocaleString()}</td>
+                    <td className="admin-tabular-nums">${t.costUsd.toFixed(4)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── Editor Brief ── */}
+      {editorBrief && (
+        <div className="articles-detail-section">
+          <div className="articles-detail-heading">Editor Brief</div>
+          <div className="articles-detail-kv">
+            <span className="articles-detail-key">Archetype</span>
+            <span>{editorBrief.archetype || '\u2014'}</span>
+            <span className="articles-detail-key">Angle</span>
+            <span>{editorBrief.angle || '\u2014'}</span>
+            <span className="articles-detail-key">Tone</span>
+            <span>{editorBrief.brief?.tonePreset || editorBrief.brief?.tone || '\u2014'}</span>
+            <span className="articles-detail-key">Density</span>
+            <span>{editorBrief.brief?.density || '\u2014'}</span>
+            <span className="articles-detail-key">Pacing</span>
+            <span>{editorBrief.brief?.pacing || '\u2014'}</span>
+            <span className="articles-detail-key">Open With</span>
+            <span>{editorBrief.brief?.openWith || '\u2014'}</span>
+            <span className="articles-detail-key">Closing</span>
+            <span>{editorBrief.brief?.closingDirection || '\u2014'}</span>
+          </div>
+          {editorBrief.brief?.emphasize && editorBrief.brief.emphasize.length > 0 && (
+            <div className="articles-detail-subsection">
+              <div className="articles-detail-subheading">Emphasize</div>
+              <ul className="articles-detail-list">{editorBrief.brief.emphasize.map((e, i) => <li key={i}>{e}</li>)}</ul>
+            </div>
+          )}
+          {editorBrief.brief?.avoid && editorBrief.brief.avoid.length > 0 && (
+            <div className="articles-detail-subsection">
+              <div className="articles-detail-subheading">Avoid</div>
+              <ul className="articles-detail-list">{editorBrief.brief.avoid.map((a, i) => <li key={i}>{a}</li>)}</ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Independence Review ── */}
+      {indReview && !indReview.skipped && (
+        <div className="articles-detail-section">
+          <div className="articles-detail-heading">Independence Review</div>
+          <div className="articles-detail-kv">
+            <span className="articles-detail-key">Verdict</span>
+            <span style={{ color: indReview.verdict === 'clean' ? '#4ade80' : indReview.verdict === 'minor_issues' ? '#fbbf24' : '#f87171' }}>
+              {indReview.verdict || '\u2014'}
+            </span>
+            <span className="articles-detail-key">Score</span>
+            <span style={{ color: getScoreColor(indReview.score ?? null) }}>{indReview.score ?? '\u2014'}/10</span>
+            <span className="articles-detail-key">Summary</span>
+            <span>{indReview.summary || '\u2014'}</span>
+          </div>
+          {indReview.flags && indReview.flags.length > 0 && (
+            <div className="articles-detail-subsection">
+              <div className="articles-detail-subheading">Flags ({indReview.flags.length})</div>
+              {indReview.flags.map((f, i) => (
+                <div key={i} className="articles-detail-flag">
+                  <div className="articles-detail-flag-type">{f.type}</div>
+                  <div className="articles-detail-flag-quote">&ldquo;{f.quote}&rdquo;</div>
+                  <div className="articles-detail-flag-rewrite">&rarr; {f.rewrite}</div>
+                  <div className="articles-detail-flag-reason">{f.reason}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {indReview.strengths && indReview.strengths.length > 0 && (
+            <div className="articles-detail-subsection">
+              <div className="articles-detail-subheading">Strengths</div>
+              <ul className="articles-detail-list">{indReview.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── QC Result ── */}
+      {qcResult && (
+        <div className="articles-detail-section">
+          <div className="articles-detail-heading">QC Result</div>
+          <div className="articles-detail-kv">
+            <span className="articles-detail-key">Decision</span>
+            <span style={{ color: qcResult.decision === 'publish' ? '#4ade80' : qcResult.decision === 'kill' ? '#f87171' : '#fbbf24' }}>
+              {qcResult.decision}
+            </span>
+            {qcResult.edits?.notes && (
+              <>
+                <span className="articles-detail-key">Notes</span>
+                <span>{qcResult.edits.notes}</span>
+              </>
+            )}
+            {qcResult.reviseInstructions && (
+              <>
+                <span className="articles-detail-key">Revise</span>
+                <span>{qcResult.reviseInstructions}</span>
+              </>
+            )}
+          </div>
+          {qcResult.voiceCheck && (
+            <div className="articles-detail-subsection">
+              <div className="articles-detail-subheading">Voice Check</div>
+              <div className="articles-voice-grid">
+                {Object.entries(qcResult.voiceCheck).map(([key, val]) => (
+                  <span key={key} className="articles-voice-item">
+                    <span style={{ color: val ? '#4ade80' : '#f87171' }}>{val ? '\u2713' : '\u2717'}</span>{' '}
+                    {key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── PubMed Verification ── */}
+      {pubmed && pubmed.total && pubmed.total > 0 && (
+        <div className="articles-detail-section">
+          <div className="articles-detail-heading">PubMed Verification</div>
+          <div className="articles-score-cards">
+            <div className="articles-score-card">
+              <div className="articles-score-label">Verified</div>
+              <div className="articles-score-value" style={{ color: '#4ade80' }}>{pubmed.verified ?? 0}</div>
+            </div>
+            <div className="articles-score-card">
+              <div className="articles-score-label">Failed</div>
+              <div className="articles-score-value" style={{ color: '#f87171' }}>{pubmed.failed ?? 0}</div>
+            </div>
+            <div className="articles-score-card">
+              <div className="articles-score-label">Skipped</div>
+              <div className="articles-score-value" style={{ color: '#7d7871' }}>{pubmed.skipped ?? 0}</div>
+            </div>
+          </div>
+          {pubmed.details && pubmed.details.length > 0 && (
+            <div className="articles-detail-subsection">
+              <div className="articles-detail-subheading">Citations</div>
+              {pubmed.details.map((d, i) => (
+                <div key={i} className="articles-detail-citation">
+                  <span style={{ color: d.found ? '#4ade80' : d.skipped ? '#7d7871' : '#f87171' }}>
+                    {d.found ? '\u2713' : d.skipped ? '\u2013' : '\u2717'}
+                  </span>{' '}
+                  {d.title}
+                  {d.pmid && <span className="articles-detail-muted"> PMID:{d.pmid}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Audio Narration ── */}
+      {article.narration_url && (
+        <div className="articles-detail-section">
+          <div className="articles-detail-heading">Narration</div>
+          <audio controls className="articles-audio-player" src={article.narration_url} preload="none" />
+        </div>
+      )}
+
+      {/* ── Illustration ── */}
+      {article.hero_image && (
+        <div className="articles-detail-section">
+          <div className="articles-detail-heading">Illustration</div>
+          <img src={article.hero_image} alt={article.hero_image_alt || ''} className="articles-hero-preview" loading="lazy" />
+          {article.hero_image_alt && <div className="articles-detail-muted">{article.hero_image_alt}</div>}
+        </div>
+      )}
+
+      {/* ── Table of Contents ── */}
+      {article.toc && article.toc.length > 0 && (
+        <div className="articles-detail-section">
+          <div className="articles-detail-heading">Table of Contents ({article.toc.length} sections)</div>
+          <ol className="articles-detail-toc">
+            {article.toc.map((entry, i) => <li key={i}>{entry.title}</li>)}
+          </ol>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Component ──────────────────────────────────────────────────────
 
 export default function ArticlesManager({ initialArticles, apiBase }: Props) {
@@ -59,6 +360,9 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
   const [saving, setSaving] = useState(false);
   const [improvingSlug, setImprovingSlug] = useState<string | null>(null);
   const [improveResult, setImproveResult] = useState<{ slug: string; message: string; ok: boolean } | null>(null);
+  const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+  const [pipelineLog, setPipelineLog] = useState<PipelineLog | null>(null);
+  const [loadingLog, setLoadingLog] = useState(false);
   const editRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -305,6 +609,28 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
     setSelected(new Set());
   }, []);
 
+  // ─── Expand detail panel ──────────────────────────────────────────
+
+  const toggleExpand = useCallback(async (slug: string) => {
+    if (expandedSlug === slug) {
+      setExpandedSlug(null);
+      setPipelineLog(null);
+      return;
+    }
+    setExpandedSlug(slug);
+    setPipelineLog(null);
+
+    const article = articles.find(a => a.slug === slug);
+    if (article?.pipeline_log_id) {
+      setLoadingLog(true);
+      try {
+        const res = await apiCall('pipeline-admin', { action: 'get-log', logId: article.pipeline_log_id });
+        setPipelineLog(res as PipelineLog);
+      } catch { /* silent — panel shows article data without log */ }
+      finally { setLoadingLog(false); }
+    }
+  }, [expandedSlug, articles, apiCall]);
+
   // ─── Status badge ────────────────────────────────────────────────
 
   function statusBadge(article: ArticleRecord) {
@@ -403,9 +729,10 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
           {filtered.map(article => {
             const isEditing = editingField?.slug === article.slug;
             const isSaved = savedSlug === article.slug;
+            const isExpanded = expandedSlug === article.slug;
             return (
+              <div key={article.slug} className={`articles-row-wrapper${isExpanded ? ' articles-row-expanded' : ''}`}>
               <div
-                key={article.slug}
                 className={`articles-row${selected.has(article.slug) ? ' articles-row-selected' : ''}`}
               >
                 {/* Checkbox */}
@@ -421,7 +748,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                 <div className="articles-stripe" style={{ background: stripeColor(article) }} />
 
                 {/* Content */}
-                <div className="articles-content">
+                <div className="articles-content" onClick={() => toggleExpand(article.slug)} style={{ cursor: 'pointer' }}>
                   {/* Title row */}
                   <div className="admin-flex-center admin-gap-md admin-mb-sm">
                     {isEditing && editingField.field === 'title' ? (
@@ -436,7 +763,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                       />
                     ) : (
                       <span
-                        onClick={() => startEdit(article.slug, 'title', article.title)}
+                        onClick={(e) => { e.stopPropagation(); startEdit(article.slug, 'title', article.title); }}
                         className="articles-title"
                         title="Click to edit title"
                       >
@@ -460,7 +787,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                     />
                   ) : (
                     <p
-                      onClick={() => startEdit(article.slug, 'description', article.description)}
+                      onClick={(e) => { e.stopPropagation(); startEdit(article.slug, 'description', article.description); }}
                       className="articles-description"
                       title="Click to edit description"
                     >
@@ -560,6 +887,11 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                     <button onClick={() => setImproveResult(null)} className="admin-toast-dismiss">{'\u00d7'}</button>
                   </div>
                 )}
+              </div>
+              {/* ── Expanded detail panel ── */}
+              {isExpanded && (
+                <ArticleDetailPanel article={article} pipelineLog={pipelineLog} loading={loadingLog} />
+              )}
               </div>
             );
           })}
