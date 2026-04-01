@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, getExistingArticles } from "../_shared/db.ts";
+import { supabase, getExistingArticles, addOverheadCost } from "../_shared/db.ts";
 import { VALID_CATEGORIES, classifyCategory, MODELS } from "../_shared/constants.ts";
 import { gemini, grok } from "../_shared/api-clients.ts";
 import { extractFingerprint, isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
@@ -189,6 +189,9 @@ Number them 1-20. Plain text, no JSON.`;
     }
 
     const { count: queueCount } = await db.from("topic_queue").select("*", { count: "exact", head: true }).eq("status", "queued");
+
+    // Log scout cost to daily overhead
+    await addOverheadCost(db, scoutCost);
 
     return json({
       success: true,

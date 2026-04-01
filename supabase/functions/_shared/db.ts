@@ -42,6 +42,47 @@ export async function addCostToLog(
   }).eq("id", logId);
 }
 
+/**
+ * Log costs for non-article operations (scout, pinger, topic-merge, etc.)
+ * Uses a daily system row in daily_article_log with slug "_system_overhead".
+ * Creates the row if it doesn't exist for today, otherwise increments.
+ */
+export async function addOverheadCost(
+  db: ReturnType<typeof supabase>,
+  usage: ApiUsage,
+) {
+  const today = new Date().toISOString().slice(0, 10);
+  const systemTopic = `System overhead (${today})`;
+
+  // Find or create today's overhead row
+  const { data: existing } = await db
+    .from("daily_article_log")
+    .select("id, cost_usd, token_usage")
+    .eq("slug", "_system_overhead")
+    .eq("run_date", today)
+    .maybeSingle();
+
+  if (existing) {
+    const currentCost = parseFloat(existing.cost_usd ?? "0") || 0;
+    const currentUsage = (existing.token_usage as ApiUsage[]) || [];
+    await db.from("daily_article_log").update({
+      cost_usd: Math.round((currentCost + usage.costUsd) * 10000) / 10000,
+      token_usage: [...currentUsage, usage],
+    }).eq("id", existing.id);
+  } else {
+    await db.from("daily_article_log").insert({
+      run_date: today,
+      slug: "_system_overhead",
+      topic: systemTopic,
+      status: "system",
+      source: "system",
+      cost_usd: Math.round(usage.costUsd * 10000) / 10000,
+      token_usage: [usage],
+      stage_started_at: new Date().toISOString(),
+    });
+  }
+}
+
 export async function getExistingArticles(
   db: ReturnType<typeof supabase>,
 ): Promise<{ titles: string[]; categoryCounts: Record<string, number> }> {

@@ -9,26 +9,28 @@ export const ACTIVE = ["started","searching","publishing","editor_reviewing","ed
 export const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","qc_approved"];
 
 // Pricing per million tokens (USD) — updated March 2026
+// Padded ~10% above listed rates so dashboard never under-reports actual spend
 export const PRICING: Record<string, { input: number; output: number }> = {
-  "claude-opus-4-6":          { input: 5,    output: 25 },
-  "claude-sonnet-4-6":        { input: 3,    output: 15 },
-  "gpt-5.4":                  { input: 2.50, output: 15 },
-  "gpt-5":                    { input: 1.25, output: 10 },
-  "gemini-3.1-pro-preview":   { input: 2,    output: 12 },
-  "gemini-2.5-pro":           { input: 1.25, output: 10 },
-  "grok-4":                   { input: 3,    output: 15 },
-  "grok-3":                   { input: 3,    output: 15 },
-  "gemini-2.5-flash":         { input: 0.30, output: 2.50 },
-  "gemini-3.1-flash-lite":    { input: 0.25, output: 1.50 },
+  "claude-opus-4-6":          { input: 5.50, output: 27.50 },
+  "claude-sonnet-4-6":        { input: 3.30, output: 16.50 },
+  "gpt-5.4":                  { input: 2.75, output: 16.50 },
+  "gpt-5":                    { input: 1.40, output: 11 },
+  "gemini-3.1-pro-preview":   { input: 2.20, output: 13.20 },
+  "gemini-2.5-pro":           { input: 1.40, output: 11 },
+  "grok-4":                   { input: 3.30, output: 16.50 },
+  "grok-3":                   { input: 3.30, output: 16.50 },
+  "gemini-2.5-flash":         { input: 0.33, output: 2.75 },
+  "gemini-3.1-flash-lite":    { input: 0.28, output: 1.65 },
 };
 
 // Flat-rate pricing for non-token services — updated April 2026
 // Sources: https://openai.com/api/pricing/, https://elevenlabs.io/pricing/api
+// Padded ~15% above listed rates so dashboard never under-reports actual spend
 export const FLAT_PRICING = {
-  // GPT Image 1: 1536x1024, medium quality ≈ $0.07/image
-  ILLUSTRATION_USD: 0.07,
-  // ElevenLabs Multilingual v2: $0.12 per 1,000 characters (Business tier)
-  NARRATION_PER_CHAR_USD: 0.00012,
+  // GPT Image 1: 1536x1024, medium quality — listed $0.07, padded to $0.08
+  ILLUSTRATION_USD: 0.08,
+  // ElevenLabs Multilingual v2: listed $0.12/1k chars, padded to $0.14/1k chars
+  NARRATION_PER_CHAR_USD: 0.00014,
 } as const;
 
 export const CATEGORY_GRADIENTS: Record<string, { from: string; to: string; hex: string }> = {

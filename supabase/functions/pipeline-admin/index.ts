@@ -88,9 +88,11 @@ Deno.serve(async (req: Request) => {
       }
 
       // Fetch recent activity (all statuses) + ensure published articles aren't lost
+      // Exclude _system_overhead rows — those are just for cost tracking
       const { data: recentLogs } = await db
         .from("daily_article_log")
         .select("*")
+        .neq("slug", "_system_overhead")
         .order("created_at", { ascending: false })
         .limit(30);
 

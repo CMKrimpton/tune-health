@@ -1,5 +1,5 @@
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase } from "../_shared/db.ts";
+import { supabase, addOverheadCost } from "../_shared/db.ts";
 import { gemini, generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { MODELS, EDITOR_CHAIN } from "../_shared/constants.ts";
 
@@ -134,6 +134,9 @@ Rules:
     topics: c.topicIds.map((id) => topicMap.get(id)).filter(Boolean),
   }));
 
+  // Log analysis cost
+  await addOverheadCost(db, result.usage);
+
   return json({
     clusters: enrichedClusters,
     alreadyPublished,
@@ -236,6 +239,9 @@ Return ONLY valid JSON:
     .delete()
     .in("id", topicIds);
   if (delErr) throw delErr;
+
+  // Log merge cost
+  await addOverheadCost(db, result.usage);
 
   return json({
     success: true,

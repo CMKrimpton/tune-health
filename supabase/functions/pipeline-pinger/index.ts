@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase } from "../_shared/db.ts";
+import { supabase, addOverheadCost } from "../_shared/db.ts";
 import { gemini, grok } from "../_shared/api-clients.ts";
 import { classifyCategory, MODELS } from "../_shared/constants.ts";
 import { extractFingerprint, isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
@@ -29,8 +29,8 @@ async function hashSignal(text: string): Promise<string> {
 // ---------------------------------------------------------------------------
 // Signal Source: Gemini Flash + Google Search (trending health searches)
 // ---------------------------------------------------------------------------
-async function checkGeminiSearch(): Promise<Signal[]> {
-  const { text } = await gemini({
+async function checkGeminiSearch(): Promise<{ signals: Signal[]; cost: number }> {
+  const { text, usage } = await gemini({
     system: `Health news detector for a 20-35 reader health magazine. Find health stories that are trending or newsworthy in the last 24 hours. Not evergreen topics — something must have HAPPENED.`,
     user: `Search for noteworthy health news from the last 24 hours. Report if ANY of these apply:
 1. Study published in a major journal (NEJM, Lancet, JAMA, Nature Medicine, BMJ, Cell, Science, PNAS, Nature) in the last 48h
@@ -52,23 +52,23 @@ Max 3 signals. Focus on stories a 25-year-old would text to a friend.`,
 
   try {
     const parsed = JSON.parse(text.replace(/^```json?\n?/, "").replace(/\n?```$/, "").trim());
-    if (!parsed.breaking || !parsed.signals) return [];
-    return (parsed.signals as Array<{ topic: string; why_breaking: string; urgency: string }>).map(s => ({
+    if (!parsed.breaking || !parsed.signals) return { signals: [], cost: usage.costUsd };
+    return { signals: (parsed.signals as Array<{ topic: string; why_breaking: string; urgency: string }>).map(s => ({
       topic: s.topic,
       why_breaking: s.why_breaking,
       source: "gemini_search",
       urgency: (s.urgency === "high" ? "high" : "medium") as "high" | "medium",
-    }));
+    })), cost: usage.costUsd };
   } catch {
-    return [];
+    return { signals: [], cost: usage.costUsd };
   }
 }
 
 // ---------------------------------------------------------------------------
 // Signal Source: Grok (real-time X/Twitter trending)
 // ---------------------------------------------------------------------------
-async function checkGrokSocial(): Promise<Signal[]> {
-  const { text } = await grok({
+async function checkGrokSocial(): Promise<{ signals: Signal[]; cost: number }> {
+  const { text, usage } = await grok({
     system: `Health news detector with X/Twitter access. Report health topics getting notable social media attention.`,
     user: `What health or medical topics are getting attention on X/Twitter right now? Report if:
 1. Notable discussion volume (hundreds+ posts, not single tweets)
@@ -85,22 +85,22 @@ Max 3 signals.`,
 
   try {
     const parsed = JSON.parse(text.replace(/^```json?\n?/, "").replace(/\n?```$/, "").trim());
-    if (!parsed.breaking || !parsed.signals) return [];
-    return (parsed.signals as Array<{ topic: string; why_trending: string; urgency: string }>).map(s => ({
+    if (!parsed.breaking || !parsed.signals) return { signals: [], cost: usage.costUsd };
+    return { signals: (parsed.signals as Array<{ topic: string; why_trending: string; urgency: string }>).map(s => ({
       topic: s.topic,
       why_breaking: s.why_trending,
       source: "grok_social",
       urgency: (s.urgency === "high" ? "high" : "medium") as "high" | "medium",
-    }));
+    })), cost: usage.costUsd };
   } catch {
-    return [];
+    return { signals: [], cost: usage.costUsd };
   }
 }
 
 // ---------------------------------------------------------------------------
 // Signal Source: PubMed RSS (free — top 5 journals, last 24h)
 // ---------------------------------------------------------------------------
-async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<Signal[]> {
+async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<{ signals: Signal[]; cost: number }> {
   const journals = [
     '"N Engl J Med"[Journal]',
     '"Lancet"[Journal]',
@@ -118,10 +118,10 @@ async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<Signal[]
   try {
     const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmode=json&retmax=10`;
     const searchRes = await fetch(searchUrl, { signal: AbortSignal.timeout(10000) });
-    if (!searchRes.ok) return [];
+    if (!searchRes.ok) return { signals: [], cost: 0 };
     const searchData = await searchRes.json();
     const ids: string[] = searchData.esearchresult?.idlist || [];
-    if (ids.length === 0) return [];
+    if (ids.length === 0) return { signals: [], cost: 0 };
 
     // Check which IDs we've already seen
     const { data: seenSignals } = await db
@@ -134,12 +134,12 @@ async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<Signal[]
       for (const id of s.raw_data?.pubmed_ids || []) seenIds.add(id);
     }
     const newIds = ids.filter((id: string) => !seenIds.has(id));
-    if (newIds.length === 0) return [];
+    if (newIds.length === 0) return { signals: [], cost: 0 };
 
     // Fetch titles for new publications
     const fetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${newIds.join(",")}&retmode=json`;
     const fetchRes = await fetch(fetchUrl, { signal: AbortSignal.timeout(10000) });
-    if (!fetchRes.ok) return [];
+    if (!fetchRes.ok) return { signals: [], cost: 0 };
     const fetchData = await fetchRes.json();
 
     const titles: string[] = [];
@@ -147,10 +147,10 @@ async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<Signal[]
       const article = fetchData.result?.[id];
       if (article?.title) titles.push(`${article.title} (${article.source || "journal"}, PMID: ${id})`);
     }
-    if (titles.length === 0) return [];
+    if (titles.length === 0) return { signals: [], cost: 0 };
 
     // Triage with Flash: which of these are breaking news vs routine?
-    const { text: triageRaw } = await gemini({
+    const { text: triageRaw, usage } = await gemini({
       system: `Medical publication triage. Decide which new journal publications are BREAKING NEWS for a health magazine vs routine science.`,
       user: `New publications from top journals (last 24h):\n${titles.map((t, i) => `${i + 1}. ${t}`).join("\n")}\n\nFor each, is this BREAKING (affects large population + surprising/actionable) or ROUTINE?\n{"signals": [{"title": "...", "breaking": true/false, "topic": "reader-facing angle if breaking", "why": "one sentence"}]}`,
       model: MODELS.PINGER_TRIAGE,
@@ -162,18 +162,18 @@ async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<Signal[]
     try {
       const parsed = JSON.parse(triageRaw.replace(/^```json?\n?/, "").replace(/\n?```$/, "").trim());
       const breaking = (parsed.signals || []).filter((s: { breaking: boolean }) => s.breaking);
-      return breaking.map((s: { topic: string; why: string }) => ({
+      return { signals: breaking.map((s: { topic: string; why: string }) => ({
         topic: s.topic,
         why_breaking: s.why,
         source: "pubmed_rss",
         urgency: "medium" as const,
         raw_data: { pubmed_ids: newIds },
-      }));
+      })), cost: usage.costUsd };
     } catch {
-      return [];
+      return { signals: [], cost: usage.costUsd };
     }
   } catch {
-    return [];
+    return { signals: [], cost: 0 };
   }
 }
 
@@ -199,17 +199,26 @@ Deno.serve(async (req: Request) => {
 
     // Execute the appropriate signal source
     let signals: Signal[] = [];
+    let sourceCost = 0;
     try {
       if (tickSource === "gemini_search") {
-        signals = await checkGeminiSearch();
+        const result = await checkGeminiSearch();
+        signals = result.signals; sourceCost = result.cost;
       } else if (tickSource === "grok_social") {
-        signals = await checkGrokSocial();
+        const result = await checkGrokSocial();
+        signals = result.signals; sourceCost = result.cost;
       } else {
-        signals = await checkPubMedRSS(db);
+        const result = await checkPubMedRSS(db);
+        signals = result.signals; sourceCost = result.cost;
       }
     } catch (sourceErr) {
       console.error(`[Pinger] ${tickSource} check failed: ${sourceErr instanceof Error ? sourceErr.message : "unknown"}`);
       return json({ checked: false, source: tickSource, error: sourceErr instanceof Error ? sourceErr.message : "unknown" });
+    }
+
+    // Log pinger cost to daily overhead (even if no signals found)
+    if (sourceCost > 0) {
+      await addOverheadCost(db, { model: tickSource, stage: "pinger", inputTokens: 0, outputTokens: 0, costUsd: sourceCost });
     }
 
     if (signals.length === 0) {
