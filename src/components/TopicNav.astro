@@ -1,8 +1,9 @@
 ---
-import { getCategoriesWithCounts } from '../utils/articles';
-import { getCategorySlug } from '../utils/category-domains';
+import { getArticles, getCategoriesWithCounts, truncate, isNewArticle } from '../utils/articles';
+import { getCategorySlug, CATEGORY_META } from '../utils/category-domains';
 
 const categoriesWithCounts = await getCategoriesWithCounts();
+const allArticles = await getArticles();
 const currentPath = Astro.url.pathname;
 const isHome = currentPath === '/' || currentPath === '/index.html';
 
@@ -10,6 +11,15 @@ const isHome = currentPath === '/' || currentPath === '/index.html';
 const isArticlesPage = currentPath.startsWith('/articles');
 const isTopicsPage = currentPath.startsWith('/topics/');
 const currentTopicSlug = isTopicsPage ? currentPath.split('/').pop() : null;
+
+// Build per-category article previews (latest 4)
+const categoryPreviews = new Map<string, typeof allArticles>();
+categoriesWithCounts.forEach(({ name }) => {
+  categoryPreviews.set(
+    name,
+    allArticles.filter((a) => a.category === name).slice(0, 4)
+  );
+});
 ---
 
 <nav class:list={['topic-nav', { 'topic-nav-hidden': isHome }]} id="topicNav" aria-label="Topics">
@@ -18,13 +28,54 @@ const currentTopicSlug = isTopicsPage ? currentPath.split('/').pop() : null;
       href="/articles"
       class:list={['topic-nav-link', { active: isArticlesPage && !isTopicsPage }]}
     >All</a>
-    {categoriesWithCounts.map(({ name }) => {
+    {categoriesWithCounts.map(({ name, count }) => {
       const slug = getCategorySlug(name);
+      const meta = CATEGORY_META[name];
+      const previews = categoryPreviews.get(name) || [];
       return (
-        <a
-          href={`/topics/${slug}`}
-          class:list={['topic-nav-link', { active: currentTopicSlug === slug }]}
-        >{name}</a>
+        <div class="topic-nav-item" data-topic-dropdown>
+          <a
+            href={`/topics/${slug}`}
+            class:list={['topic-nav-link', { active: currentTopicSlug === slug }]}
+          >{name}</a>
+          <div class="topic-dropdown" data-topic-panel>
+            <div class="topic-dropdown-inner">
+              {/* Header */}
+              <div class="topic-dropdown-header">
+                <div>
+                  <h3 class="topic-dropdown-title">{name}</h3>
+                  {meta && <p class="topic-dropdown-tagline">{meta.tagline}</p>}
+                </div>
+                <span class="topic-dropdown-count">{count} articles</span>
+              </div>
+
+              {/* Article previews */}
+              {previews.length > 0 && (
+                <ul class="topic-dropdown-list">
+                  {previews.map((article) => (
+                    <li>
+                      <a href={article.href} class="topic-dropdown-article">
+                        <span class="topic-dropdown-article-title">{truncate(article.title, 52)}</span>
+                        <span class="topic-dropdown-article-meta">
+                          {article.readTime} min
+                          {isNewArticle(article.publishDate) && <span class="topic-dropdown-new">New</span>}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Footer */}
+              <a href={`/topics/${slug}`} class="topic-dropdown-viewall">
+                View all {name} articles
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
       );
     })}
   </div>
@@ -62,6 +113,11 @@ const currentTopicSlug = isTopicsPage ? currentPath.split('/').pop() : null;
     display: none;
   }
 
+  /* Topic item wrapper (for dropdown positioning) */
+  .topic-nav-item {
+    @apply relative flex-shrink-0;
+  }
+
   .topic-nav-link {
     @apply flex-shrink-0 px-3 py-1 text-xs font-medium;
     @apply text-stone-500 dark:text-stone-400;
@@ -74,6 +130,113 @@ const currentTopicSlug = isTopicsPage ? currentPath.split('/').pop() : null;
     @apply bg-stone-200/60 dark:bg-stone-800/60;
   }
 
+  /* ─── Topic Dropdown ─── */
+  .topic-dropdown {
+    @apply absolute top-full left-1/2 -translate-x-1/2 pt-2;
+    @apply opacity-0 invisible;
+    @apply transform -translate-y-1;
+    @apply z-50;
+    width: 320px;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+  }
+
+  .topic-dropdown.open {
+    @apply opacity-100 visible translate-y-0;
+    pointer-events: auto;
+  }
+
+  /* Keep dropdown within viewport */
+  .topic-nav-item:first-child .topic-dropdown,
+  .topic-nav-item:nth-child(2) .topic-dropdown {
+    left: 0;
+    transform: translateX(0) translateY(-4px);
+  }
+  .topic-nav-item:first-child .topic-dropdown.open,
+  .topic-nav-item:nth-child(2) .topic-dropdown.open {
+    transform: translateX(0) translateY(0);
+  }
+  .topic-nav-item:last-child .topic-dropdown,
+  .topic-nav-item:nth-last-child(2) .topic-dropdown {
+    left: auto;
+    right: 0;
+    transform: translateX(0) translateY(-4px);
+  }
+  .topic-nav-item:last-child .topic-dropdown.open,
+  .topic-nav-item:nth-last-child(2) .topic-dropdown.open {
+    transform: translateX(0) translateY(0);
+  }
+
+  .topic-dropdown-inner {
+    @apply bg-white/95 dark:bg-stone-900/95 backdrop-blur-md;
+    @apply border border-stone-200/50 dark:border-stone-700/50;
+    @apply rounded-xl;
+    @apply p-4;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  :global(.dark) .topic-dropdown-inner {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .topic-dropdown-header {
+    @apply flex items-start justify-between mb-3 pb-3;
+    @apply border-b border-stone-100 dark:border-stone-800;
+  }
+
+  .topic-dropdown-title {
+    @apply text-sm font-semibold text-stone-900 dark:text-white;
+  }
+
+  .topic-dropdown-tagline {
+    @apply text-xs text-stone-500 dark:text-stone-400 mt-0.5;
+    @apply italic;
+  }
+
+  .topic-dropdown-count {
+    @apply text-[10px] font-medium text-stone-400 dark:text-stone-500;
+    @apply bg-stone-100 dark:bg-stone-800 px-1.5 py-0.5 rounded;
+    @apply flex-shrink-0;
+  }
+
+  .topic-dropdown-list {
+    @apply space-y-0.5 mb-3;
+  }
+
+  .topic-dropdown-article {
+    @apply flex items-center justify-between gap-3;
+    @apply px-2 py-2 rounded-lg;
+    @apply hover:bg-stone-50 dark:hover:bg-stone-800/70;
+    @apply transition-colors duration-150;
+    min-height: 36px;
+  }
+
+  .topic-dropdown-article-title {
+    @apply text-sm text-stone-700 dark:text-stone-300;
+    @apply line-clamp-1;
+  }
+
+  .topic-dropdown-article-meta {
+    @apply text-[10px] text-stone-400 dark:text-stone-500 flex-shrink-0;
+    @apply flex items-center gap-1.5;
+  }
+
+  .topic-dropdown-new {
+    @apply px-1 py-px rounded text-[9px] font-semibold uppercase;
+    @apply bg-primary-100 text-primary-700;
+    @apply dark:bg-primary-900/30 dark:text-primary-400;
+  }
+
+  .topic-dropdown-viewall {
+    @apply flex items-center justify-center gap-1.5;
+    @apply text-xs font-medium text-primary-600 dark:text-primary-400;
+    @apply hover:text-primary-700 dark:hover:text-primary-300;
+    @apply py-2 rounded-lg;
+    @apply bg-stone-50 dark:bg-stone-800/50;
+    @apply hover:bg-primary-50 dark:hover:bg-primary-900/20;
+    @apply transition-colors duration-200;
+  }
+
   /* Hide on mobile — MobileNav handles navigation there */
   @media (pointer: coarse) and (max-width: 1023px) {
     .topic-nav {
@@ -81,3 +244,65 @@ const currentTopicSlug = isTopicsPage ? currentPath.split('/').pop() : null;
     }
   }
 </style>
+
+<script>
+  let topicNavController: AbortController | null = null;
+
+  function initTopicDropdowns() {
+    if (topicNavController) topicNavController.abort();
+    topicNavController = new AbortController();
+    const signal = topicNavController.signal;
+
+    const items = document.querySelectorAll<HTMLElement>('[data-topic-dropdown]');
+
+    items.forEach((item) => {
+      const panel = item.querySelector<HTMLElement>('[data-topic-panel]');
+      if (!panel) return;
+
+      let isHovering = false;
+      let closeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+      function open() {
+        if (closeTimeout) { clearTimeout(closeTimeout); closeTimeout = null; }
+        // Close all other dropdowns first
+        items.forEach((other) => {
+          if (other !== item) {
+            other.querySelector<HTMLElement>('[data-topic-panel]')?.classList.remove('open');
+          }
+        });
+        isHovering = true;
+        panel!.classList.add('open');
+      }
+
+      function close() {
+        isHovering = false;
+        panel!.classList.remove('open');
+      }
+
+      item.addEventListener('mouseenter', open, { signal });
+      item.addEventListener('mouseleave', () => {
+        isHovering = false;
+        closeTimeout = setTimeout(() => {
+          if (!isHovering) close();
+        }, 200);
+      }, { signal });
+
+      // Close when clicking a link inside (navigation)
+      panel.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', close, { signal });
+      });
+    });
+
+    // Close all on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        items.forEach((item) => {
+          item.querySelector<HTMLElement>('[data-topic-panel]')?.classList.remove('open');
+        });
+      }
+    }, { signal });
+  }
+
+  initTopicDropdowns();
+  document.addEventListener('astro:after-swap', initTopicDropdowns);
+</script>
