@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { addOverheadCost, calcCost, supabase } from "../_shared/db.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -157,6 +158,19 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
 
     const data = await response.json();
     const content = data.content?.[0]?.text;
+
+    // Log cost
+    const apiUsage = data.usage;
+    if (apiUsage) {
+      const model = "claude-sonnet-4-6";
+      const costUsd = calcCost(model, apiUsage.input_tokens || 0, apiUsage.output_tokens || 0);
+      await addOverheadCost(supabase(), {
+        model, stage: "process-article",
+        inputTokens: apiUsage.input_tokens || 0,
+        outputTokens: apiUsage.output_tokens || 0,
+        costUsd,
+      });
+    }
 
     if (!content) {
       return new Response(

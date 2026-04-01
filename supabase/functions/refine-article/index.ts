@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { addOverheadCost, calcCost, supabase } from "../_shared/db.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,6 +100,9 @@ Apply the requested changes and return the complete updated article as JSON.`;
     // Try Claude first, fall back to Grok, then Gemini
     let content: string | null = null;
     let lastError = "";
+    let usedModel = "";
+    let inputTokens = 0;
+    let outputTokens = 0;
 
     // Attempt 1: Claude Sonnet (fast, good at editing)
     try {
@@ -111,6 +115,7 @@ Apply the requested changes and return the complete updated article as JSON.`;
       if (res.ok) {
         const data = await res.json();
         content = data.content?.[0]?.text || null;
+        if (content && data.usage) { usedModel = "claude-sonnet-4-6"; inputTokens = data.usage.input_tokens || 0; outputTokens = data.usage.output_tokens || 0; }
       } else {
         lastError = `Claude ${res.status}: ${(await res.text()).slice(0, 200)}`;
       }
@@ -130,6 +135,7 @@ Apply the requested changes and return the complete updated article as JSON.`;
           if (res.ok) {
             const data = await res.json();
             content = data.choices?.[0]?.message?.content || null;
+            if (content && data.usage) { usedModel = "grok-3"; inputTokens = data.usage.prompt_tokens || 0; outputTokens = data.usage.completion_tokens || 0; }
           } else { lastError = `Grok ${res.status}`; }
         } catch (e: unknown) { lastError = e instanceof Error ? e.message : "Grok failed"; }
       }
@@ -149,9 +155,19 @@ Apply the requested changes and return the complete updated article as JSON.`;
           if (res.ok) {
             const data = await res.json();
             content = (data.candidates?.[0]?.content?.parts || []).map((p: { text?: string }) => p.text || "").join("");
+            if (content && data.usageMetadata) { usedModel = "gemini-2.5-flash"; inputTokens = data.usageMetadata.promptTokenCount || 0; outputTokens = data.usageMetadata.candidatesTokenCount || 0; }
           } else { lastError = `Gemini ${res.status}`; }
         } catch (e: unknown) { lastError = e instanceof Error ? e.message : "Gemini failed"; }
       }
+    }
+
+    // Log cost for whichever model succeeded
+    if (usedModel && (inputTokens > 0 || outputTokens > 0)) {
+      const costUsd = calcCost(usedModel, inputTokens, outputTokens);
+      await addOverheadCost(supabase(), {
+        model: usedModel, stage: "refine-article",
+        inputTokens, outputTokens, costUsd,
+      });
     }
 
     if (!content) {

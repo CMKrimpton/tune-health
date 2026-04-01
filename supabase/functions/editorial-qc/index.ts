@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { addOverheadCost, calcCost } from "../_shared/db.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -239,6 +240,19 @@ Conduct your editorial review and return ONLY the JSON report. No markdown, no e
   const data = await response.json();
   const content = data.content?.[0]?.text;
   if (!content) throw new Error("No content returned from Claude");
+
+  // Log cost
+  const apiUsage = data.usage;
+  if (apiUsage) {
+    const model = "claude-sonnet-4-20250514";
+    const costUsd = calcCost(model, apiUsage.input_tokens || 0, apiUsage.output_tokens || 0);
+    await addOverheadCost(db, {
+      model, stage: "editorial-qc",
+      inputTokens: apiUsage.input_tokens || 0,
+      outputTokens: apiUsage.output_tokens || 0,
+      costUsd,
+    });
+  }
 
   // Parse JSON
   const jsonStr = content
