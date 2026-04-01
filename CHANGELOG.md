@@ -6,18 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [16.4.0] - 2026-04-01
+## [16.5.0] - 2026-04-01
 
-### Added
-- **Voice selector (CMK1/CMK2)** — admin can choose between two ElevenLabs voices for narration generation, with toggle buttons in the Narrations panel
-- **Persistent narration settings** — voice choice, preset, and all slider values saved to localStorage and restored on next visit
+### Added — Complete Cost Tracking
+- **Full pipeline cost logging** — illustration (GPT Image, $0.08 padded) and narration (ElevenLabs, $0.14/1k chars padded) now logged to `daily_article_log` via `addCostToLog` in stage-publish
+- **System overhead tracking** — new `addOverheadCost()` utility creates daily `_system_overhead` rows for non-article costs: scout (3x/day), pinger (4x/hour), topic-merge, process-article, refine-article, editorial-qc
+- **All pricing padded 10-15%** above listed API rates so dashboard never under-reports actual spend
+- **`FLAT_PRICING` constant** in constants.ts for non-token services (illustration, narration)
+- Pipeline admin filters `_system_overhead` from UI logs but includes in total spend
+
+### Added — Narration Controls
+- **Voice selector (CMK1/CMK2)** — admin can choose between two ElevenLabs voices for narration generation
+- **Persistent narration settings** — voice choice, preset, and all slider values saved to localStorage
 
 ### Improved
-- **Light-mode article images** — translucent white overlay (15% opacity) on all card image containers in light mode, lifting the visual weight of dark AI illustrations without distorting colors. Applied via `hero-img-wrap` class across all 6 card types (ArticleCard component, homepage featured/grid, articles index lead/side/category)
+- **Light-mode article images** — translucent white overlay (15% opacity) on all card image containers in light mode via `hero-img-wrap` class across all 6 card types
 
 ### Fixed
-- **Admin narration regeneration** — single-article "Generate" now sends `force: true`, allowing admins to regenerate narration for articles that already have one
-- **Narration cache-busting** — append `?v=timestamp` to narration URLs so browsers serve fresh audio after regeneration
+- **Admin narration regeneration** — single-article "Generate" now sends `force: true`
+- **Narration cache-busting** — append `?v=timestamp` to narration URLs so browsers serve fresh audio
 
 ## [16.3.0] - 2026-04-01
 
