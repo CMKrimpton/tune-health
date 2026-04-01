@@ -13,8 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Persistent narration settings** — voice choice, preset, and all slider values saved to localStorage and restored on next visit
 
 ### Improved
-- **Light-mode article images** — `brightness(1.15) saturate(1.05)` filter on all card images in light mode so dark hero art doesn't feel heavy
-- **Light-mode lead card** — white-from-bottom gradient overlay with dark text instead of dark overlay, matching the lighter aesthetic
+- **Light-mode article images** — translucent white overlay (15% opacity) on all card image containers in light mode, lifting the visual weight of dark AI illustrations without distorting colors. Applied via `hero-img-wrap` class across all 6 card types (ArticleCard component, homepage featured/grid, articles index lead/side/category)
 
 ### Fixed
 - **Admin narration regeneration** — single-article "Generate" now sends `force: true`, allowing admins to regenerate narration for articles that already have one
