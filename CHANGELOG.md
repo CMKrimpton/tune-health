@@ -6,10 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [16.3.1] - 2026-04-01
+## [16.4.0] - 2026-04-01
+
+### Added
+- **Voice selector (CMK1/CMK2)** — admin can choose between two ElevenLabs voices for narration generation, with toggle buttons in the Narrations panel
+- **Persistent narration settings** — voice choice, preset, and all slider values saved to localStorage and restored on next visit
 
 ### Fixed
 - **Admin narration regeneration** — single-article "Generate" now sends `force: true`, allowing admins to regenerate narration for articles that already have one
+- **Narration cache-busting** — append `?v=timestamp` to narration URLs so browsers serve fresh audio after regeneration
 
 ## [16.3.0] - 2026-04-01
 
