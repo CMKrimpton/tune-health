@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **System overhead tracking** — new `addOverheadCost()` utility creates daily `_system_overhead` rows for non-article costs: scout (3x/day), pinger (4x/hour), topic-merge, process-article, refine-article, editorial-qc
 - **All pricing padded 10-15%** above listed API rates so dashboard never under-reports actual spend
 - **`FLAT_PRICING` constant** in constants.ts for non-token services (illustration, narration)
+- **Cost dashboard breakdown** — Total Spend now shows $/article avg and overhead spend underneath
+- **`backfill-media-costs` action** — retroactively adds illustration + narration costs to historical published articles (105 articles, +$13.95)
 - Pipeline admin filters `_system_overhead` from UI logs but includes in total spend
 
 ### Added — Narration Controls
