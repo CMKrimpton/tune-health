@@ -22,6 +22,15 @@ export const PRICING: Record<string, { input: number; output: number }> = {
   "gemini-3.1-flash-lite":    { input: 0.25, output: 1.50 },
 };
 
+// Flat-rate pricing for non-token services — updated April 2026
+// Sources: https://openai.com/api/pricing/, https://elevenlabs.io/pricing/api
+export const FLAT_PRICING = {
+  // GPT Image 1: 1536x1024, medium quality ≈ $0.07/image
+  ILLUSTRATION_USD: 0.07,
+  // ElevenLabs Multilingual v2: $0.12 per 1,000 characters (Business tier)
+  NARRATION_PER_CHAR_USD: 0.00012,
+} as const;
+
 export const CATEGORY_GRADIENTS: Record<string, { from: string; to: string; hex: string }> = {
   "Neuroscience":          { from: "violet-600",  to: "purple-700",  hex: "#7c3aed" },
   "Mental Health":         { from: "sky-500",     to: "blue-600",    hex: "#0ea5e9" },

@@ -1,9 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, parseScore } from "../_shared/db.ts";
+import { supabase, parseScore, addCostToLog } from "../_shared/db.ts";
 import { publishToGitHub } from "../_shared/github.ts";
 import { assembleAstroFile, todayISO } from "../_shared/astro.ts";
-import { getByline, API_TIMEOUT, MODELS } from "../_shared/constants.ts";
+import { getByline, API_TIMEOUT, MODELS, FLAT_PRICING } from "../_shared/constants.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
 
 Deno.serve(async (req: Request) => {
@@ -218,6 +218,14 @@ Deno.serve(async (req: Request) => {
           const illData = await illRes.json();
           if (illData.success && illData.imageUrl) {
             console.log(`[Publish] Illustration generated for ${slug}: ${illData.imageUrl}`);
+            // Log illustration cost to pipeline
+            await addCostToLog(db, logId, {
+              model: "gpt-image-1",
+              stage: "illustration",
+              inputTokens: 0,
+              outputTokens: 0,
+              costUsd: FLAT_PRICING.ILLUSTRATION_USD,
+            });
           }
         } else {
           console.warn(`[Publish] Illustration generation returned ${illRes.status} for ${slug}`);
@@ -254,6 +262,17 @@ Deno.serve(async (req: Request) => {
             const narData = await narRes.json();
             if (narData.success && narData.narrationUrl) {
               console.log(`[Publish] Narration generated for ${slug}: ${narData.narrationUrl}`);
+              // Log narration cost to pipeline
+              const charCount = narData.characters || 0;
+              if (charCount > 0) {
+                await addCostToLog(db, logId, {
+                  model: "eleven_multilingual_v2",
+                  stage: "narration",
+                  inputTokens: charCount,
+                  outputTokens: 0,
+                  costUsd: Math.round(charCount * FLAT_PRICING.NARRATION_PER_CHAR_USD * 10000) / 10000,
+                });
+              }
             }
           } else {
             console.warn(`[Publish] Narration generation returned ${narRes.status} for ${slug}`);
