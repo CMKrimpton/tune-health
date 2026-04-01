@@ -864,6 +864,29 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
         </button>
       </div>
 
+      {/* Preview current narration */}
+      {selectedSlug && (() => {
+        const selected = published.find(a => a.slug === selectedSlug);
+        if (!selected?.narration_url) return (
+          <p style={{ fontSize: 11, color: 'var(--admin-text-secondary)', marginTop: 8, fontStyle: 'italic' }}>
+            No narration yet for this article.
+          </p>
+        );
+        return (
+          <div style={{ marginTop: 8 }}>
+            <label style={{ fontSize: 11, color: 'var(--admin-text-secondary)', display: 'block', marginBottom: 4 }}>
+              Current narration:
+            </label>
+            <audio
+              controls
+              src={selected.narration_url}
+              style={{ width: '100%', height: 36, borderRadius: 8 }}
+              preload="none"
+            />
+          </div>
+        );
+      })()}
+
       {/* Voice Settings */}
       <div style={{ marginTop: 12 }}>
         <button
