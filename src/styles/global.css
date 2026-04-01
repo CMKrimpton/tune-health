@@ -706,9 +706,17 @@ body.menu-open {
 }
 
 /* Lighten dark hero images in light mode so they don't feel heavy */
-html:not(.dark) .article-card-image-inner,
-html:not(.dark) .featured-image-inner {
-  filter: brightness(1.15);
+html:not(.dark) .article-card-image-inner img,
+html:not(.dark) .featured-image-inner img,
+html:not(.dark) .article-lead-card img,
+html:not(.dark) .article-side-card img,
+html:not(.dark) .category-section img {
+  filter: brightness(1.15) saturate(1.05);
+}
+
+/* Soften the dark text overlay on the lead card in light mode */
+html:not(.dark) .lead-card-overlay {
+  opacity: 0.85;
 }
 
 .article-card:hover .article-card-image-inner,
