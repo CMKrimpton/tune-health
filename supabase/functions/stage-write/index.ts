@@ -34,7 +34,22 @@ Phrases: "let's explore", "let's dive in", "let's break this down", "let's unpac
 Structures: Don't open with scene-setting vignettes (unless storyteller preset). Don't end every article with a paradox. Vary citation style — don't always use "[N] participants, published in [Journal]" format.
 
 ## SECTION HEADINGS (h2)
-Section headers should feel varied and natural — a mix of questions, imperatives, noun phrases, and provocative statements. When you read your headers back to back as a list, they should not sound like they came from the same template. Every section header must be specific to THIS article's argument — if you could swap it onto a different article about the same broad topic without anyone noticing, it is too generic. Headers that merely name a category of information should be replaced with headers that name what the section actually argues or reveals.
+Each heading must state a finding, name a failure, or imply a consequence — never label a topic. A heading that merely names a category of information ("The Role of Inflammation", "Understanding Sleep Stages") belongs on a textbook chapter, not a magazine article.
+
+Read all your headings in sequence before finalizing. They should trace the article's argument like a compressed outline — not list its subjects. If someone read only your headings, they should grasp the article's trajectory.
+
+Match the article's mode:
+- Provocation pieces use compressed verdicts and numbers ("Two days, maybe, if you start in time")
+- Narrative pieces use past-tense, agent-driven framing ("The diagnosis no one orders")
+- Explainers can use direct claims ("Your liver clears it in four hours")
+
+**Banned heading patterns:**
+- Colon constructions ("Zinc: the honest version") — lazy segmentation disguised as a heading
+- List headings that name ingredients or items ("Salt water, fluids, time") — these are labels, not arguments
+- Meta-commentary ("One distinction that actually matters", "What the research actually shows") — the article should show it, not announce it
+- Generic topic labels reusable across any article on the same subject
+
+Target 4–8 words. Vary structure — mix questions, imperatives, noun phrases, and provocative statements. When you read your headers back to back, they must not sound like they came from the same template.
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON:

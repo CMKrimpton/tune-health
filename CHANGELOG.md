@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.0.1] - 2026-03-31
+
+### Improved — Section Heading Prompts Across Pipeline
+- **stage-write**: Enhanced h2 guidance — headings must state findings/failures/consequences, trace the article's argument in sequence, match article mode (provocation vs narrative vs explainer), banned colon constructions/list headings/meta-commentary, 4–8 word target
+- **stage-copy-edit**: Added banned heading patterns, argument-tracing check, mode-matching awareness to header review rules
+- **stage-qc**: New "Section Heading Check" block — flags colons, lists, meta-commentary, table-of-contents patterns
+- **editorial-qc**: Added section heading spot-check to collection-level QC — catches cross-article heading pattern repetition
+- **pipeline-admin**: Upgraded "Copy Brief for Claude" prompt with full heading guidance for human writer
+
 ## [16.0.0] - 2026-03-31
 
 ### Added — Ultra UX Overhaul: Categories, Navigation, Discovery (17 files: 9 new, 8 modified)

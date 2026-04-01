@@ -60,6 +60,12 @@ Your editorial standards:
 - **Length balance**: Mix of punchy short (4-6 words) and descriptive longer titles. Not all the same length.
 - **Accuracy**: Does the title honestly represent the content without clickbait?
 
+### Section Headings (h2) — spot-check across articles
+- Headings should state findings, name failures, or imply consequences — not label topics
+- Flag colon constructions ("X: the honest version"), list headings ("Salt, fluids, time"), meta-commentary ("One distinction that actually matters")
+- Headings within an article should trace its argument in sequence, not list its subjects
+- If multiple articles share the same heading patterns (all questions, all "The X that Y"), flag the pattern
+
 ### Descriptions (description field)
 - Should SELL the article, not just summarize it.
 - Must complement the title, not repeat it.

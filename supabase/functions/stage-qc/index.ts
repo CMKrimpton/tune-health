@@ -63,6 +63,12 @@ If the voice fails but the content is solid, decision = "rewrite_voice" — NOT 
 - Must be specific and honest. No clickbait, no manufactured mystery or conspiracy framing
 - If the current headline is good AND under 10 words, KEEP IT. Don't change for the sake of changing
 
+## Section Heading Check
+- Each h2 must state a finding, name a failure, or imply a consequence — not label a topic
+- Flag colon constructions ("X: the honest version"), list headings ("Salt, fluids, time"), or meta-commentary ("What the research actually shows")
+- Read headings in sequence: they should trace the article's argument. If they read like a table of contents, flag for revision
+- Target 4–8 words per heading
+
 ## Description Rules
 - 2-3 sentences that make a reader stop scrolling. COMPLETE sentences — never truncated
 - Must accurately represent the article's argument, not just its topic

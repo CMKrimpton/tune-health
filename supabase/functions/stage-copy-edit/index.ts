@@ -51,10 +51,13 @@ DESCRIPTION:
 - If the current description works, return null
 
 SECTION HEADERS (H2/H3):
-- Replace generic labels with specific ones that reflect what the section actually argues
+- Each heading must state a finding, name a failure, or imply a consequence — never label a topic
+- Replace generic labels ("The Role of X", "Understanding Y") with specific claims about what the section argues or reveals
 - Leave headers alone if they're already specific, even if you'd phrase them differently
-- Read the headers back to back as a list. If they sound like they came from the same template — same opener, same grammatical form repeated across most of them — propose varied alternatives
-- Variety in structure matters — a mix of questions, imperatives, noun phrases, and provocative statements reads better than any single form repeated
+- Read all headers in sequence: they should trace the article's argument, not list its subjects. If someone read only the headings, they should grasp the article's trajectory
+- Match the article's mode: provocation pieces use compressed verdicts and numbers; narrative pieces use past-tense, agent-driven framing; explainers use direct claims
+- **Banned**: colon constructions ("Zinc: the honest version"), list headings ("Salt water, fluids, time"), meta-commentary ("One distinction that actually matters", "What the research actually shows")
+- Target 4–8 words. Vary structure — mix of questions, imperatives, noun phrases, and provocative statements
 
 FOR HUMAN-WRITTEN ARTICLES (writtenBy = "human-opus"):
 - Only fix clear errors: truncation, grammar, >10 word titles
