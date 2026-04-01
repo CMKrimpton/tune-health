@@ -964,6 +964,63 @@ End with: <div class="data-callout reveal"><p><strong>Disclaimer:</strong> This 
       });
     }
 
+    // ------ IMPROVE-ARTICLE — send existing article back through full pipeline ------
+    if (action === "improve-article") {
+      const slug = body.slug as string;
+      if (!slug) return json({ error: "slug is required" }, 400);
+
+      // 1. Read existing article
+      const { data: article } = await db.from("articles")
+        .select("slug, title, description, category, tags, keywords")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!article) return json({ error: `Article "${slug}" not found` }, 404);
+
+      // 2. Check no pipeline run is already in progress for this slug
+      const { data: existing } = await db.from("daily_article_log")
+        .select("id, status")
+        .eq("slug", slug)
+        .not("status", "in", '("published","failed")')
+        .maybeSingle();
+      if (existing) {
+        return json({ error: `Article "${slug}" already has an active pipeline run (status: ${existing.status})` }, 409);
+      }
+
+      // 3. Create pipeline log entry
+      const { data: logEntry, error: logErr } = await db.from("daily_article_log").insert({
+        run_date: new Date().toISOString().split("T")[0],
+        slug,
+        topic: article.title,
+        title: article.title,
+        status: "started",
+        source: "improve",
+        stage_started_at: new Date().toISOString(),
+        research_data: {
+          _improves: slug,
+          _existingArticle: {
+            title: article.title,
+            description: article.description,
+            category: article.category,
+            tags: article.tags,
+            keywords: article.keywords,
+          },
+        },
+      }).select("id").single();
+
+      if (logErr || !logEntry) return json({ error: `Failed to create log entry: ${logErr?.message}` }, 500);
+
+      // 4. Dispatch to stage-research
+      await dispatchStage("stage-research", logEntry.id);
+      console.log(`[Admin] Improve-article: "${slug}" — dispatched stage-research (full pipeline re-run)`);
+
+      return json({
+        success: true,
+        logId: logEntry.id,
+        slug,
+        message: `"${article.title}" sent back through the full pipeline. It will pause at editor_approved for your writing.`,
+      });
+    }
+
     // ------ PRODUCE — manual trigger → calls dispatch_pipeline_stage() via SQL ------
     if (action === "produce") {
       console.log("[Admin] Manual produce trigger — calling dispatch_pipeline_stage()");

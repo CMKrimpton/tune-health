@@ -483,6 +483,13 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
       }
 
       // Editor approved — store the brief alongside research data
+      // For improve-article runs, force the original slug so the article is overwritten
+      const improvesSlug = researchData._improves as string | undefined;
+      if (improvesSlug) {
+        editorBrief.slug = improvesSlug;
+        console.log(`[Editor] Improve run — forcing slug to "${improvesSlug}"`);
+      }
+
       const { error: approveErr } = await db
         .from("daily_article_log")
         .update({
@@ -491,7 +498,7 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
           slug: editorBrief.slug as string,
           status: "editor_approved",
           editor_score: parseScore(editorBrief.topicScore),
-          source: researchData._queueId || researchData._fromQueue ? "queue" : "trending",
+          source: improvesSlug ? "improve" : (researchData._queueId || researchData._fromQueue ? "queue" : "trending"),
           research_data: {
             ...chosenResearch,
             _editorBrief: editorBrief,

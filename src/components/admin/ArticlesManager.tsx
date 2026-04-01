@@ -160,43 +160,23 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
     return res.json();
   }, [apiBase]);
 
-  // ─── Improve article (Grok review + auto-fix) ───────────────────
+  // ─── Improve article (full pipeline re-run) ────────────────────
 
   const improveArticle = useCallback(async (slug: string) => {
+    const article = articles.find(a => a.slug === slug);
+    if (!confirm(`Send "${article?.title || slug}" back through the full production pipeline?\n\nThis will re-research, re-edit, and pause for your writing — then replace the current version.`)) return;
+
     setImprovingSlug(slug);
     setImproveResult(null);
     try {
-      // 1. Get article content
-      const getRes = await apiCall('articles-api', { action: 'get', slug });
-      if (!getRes.article_html) throw new Error('No article content');
-
-      // 2. Send through refine-article with improvement instruction
-      const refineRes = await fetchWithTimeout(`${apiBase}/refine-article`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
-        body: JSON.stringify({
-          currentHtml: getRes.article_html,
-          currentMetadata: { title: getRes.title, category: getRes.category, slug },
-          instruction: 'Review this article for editorial quality. Fix any: pulled punches, institutional deference, missing study funders, vague "studies show" claims, weak conclusions, AI-sounding prose (uniform sentence length, "it\'s important to note"). Make the ending stronger if it feels abrupt. Preserve the editorial voice and angle. Return improved HTML.',
-          messages: [],
-        }),
-      });
-      if (!refineRes.ok) throw new Error(`Refine failed: ${refineRes.status}`);
-      const data = await refineRes.json();
-
-      if (data.html) {
-        // 3. Save improved content back to DB
-        await apiCall('articles-api', { action: 'save', article: { slug, article_html: data.html } });
-        setImproveResult({ slug, message: data.message || 'Article improved and saved', ok: true });
-      } else {
-        setImproveResult({ slug, message: data.message || 'No changes needed', ok: true });
-      }
+      const res = await apiCall('pipeline-admin', { action: 'improve-article', slug });
+      setImproveResult({ slug, message: res.message || 'Article sent to pipeline', ok: true });
     } catch (err) {
       setImproveResult({ slug, message: `Failed: ${(err as Error).message}`, ok: false });
     } finally {
       setImprovingSlug(null);
     }
-  }, [apiBase, apiCall]);
+  }, [apiCall, articles]);
 
   // ─── Search debounce ──────────────────────────────────────────────
 
@@ -546,7 +526,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
                     onClick={() => improveArticle(article.slug)}
                     disabled={improvingSlug === article.slug}
                     aria-label={`Improve ${article.title}`}
-                    title="AI review + auto-fix"
+                    title="Re-run full pipeline (research → edit → write → publish)"
                   >
                     {improvingSlug === article.slug ? (
                       <span className="admin-text-xs">Improving\u2026</span>

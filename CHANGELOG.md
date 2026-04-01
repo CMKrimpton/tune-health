@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.2.0] - 2026-04-01
+
+### Added
+- **Improve button → full pipeline re-run** — "Improve" on any published article sends it back through research → editor → write → independence → QC → publish, keeping the same slug so it overwrites the old version. Replaces the previous lightweight AI-review behavior. Confirmation dialog prevents accidental triggers. Stage-editor preserves the original slug for improve runs (`source: "improve"`). Narration is regenerated on publish for improved articles
+
 ## [16.1.0] - 2026-04-01
 
 ### Added

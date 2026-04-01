@@ -135,7 +135,7 @@ supabase/
     ├── stage-publish/                    # Stage 7: GitHub commit + Vercel hook + GPT Image illustration + ElevenLabs narration
     ├── pipeline-scout/                   # Scout — 3x/day topic discovery (all Gemini + Google Search)
     ├── pipeline-pinger/                  # Pinger — 4x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
-    ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article, merge
+    ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article, improve-article, merge
     │
     ├── topic-merge/                      # AI topic deduplication + merge (GPT-5.4 analyze, Sonnet merge)
     │
@@ -238,7 +238,7 @@ const articles = await getCollection('articles');
   - **Topic Queue with full controls**: Produce, Expedite, Priority ↑↓, Delete, Reset. BREAKING badge for pinger-promoted topics
   - Published articles with model pen names, independence/editor scores, cost per article, Edit + View links
   - Failed articles show actual error message
-- **Articles tab** (React island: `ArticlesManager`): search, filter (status/category), sort (newest/oldest/A-Z/read time/independence score), inline editing, bulk actions, featured toggle, **Improve button** (AI review + auto-fix per article), Refresh button, independence & editor score display per row
+- **Articles tab** (React island: `ArticlesManager`): search, filter (status/category), sort (newest/oldest/A-Z/read time/independence score), inline editing, bulk actions, featured toggle, **Improve button** (sends article back through full pipeline, same slug), Refresh button, independence & editor score display per row
 - **AI Agents tab** (React island: `AgentsPanel`): Reader Questions (mines alumi Health chat data), **Breaking News Pinger** (recent signals with source color coding, PROMOTED badges, refresh button), Cron Schedule (6 active jobs), editorial QC, illustration agent, Database & Maintenance, editor decision log
 - **New Article Editor** (`/admin/new`): drag-and-drop upload, AI generation, chat refinement, live preview, one-click publish
 - **Edit page** (`/admin/edit/[slug]`): metadata/content/AI refine tabs, autosave with 2s debounce + indicator, Cmd+S keyboard shortcut, score badges (independence/editor), live preview auto-refresh, Publish + Delete from GitHub buttons, XSS-safe chat rendering
@@ -331,7 +331,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `stage-publish` | Stage 7: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
 | `pipeline-scout` | 3x/day topic discovery — all Gemini + Google Search grounding. Trending signals, search demand, "why now" | None (called by pg_cron) |
 | `pipeline-pinger` | 4x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
-| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `merge-analyze`, `merge-execute` | None (rate-limited internally) |
+| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `improve-article` (full pipeline re-run, same slug), `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `merge-analyze`, `merge-execute` | None (rate-limited internally) |
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |

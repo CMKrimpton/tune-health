@@ -237,7 +237,8 @@ Deno.serve(async (req: Request) => {
         .eq("slug", slug)
         .maybeSingle();
 
-      if (!narrationCheck?.narration_url) {
+      const isImproveRun = !!researchData._improves;
+      if (!narrationCheck?.narration_url || isImproveRun) {
         console.log(`[Publish] No narration for ${slug} — generating TTS post-publish.`);
         try {
           const narRes = await fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
