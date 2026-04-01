@@ -146,9 +146,12 @@ async function handleGenerate(body: Record<string, unknown>) {
     ? { ...NARRATION_SETTINGS, ...(body.voiceSettings as Record<string, unknown>) }
     : { ...NARRATION_SETTINGS };
 
+  // Caller can override voice; fall back to default
+  const voiceId = (body.voiceId as string) || MODELS.NARRATION_VOICE;
+
   // Call ElevenLabs TTS API
   const ttsResponse = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${MODELS.NARRATION_VOICE}`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
     {
       method: "POST",
       headers: {
@@ -270,6 +273,7 @@ async function handleBatch(body: Record<string, unknown>) {
         action: "generate",
         slug: article.slug,
         force: !!body.force,
+        voiceId: body.voiceId || undefined,
         voiceSettings: body.voiceSettings || undefined,
       }),
     }).catch((err) => {

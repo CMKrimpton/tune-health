@@ -735,6 +735,12 @@ function IllustrationAgent({ apiBase }: { apiBase: string }) {
 
 // ─── 3b. Narration Agent ──────────────────────────────────────────────
 
+// Voice options for ElevenLabs narrations
+const VOICE_OPTIONS: Record<string, { label: string; id: string }> = {
+  cmk1: { label: 'CMK1', id: 'PpucZrRuGmXOkLcuhLXQ' },
+  cmk2: { label: 'CMK2', id: 'GK8yfgyvbDZaYf0rm78A' },
+};
+
 // Voice setting presets for ElevenLabs narrations
 const VOICE_PRESETS: Record<string, { label: string; desc: string; settings: { stability: number; similarity_boost: number; style: number; speed: number } }> = {
   default:   { label: 'Default',   desc: 'Current production settings', settings: { stability: 0.3, similarity_boost: 0.6, style: 0.4, speed: 1.0 } },
@@ -745,16 +751,44 @@ const VOICE_PRESETS: Record<string, { label: string; desc: string; settings: { s
   storyteller: { label: 'Storyteller', desc: 'Engaging, varied pacing — longform narrative', settings: { stability: 0.25, similarity_boost: 0.6, style: 0.6, speed: 0.95 } },
 };
 
+const NARRATION_STORAGE_KEY = 'alumi-admin-narration-settings';
+
+function loadNarrationSettings(): { voiceKey: string; preset: string; voiceSettings: { stability: number; similarity_boost: number; style: number; speed: number } } {
+  try {
+    const raw = localStorage.getItem(NARRATION_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        voiceKey: parsed.voiceKey && VOICE_OPTIONS[parsed.voiceKey] ? parsed.voiceKey : 'cmk2',
+        preset: parsed.preset || 'default',
+        voiceSettings: parsed.voiceSettings || VOICE_PRESETS.default.settings,
+      };
+    }
+  } catch { /* ignore */ }
+  return { voiceKey: 'cmk2', preset: 'default', voiceSettings: VOICE_PRESETS.default.settings };
+}
+
+function saveNarrationSettings(voiceKey: string, preset: string, voiceSettings: { stability: number; similarity_boost: number; style: number; speed: number }) {
+  try { localStorage.setItem(NARRATION_STORAGE_KEY, JSON.stringify({ voiceKey, preset, voiceSettings })); } catch { /* ignore */ }
+}
+
 function NarrationAgent({ apiBase }: { apiBase: string }) {
   const [articles, setArticles] = useState<Array<{ slug: string; title: string; narration_url: string | null; status: string }>>([]);
   const [selectedSlug, setSelectedSlug] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
   const [result, setResult] = useState<string | null>(null);
-  const [preset, setPreset] = useState('default');
-  const [voiceSettings, setVoiceSettings] = useState(VOICE_PRESETS.default.settings);
+  const saved = loadNarrationSettings();
+  const [voiceKey, setVoiceKey] = useState(saved.voiceKey);
+  const [preset, setPreset] = useState(saved.preset);
+  const [voiceSettings, setVoiceSettings] = useState(saved.voiceSettings);
   const [showSettings, setShowSettings] = useState(false);
   const { ask, ConfirmDialog: NarrationConfirm } = useConfirm();
+
+  // Persist voice + settings to localStorage on any change
+  useEffect(() => {
+    saveNarrationSettings(voiceKey, preset, voiceSettings);
+  }, [voiceKey, preset, voiceSettings]);
 
   useEffect(() => {
     (async () => {
@@ -790,7 +824,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       const res = await fetchWithTimeout(`${apiBase}/generate-narration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'batch', force, voiceSettings }),
+        body: JSON.stringify({ action: 'batch', force, voiceId: VOICE_OPTIONS[voiceKey].id, voiceSettings }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -808,7 +842,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
     } finally {
       setLoading(false);
     }
-  }, [apiBase, voiceSettings]);
+  }, [apiBase, voiceKey, voiceSettings]);
 
   const runSingle = useCallback(async () => {
     if (!selectedSlug) return;
@@ -821,7 +855,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       const res = await fetchWithTimeout(`${apiBase}/generate-narration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', slug: selectedSlug, force: true, voiceSettings }),
+        body: JSON.stringify({ action: 'generate', slug: selectedSlug, force: true, voiceId: VOICE_OPTIONS[voiceKey].id, voiceSettings }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -832,7 +866,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
     } finally {
       setLoading(false);
     }
-  }, [apiBase, selectedSlug, voiceSettings]);
+  }, [apiBase, selectedSlug, voiceKey, voiceSettings]);
 
   return (
     <Panel
@@ -884,8 +918,30 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
         );
       })()}
 
+      {/* Voice selector */}
+      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <label style={{ fontSize: 11, color: 'var(--admin-text-secondary)' }}>Voice:</label>
+        {Object.entries(VOICE_OPTIONS).map(([key, v]) => (
+          <button
+            key={key}
+            className="agents-btn"
+            onClick={() => setVoiceKey(key)}
+            style={{
+              fontSize: 11,
+              padding: '4px 12px',
+              background: voiceKey === key ? 'var(--admin-accent)' : 'var(--admin-surface-hover)',
+              color: voiceKey === key ? '#fff' : 'var(--admin-text-secondary)',
+              borderRadius: 6,
+              border: voiceKey === key ? '1px solid var(--admin-accent)' : '1px solid var(--admin-border)',
+            }}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
       {/* Voice Settings */}
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 8 }}>
         <button
           className="agents-btn"
           onClick={() => setShowSettings(!showSettings)}
