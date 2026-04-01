@@ -52,7 +52,7 @@ const sortedCategories = [...articlesByCategory.entries()]
         <!-- Search + Sort -->
         <div class="flex flex-col sm:flex-row gap-3 w-full max-w-md">
           <div class="relative flex-1">
-            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="8" stroke-width="2"/>
               <path d="m21 21-4.35-4.35" stroke-width="2"/>
             </svg>
@@ -60,9 +60,20 @@ const sortedCategories = [...articlesByCategory.entries()]
               type="text"
               id="articleSearch"
               placeholder="Search articles..."
-              class="w-full pl-12 pr-5 py-3 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-base focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-[border-color,box-shadow]"
+              class="w-full pl-12 pr-12 py-3 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full text-base focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-[border-color,box-shadow]"
               aria-label="Search articles"
             />
+            <button
+              id="articleSearchClear"
+              class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
+              aria-label="Clear search"
+              style="display: none;"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="m15 9-6 6M9 9l6 6"/>
+              </svg>
+            </button>
           </div>
           <div class="sort-dropdown" id="articleSortDropdown">
             <button class="sort-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Sort articles">
@@ -356,6 +367,14 @@ const sortedCategories = [...articlesByCategory.entries()]
     const activeTagLabel = document.getElementById('activeTagLabel');
     const clearTagBtn = document.getElementById('clearTagFilter');
     const clearAllBtn = document.getElementById('clearAllFilters');
+    const searchClearBtn = document.getElementById('articleSearchClear');
+
+    // Show/hide clear button on input
+    function updateSearchClearBtn() {
+      if (searchClearBtn) {
+        searchClearBtn.style.display = searchInput?.value ? '' : 'none';
+      }
+    }
 
     // Read URL params
     const params = new URLSearchParams(window.location.search);
@@ -543,10 +562,22 @@ const sortedCategories = [...articlesByCategory.entries()]
       });
     }
 
+    // Clear button
+    searchClearBtn?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+      }
+      activeCategory = 'all';
+      updateSearchClearBtn();
+      filterArticles();
+    });
+
     // Debounced search
     let searchTimer: ReturnType<typeof setTimeout>;
     searchInput?.addEventListener('input', () => {
       clearTimeout(searchTimer);
+      updateSearchClearBtn();
       searchTimer = setTimeout(() => {
         if (searchInput.value.trim()) {
           activeCategory = 'all';
@@ -675,9 +706,12 @@ const sortedCategories = [...articlesByCategory.entries()]
   }
 
   .sort-dropdown-option {
-    @apply px-3 py-2 text-sm cursor-pointer;
+    @apply px-3 py-2.5 text-sm cursor-pointer;
     @apply text-stone-600 dark:text-stone-400;
     @apply rounded-lg;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
     transition: background-color 0.15s ease, color 0.15s ease;
   }
 

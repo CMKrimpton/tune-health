@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.7.0] - 2026-04-01
+
+### Improved — Search UX Overhaul
+
+#### Command Palette (⌘K) — Mobile-First
+- **iOS zoom fix** — input forced to 16px on mobile to prevent Safari auto-zoom on focus
+- **44px touch targets** — all list items now meet minimum touch target size (was ~34px)
+- **Responsive card layout** — proper 16px horizontal margins with `w-[calc(100%-2rem)]`, positioned below safe area
+- **visualViewport keyboard adaptation** — container dynamically shrinks when iOS keyboard opens via `visualViewport` resize listener
+- **Clear button** — circle × button appears when text/category is active, clears and refocuses
+- **Search match highlighting** — `<mark>` highlights matching substring in title and description
+- **Context-aware footer** — touch devices see "Close" button; desktop keeps ↑↓/↵ keyboard hints
+- **Better placeholder** — "Search articles, topics, pages..." communicates scope
+- **Fade-in animation** — smooth entrance via CSS keyframes
+- **Active tap feedback** — `active:bg-stone-100` for immediate visual response on touch
+
+#### Articles Page Search
+- **Clear button** — × button inside search input, appears when text is entered
+- **Sort dropdown touch targets** — options now 44px min-height with flex alignment
+
 ## [16.6.0] - 2026-04-01
 
 ### Improved — UX Polish Pass (6 files)
