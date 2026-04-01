@@ -112,6 +112,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const uploadFileRef = useRef<HTMLInputElement>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
+  const [overheadSpend, setOverheadSpend] = useState<number>(0);
+  const [avgCostPerArticle, setAvgCostPerArticle] = useState<number>(0);
   const [scouting, setScouting] = useState<string | null>(null);
   const [scoutResult, setScoutResult] = useState<string | null>(null);
   // Merge state
@@ -156,6 +158,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       if (typeof data.articleCount === 'number') setArticleCount(data.articleCount);
       if (data.queue) setQueue(data.queue);
       if (typeof data.totalCost === 'number') setTotalCost(data.totalCost);
+      if (typeof data.overheadSpend === 'number') setOverheadSpend(data.overheadSpend);
+      if (typeof data.avgCostPerArticle === 'number') setAvgCostPerArticle(data.avgCostPerArticle);
       setLastPoll(new Date());
     } catch { /* retry on next poll */ }
   }, [apiBase]);
@@ -815,6 +819,11 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             <span className="admin-text-sm admin-color-subtle">Total Spend</span>
             <span className="admin-text-lg admin-weight-600 admin-tabular-nums" style={{ color: totalCost > 50 ? 'var(--admin-red-light)' : totalCost > 20 ? 'var(--admin-yellow)' : 'var(--admin-text-2)' }}>
               ${totalCost.toFixed(2)}
+            </span>
+            <span className="admin-text-micro admin-color-muted admin-tabular-nums" style={{ marginTop: 2 }}>
+              {avgCostPerArticle > 0 && `$${avgCostPerArticle.toFixed(2)}/article`}
+              {avgCostPerArticle > 0 && overheadSpend > 0 && ' · '}
+              {overheadSpend > 0 && `$${overheadSpend.toFixed(2)} overhead`}
             </span>
           </div>
         )}

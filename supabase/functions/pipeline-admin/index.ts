@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, calcCost, dispatchStage } from "../_shared/db.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
-import { getCategoryGradient, MODELS } from "../_shared/constants.ts";
+import { getCategoryGradient, MODELS, FLAT_PRICING } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
@@ -125,14 +125,22 @@ Deno.serve(async (req: Request) => {
         .order("priority", { ascending: true })
         .order("created_at", { ascending: true });
 
-      // Calculate total spend across all logs
+      // Calculate total spend across all logs (article + overhead separately)
       const { data: costData } = await db
         .from("daily_article_log")
-        .select("cost_usd");
-      const totalCost = (costData || []).reduce((sum: number, row: { cost_usd: number | string | null }) =>
-        sum + (parseFloat(String(row.cost_usd ?? "0")) || 0), 0);
+        .select("cost_usd, slug");
+      let articleSpend = 0;
+      let overheadSpend = 0;
+      for (const row of costData || []) {
+        const c = parseFloat(String(row.cost_usd ?? "0")) || 0;
+        if (row.slug === "_system_overhead") overheadSpend += c;
+        else articleSpend += c;
+      }
+      const totalCost = Math.round((articleSpend + overheadSpend) * 100) / 100;
+      const publishedWithCost = (costData || []).filter((r: { cost_usd: number | string | null; slug: string }) => r.slug !== "_system_overhead" && (parseFloat(String(r.cost_usd ?? "0")) || 0) > 0).length;
+      const avgCostPerArticle = publishedWithCost > 0 ? Math.round((articleSpend / publishedWithCost) * 100) / 100 : 0;
 
-      return json({ logs: data || [], articleCount, queue: queue || [], totalCost: Math.round(totalCost * 100) / 100 });
+      return json({ logs: data || [], articleCount, queue: queue || [], totalCost, overheadSpend: Math.round(overheadSpend * 100) / 100, avgCostPerArticle });
     }
 
     // ------ READER QUESTIONS — mine user chat data for article ideas ------
@@ -380,6 +388,73 @@ Deno.serve(async (req: Request) => {
         updated,
         totalEstimated: Math.round(totalEstimated * 100) / 100,
         note: "These are estimates based on typical token counts per stage. Actual costs may vary ±20%.",
+      });
+    }
+
+    // ------ BACKFILL MEDIA COSTS — add illustration + narration costs to published articles ------
+    if (action === "backfill-media-costs") {
+      // Find published articles that have hero_image or narration_url
+      // and check if their log entry already has illustration/narration cost entries
+      const { data: articles } = await db
+        .from("articles")
+        .select("slug, hero_image, narration_url, description, pipeline_log_id")
+        .eq("status", "published");
+
+      if (!articles || articles.length === 0) {
+        return json({ message: "No published articles found", updated: 0 });
+      }
+
+      let updated = 0;
+      let addedCost = 0;
+
+      for (const article of articles) {
+        if (!article.pipeline_log_id) continue;
+
+        // Check existing token_usage for this log entry
+        const { data: logEntry } = await db
+          .from("daily_article_log")
+          .select("id, cost_usd, token_usage")
+          .eq("id", article.pipeline_log_id)
+          .maybeSingle();
+        if (!logEntry) continue;
+
+        const existingUsage = (logEntry.token_usage as ApiUsage[]) || [];
+        const hasIllustrationCost = existingUsage.some((u: ApiUsage) => u.stage === "illustration");
+        const hasNarrationCost = existingUsage.some((u: ApiUsage) => u.stage === "narration");
+
+        let extraCost = 0;
+        const newEntries: ApiUsage[] = [];
+
+        // Add illustration cost if article has hero_image but no illustration cost logged
+        if (article.hero_image && !hasIllustrationCost) {
+          extraCost += FLAT_PRICING.ILLUSTRATION_USD;
+          newEntries.push({ model: "gpt-image-1", stage: "illustration", inputTokens: 0, outputTokens: 0, costUsd: FLAT_PRICING.ILLUSTRATION_USD });
+        }
+
+        // Add narration cost if article has narration_url but no narration cost logged
+        if (article.narration_url && !hasNarrationCost) {
+          const charCount = (article.description || "").length;
+          const narCost = Math.round(charCount * FLAT_PRICING.NARRATION_PER_CHAR_USD * 10000) / 10000;
+          extraCost += narCost;
+          newEntries.push({ model: "eleven_multilingual_v2", stage: "narration", inputTokens: charCount, outputTokens: 0, costUsd: narCost });
+        }
+
+        if (extraCost > 0) {
+          const currentCost = parseFloat(String(logEntry.cost_usd ?? "0")) || 0;
+          await db.from("daily_article_log").update({
+            cost_usd: Math.round((currentCost + extraCost) * 10000) / 10000,
+            token_usage: [...existingUsage, ...newEntries],
+          }).eq("id", logEntry.id);
+          updated++;
+          addedCost += extraCost;
+        }
+      }
+
+      return json({
+        message: `Backfilled media costs for ${updated} articles`,
+        updated,
+        addedCost: Math.round(addedCost * 100) / 100,
+        totalArticles: articles.length,
       });
     }
 
