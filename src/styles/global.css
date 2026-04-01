@@ -705,6 +705,12 @@ body.menu-open {
   @apply transition-transform duration-700 ease-editorial;
 }
 
+/* Lighten dark hero images in light mode so they don't feel heavy */
+html:not(.dark) .article-card-image-inner,
+html:not(.dark) .featured-image-inner {
+  filter: brightness(1.15);
+}
+
 .article-card:hover .article-card-image-inner,
 .featured-card:hover .featured-image-inner {
   @apply scale-105;
