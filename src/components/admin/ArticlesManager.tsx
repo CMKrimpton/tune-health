@@ -188,13 +188,13 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
             <span className="articles-detail-key">Closing</span>
             <span>{editorBrief.brief?.closingDirection || '\u2014'}</span>
           </div>
-          {editorBrief.brief?.emphasize && editorBrief.brief.emphasize.length > 0 && (
+          {Array.isArray(editorBrief.brief?.emphasize) && editorBrief.brief.emphasize.length > 0 && (
             <div className="articles-detail-subsection">
               <div className="articles-detail-subheading">Emphasize</div>
               <ul className="articles-detail-list">{editorBrief.brief.emphasize.map((e, i) => <li key={i}>{e}</li>)}</ul>
             </div>
           )}
-          {editorBrief.brief?.avoid && editorBrief.brief.avoid.length > 0 && (
+          {Array.isArray(editorBrief.brief?.avoid) && editorBrief.brief.avoid.length > 0 && (
             <div className="articles-detail-subsection">
               <div className="articles-detail-subheading">Avoid</div>
               <ul className="articles-detail-list">{editorBrief.brief.avoid.map((a, i) => <li key={i}>{a}</li>)}</ul>
@@ -217,7 +217,7 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
             <span className="articles-detail-key">Summary</span>
             <span>{indReview.summary || '\u2014'}</span>
           </div>
-          {indReview.flags && indReview.flags.length > 0 && (
+          {Array.isArray(indReview.flags) && indReview.flags.length > 0 && (
             <div className="articles-detail-subsection">
               <div className="articles-detail-subheading">Flags ({indReview.flags.length})</div>
               {indReview.flags.map((f, i) => (
@@ -230,7 +230,7 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
               ))}
             </div>
           )}
-          {indReview.strengths && indReview.strengths.length > 0 && (
+          {Array.isArray(indReview.strengths) && indReview.strengths.length > 0 && (
             <div className="articles-detail-subsection">
               <div className="articles-detail-subheading">Strengths</div>
               <ul className="articles-detail-list">{indReview.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
@@ -295,7 +295,7 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
               <div className="articles-score-value" style={{ color: '#7d7871' }}>{pubmed.skipped ?? 0}</div>
             </div>
           </div>
-          {pubmed.details && pubmed.details.length > 0 && (
+          {Array.isArray(pubmed.details) && pubmed.details.length > 0 && (
             <div className="articles-detail-subsection">
               <div className="articles-detail-subheading">Citations</div>
               {pubmed.details.map((d, i) => (
