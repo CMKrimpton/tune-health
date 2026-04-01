@@ -189,7 +189,8 @@ async function handleGenerate(body: Record<string, unknown>) {
     .from("article-narrations")
     .getPublicUrl(storagePath);
 
-  const publicUrl = urlData.publicUrl;
+  // Append cache-busting timestamp so browsers/CDN serve the new file on regeneration
+  const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
   // Update the article record
   const { error: updateError } = await db
@@ -202,7 +203,7 @@ async function handleGenerate(body: Record<string, unknown>) {
   }
 
   // Sync narrationUrl to GitHub JSON so the Astro site can render the audio player
-  await updateGitHubJson(slug, { narrationUrl: publicUrl }, `feat: Add narration — '${slug}'`);
+  await updateGitHubJson(slug, { narrationUrl: publicUrl }, `feat: Update narration — '${slug}'`);
 
   console.log(`[Narration] Generated for ${slug}: ${publicUrl}`);
 
