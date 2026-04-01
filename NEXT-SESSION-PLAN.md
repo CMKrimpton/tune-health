@@ -1,10 +1,10 @@
 # Next Session Plan
 
-> **Status**: v16.1.0 live. ~184 published articles across 9 categories. TopicNav dropdowns, voice settings panel, tightened heading prompts, unified author bylines.
+> **Status**: v16.3.0 live. ~185 published articles across 9 categories. Admin pipeline redesigned with 2-row adaptive grid, wider dashboard, improved spacing.
 
 ---
 
-## Current Architecture (v16.1.0)
+## Current Architecture (v16.3.0)
 
 - **Navigation**: domain-grouped dropdown (Mind/Body/Medicine/Environment), TopicNav with per-category hover dropdowns (tagline + 4 latest articles), SideNav grouped by domain
 - **Category Landing Pages**: `/topics/[slug]` — 9 pages with gradient hero, editorial metadata, featured article, sorted grid, related topics
@@ -15,16 +15,15 @@
 - **Pipeline**: 8-stage + post-publish narration + illustration. Hybrid model (human writes with Opus). Tightened heading/title word limits across all stages
 - **Narration**: ElevenLabs TTS with admin voice settings panel (6 presets + custom sliders). Fire-and-forget batch dispatch
 - **Security**: HSTS preload, CSP hardening, immutable asset caching
+- **Admin Pipeline UI**: 2-row adaptive grid — Write card spans right column at full height, 5 post-write stages in bottom row. Dashboard max-width 1600px. Queue/Published 3fr/2fr split
 
 ## What Was Done This Session
 
-1. **Section heading prompt overhaul** — all pipeline stages now enforce 4-8 word h2 headings with banned patterns
-2. **Title word limits tightened** — "target 5-8, hard cap 10" replaces soft "max 10" across 7 files
-3. **TopicNav hover dropdowns** — glass dropdown per category with tagline, latest articles, badges
-4. **Author unification** — all 153 articles + MODEL_BYLINES → "Max Lundin"
-5. **Voice settings panel** — 6 ElevenLabs presets + custom sliders in admin narration panel
-6. **Batch narration fix** — fire-and-forget dispatch replaces sequential processing (timeout fix)
-7. **Narration UI fixes** — published-only counts, title instead of slug in results
+1. **Pipeline stage layout redesign** — 2-row adaptive grid replaces cramped 7-equal-column layout. Write card spans right third at full height for hybrid workflow. Bottom row: Independence → QC → Voice Polish → Copy Edit → Publish
+2. **Dashboard widened** — max-width 1400px → 1600px for header and main
+3. **Queue/Published rebalanced** — 3fr/2fr split with larger gap (1.25rem)
+4. **Spacing pass** — stats cards, pipeline cards, stage headers/bodies, status bar, section titles, opus box all improved
+5. **3 responsive breakpoints** — 1400px, 1100px, 900px for clean degradation
 
 ## Priority for Next Session
 
@@ -34,6 +33,7 @@
 - Check all category landing pages in light + dark mode
 - Test "Continue Reading" section
 - Real device testing (iPhone SE, iPhone 14 Pro, iPad)
+- Verify admin pipeline layout on 1440px, 1280px, 1024px, 768px screens
 
 ### 2. Content Production
 - Use merge system to clean up topic queue

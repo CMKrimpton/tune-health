@@ -884,12 +884,13 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         </div>
       )}
 
-      {/* ── 7-Stage Pipeline ── */}
+      {/* ── Pipeline Stages — 2-row layout ── */}
       <div className="pipeline-container">
-        {PIPELINE_STAGE_CONFIG.map((stage) => {
+        {/* Row 1: Research, Editor (left), Write (right, spanning full height) */}
+        {PIPELINE_STAGE_CONFIG.slice(0, 2).map((stage) => {
           const items = stageLogsMap[stage.key];
           return (
-            <div key={stage.key} className="pipeline-stage">
+            <div key={stage.key} className="pipeline-stage" data-stage={stage.key}>
               <div className="pipeline-stage-header">
                 <span className="pipeline-stage-icon">{stage.icon}</span>
                 <span>{stage.label}</span>
@@ -905,22 +906,72 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                   <div className="pipeline-stage-empty">Waiting</div>
                 ) : (
                   items.map(log => (
-                    <PipelineCard
-                      key={log.id}
-                      log={log}
-                      expanded={expandedId === log.id}
-                      onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)}
-                      onKill={() => killArticle(log.id)}
-                      killing={killingId === log.id}
-                      apiBase={apiBase}
-                      onRefresh={fetchStatus}
-                    />
+                    <PipelineCard key={log.id} log={log} expanded={expandedId === log.id} onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)} onKill={() => killArticle(log.id)} killing={killingId === log.id} apiBase={apiBase} onRefresh={fetchStatus} />
                   ))
                 )}
               </div>
             </div>
           );
         })}
+
+        {/* Write stage — spans right column, full height */}
+        {(() => {
+          const stage = PIPELINE_STAGE_CONFIG[2]; // write
+          const items = stageLogsMap[stage.key];
+          return (
+            <div key={stage.key} className="pipeline-stage" data-stage={stage.key}>
+              <div className="pipeline-stage-header">
+                <span className="pipeline-stage-icon">{stage.icon}</span>
+                <span>{stage.label}</span>
+                <span className="admin-text-micro admin-weight-600 admin-ml-xs" style={{ color: stage.modelColor, opacity: 0.8 }}>
+                  {stage.model}
+                </span>
+                <span className={`pipeline-stage-count${items.length > 0 ? ' has-items' : ''}`}>
+                  {items.length}
+                </span>
+              </div>
+              <div className="pipeline-stage-body">
+                {items.length === 0 ? (
+                  <div className="pipeline-stage-empty">Waiting for articles ready to write</div>
+                ) : (
+                  items.map(log => (
+                    <PipelineCard key={log.id} log={log} expanded={expandedId === log.id} onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)} onKill={() => killArticle(log.id)} killing={killingId === log.id} apiBase={apiBase} onRefresh={fetchStatus} />
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Row 2: Independence → QC → Voice Polish → Copy Edit → Publish */}
+        <div className="pipeline-row-2">
+          {PIPELINE_STAGE_CONFIG.slice(3).map((stage) => {
+            const items = stageLogsMap[stage.key];
+            return (
+              <div key={stage.key} className="pipeline-stage" data-stage={stage.key}>
+                <div className="pipeline-stage-header">
+                  <span className="pipeline-stage-icon">{stage.icon}</span>
+                  <span>{stage.label}</span>
+                  <span className="admin-text-micro admin-weight-600 admin-ml-xs" style={{ color: stage.modelColor, opacity: 0.8 }}>
+                    {stage.model}
+                  </span>
+                  <span className={`pipeline-stage-count${items.length > 0 ? ' has-items' : ''}`}>
+                    {items.length}
+                  </span>
+                </div>
+                <div className="pipeline-stage-body">
+                  {items.length === 0 ? (
+                    <div className="pipeline-stage-empty">Waiting</div>
+                  ) : (
+                    items.map(log => (
+                      <PipelineCard key={log.id} log={log} expanded={expandedId === log.id} onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)} onKill={() => killArticle(log.id)} killing={killingId === log.id} apiBase={apiBase} onRefresh={fetchStatus} />
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Two-column layout: Queue + Published/Kills/Errors ── */}

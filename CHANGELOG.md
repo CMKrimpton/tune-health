@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.3.0] - 2026-04-01
+
+### Improved — Admin Pipeline Layout Redesign
+- **2-row adaptive pipeline grid** — replaces cramped 7-equal-column layout. Row 1: Research + Editor (left), Write card spanning the right third at full height for hybrid workflow (Copy Brief, Submit Article, headline input). Row 2: Independence → QC → Voice Polish → Copy Edit → Publish (5 equal columns). Three responsive breakpoints (1400px, 1100px, 900px)
+- **Dashboard max-width widened** from 1400px to 1600px — all sections have more breathing room
+- **Queue/Published split** changed from 1fr/1fr to 3fr/2fr — queue gets 60% of width since it has more controls (upload, search, filters, topic cards)
+- **Improved spacing** throughout: stats cards, pipeline cards, stage headers/bodies, status bar, section titles, opus workflow box all get more padding
+- **Write stage body** has no max-height limit — hybrid workflow UI (brief copy, article submission) is never clipped
+
 ## [16.2.0] - 2026-04-01
 
 ### Added
