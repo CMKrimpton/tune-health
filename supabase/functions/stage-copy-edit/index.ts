@@ -41,9 +41,9 @@ A strong section header names what the section actually argues or reveals — no
 ## Rules
 
 TITLE (H1):
-- Max 10 words — this is a hard cap. Shorten if it exceeds this
+- Target 5-8 words, hard cap 10. Count every word. If it's 9+, shorten it — that's an automatic change
 - Must make a specific claim or ask a specific question
-- If the current title is good, return null for proposed. Don't change for the sake of changing
+- If the current title is good AND under 10 words, return null for proposed. Don't change for the sake of changing
 
 DESCRIPTION:
 - Must be complete sentences (no truncation mid-thought)
@@ -57,7 +57,7 @@ SECTION HEADERS (H2/H3):
 - Read all headers in sequence: they should trace the article's argument, not list its subjects. If someone read only the headings, they should grasp the article's trajectory
 - Match the article's mode: provocation pieces use compressed verdicts and numbers; narrative pieces use past-tense, agent-driven framing; explainers use direct claims
 - **Banned**: colon constructions ("Zinc: the honest version"), list headings ("Salt water, fluids, time"), meta-commentary ("One distinction that actually matters", "What the research actually shows")
-- Target 4–8 words. Vary structure — mix of questions, imperatives, noun phrases, and provocative statements
+- **4–8 words, hard range. Count every heading. A 9-word heading is a failure — shorten it.** Vary structure — mix of questions, imperatives, noun phrases, and provocative statements
 
 FOR HUMAN-WRITTEN ARTICLES (writtenBy = "human-opus"):
 - Only fix clear errors: truncation, grammar, >10 word titles

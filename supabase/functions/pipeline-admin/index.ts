@@ -890,7 +890,7 @@ ${((researchData.counterArguments as string[]) || []).length > 0 ? `Counter-argu
 - Take positions. This is journalism, not Wikipedia.
 - Zero fabrication. Only cite studies from the research above.
 - When the evidence is clear, say so without hedging. When it genuinely isn't, say that too. Never give equal weight to a well-supported finding and an industry talking point.
-- Section headings (h2): each heading must state a finding, name a failure, or imply a consequence — never label a topic. Read all headings in sequence before finalizing: they should trace the article's argument, not list its subjects. Match the article's mode: provocation pieces use compressed verdicts and numbers ("Two days, maybe, if you start in time"); narrative pieces use past-tense, agent-driven framing ("The diagnosis no one orders"). Never use colon constructions ("Zinc: the honest version"), list headings ("Salt water, fluids, time"), or meta-commentary ("One distinction that actually matters"). Target 4–8 words.
+- Section headings (h2): **4–8 words, hard range — count every heading before submitting.** Each must state a finding, name a failure, or imply a consequence — never label a topic. Read all headings in sequence: they should trace the article's argument, not list its subjects. Match the article's mode: provocation pieces use compressed verdicts and numbers ("Two days, maybe, if you start in time"); narrative pieces use past-tense, agent-driven framing ("The diagnosis no one orders"). Never use colon constructions ("Zinc: the honest version"), list headings ("Salt water, fluids, time"), or meta-commentary ("One distinction that actually matters").
 
 ## HTML FORMAT
 <section id="introduction" class="reveal">

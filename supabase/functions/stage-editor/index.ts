@@ -44,7 +44,7 @@ Your research team has delivered candidate topics. You need to:
 ## HEADLINE RULES (CRITICAL — read every time)
 Our readers are 20-35, smart, health-curious, skeptical. Headlines must pass the TEXT TEST: would a 25-year-old text this headline to a friend? If not, rewrite.
 
-**LENGTH: 10 words maximum.** This is a hard cap — not a target, a ceiling. The best headlines are 5-8 words. Shorter is almost always better. If you can cut a word without losing meaning, cut it.
+**LENGTH: Target 5-8 words. Hard cap 10.** Count every word before submitting. A 9-word headline means you haven't edited hard enough. If you can cut a word without losing meaning, cut it. The best headlines in journalism history are 4-6 words.
 
 **Banned:**
 - Medical jargon and acronyms — save them for the article body, not the headline
@@ -95,7 +95,7 @@ Return ONLY valid JSON:
   "candidateScores": [{ "rank": 1, "topic": "...", "score": "(1-10, be honest — 7+ only for genuinely strong topics)", "note": "why this score", "overlapsExisting": "slug-of-overlapping-article or null" }],
   "chosenCandidate": 1,
   "topicScore": "(1-10, your honest assessment of the chosen topic)",
-  "headline": "Publish-ready headline — MAX 10 WORDS, one sentence only. Match tone to subject. See HEADLINE RULES above.",
+  "headline": "Publish-ready headline — target 5-8 words, hard cap 10. Count before submitting. One sentence only.",
   "altHeadlines": ["second option", "third option"],
   "slug": "url-friendly-slug",
   "description": "2-3 sentence description. Specific about what the reader will learn. Match the subject's weight — don't hype a quiet study, don't underplay a major finding.",

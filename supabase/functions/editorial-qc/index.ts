@@ -57,11 +57,12 @@ Your editorial standards:
 - **Structural variety**: Too many titles following the same pattern is deadly. "The X of Y", "The X That Y", "Your X Is Y" — if more than 3-4 share a structure, flag them.
 - **Reader magnetism**: Would someone stop scrolling for this? Does it create curiosity, tension, or provocation?
 - **Differentiation**: When shown as a list, can a reader distinguish each article? Or do they blur together?
-- **Length balance**: Mix of punchy short (4-6 words) and descriptive longer titles. Not all the same length.
+- **Length enforcement**: Target 5-8 words, hard cap 10. Flag ANY title over 10 words as an automatic fix. Most titles should land at 5-8 words — if the collection skews 9-10, that's a problem even if no individual title breaks the cap.
 - **Accuracy**: Does the title honestly represent the content without clickbait?
 
 ### Section Headings (h2) — spot-check across articles
 - Headings should state findings, name failures, or imply consequences — not label topics
+- **4–8 words per heading. Flag any heading over 8 words — it needs editing**
 - Flag colon constructions ("X: the honest version"), list headings ("Salt, fluids, time"), meta-commentary ("One distinction that actually matters")
 - Headings within an article should trace its argument in sequence, not list its subjects
 - If multiple articles share the same heading patterns (all questions, all "The X that Y"), flag the pattern

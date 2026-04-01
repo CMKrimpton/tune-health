@@ -63,9 +63,11 @@ Medical/legal disclaimer at the end:
 
 Use standard HTML: <p>, <ul>, <li>, <strong>, <em>, <h2>, <h3>. All major sections have class="reveal".
 
+Section headings (h2): 4–8 words, hard range. Each must state a finding, name a failure, or imply a consequence — never label a topic. No colon constructions, no list headings, no meta-commentary. Count every heading before submitting.
+
 ### metadata field
 {
-  "title": "Article title",
+  "title": "Article title — MAX 8 WORDS (hard cap 10). One sentence, no two-part kickers",
   "slug": "url-slug",
   "description": "1-2 sentence description for SEO",
   "category": "One of: Mental Health, Neuroscience, Nutrition, Longevity, Fitness, Sleep Science, Clinical Evidence, Research Summary, Environmental Health, Pharmacology",

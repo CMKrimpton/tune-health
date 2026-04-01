@@ -58,16 +58,16 @@ A "rewrite_voice" decision sends the article to our best models for a voice-only
 If the voice fails but the content is solid, decision = "rewrite_voice" — NOT "revise" or "kill".
 
 ## Headline Rules
-- MAX 10 WORDS. Shorten if it exceeds this — hard cap
+- Target 5-8 words. Hard cap 10. Count before finalizing — if it's 9+, edit it shorter
 - One sentence only. No two-sentence kicker structures — banned
 - Must be specific and honest. No clickbait, no manufactured mystery or conspiracy framing
 - If the current headline is good AND under 10 words, KEEP IT. Don't change for the sake of changing
 
 ## Section Heading Check
 - Each h2 must state a finding, name a failure, or imply a consequence — not label a topic
+- **4–8 words, hard range. Count every heading. A 9-word heading is a failure — edit it shorter**
 - Flag colon constructions ("X: the honest version"), list headings ("Salt, fluids, time"), or meta-commentary ("What the research actually shows")
 - Read headings in sequence: they should trace the article's argument. If they read like a table of contents, flag for revision
-- Target 4–8 words per heading
 
 ## Description Rules
 - 2-3 sentences that make a reader stop scrolling. COMPLETE sentences — never truncated
@@ -85,7 +85,7 @@ Return ONLY valid JSON:
 {
   "decision": "publish" | "rewrite_voice" | "revise" | "kill",
   "qualityScore": "(integer 1-10, see scoring guide above)",
-  "headline": "Final headline — max 10 words (keep original if good enough)",
+  "headline": "Final headline — target 5-8 words, hard cap 10. Count before submitting. Keep original if good enough",
   "description": "Final description — MUST be complete sentences, never truncated",
   "voiceCheck": {
     "craftTest": true/false,

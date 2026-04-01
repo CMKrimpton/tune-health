@@ -49,14 +49,14 @@ Match the article's mode:
 - Meta-commentary ("One distinction that actually matters", "What the research actually shows") — the article should show it, not announce it
 - Generic topic labels reusable across any article on the same subject
 
-Target 4–8 words. Vary structure — mix questions, imperatives, noun phrases, and provocative statements. When you read your headers back to back, they must not sound like they came from the same template.
+**LENGTH: 4–8 words. This is a hard range — count every heading before submitting. A 9-word heading is a failure. Shorter is almost always better.** Vary structure — mix questions, imperatives, noun phrases, and provocative statements. When you read your headers back to back, they must not sound like they came from the same template.
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON:
 {
   "html": "<article body sections — see format below>",
   "metadata": {
-    "title": "your best headline — keep the editor's or beat it",
+    "title": "your best headline — MAX 8 WORDS (hard cap 10). Keep the editor's or beat it, but never exceed 10 words",
     "slug": "slug from editorial brief",
     "description": "description from editorial brief — MUST be complete sentences",
     "category": "one of: Neuroscience, Mental Health, Longevity, Clinical Evidence, Environmental Health, Nutrition, Fitness, Sleep Science, Pharmacology",
