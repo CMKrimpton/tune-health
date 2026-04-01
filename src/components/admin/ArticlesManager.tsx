@@ -18,7 +18,7 @@ interface Props {
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-type SortMode = 'newest' | 'oldest' | 'az' | 'readtime' | 'score';
+type SortMode = 'newest' | 'oldest' | 'updated' | 'az' | 'readtime' | 'score' | 'editor_score' | 'no_narration' | 'no_illustration';
 type StatusFilter = 'all' | 'published' | 'draft' | 'coming_soon';
 
 function stripeColor(article: ArticleRecord): string {
@@ -399,9 +399,13 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
     switch (sort) {
       case 'newest': list.sort((a, b) => new Date(b.publish_date || b.created_at).getTime() - new Date(a.publish_date || a.created_at).getTime()); break;
       case 'oldest': list.sort((a, b) => new Date(a.publish_date || a.created_at).getTime() - new Date(b.publish_date || b.created_at).getTime()); break;
+      case 'updated': list.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()); break;
       case 'az': list.sort((a, b) => a.title.localeCompare(b.title)); break;
       case 'readtime': list.sort((a, b) => (b.read_time || 0) - (a.read_time || 0)); break;
       case 'score': list.sort((a, b) => ((b as ArticleWithScores).independence_score || 0) - ((a as ArticleWithScores).independence_score || 0)); break;
+      case 'editor_score': list.sort((a, b) => ((b as ArticleWithScores).editor_score || 0) - ((a as ArticleWithScores).editor_score || 0)); break;
+      case 'no_narration': list.sort((a, b) => (a.narration_url ? 1 : 0) - (b.narration_url ? 1 : 0)); break;
+      case 'no_illustration': list.sort((a, b) => (a.hero_image ? 1 : 0) - (b.hero_image ? 1 : 0)); break;
     }
 
     return list;
@@ -678,9 +682,13 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
         >
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>
+          <option value="updated">Recently updated</option>
           <option value="az">A-Z</option>
           <option value="readtime">Read time</option>
           <option value="score">Independence score</option>
+          <option value="editor_score">Editor score</option>
+          <option value="no_narration">Missing narration</option>
+          <option value="no_illustration">Missing illustration</option>
         </select>
         <button
           onClick={refreshArticles}
