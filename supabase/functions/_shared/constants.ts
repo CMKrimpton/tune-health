@@ -131,20 +131,20 @@ export const QC_CHAIN = [MODELS.QC_PRIMARY, MODELS.QC_FALLBACK];
 export const COPY_EDIT_CHAIN = [MODELS.COPY_EDIT_PRIMARY, MODELS.COPY_EDIT_FALLBACK];
 
 export const MODEL_BYLINES: Record<string, { name: string; role: string }> = {
-  "human-opus":               { name: "Carl Lundin",       role: "Editor-at-Large" },  // Human-written via Opus Max
-  "claude-opus-4-6":          { name: "Carl Lundin",       role: "Editor-at-Large" },
-  "claude-sonnet-4-6":        { name: "Max Quilici",       role: "Senior Health Correspondent" },
-  "gpt-5.4":                  { name: "Eli Vance",         role: "Health & Science Editor" },
-  "gpt-5":                    { name: "Eli Vance",         role: "Health & Science Editor" },
-  "gemini-3.1-pro-preview":   { name: "Christine Wright",  role: "Science & Evidence Desk" },
-  "gemini-2.5-pro":           { name: "Christine Wright",  role: "Science & Evidence Desk" },
-  "grok-4":                   { name: "Linda Carnes",      role: "Investigative Health Reporter" },
-  "grok-3":                   { name: "Linda Carnes",      role: "Investigative Health Reporter" },
-  "gemini-2.5-flash":         { name: "Christine Wright",  role: "Science & Evidence Desk" },
+  "human-opus":               { name: "Max Lundin",        role: "Editor-at-Large" },  // Human-written via Opus Max
+  "claude-opus-4-6":          { name: "Max Lundin",        role: "Editor-at-Large" },
+  "claude-sonnet-4-6":        { name: "Max Lundin",        role: "Senior Health Correspondent" },
+  "gpt-5.4":                  { name: "Max Lundin",        role: "Health & Science Editor" },
+  "gpt-5":                    { name: "Max Lundin",        role: "Health & Science Editor" },
+  "gemini-3.1-pro-preview":   { name: "Max Lundin",        role: "Science & Evidence Desk" },
+  "gemini-2.5-pro":           { name: "Max Lundin",        role: "Science & Evidence Desk" },
+  "grok-4":                   { name: "Max Lundin",        role: "Investigative Health Reporter" },
+  "grok-3":                   { name: "Max Lundin",        role: "Investigative Health Reporter" },
+  "gemini-2.5-flash":         { name: "Max Lundin",        role: "Science & Evidence Desk" },
 };
 
 export function getByline(model: string): { name: string; role: string } {
-  return MODEL_BYLINES[model] || { name: "alumi news Editorial", role: "Medical Review Board" };
+  return MODEL_BYLINES[model] || { name: "Max Lundin", role: "Medical Review Board" };
 }
 
 export function pickWriterModel(): string[] {
