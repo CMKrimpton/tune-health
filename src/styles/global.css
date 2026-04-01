@@ -705,13 +705,16 @@ body.menu-open {
   @apply transition-transform duration-700 ease-editorial;
 }
 
-/* Lighten dark hero images in light mode so they don't feel heavy */
+/* Soften dark AI hero images in light mode.
+   contrast(0.88) lifts the deep blacks (the actual problem),
+   brightness(1.1) compensates for the slight dulling.
+   Unlike brightness alone, this doesn't blow out glowing highlights. */
 html:not(.dark) .article-card-image-inner img,
 html:not(.dark) .featured-image-inner img,
 html:not(.dark) .article-lead-card img,
 html:not(.dark) .article-side-card img,
 html:not(.dark) .category-section img {
-  filter: brightness(1.35) saturate(1.1);
+  filter: contrast(0.88) brightness(1.1);
 }
 
 
