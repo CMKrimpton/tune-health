@@ -23,62 +23,66 @@ categoriesWithCounts.forEach(({ name }) => {
 ---
 
 <nav class:list={['topic-nav', { 'topic-nav-hidden': isHome }]} id="topicNav" aria-label="Topics">
+  <!-- Scrollable pill bar -->
   <div class="topic-nav-inner container-editorial">
     <a
       href="/articles"
       class:list={['topic-nav-link', { active: isArticlesPage && !isTopicsPage }]}
     >All</a>
-    {categoriesWithCounts.map(({ name, count }) => {
+    {categoriesWithCounts.map(({ name }) => {
       const slug = getCategorySlug(name);
-      const meta = CATEGORY_META[name];
-      const previews = categoryPreviews.get(name) || [];
       return (
-        <div class="topic-nav-item" data-topic-dropdown>
-          <a
-            href={`/topics/${slug}`}
-            class:list={['topic-nav-link', { active: currentTopicSlug === slug }]}
-          >{name}</a>
-          <div class="topic-dropdown" data-topic-panel>
-            <div class="topic-dropdown-inner">
-              {/* Header */}
-              <div class="topic-dropdown-header">
-                <div>
-                  <h3 class="topic-dropdown-title">{name}</h3>
-                  {meta && <p class="topic-dropdown-tagline">{meta.tagline}</p>}
-                </div>
-                <span class="topic-dropdown-count">{count} articles</span>
-              </div>
-
-              {/* Article previews */}
-              {previews.length > 0 && (
-                <ul class="topic-dropdown-list">
-                  {previews.map((article) => (
-                    <li>
-                      <a href={article.href} class="topic-dropdown-article">
-                        <span class="topic-dropdown-article-title">{truncate(article.title, 52)}</span>
-                        <span class="topic-dropdown-article-meta">
-                          {article.readTime} min
-                          {isNewArticle(article.publishDate) && <span class="topic-dropdown-new">New</span>}
-                        </span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {/* Footer */}
-              <a href={`/topics/${slug}`} class="topic-dropdown-viewall">
-                View all {name} articles
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
+        <a
+          href={`/topics/${slug}`}
+          class:list={['topic-nav-link', { active: currentTopicSlug === slug }]}
+          data-topic-trigger={name}
+        >{name}</a>
       );
     })}
   </div>
+
+  <!-- Dropdown panels — rendered OUTSIDE the scrollable container to avoid overflow clipping -->
+  {categoriesWithCounts.map(({ name, count }) => {
+    const slug = getCategorySlug(name);
+    const meta = CATEGORY_META[name];
+    const previews = categoryPreviews.get(name) || [];
+    return (
+      <div class="topic-dropdown" data-topic-panel={name}>
+        <div class="topic-dropdown-inner">
+          <div class="topic-dropdown-header">
+            <div>
+              <h3 class="topic-dropdown-title">{name}</h3>
+              {meta && <p class="topic-dropdown-tagline">{meta.tagline}</p>}
+            </div>
+            <span class="topic-dropdown-count">{count} articles</span>
+          </div>
+
+          {previews.length > 0 && (
+            <ul class="topic-dropdown-list">
+              {previews.map((article) => (
+                <li>
+                  <a href={article.href} class="topic-dropdown-article">
+                    <span class="topic-dropdown-article-title">{truncate(article.title, 52)}</span>
+                    <span class="topic-dropdown-article-meta">
+                      {article.readTime} min
+                      {isNewArticle(article.publishDate) && <span class="topic-dropdown-new">New</span>}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <a href={`/topics/${slug}`} class="topic-dropdown-viewall">
+            View all {name} articles
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    );
+  })}
 </nav>
 
 <style>
@@ -113,11 +117,6 @@ categoriesWithCounts.forEach(({ name }) => {
     display: none;
   }
 
-  /* Topic item wrapper (for dropdown positioning) */
-  .topic-nav-item {
-    @apply relative flex-shrink-0;
-  }
-
   .topic-nav-link {
     @apply flex-shrink-0 px-3 py-1 text-xs font-medium;
     @apply text-stone-500 dark:text-stone-400;
@@ -130,41 +129,23 @@ categoriesWithCounts.forEach(({ name }) => {
     @apply bg-stone-200/60 dark:bg-stone-800/60;
   }
 
-  /* ─── Topic Dropdown ─── */
+  /* ─── Topic Dropdown (positioned via JS, lives outside scroll container) ─── */
   .topic-dropdown {
-    @apply absolute top-full left-1/2 -translate-x-1/2 pt-2;
+    @apply absolute pt-2;
     @apply opacity-0 invisible;
-    @apply transform -translate-y-1;
-    @apply z-50;
+    top: 100%;
+    left: 0;
     width: 320px;
+    @apply z-50;
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
     pointer-events: none;
+    transform: translateY(-4px);
   }
 
   .topic-dropdown.open {
-    @apply opacity-100 visible translate-y-0;
+    @apply opacity-100 visible;
     pointer-events: auto;
-  }
-
-  /* Keep dropdown within viewport */
-  .topic-nav-item:first-child .topic-dropdown,
-  .topic-nav-item:nth-child(2) .topic-dropdown {
-    left: 0;
-    transform: translateX(0) translateY(-4px);
-  }
-  .topic-nav-item:first-child .topic-dropdown.open,
-  .topic-nav-item:nth-child(2) .topic-dropdown.open {
-    transform: translateX(0) translateY(0);
-  }
-  .topic-nav-item:last-child .topic-dropdown,
-  .topic-nav-item:nth-last-child(2) .topic-dropdown {
-    left: auto;
-    right: 0;
-    transform: translateX(0) translateY(-4px);
-  }
-  .topic-nav-item:last-child .topic-dropdown.open,
-  .topic-nav-item:nth-last-child(2) .topic-dropdown.open {
-    transform: translateX(0) translateY(0);
+    transform: translateY(0);
   }
 
   .topic-dropdown-inner {
@@ -253,53 +234,92 @@ categoriesWithCounts.forEach(({ name }) => {
     topicNavController = new AbortController();
     const signal = topicNavController.signal;
 
-    const items = document.querySelectorAll<HTMLElement>('[data-topic-dropdown]');
+    const nav = document.getElementById('topicNav');
+    if (!nav) return;
 
-    items.forEach((item) => {
-      const panel = item.querySelector<HTMLElement>('[data-topic-panel]');
+    const triggers = nav.querySelectorAll<HTMLElement>('[data-topic-trigger]');
+    const panels = nav.querySelectorAll<HTMLElement>('[data-topic-panel]');
+    const panelMap = new Map<string, HTMLElement>();
+    panels.forEach((p) => {
+      const name = p.getAttribute('data-topic-panel');
+      if (name) panelMap.set(name, p);
+    });
+
+    let activePanel: HTMLElement | null = null;
+    let activeTrigger: HTMLElement | null = null;
+    let closeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    function positionPanel(trigger: HTMLElement, panel: HTMLElement) {
+      const triggerRect = trigger.getBoundingClientRect();
+      const navRect = nav!.getBoundingClientRect();
+      const panelWidth = 320;
+
+      // Center the panel under the trigger pill
+      let left = triggerRect.left - navRect.left + (triggerRect.width / 2) - (panelWidth / 2);
+
+      // Clamp within viewport
+      const maxLeft = navRect.width - panelWidth - 8;
+      left = Math.max(8, Math.min(left, maxLeft));
+
+      panel.style.left = `${left}px`;
+    }
+
+    function openPanel(trigger: HTMLElement) {
+      if (closeTimeout) { clearTimeout(closeTimeout); closeTimeout = null; }
+
+      const name = trigger.getAttribute('data-topic-trigger');
+      if (!name) return;
+      const panel = panelMap.get(name);
       if (!panel) return;
 
-      let isHovering = false;
-      let closeTimeout: ReturnType<typeof setTimeout> | null = null;
-
-      function open() {
-        if (closeTimeout) { clearTimeout(closeTimeout); closeTimeout = null; }
-        // Close all other dropdowns first
-        items.forEach((other) => {
-          if (other !== item) {
-            other.querySelector<HTMLElement>('[data-topic-panel]')?.classList.remove('open');
-          }
-        });
-        isHovering = true;
-        panel!.classList.add('open');
+      // Close previous
+      if (activePanel && activePanel !== panel) {
+        activePanel.classList.remove('open');
       }
 
-      function close() {
-        isHovering = false;
-        panel!.classList.remove('open');
-      }
+      positionPanel(trigger, panel);
+      panel.classList.add('open');
+      activePanel = panel;
+      activeTrigger = trigger;
+    }
 
-      item.addEventListener('mouseenter', open, { signal });
-      item.addEventListener('mouseleave', () => {
-        isHovering = false;
-        closeTimeout = setTimeout(() => {
-          if (!isHovering) close();
-        }, 200);
-      }, { signal });
+    function closeAll() {
+      activePanel?.classList.remove('open');
+      activePanel = null;
+      activeTrigger = null;
+    }
 
-      // Close when clicking a link inside (navigation)
+    function scheduleClose() {
+      if (closeTimeout) clearTimeout(closeTimeout);
+      closeTimeout = setTimeout(() => {
+        closeAll();
+      }, 200);
+    }
+
+    function cancelClose() {
+      if (closeTimeout) { clearTimeout(closeTimeout); closeTimeout = null; }
+    }
+
+    // Trigger hover
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('mouseenter', () => openPanel(trigger), { signal });
+      trigger.addEventListener('mouseleave', scheduleClose, { signal });
+    });
+
+    // Panel hover — keep open while mouse is on the dropdown
+    panels.forEach((panel) => {
+      panel.addEventListener('mouseenter', cancelClose, { signal });
+      panel.addEventListener('mouseleave', scheduleClose, { signal });
+
+      // Close on link click (navigation)
       panel.querySelectorAll('a').forEach((link) => {
-        link.addEventListener('click', close, { signal });
+        link.addEventListener('click', closeAll, { signal });
       });
     });
 
-    // Close all on Escape
+    // Close on Escape
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        items.forEach((item) => {
-          item.querySelector<HTMLElement>('[data-topic-panel]')?.classList.remove('open');
-        });
-      }
+      if (e.key === 'Escape') closeAll();
     }, { signal });
   }
 
