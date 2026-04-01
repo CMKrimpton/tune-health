@@ -217,21 +217,13 @@ async function handleGenerate(body: Record<string, unknown>) {
 
 /**
  * Generate narrations for all articles missing them.
- * Accepts: { action: "batch", limit?: number, force?: boolean }
+ * Fire-and-forget: dispatches individual generate calls with staggered delays
+ * so each runs within edge function timeout. Returns immediately with count.
+ * Accepts: { action: "batch", limit?: number, force?: boolean, voiceSettings?: object }
  */
 async function handleBatch(body: Record<string, unknown>) {
-  const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
-  if (!apiKey) {
-    return json({ error: "ELEVENLABS_API_KEY not configured" }, 500);
-  }
-
   const db = supabase();
   const limit = (body.limit as number) || 20;
-
-  // Merge caller-provided voice settings over defaults
-  const voiceSettings = body.voiceSettings
-    ? { ...NARRATION_SETTINGS, ...(body.voiceSettings as Record<string, unknown>) }
-    : { ...NARRATION_SETTINGS };
 
   // Get published articles needing narration
   let query = db
@@ -240,10 +232,8 @@ async function handleBatch(body: Record<string, unknown>) {
     .eq("status", "published");
 
   if (body.force) {
-    // Force-regen: oldest-updated first so each batch makes progress
     query = query.order("updated_at", { ascending: true, nullsFirst: true });
   } else {
-    // Normal: only articles missing narration, newest first
     query = query.is("narration_url", null)
       .order("publish_date", { ascending: false });
   }
@@ -255,91 +245,48 @@ async function handleBatch(body: Record<string, unknown>) {
     return json({
       success: true,
       message: "All articles already have narrations.",
-      generated: 0,
+      dispatched: 0,
     });
   }
 
-  const results: Array<{ slug: string; status: string; characters?: number; error?: string }> = [];
+  // Fire individual generate calls via self-invocation (staggered to respect rate limits)
+  const selfUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-narration`;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+  let dispatched = 0;
   for (const article of articles) {
-    try {
-      // Read from GitHub JSON (deployed source of truth) with DB fallback
-      const ghJson = await readGitHubJson(article.slug);
-      const description = (ghJson?.description as string) || article.description || "";
-      const introText = description.trim();
-      if (!introText || introText.length < 20) {
-        results.push({ slug: article.slug, status: "skipped", error: "No description found" });
-        continue;
-      }
+    const description = article.description || "";
+    if (!description.trim() || description.trim().length < 20) continue;
 
-      // Self-heal DB drift
-      if (ghJson?.description && article.description && ghJson.description !== article.description) {
-        await db.from("articles").update({ description: ghJson.description as string }).eq("slug", article.slug);
-      }
+    // Fire-and-forget: don't await the response
+    fetch(selfUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        action: "generate",
+        slug: article.slug,
+        force: !!body.force,
+        voiceSettings: body.voiceSettings || undefined,
+      }),
+    }).catch((err) => {
+      console.error(`[Narration] Dispatch failed for ${article.slug}: ${(err as Error).message}`);
+    });
 
-      const ttsResponse = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${MODELS.NARRATION_VOICE}`,
-        {
-          method: "POST",
-          headers: {
-            "xi-api-key": apiKey,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text: introText,
-            model_id: MODELS.NARRATION_MODEL,
-            voice_settings: voiceSettings,
-            output_format: "mp3_44100_128",
-          }),
-        }
-      );
+    dispatched++;
 
-      if (!ttsResponse.ok) {
-        const errText = await ttsResponse.text();
-        throw new Error(`ElevenLabs ${ttsResponse.status}: ${errText}`);
-      }
-
-      const audioBuffer = await ttsResponse.arrayBuffer();
-
-      const storagePath = `narrations/${article.slug}.mp3`;
-      const { error: uploadError } = await db.storage
-        .from("article-narrations")
-        .upload(storagePath, audioBuffer, {
-          contentType: "audio/mpeg",
-          upsert: true,
-        });
-
-      if (uploadError) throw new Error(`Upload: ${uploadError.message}`);
-
-      const { data: urlData } = db.storage
-        .from("article-narrations")
-        .getPublicUrl(storagePath);
-
-      await db
-        .from("articles")
-        .update({ narration_url: urlData.publicUrl, updated_at: new Date().toISOString() })
-        .eq("slug", article.slug);
-
-      // Sync to GitHub JSON
-      await updateGitHubJson(article.slug, { narrationUrl: urlData.publicUrl }, `feat: Add narration — '${article.slug}'`);
-
-      results.push({ slug: article.slug, status: "success", characters: introText.length });
-    } catch (err) {
-      results.push({ slug: article.slug, status: "error", error: (err as Error).message });
-    }
-
-    // Pause between calls to respect rate limits
-    await new Promise((r) => setTimeout(r, 1000));
+    // Stagger dispatches to respect ElevenLabs rate limits
+    await new Promise((r) => setTimeout(r, 2000));
   }
 
-  const succeeded = results.filter((r) => r.status === "success").length;
-  const failed = results.filter((r) => r.status === "error").length;
+  console.log(`[Narration] Batch dispatched ${dispatched} individual generate calls`);
 
   return json({
     success: true,
-    message: `Generated ${succeeded} narrations (${failed} failed)`,
-    generated: succeeded,
-    failed,
-    results,
+    message: `Dispatched ${dispatched} narrations — they'll generate in the background over ~${Math.ceil(dispatched * 3 / 60)} min.`,
+    dispatched,
+    slugs: articles.slice(0, dispatched).map((a: { slug: string }) => a.slug),
   });
 }

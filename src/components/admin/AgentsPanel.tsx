@@ -793,7 +793,9 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
 
-      setResult(`${data.generated} narrations generated` + (data.failed > 0 ? `, ${data.failed} failed` : ''));
+      setResult(data.dispatched != null
+        ? `${data.dispatched} narrations dispatched — generating in background. ${data.message || ''}`
+        : `${data.generated} narrations generated` + (data.failed > 0 ? `, ${data.failed} failed` : ''));
     } catch (err) {
       const msg = (err as Error).message || '';
       if (msg.includes('timeout') || msg.includes('Failed to fetch')) {
