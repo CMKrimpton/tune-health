@@ -714,10 +714,21 @@ html:not(.dark) .category-section img {
   filter: brightness(1.15) saturate(1.05);
 }
 
-/* Soften the dark text overlay on the lead card in light mode */
-html:not(.dark) .lead-card-overlay {
-  opacity: 0.85;
+/* Lead card overlay: light mode = white from bottom, dark mode = dark from bottom */
+.lead-card-overlay {
+  background: linear-gradient(to top, rgb(250 250 249 / 0.88), rgb(250 250 249 / 0.25), transparent);
 }
+:is(.dark) .lead-card-overlay {
+  background: linear-gradient(to top, rgb(28 25 23 / 0.80), rgb(28 25 23 / 0.20), transparent);
+}
+
+/* Lead card text colors: light mode = dark text, dark mode = light text */
+.lead-card-title { color: var(--black); }
+.lead-card-desc { color: theme('colors.stone.600'); }
+.lead-card-meta { color: theme('colors.stone.500'); }
+:is(.dark) .lead-card-title { color: #fff; }
+:is(.dark) .lead-card-desc { color: theme('colors.stone.300'); }
+:is(.dark) .lead-card-meta { color: theme('colors.stone.300'); }
 
 .article-card:hover .article-card-image-inner,
 .featured-card:hover .featured-image-inner {
