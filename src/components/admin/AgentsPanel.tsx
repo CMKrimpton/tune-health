@@ -746,7 +746,7 @@ const VOICE_PRESETS: Record<string, { label: string; desc: string; settings: { s
 };
 
 function NarrationAgent({ apiBase }: { apiBase: string }) {
-  const [articles, setArticles] = useState<Array<{ slug: string; title: string; narration_url: string | null }>>([]);
+  const [articles, setArticles] = useState<Array<{ slug: string; title: string; narration_url: string | null; status: string }>>([]);
   const [selectedSlug, setSelectedSlug] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
@@ -770,14 +770,16 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
             slug: a.slug as string,
             title: a.title as string,
             narration_url: (a.narration_url as string) || null,
+            status: (a.status as string) || 'draft',
           })) : []);
         }
       } catch { /* silent */ }
     })();
   }, [apiBase]);
 
-  const withoutNarration = articles.filter(a => !a.narration_url);
-  const withNarration = articles.filter(a => a.narration_url);
+  const published = articles.filter(a => a.status === 'published');
+  const withoutNarration = published.filter(a => !a.narration_url);
+  const withNarration = published.filter(a => a.narration_url);
 
   const runBatch = useCallback(async (force: boolean) => {
     setResult(null);
@@ -840,7 +842,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
       title="Narrations"
       badge={
         <span className={withoutNarration.length > 0 ? 'agents-badge-yellow' : 'agents-badge-green'}>
-          {withNarration.length}/{articles.length} narrated
+          {withNarration.length}/{published.length} narrated
         </span>
       }
     >
@@ -853,7 +855,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
           className="agents-illust-select"
         >
           <option value="">Select article...</option>
-          {articles.map(a => (
+          {published.map(a => (
             <option key={a.slug} value={a.slug}>{a.narration_url ? '\uD83D\uDD0A' : '\uD83D\uDD07'} {a.title}</option>
           ))}
         </select>
