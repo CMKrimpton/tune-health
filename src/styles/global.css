@@ -706,15 +706,18 @@ body.menu-open {
 }
 
 /* Soften dark AI hero images in light mode.
-   contrast(0.88) lifts the deep blacks (the actual problem),
-   brightness(1.1) compensates for the slight dulling.
-   Unlike brightness alone, this doesn't blow out glowing highlights. */
-html:not(.dark) .article-card-image-inner img,
-html:not(.dark) .featured-image-inner img,
-html:not(.dark) .article-lead-card img,
-html:not(.dark) .article-side-card img,
-html:not(.dark) .category-section img {
-  filter: contrast(0.88) brightness(1.1);
+   A translucent white overlay lifts shadows uniformly without
+   distorting highlight colors the way brightness() does. */
+.hero-img-wrap {
+  position: relative;
+}
+html:not(.dark) .hero-img-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(255 255 255 / 0.15);
+  pointer-events: none;
+  z-index: 1;
 }
 
 
