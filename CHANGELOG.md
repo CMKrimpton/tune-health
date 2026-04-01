@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.8.0] - 2026-04-01
+
+### Improved — Ultra Audit & Polish Pass (12 files)
+
+#### Accessibility & Contrast (Phase 1)
+- **Footer contrast** — link text `stone-400` → `stone-300`, fine print `stone-600` → `stone-500` for WCAG AA on dark backgrounds
+- **Newsletter contrast** — body/benefit text `stone-400` → `stone-300`, placeholder `stone-500` → `stone-400`
+- **AudioNarration** — added `aria-pressed` toggle state for screen readers
+- **SeriesNav** — focus-visible rings on progress dots, smooth 0.3s color transitions, subtle scaleY hover feedback
+- **HighlightShare** — Escape key closes popup, Tab key traps focus between share buttons (keyboard-accessible)
+
+#### Visual Polish (Phase 2)
+- **Scroll progress bar** — 2px → 3px for better visibility across themes
+- **HighlightShare entry animation** — added scale(0.95→1) spring for snappier popup appearance
+
+#### Interaction & Navigation (Phase 3)
+- **CommandPalette empty state** — shows top 5 topic category pills when search yields no results (browse instead of dead end)
+- **CommandPalette focus restoration** — restores focus to trigger element on close
+- **Share brand colors** — moved hardcoded hex to CSS custom properties with fallbacks (`--brand-linkedin`, `--brand-bluesky`, etc.)
+
+#### SEO & Navigation (Phase 4)
+- **Visual breadcrumbs** — added `Home > Articles > Category` on topic pages, `Home > Collections > Title` on collection pages via Breadcrumbs component
+
+#### Performance (Phase 5)
+- **Admin CSS cleanup** — removed legacy table, article card, and modal selectors: **81.8 KB → 71.4 KB** (−10.4 KB dead CSS)
+
 ## [16.7.0] - 2026-04-01
 
 ### Improved — Search UX Overhaul

@@ -170,7 +170,7 @@
   /* Scroll Progress Bar */
   .scroll-progress {
     @apply fixed top-0 left-0 z-40;
-    height: 2px;
+    height: 3px;
     background: linear-gradient(90deg, theme('colors.primary.600'), theme('colors.primary.400'));
     transform-origin: left;
     transform: scaleX(0);

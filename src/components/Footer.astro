@@ -28,7 +28,7 @@ const latestArticles = articles.slice(0, 4);
         <ul class="space-y-2.5">
           {latestArticles.map((article) => (
             <li>
-              <a href={article.href} class="text-sm text-stone-400 hover:text-white transition-colors duration-200 leading-snug block">
+              <a href={article.href} class="text-sm text-stone-300 hover:text-white transition-colors duration-200 leading-snug block">
                 {truncate(article.title, 45)}
               </a>
             </li>
@@ -40,11 +40,11 @@ const latestArticles = articles.slice(0, 4);
       <div>
         <h4 class="text-overline font-semibold text-stone-500 mb-4">Explore</h4>
         <ul class="space-y-2.5">
-          <li><a href="/articles" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">All Articles</a></li>
-          <li><a href="/deep-dives" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">Deep Dives</a></li>
-          <li><a href="/about" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">About</a></li>
-          <li><a href="/howwewrite" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">How We Write</a></li>
-          <li><a href="/subscribe" class="text-sm text-stone-400 hover:text-white transition-colors duration-200">Subscribe</a></li>
+          <li><a href="/articles" class="text-sm text-stone-300 hover:text-white transition-colors duration-200">All Articles</a></li>
+          <li><a href="/deep-dives" class="text-sm text-stone-300 hover:text-white transition-colors duration-200">Deep Dives</a></li>
+          <li><a href="/about" class="text-sm text-stone-300 hover:text-white transition-colors duration-200">About</a></li>
+          <li><a href="/howwewrite" class="text-sm text-stone-300 hover:text-white transition-colors duration-200">How We Write</a></li>
+          <li><a href="/subscribe" class="text-sm text-stone-300 hover:text-white transition-colors duration-200">Subscribe</a></li>
         </ul>
       </div>
 
@@ -54,7 +54,7 @@ const latestArticles = articles.slice(0, 4);
         <ul class="space-y-2.5">
           {categories.slice(0, 6).map((cat) => (
             <li>
-              <a href={`/articles?topic=${encodeURIComponent(cat)}`} class="text-sm text-stone-400 hover:text-white transition-colors duration-200">
+              <a href={`/articles?topic=${encodeURIComponent(cat)}`} class="text-sm text-stone-300 hover:text-white transition-colors duration-200">
                 {cat}
               </a>
             </li>
@@ -84,10 +84,10 @@ const latestArticles = articles.slice(0, 4);
           <span class="text-primary-500 font-bold text-xl">a</span><span class="text-white">lumi</span>
           <em class="ml-1 font-normal text-stone-400">Health</em>
         </span>
-        <p class="text-sm text-stone-400 max-w-md leading-relaxed">
+        <p class="text-sm text-stone-300 max-w-md leading-relaxed">
           AI-powered health tracking. Lab results, meal analysis, and personal experiments — all in one platform.
         </p>
-        <p class="text-xs text-stone-600 mt-1">Free to start. No credit card required.</p>
+        <p class="text-xs text-stone-500 mt-1">Free to start. No credit card required.</p>
       </div>
       <a
         href="https://tune-sigma.vercel.app?utm_source=alumi-news&utm_medium=footer"
@@ -148,7 +148,7 @@ const latestArticles = articles.slice(0, 4);
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <a href="/reading-list" class="inline-flex items-center gap-2 text-sm text-stone-400 hover:text-white transition-colors">
+        <a href="/reading-list" class="inline-flex items-center gap-2 text-sm text-stone-300 hover:text-white transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -160,9 +160,9 @@ const latestArticles = articles.slice(0, 4);
     <!-- Bottom bar -->
     <div class="pt-8 border-t border-stone-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
-        <p class="text-xs text-stone-600">© {new Date().getFullYear()} alumi news</p>
+        <p class="text-xs text-stone-500">© {new Date().getFullYear()} alumi news</p>
       </div>
-      <p class="text-xs text-stone-600 max-w-md md:text-right leading-relaxed">
+      <p class="text-xs text-stone-500 max-w-md md:text-right leading-relaxed">
         Content is for informational purposes only and is not a substitute
         for professional medical advice, diagnosis, or treatment.
       </p>

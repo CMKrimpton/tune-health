@@ -10,6 +10,7 @@ const { narrationUrl, title } = Astro.props;
 <button
   class="narration-toggle"
   aria-label={`Toggle narration for ${title}`}
+  aria-pressed="false"
   data-narration-toggle
   data-narration-src={narrationUrl}
   title="Listen to intro"
@@ -49,6 +50,7 @@ const { narrationUrl, title } = Astro.props;
       iconOn.style.display = playing ? '' : 'none';
       iconOff.style.display = playing ? 'none' : '';
       toggle.classList.toggle('narration-active', playing);
+      toggle.setAttribute('aria-pressed', String(playing));
       toggle.title = playing ? 'Mute narration' : 'Listen to intro';
     }
 

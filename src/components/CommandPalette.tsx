@@ -118,6 +118,7 @@ export default function CommandPalette() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
   const isTouch = useIsTouch();
 
   // Load articles from window data injected by Astro
@@ -203,11 +204,15 @@ export default function CommandPalette() {
     };
   }, []);
 
-  // Reset state on open
+  // Reset state on open; restore focus on close
   useEffect(() => {
     if (open) {
+      triggerRef.current = document.activeElement;
       setSearch('');
       setSelectedCategory(null);
+    } else if (triggerRef.current instanceof HTMLElement) {
+      triggerRef.current.focus();
+      triggerRef.current = null;
     }
   }, [open]);
 
@@ -375,9 +380,21 @@ export default function CommandPalette() {
           </div>
 
           <Command.List className="max-h-[min(50vh,420px)] overflow-y-auto p-1.5 overscroll-contain">
-            <Command.Empty className="py-12 text-center">
+            <Command.Empty className="py-8 text-center">
               <p className="text-sm text-stone-400">No results for &ldquo;{search}&rdquo;</p>
-              <p className="text-xs text-stone-400/60 mt-1.5">Try a different term or browse by topic</p>
+              <p className="text-xs text-stone-400/60 mt-1.5 mb-4">Try a different term or browse a topic</p>
+              <div className="flex flex-wrap justify-center gap-2 px-4">
+                {categories.slice(0, 5).map(({ name }) => (
+                  <button
+                    key={name}
+                    onClick={() => { setSearch(''); setSelectedCategory(name); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: categoryColors[name] || '#78716c' }} />
+                    {name}
+                  </button>
+                ))}
+              </div>
             </Command.Empty>
 
             {/* === IDLE STATE === */}

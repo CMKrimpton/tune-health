@@ -28,7 +28,7 @@ const isCompact = variant === 'compact';
       <h2 class:list={['font-serif font-semibold mb-4 leading-tight', isCompact ? 'text-heading-3' : 'text-heading-2']}>
         {isCompact ? 'Get More Like This' : 'Real Wealth Starts Here'}
       </h2>
-      <p class:list={['font-body text-stone-400', isCompact ? 'text-base mb-6' : 'text-lg mb-8']}>
+      <p class:list={['font-body text-stone-300', isCompact ? 'text-base mb-6' : 'text-lg mb-8']}>
         {isCompact
           ? 'Weekly evidence-based health articles, delivered to your inbox.'
           : 'Weekly evidence-based health insights — no hype, no sales pitches, just the research that matters.'}
@@ -40,7 +40,7 @@ const isCompact = variant === 'compact';
           type="email"
           required
           placeholder="you@example.com"
-          class="flex-1 px-5 py-3 bg-stone-800 border border-stone-700 rounded-full text-base text-white placeholder-stone-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors duration-200"
+          class="flex-1 px-5 py-3 bg-stone-800 border border-stone-700 rounded-full text-base text-white placeholder-stone-400 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors duration-200"
           aria-label="Email address"
           autocomplete="email"
         />
@@ -49,23 +49,23 @@ const isCompact = variant === 'compact';
         </button>
       </form>
       <div class="sr-only" aria-live="polite" role="status" data-newsletter-status></div>
-      <p class="text-xs text-stone-600 mt-4">No spam. Unsubscribe anytime.</p>
+      <p class="text-xs text-stone-500 mt-4">No spam. Unsubscribe anytime.</p>
 
       {!isCompact && (
         <div class="flex flex-wrap justify-center gap-6 mt-8">
-          <div class="flex items-center gap-2 text-sm text-stone-400">
+          <div class="flex items-center gap-2 text-sm text-stone-300">
             <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 13l4 4L19 7" stroke-width="2"/>
             </svg>
             <span>Weekly insights</span>
           </div>
-          <div class="flex items-center gap-2 text-sm text-stone-400">
+          <div class="flex items-center gap-2 text-sm text-stone-300">
             <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 13l4 4L19 7" stroke-width="2"/>
             </svg>
             <span>Evidence-based</span>
           </div>
-          <div class="flex items-center gap-2 text-sm text-stone-400">
+          <div class="flex items-center gap-2 text-sm text-stone-300">
             <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 13l4 4L19 7" stroke-width="2"/>
             </svg>

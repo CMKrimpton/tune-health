@@ -5,6 +5,7 @@ import Footer from '../../components/Footer.astro';
 import Newsletter from '../../components/Newsletter.astro';
 import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
 import SideNav from '../../components/SideNav.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getAllCollections, type CuratedCollection } from '../../utils/collections';
 import { getArticles, getArticleGradientStyle, formatPublishDateShort } from '../../utils/articles';
 
@@ -55,6 +56,15 @@ const allCollections = getAllCollections().filter(c => c.slug !== collection.slu
       </div>
     </div>
   </section>
+
+  <!-- Breadcrumbs -->
+  <div class="container-editorial pt-6">
+    <Breadcrumbs items={[
+      { label: 'Home', href: '/' },
+      { label: 'Collections', href: '/collections' },
+      { label: collection.title },
+    ]} />
+  </div>
 
   <!-- Article List (ordered, numbered) -->
   <section class="py-12 md:py-16">

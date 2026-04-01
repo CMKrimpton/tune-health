@@ -5,6 +5,7 @@ import Footer from '../../components/Footer.astro';
 import Newsletter from '../../components/Newsletter.astro';
 import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
 import SideNav from '../../components/SideNav.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getArticlesForCategory, getArticleGradientStyle, formatPublishDateShort, isNewArticle } from '../../utils/articles';
 import { CATEGORY_DOMAINS, CATEGORY_META, getCategorySlug, getCategoryFromSlug, getDomainForCategory } from '../../utils/category-domains';
 
@@ -61,6 +62,15 @@ const relatedTopics = domain
       </div>
     </div>
   </section>
+
+  <!-- Breadcrumbs -->
+  <div class="container-editorial pt-6">
+    <Breadcrumbs items={[
+      { label: 'Home', href: '/' },
+      { label: 'Articles', href: '/articles' },
+      { label: category },
+    ]} />
+  </div>
 
   <!-- Featured Article -->
   {featuredArticle && (

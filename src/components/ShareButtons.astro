@@ -215,14 +215,14 @@ const isVertical = variant === 'vertical';
     outline-offset: 2px;
   }
 
-  .share-btn--x:hover { color: #000; }
-  :global(.dark) .share-btn--x:hover { color: #fff; }
+  .share-btn--x:hover { color: var(--brand-x, #000); }
+  :global(.dark) .share-btn--x:hover { color: var(--brand-x-dark, #fff); }
 
-  .share-btn--linkedin:hover { color: #0a66c2; }
-  .share-btn--facebook:hover { color: #1877f2; }
-  .share-btn--reddit:hover { color: #ff4500; }
-  .share-btn--bluesky:hover { color: #0085ff; }
-  .share-btn--whatsapp:hover { color: #25d366; }
+  .share-btn--linkedin:hover { color: var(--brand-linkedin, #0a66c2); }
+  .share-btn--facebook:hover { color: var(--brand-facebook, #1877f2); }
+  .share-btn--reddit:hover { color: var(--brand-reddit, #ff4500); }
+  .share-btn--bluesky:hover { color: var(--brand-bluesky, #0085ff); }
+  .share-btn--whatsapp:hover { color: var(--brand-whatsapp, #25d366); }
 
   .share-btn--email:hover {
     color: var(--tw-stone-700, #44403c);
