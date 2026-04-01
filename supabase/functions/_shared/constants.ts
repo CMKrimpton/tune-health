@@ -111,7 +111,7 @@ export const MODELS = {
 
   // Narration (ElevenLabs TTS)
   NARRATION_MODEL: "eleven_multilingual_v2",
-  NARRATION_VOICE: "LkgZkNm7dD8b7nbdptAB",
+  NARRATION_VOICE: "GK8yfgyvbDZaYf0rm78A",
 } as const;
 
 export const NARRATION_SETTINGS = {
