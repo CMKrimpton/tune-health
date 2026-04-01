@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Voice selector (CMK1/CMK2)** — admin can choose between two ElevenLabs voices for narration generation, with toggle buttons in the Narrations panel
 - **Persistent narration settings** — voice choice, preset, and all slider values saved to localStorage and restored on next visit
 
+### Improved
+- **Light-mode article images** — `brightness(1.15) saturate(1.05)` filter on all card images in light mode so dark hero art doesn't feel heavy
+- **Light-mode lead card** — white-from-bottom gradient overlay with dark text instead of dark overlay, matching the lighter aesthetic
+
 ### Fixed
 - **Admin narration regeneration** — single-article "Generate" now sends `force: true`, allowing admins to regenerate narration for articles that already have one
 - **Narration cache-busting** — append `?v=timestamp` to narration URLs so browsers serve fresh audio after regeneration
