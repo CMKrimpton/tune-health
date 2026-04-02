@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { addOverheadCost, calcCost, supabase } from "../_shared/db.ts";
+import { MODELS } from "../_shared/constants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,13 +130,13 @@ Apply the requested changes and return the complete updated article as JSON.`;
           const res = await fetch("https://api.x.ai/v1/chat/completions", {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: "Bearer " + xaiKey },
-            body: JSON.stringify({ model: "grok-3", messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: userPrompt }], max_tokens: maxTokens, temperature: 0.3 }),
+            body: JSON.stringify({ model: MODELS.INDEPENDENCE, messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: userPrompt }], max_tokens: maxTokens, temperature: 0.3 }),
             signal: AbortSignal.timeout(135_000),
           });
           if (res.ok) {
             const data = await res.json();
             content = data.choices?.[0]?.message?.content || null;
-            if (content && data.usage) { usedModel = "grok-3"; inputTokens = data.usage.prompt_tokens || 0; outputTokens = data.usage.completion_tokens || 0; }
+            if (content && data.usage) { usedModel = MODELS.INDEPENDENCE; inputTokens = data.usage.prompt_tokens || 0; outputTokens = data.usage.completion_tokens || 0; }
           } else { lastError = `Grok ${res.status}`; }
         } catch (e: unknown) { lastError = e instanceof Error ? e.message : "Grok failed"; }
       }
