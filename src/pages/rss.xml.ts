@@ -9,7 +9,7 @@ export async function GET(context: APIContext) {
     title: 'alumi news',
     description:
       'Evidence-based health insights. Independent analysis for people who think for themselves.',
-    site: 'https://tune-health.vercel.app',
+    site: context.site?.toString() || 'https://tune-health.vercel.app',
     items: articles.map((article) => ({
       title: article.title,
       description: article.description,

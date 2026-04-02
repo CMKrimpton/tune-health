@@ -28,8 +28,8 @@ import SideNav from '../components/SideNav.astro';
           How we use AI models, human oversight, and editorial standards to produce health content that respects the reader's intelligence.
         </p>
         <div class="manual-meta">
-          <span>Last updated: March 2026</span>
-          <span>Version 1.0</span>
+          <span>Last updated: April 2026</span>
+          <span>Version 2.0</span>
           <span>For all contributors</span>
         </div>
       </div>
@@ -123,7 +123,7 @@ import SideNav from '../components/SideNav.astro';
       <section class="manual-section" id="pipeline">
         <div class="manual-kicker"><span class="kicker-line"></span><span>04 &mdash; The pipeline</span></div>
         <h2 class="font-serif text-heading-1 font-semibold mt-4 mb-6">How an article gets made</h2>
-        <p>Eight stages. AI handles discovery, research, and quality control. A human writes. This is not a cost-cutting measure &mdash; it is a quality architecture.</p>
+        <p>Nine stages. AI handles discovery, research, and quality control. A human writes. This is not a cost-cutting measure &mdash; it is a quality architecture.</p>
 
         <div class="pipeline">
           <div class="pipe-step">
@@ -147,7 +147,7 @@ import SideNav from '../components/SideNav.astro';
             <div class="pipe-body">
               <div class="pipe-title">Editorial brief</div>
               <p class="pipe-desc">Assigns archetype, tone preset, structural density, and pacing. Manually queued topics receive mandatory editorial direction.</p>
-              <span class="pipe-model">Gemini Flash &middot; fallback: Sonnet</span>
+              <span class="pipe-model">Sonnet &middot; fallback: Gemini 3.1 Pro</span>
             </div>
           </div>
           <div class="pipe-step pipe-step-human">
@@ -163,7 +163,7 @@ import SideNav from '../components/SideNav.astro';
             <div class="pipe-body">
               <div class="pipe-title">Independence review</div>
               <p class="pipe-desc">Adversarial review. Checks for overstatement, missing caveats, unverified claims. Cross-references against PubMed. Applies corrections.</p>
-              <span class="pipe-model">Grok 3 + PubMed verification + Flash corrections</span>
+              <span class="pipe-model">Grok 4 + PubMed verification + Flash corrections</span>
             </div>
           </div>
           <div class="pipe-step">
@@ -184,6 +184,14 @@ import SideNav from '../components/SideNav.astro';
           </div>
           <div class="pipe-step">
             <div class="pipe-num">8</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Copy edit</div>
+              <p class="pipe-desc">Conservative headline and section header review. Only changes that are clearly better — not just different — are applied. Threshold is high: generic, swappable titles get sharpened; everything else is left alone.</p>
+              <span class="pipe-model">Sonnet &middot; fallback: Gemini Pro &middot; confidence &ge;8 only</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">9</div>
             <div class="pipe-body">
               <div class="pipe-title">Publish</div>
               <p class="pipe-desc">GitHub commit, Vercel deploy, AI-generated editorial illustration, featured rotation. Article is live.</p>
@@ -289,7 +297,7 @@ import SideNav from '../components/SideNav.astro';
 
   <!-- Footer -->
   <div class="manual-footer">
-    <p><em>alumi news</em> &mdash; Evidence. Wherever it leads. &middot; Internal document, March 2026</p>
+    <p><em>alumi news</em> &mdash; Evidence. Wherever it leads. &middot; Internal document, April 2026</p>
   </div>
 
   <Footer slot="footer" />
