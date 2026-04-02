@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, addCostToLog } from "../_shared/db.ts";
+import { supabase, addCostToLog, dispatchStage } from "../_shared/db.ts";
 import { generateWithFallback } from "../_shared/api-clients.ts";
 import { auditVoiceQuality } from "../_shared/voice-audit.ts";
 import { VOICE_REWRITE_CHAIN } from "../_shared/constants.ts";
@@ -120,6 +120,9 @@ Return ONLY the rewritten HTML. No JSON wrapper, no explanation, no markdown fen
         _voiceRewriteCompleted: true,
       },
     }).eq("id", logId);
+
+    // Chain-dispatch: fire copy-edit immediately (no cron wait)
+    await dispatchStage("stage-copy-edit", logId);
 
     return json({
       success: true,

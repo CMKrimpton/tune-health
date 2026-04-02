@@ -351,6 +351,8 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
           console.error(`[stage-qc] DB update failed for voice_rewrite_pending: ${updateErr.message}`);
           return json({ error: `DB update failed: ${updateErr.message}`, logId }, 500);
         }
+        // Chain-dispatch: fire voice rewrite immediately (no cron wait)
+        await dispatchStage("stage-voice-rewrite", logId);
         return json({ success: true, logId, qcResult, decision: "rewrite_voice" });
       }
     }

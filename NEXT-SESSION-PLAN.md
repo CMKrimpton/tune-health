@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v17.3.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline (stage-copy-edit live).
+> **Status**: v17.4.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline fully chain-dispatched (including voice-rewrite path).
 
 ---
 
@@ -21,7 +21,13 @@
 - **Admin**: Pipeline/Articles/Agents tabs. Supabase Realtime live updates
 - **Newsletter**: `/api/subscribe` → Supabase + Beehiiv forward (when BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID env vars set)
 
-## What Was Done This Session (v17.3.0)
+## What Was Done This Session (v17.4.0)
+
+1. **Voice-rewrite chain dispatch fix** — QC now dispatches `stage-voice-rewrite` immediately on `rewrite_voice` decision (was waiting for 5-min cron). Voice-rewrite now dispatches `stage-copy-edit` immediately on completion (was waiting another 5-min cron). Up to 10-minute pipeline delay eliminated on voice-rewrite path
+2. **Admin types.ts sync** — `MODEL_PEN_NAMES` updated to use "Max Lundin" for all models (was stale: Carl Lundin, Max Quilici, Eli Vance, etc.)
+3. **Deployed**: `stage-qc`, `stage-voice-rewrite` redeployed to Supabase
+
+## What Was Done Last Session (v17.3.0)
 
 1. **Newsletter copy bug** — Fixed "Real Wealth Starts Here" (alumi Wealth leftover) → "Evidence in Your Inbox" in both `Newsletter.astro` AND `index.astro` (homepage newsletter section had same stale copy)
 2. **Pipeline type completeness** — Added `copy_editing`/`copy_edited` to `PipelineStatus` type and `getStatusText` map in `types.ts`

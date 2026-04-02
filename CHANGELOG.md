@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [17.4.0] - 2026-04-02
+
+### Fixed — Voice-Rewrite Chain Dispatch (2 edge functions)
+
+Articles needing voice polish were waiting up to 10 minutes for the 5-minute safety-net cron to fire — twice (once from `voice_rewrite_pending`, once from `voice_rewrite_done`). Both transitions now chain-dispatch immediately.
+
+- **`stage-qc`** — after setting status `voice_rewrite_pending`, now calls `dispatchStage("stage-voice-rewrite", logId)` immediately. Previously returned without dispatching, leaving articles to wait for the cron
+- **`stage-voice-rewrite`** — added `dispatchStage` import; after setting status `voice_rewrite_done`, now calls `dispatchStage("stage-copy-edit", logId)` immediately. Voice-rewrite path now chains in seconds, not minutes
+
+### Fixed — Admin types.ts MODEL_PEN_NAMES Sync
+
+Frontend admin `MODEL_PEN_NAMES` in `src/components/admin/types.ts` had stale per-model pen names (Carl Lundin, Max Quilici, Eli Vance, Christine Wright, Linda Carnes) from before the single-byline architecture. Backend `MODEL_BYLINES` was already updated to use "Max Lundin" for all models. Frontend now matches.
+
+- Updated "last synced" comment to 2026-04-02
+- All 10 model entries now use `name: "Max Lundin"` (roles preserved for admin display)
+
 ## [17.3.0] - 2026-04-02
 
 ### Fixed — Model Centralization (9 edge functions)
