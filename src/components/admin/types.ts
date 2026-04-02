@@ -143,6 +143,8 @@ export type PipelineStatus =
   | 'voice_rewrite_pending'
   | 'rewriting_voice'
   | 'voice_rewrite_done'
+  | 'copy_editing'
+  | 'copy_edited'
   | 'publishing'
   | 'published'
   | 'failed';
@@ -421,6 +423,8 @@ export function getStatusText(status: string, modelName?: string): string {
     voice_rewrite_pending: 'Voice rewrite queued',
     rewriting_voice: 'Voice polish in progress...',
     voice_rewrite_done: 'Voice polish complete',
+    copy_editing: 'Copy editor reviewing headlines & headers...',
+    copy_edited: 'Copy edit complete — ready to publish',
     publishing: 'Publishing to GitHub...',
     published: 'Published',
     failed: 'Failed',

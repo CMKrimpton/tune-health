@@ -55,21 +55,23 @@ npm run preview  # Preview production build
 src/
 ├── content/
 │   ├── config.ts             # Content collection schema (Zod)
-│   └── articles/             # Article metadata (JSON) - 79 published articles
+│   └── articles/             # Article metadata (JSON) - ~190 published articles
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
 ├── components/
 │   ├── Header.astro          # Navigation with glass dropdown menu (home + article variants, both with full menu)
 │   ├── MenuDropdownContent.astro  # Shared dropdown content (extracted from Header to DRY both variants)
+│   ├── TopicNav.astro        # Domain-grouped topic navigation bar (Mind/Body/Medicine/Environment) with per-category dropdowns
 │   ├── Footer.astro          # Site footer
 │   ├── SideNav.astro         # Magazine-style sidebar (collection-driven topics, series, featured)
 │   ├── MobileNav.astro       # Fixed bottom nav bar for touch devices (Home, Articles, Search, Saved, Series)
+│   ├── QuickNav.astro        # Floating quick navigation pill with keyboard shortcuts
 │   ├── CommandPalette.tsx    # React command palette (dynamic via window injection)
 │   ├── CommandPaletteWrapper.astro  # Injects article data for React island
 │   ├── FloatingTOC.astro     # Floating table of contents with scroll spy
 │   ├── ArticleCard.astro     # Reusable article preview cards
-│   ├── Newsletter.astro      # Newsletter signup section
+│   ├── Newsletter.astro      # Newsletter signup section (→ Supabase + Beehiiv if configured)
 │   ├── Breadcrumbs.astro     # Navigation breadcrumbs
 │   ├── SEO.astro             # JSON-LD structured data
 │   ├── ArticleCTA.astro      # Category-contextual app CTA (article end)
@@ -80,38 +82,51 @@ src/
 │   ├── SeriesNav.astro       # Series prev/next navigation with progress dots
 │   ├── AudioNarration.astro  # ElevenLabs TTS intro narration (speaker icon, localStorage preference)
 │   ├── BookmarkButton.astro  # localStorage reading list / bookmark toggle
+│   ├── ContinueReading.astro # Homepage "Continue Reading" section (localStorage scroll tracking)
+│   ├── ReadingProgressTracker.astro  # Tracks per-article scroll progress in localStorage
 │   └── admin/
-│       └── ArticleEditor.tsx # Admin publishing portal React component
+│       ├── PipelineMonitor.tsx   # Pipeline tab React island
+│       ├── ArticlesManager.tsx   # Articles tab React island
+│       ├── AgentsPanel.tsx       # AI Agents tab React island
+│       ├── ArticleEditor.tsx     # New article editor React component
+│       ├── ConfirmModal.tsx      # Shared confirm dialog
+│       └── types.ts              # Shared admin types, pipeline config, status maps
 ├── pages/
 │   ├── index.astro           # Homepage (collection-driven)
 │   ├── deep-dives.astro      # Deep dive series page (collection-driven)
 │   ├── about.astro           # About / mission / editorial standards
+│   ├── howwewrite.astro      # Editorial manual (pipeline transparency, voice standards)
+│   ├── start-here.astro      # Onboarding page: 5 handpicked articles + domain browser
 │   ├── 404.astro             # Custom 404 page
 │   ├── rss.xml.ts            # RSS feed (via @astrojs/rss)
 │   ├── reading-list.astro    # Bookmarked articles page (reads localStorage)
 │   ├── subscribe.astro       # Newsletter subscription page
 │   ├── api/
-│   │   └── subscribe.ts      # Newsletter subscription API (POST, Supabase upsert)
+│   │   └── subscribe.ts      # Newsletter API: Supabase upsert + Beehiiv forward (if BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID set)
 │   ├── admin/
 │   │   ├── login.astro       # Admin token login (SSR)
 │   │   ├── index.astro       # Admin dashboard (SSR)
-│   │   └── new.astro         # New article editor (SSR)
+│   │   ├── new.astro         # New article editor (SSR)
+│   │   └── edit/[slug].astro # Article edit page (SSR)
+│   ├── topics/
+│   │   └── [slug].astro      # Category landing pages (9 pages: gradient hero, featured article, sorted grid)
+│   ├── collections/
+│   │   ├── index.astro       # Collections index page
+│   │   └── [slug].astro      # Curated reading lists (5 collections with share buttons)
 │   └── articles/
 │       ├── index.astro       # Articles index page (collection-driven)
 │       └── *.astro           # Individual article pages
 ├── middleware.ts              # Auth gate for /admin routes
 ├── utils/
 │   ├── articles.ts           # Article collection helpers
+│   ├── collections.ts        # Curated collection definitions
 │   ├── funnel.ts             # Category-to-feature mapping, UTM link builder
 │   └── reading-time.ts       # Reading time calculation
 └── styles/
     ├── global.css            # Tailwind directives + custom styles
     └── admin.css             # Admin portal styles (source copy — public/admin.css is the served file)
 supabase/
-├── migrations/
-│   ├── 20260315_create_articles.sql    # Articles table schema
-│   ├── 20260322_daily_article_agent.sql # Log table + pg_cron schedule
-│   └── 20260324_hourly_article_schedule.sql # Staged pipeline + 15-min cron
+├── migrations/               # All schema changes (latest: 20260351_topic_dedup_log.sql)
 └── functions/
     ├── _shared/                          # Shared utilities (NOT a deployed function)
     │   ├── api-clients.ts                # claude(), gemini(), grok(), openai() + generateWithFallback()
@@ -119,7 +134,7 @@ supabase/
     │   ├── constants.ts                  # PRICING, MODEL_PROVIDERS, MODEL_BYLINES, chains
     │   ├── cors.ts                       # CORS headers, json() helper
     │   ├── db.ts                         # supabase(), addCostToLog(), safeStage(), parseScore()
-    │   ├── dedup.ts                     # extractFingerprint(), isDuplicate(), buildFingerprints()
+    │   ├── dedup.ts                      # extractFingerprint(), isDuplicate(), buildFingerprints() + topic_dedup_log
     │   ├── featured.ts                   # rotateFeatured()
     │   ├── github.ts                     # publishToGitHub() with retry
     │   ├── pubmed.ts                     # verifyPubMedCitations()
@@ -127,27 +142,28 @@ supabase/
     │   └── voice-audit.ts               # auditVoiceQuality()
     │
     ├── stage-research/                   # Stage 1: Gemini 2.5 Pro + Google Search → Sonnet fallback
-    ├── stage-editor/                     # Stage 2: Flash → Sonnet. Editor brief — archetype/tone
+    ├── stage-editor/                     # Stage 2: Sonnet → Gemini 3.1 Pro. Editor brief — archetype/tone
     ├── stage-write/                      # Stage 3: Gemini 3.1 Pro → Sonnet (fallback path only — hybrid model pauses here)
-    ├── stage-independence/               # Stage 4: Grok 3 adversarial review + Flash corrections + PubMed
+    ├── stage-independence/               # Stage 4: Grok 4 adversarial review + Flash corrections + PubMed
     ├── stage-qc/                         # Stage 5: Flash → Sonnet. QC — publish/rewrite_voice/revise/kill
     ├── stage-voice-rewrite/              # Stage 6: Sonnet → Gemini → GPT-5.4 (skipped for human-written articles)
-    ├── stage-publish/                    # Stage 7: GitHub commit + Vercel hook + GPT Image illustration + ElevenLabs narration
+    ├── stage-copy-edit/                  # Stage 7: Sonnet → Gemini Pro. Conservative headline + header polish (confidence ≥8 only)
+    ├── stage-publish/                    # Stage 8: GitHub commit + Vercel hook + GPT Image illustration + ElevenLabs narration
     ├── pipeline-scout/                   # Scout — 3x/day topic discovery (all Gemini + Google Search)
     ├── pipeline-pinger/                  # Pinger — 4x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
     ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article, improve-article, merge
     │
     ├── topic-merge/                      # AI topic deduplication + merge (GPT-5.4 analyze, Sonnet merge)
     │
-    ├── articles-api/                     # (existing) CRUD for articles table
-    ├── process-article/                  # (existing) manual article generation
-    ├── refine-article/                   # (existing) chat refinement
-    ├── publish-article/                  # (existing) manual GitHub publish
-    ├── delete-article/                   # (existing) GitHub deletion
-    ├── fetch-article/                    # (existing) GitHub fetch
-    ├── generate-illustration/            # (existing) AI illustration
+    ├── articles-api/                     # CRUD for articles table
+    ├── process-article/                  # Manual article generation
+    ├── refine-article/                   # Chat-based article refinement
+    ├── publish-article/                  # Manual GitHub publish
+    ├── delete-article/                   # GitHub deletion
+    ├── fetch-article/                    # GitHub fetch
+    ├── generate-illustration/            # AI illustration (GPT Image 1)
     ├── generate-narration/               # ElevenLabs TTS narration of article description
-    └── editorial-qc/                     # (existing) collection-wide QC
+    └── editorial-qc/                     # Collection-wide QC
 ```
 
 ### Content Collections
@@ -229,7 +245,7 @@ const articles = await getCollection('articles');
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix). Wrong token redirects to `/admin/login?error=1` with inline error display.
 - **Dashboard**: 4-column stat grid (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 3 tab panels with fade-in animation (Pipeline, Articles, AI Agents). Max-width 1400px. Multi-column layouts: Pipeline tab has 2-col grid (queue + published side-by-side), AI Agents tab has 2-col grid (6 sections split). Articles tab is single-column (rows need full width for inline editing)
 - **Pipeline tab** (React island: `PipelineMonitor`):
-  - 7-stage visual pipeline: Research (Gemini 2.5 Pro + Search) → Editor (Flash → Sonnet) → **PAUSE for Opus writing** → Independence (Grok 3) → QC (Flash → Sonnet) → Voice Polish (Sonnet → Gemini, skipped for human articles) → Publish (GitHub + GPT Image)
+  - 8-stage visual pipeline: Research (Gemini 2.5 Pro + Search) → Editor (Sonnet → Gemini) → **PAUSE for Opus writing** → Independence (Grok 4) → QC (Flash → Sonnet) → Voice Polish (Sonnet → Gemini, skipped for human articles) → Copy Edit (Sonnet → Gemini Pro, conservative headline/header polish) → Publish (GitHub + GPT Image)
   - **Hybrid workflow UI**: editor_approved articles show purple highlight, "Copy Brief for Claude" button (client-side clipboard), "Submit Written Article" textarea + submit button
   - **"Clear All Briefs" button**: one-click kills all stale editor_approved articles
   - **× dismiss button**: on every pipeline card, visible without expanding, hover turns red
@@ -243,7 +259,7 @@ const articles = await getCollection('articles');
 - **New Article Editor** (`/admin/new`): drag-and-drop upload, AI generation, chat refinement, live preview, one-click publish
 - **Edit page** (`/admin/edit/[slug]`): metadata/content/AI refine tabs, autosave with 2s debounce + indicator, Cmd+S keyboard shortcut, score badges (independence/editor), live preview auto-refresh, Publish + Delete from GitHub buttons, XSS-safe chat rendering
 
-#### Hybrid AI Newsroom (v12 — Human + AI)
+#### Hybrid AI Newsroom (v17 — Human + AI)
 
 AI handles discovery, research, editorial judgment, and quality control. Human writes with Opus via Max subscription. ~$0.13/article.
 
@@ -263,26 +279,27 @@ Safety-net cron only — recovers stuck articles and advances in-progress stages
      - "Copy Brief for Claude" button (fetches formatted prompt via `pipeline-admin` `get-brief` action)
      - "Submit Written Article" form (accepts HTML, resumes pipeline via `submit-article` action)
   4. **Human writes with Opus** — User pastes brief to Claude Mac/Code, Opus writes the article ($0 via Max subscription). User pastes HTML back into admin dashboard.
-  5. **Grok Independence Review** (~30-60s): Grok 3 adversarial review. Flash applies corrections. PubMed verification in parallel.
+  5. **Grok Independence Review** (~30-60s): Grok 4 adversarial review. Flash applies corrections. PubMed verification in parallel.
   6. **QC** (~30s): Flash → Sonnet fallback. Publish/rewrite_voice/revise/kill. Mechanical voice audit.
   7. **Voice Rewrite** (if QC triggers): Sonnet → Gemini → GPT-5.4 → Grok. Voice-only prose rewrite.
-  8. **Publish** (~30s): GitHub commit (.astro + .json) with 422 retry loop. Vercel deploy hook. GPT Image illustration. Featured rotation.
+  8. **Copy Edit** (~15-30s): Sonnet → Gemini Pro. Conservative headline + section header polish. Confidence threshold ≥8. Failures skip gracefully to publish.
+  9. **Publish** (~30s): GitHub commit (.astro + .json) with 422 retry loop. Vercel deploy hook. GPT Image illustration. Featured rotation.
 
 **Architecture (split pipeline, SQL dispatch)**:
 Each stage is its own edge function with shared utilities in `_shared/`. The SQL function `dispatch_pipeline_stage()` (called by pg_cron) recovers stuck articles and advances in-progress stages via `pg_net.http_post()` (fire-and-forget). **It never auto-picks from the queue** — admin must click "Produce" to start any article. `editor_approved` is EXCLUDED from auto-dispatch — articles pause there for human writing. Dead code deleted: `daily-article-agent/` (old monolith) and `pipeline-orchestrator/` (replaced by SQL dispatch).
 
 **Chain-dispatch (all user-triggered flows)**: All stages fire the next directly via `chain_dispatch()` SQL → `pg_net.http_post()`. No cron waits.
-- Post-submit: submit-article → independence → QC → publish (seconds to publish)
+- Post-submit: submit-article → independence → QC → [voice rewrite if needed] → copy edit → publish (seconds to publish)
 - Manual produce: produce-topic → research → editor brief → pause
 **Safety-net cron**: `dispatch_pipeline_stage()` runs every 5 min (`*/5 * * * *`) to recover stuck articles and advance in-progress stages. Does NOT pick from queue.
 **Manual production only**: Admin clicks "Produce" on a topic → `produce-topic` action → research → editor brief → pause. No auto-production.
 **Error handling**: `safeStage()` wrapper + `parseScore()` for safe integer parsing. All stages log errors to DB on failure.
-**Model chains**: Writer (fallback path): Gemini 3.1 Pro → Sonnet → GPT-5.4. QC: Flash → Sonnet. Voice rewrite: Sonnet → Gemini → GPT-5.4 → Grok. Independence revision: Flash → Sonnet.
+**Model chains**: Writer (fallback path): Gemini 3.1 Pro → Sonnet → GPT-5.4. Editor: Sonnet → Gemini 3.1 Pro. QC: Flash → Sonnet. Voice rewrite: Sonnet → Gemini → GPT-5.4 → Grok. Copy edit: Sonnet → Gemini Pro. Independence revision: Flash → Sonnet.
 **API timeout**: 75s constant (`API_TIMEOUT`).
 **Human-article protections**: QC detects `_writtenBy: "human-opus"` → skips voice rewrite, force-publishes on revise. Never degrades Opus prose.
 **Mechanical voice audit**: `auditVoiceQuality()` — 30+ banned phrases, "you" count (min 6), paragraph length (max 3 sentences).
 **Editorial independence**: Manually queued topics get "MANDATORY EDITORIAL DIRECTION".
-**Duplicate filter**: `isDuplicate()` — bidirectional 55% word overlap with 5+ matching subject words.
+**Duplicate filter**: `isDuplicate()` — bidirectional 55% word overlap with 5+ matching subject words. Backed by `topic_dedup_log` table for permanent dedup memory (survives topic merges + queue deletes).
 **Cost tracking**: every API call logs tokens + USD to `daily_article_log.cost_usd` + `token_usage` (jsonb). ~$0.13/article with hybrid model.
 
 - **Smart featured rotation**: every 6h via independent `pg_cron` job (`featured-rotation`). Uses `updated_at` to track when article became featured (not publish date). Scores: editor quality (25%), recency (30%), independence score (15%), illustration (10%), read time (10%), category diversity (10%). Must have illustration and score >30 to qualify. Standalone `rotate-featured` action works even when pipeline crons are paused.
@@ -323,12 +340,13 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | Function | Purpose | Auth |
 |---|---|---|
 | `stage-research` | Stage 1: Gemini 2.5 Pro + Google Search grounding → Sonnet fallback | None (called by SQL dispatch) |
-| `stage-editor` | Stage 2: Flash → Sonnet. Editor brief — archetype, tone, density, pacing | None (called by SQL dispatch) |
+| `stage-editor` | Stage 2: Sonnet → Gemini 3.1 Pro. Editor brief — archetype, tone, density, pacing | None (called by SQL dispatch) |
 | `stage-write` | Stage 3: Gemini 3.1 Pro → Sonnet → GPT-5.4. Full article (fallback path only — hybrid pauses at editor_approved) | None (called by SQL dispatch) |
-| `stage-independence` | Stage 4: Grok 3 adversarial review + Flash corrections + PubMed verification | None (called by SQL dispatch) |
+| `stage-independence` | Stage 4: Grok 4 adversarial review + Flash corrections + PubMed verification | None (called by SQL dispatch) |
 | `stage-qc` | Stage 5: Flash → Sonnet. QC — publish/rewrite_voice/revise/kill. Skips voice rewrite for human-written articles | None (called by SQL dispatch) |
 | `stage-voice-rewrite` | Stage 6: Sonnet → Gemini → GPT-5.4 → Grok. Voice-only prose rewrite (skipped for Opus/human articles) | None (called by SQL dispatch) |
-| `stage-publish` | Stage 7: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
+| `stage-copy-edit` | Stage 7: Sonnet → Gemini Pro. Conservative headline + section header polish (confidence ≥8 threshold). Failures skip gracefully to publish | None (called by SQL dispatch) |
+| `stage-publish` | Stage 8: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
 | `pipeline-scout` | 3x/day topic discovery — all Gemini + Google Search grounding. Trending signals, search demand, "why now" | None (called by pg_cron) |
 | `pipeline-pinger` | 4x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
 | `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `improve-article` (full pipeline re-run, same slug), `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `merge-analyze`, `merge-execute` | None (rate-limited internally) |
@@ -348,16 +366,22 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 supabase functions deploy <function-name> --no-verify-jwt
 
 # Deploy all pipeline functions at once
-for fn in stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-publish pipeline-scout pipeline-pinger pipeline-admin topic-merge; do
+for fn in stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-copy-edit stage-publish pipeline-scout pipeline-pinger pipeline-admin topic-merge; do
   supabase functions deploy $fn --no-verify-jwt
 done
 ```
 
 **Required secrets** (set via `supabase secrets set`):
 - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
-- `ELEVENLABS_API_KEY` (ElevenLabs TTS for article narrations — voice `LkgZkNm7dD8b7nbdptAB`, model `eleven_multilingual_v2`)
-- `XAI_API_KEY` (Grok 3 for independence review + pinger social trending), `GOOGLE_API_KEY` (Gemini for research, scouts, pinger)
+- `ELEVENLABS_API_KEY` (ElevenLabs TTS for article narrations — voice `GK8yfgyvbDZaYf0rm78A`, model `eleven_multilingual_v2`)
+- `XAI_API_KEY` (Grok 4 for independence review + pinger social trending), `GOOGLE_API_KEY` (Gemini for research, scouts, pinger)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
+
+**Vercel environment variables** (public site):
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — newsletter subscribe API (server-side)
+- `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY` — Realtime subscriptions in admin dashboard
+- `BEEHIIV_API_KEY`, `BEEHIIV_PUBLICATION_ID` — newsletter forward to Beehiiv (optional; falls back gracefully if not set)
+- `ADMIN_TOKEN` — admin dashboard auth gate
 
 **Database tables:**
 - `articles` — main content table. Key columns: `slug`, `title`, `description`, `category`, `tags[]`, `keywords[]`, `article_html`, `hero_image`, `status`, `independence_score`, `editor_score`, `pipeline_log_id` (FK to daily_article_log)
@@ -365,6 +389,7 @@ done
 - `topic_queue` — editorial topic backlog. Key columns: `topic`, `notes`, `category`, `priority`, `expedite`, `source` (manual/trending/breaking), `status` (queued/assigned/in_progress/completed/skipped), `editor_score`, `research_summary`
 - `pinger_signals` — breaking news signal tracking. Key columns: `signal_hash`, `topic`, `source` (gemini_search/grok_social/pubmed_rss), `urgency`, `why_breaking`, `promoted_to_queue`, `queue_id`, `expires_at` (48h auto-cleanup)
 - `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source)
+- `topic_dedup_log` — permanent dedup memory for scouts/pinger. Written when topics are merged or deleted. 90-day TTL via pg_cron. Prevents re-suggesting angles that were already explored
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
 - `scout-gemini`: daily 6am UTC → `pipeline-scout` — Gemini + Google Search discovers 20 trending topics

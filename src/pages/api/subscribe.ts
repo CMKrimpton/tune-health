@@ -72,6 +72,37 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // Forward to Beehiiv if configured (non-fatal — Supabase record already saved)
+    const beehiivApiKey = import.meta.env.BEEHIIV_API_KEY;
+    const beehiivPubId = import.meta.env.BEEHIIV_PUBLICATION_ID;
+    if (beehiivApiKey && beehiivPubId) {
+      try {
+        const beehiivRes = await fetch(
+          `https://api.beehiiv.com/v2/publications/${beehiivPubId}/subscriptions`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${beehiivApiKey}`,
+            },
+            body: JSON.stringify({
+              email,
+              reactivate_existing: true,
+              send_welcome_email: true,
+              utm_source: (body?.source as string) || 'website',
+              utm_medium: 'organic',
+            }),
+          }
+        );
+        if (!beehiivRes.ok) {
+          const errText = await beehiivRes.text();
+          console.warn('[newsletter] Beehiiv forward failed:', beehiivRes.status, errText);
+        }
+      } catch (beehiivErr) {
+        console.warn('[newsletter] Beehiiv forward error:', beehiivErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({ success: true, message: 'Subscribed successfully' }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }

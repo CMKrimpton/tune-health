@@ -6,6 +6,7 @@ import Newsletter from '../../components/Newsletter.astro';
 import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
 import SideNav from '../../components/SideNav.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ShareButtons from '../../components/ShareButtons.astro';
 import { getAllCollections, type CuratedCollection } from '../../utils/collections';
 import { getArticles, getArticleGradientStyle, formatPublishDateShort } from '../../utils/articles';
 
@@ -48,10 +49,18 @@ const allCollections = getAllCollections().filter(c => c.slug !== collection.slu
         </a>
         <h1 class="font-serif text-display-2 font-semibold text-white mb-4 leading-tight">{collection.title}</h1>
         <p class="font-body text-white/80 leading-relaxed max-w-lg mb-6">{collection.longDescription}</p>
-        <div class="flex items-center gap-4 text-sm text-white/50">
+        <div class="flex items-center gap-4 text-sm text-white/50 mb-6">
           <span>{articles.length} articles</span>
           <span>·</span>
           <span>{totalReadTime} min total</span>
+        </div>
+        <div class="collection-share">
+          <span class="text-xs text-white/40 uppercase tracking-widest mr-3">Share</span>
+          <ShareButtons
+            title={collection.title}
+            url={`/collections/${collection.slug}`}
+            description={collection.description}
+          />
         </div>
       </div>
     </div>
@@ -128,5 +137,24 @@ const allCollections = getAllCollections().filter(c => c.slug !== collection.slu
     content: '';
     @apply absolute inset-0;
     background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%);
+  }
+
+  /* Override share-btn colors for the dark hero background */
+  .collection-share :global(.share-buttons) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .collection-share :global(.share-btn) {
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .collection-share :global(.share-btn:hover) {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
   }
 </style>

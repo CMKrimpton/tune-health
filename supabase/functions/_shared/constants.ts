@@ -4,9 +4,9 @@ export const API_TIMEOUT = 75_000; // 75s per model — allows 2 fallback attemp
 export const RESEARCH_TIMEOUT = 120_000; // 120s — research web search needs more time (single model, no fallback chain)
 export const RESEARCH_PARALLEL_TIMEOUT = 90_000; // 90s per model in parallel research (3 models, limited by slowest)
 // Active statuses = currently processing (used by stale detection + concurrency guard)
-export const ACTIVE = ["started","searching","publishing","editor_reviewing","editor_qc","independence_review"];
+export const ACTIVE = ["started","searching","publishing","editor_reviewing","editor_qc","independence_review","copy_editing"];
 // All pipeline statuses (active + waiting + terminal)
-export const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","qc_approved"];
+export const IN_PIPELINE = [...ACTIVE,"research_done","editor_approved","written","independence_done","qc_approved","copy_edited"];
 
 // Pricing per million tokens (USD) — updated March 2026
 // Padded ~10% above listed rates so dashboard never under-reports actual spend
