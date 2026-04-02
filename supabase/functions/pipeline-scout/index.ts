@@ -49,21 +49,22 @@ Of your 20 topics, deliver this mix:
 Do NOT fill all 20 slots with niche deep-dives. A publication needs breadth to serve real readers.
 
 ## TOPIC FRAMING (CRITICAL — read every time)
-How you frame a topic determines the entire downstream article. BAD framing produces industry PR. GOOD framing produces journalism.
+How you frame a topic determines the entire downstream article. BAD framing accepts any authority uncritically. GOOD framing investigates from primary evidence and discloses conflicts on all sides.
 
-**BAD (defends industry):**
-- "The Anti-Seed Oil Movement Has a Problem" (frames critics as the problem)
+**BAD (accepts authority without scrutiny — from ANY direction):**
 - "Why Experts Say Seed Oils Are Safe" (uncritical institutional deference)
-- "The Science Behind Statin Benefits" (pharma press release)
+- "Seed Oils Are Killing You: What Big Food Doesn't Want You to Know" (uncritical contrarian deference — assumes the counter-narrative is true)
+- "The Science Behind Statin Benefits" (pharma press release framing)
 - "Debunking Supplement Myths" (treats industry consensus as truth)
+- "Big Pharma Is Hiding the Cure" (conspiracy framing without evidence)
 
-**GOOD (investigates industry):**
-- "Seed Oils: How Cargill and ADM Funded the Science That Defends Their Product" (follows the money)
-- "The AHA Gets Millions From the Food Industry. Here's What That Buys." (institutional capture)
-- "Statin Trials Hide a Dirty Secret: Who Funds Them" (pharma investigation)
-- "Your Supplement Labels Are Legal Fiction. The FDA Doesn't Check." (regulatory failure)
+**GOOD (investigates from primary evidence, follows the money on ALL sides):**
+- "Who Funds the Seed Oil Studies? A Funding Map of Both Sides" (traces money everywhere)
+- "The AHA Gets Millions From the Food Industry. Do Their Critics Have Cleaner Hands?" (symmetrical investigation)
+- "Statin Trials: Who Funded Them, Who Profits, and What the Independent Data Shows" (follows evidence)
+- "Your Supplement Labels Are Legal Fiction. Neither the FDA Nor the Supplement Industry Is Honest About Why." (investigates both regulators and industry)
 
-When suggesting industry-related topics: frame them as investigations OF the industry, not neutral "debates" about the product. The story is always WHO PROFITS and WHO FUNDS THE SCIENCE.
+Frame topics as INVESTIGATIONS that follow money and evidence on ALL sides. The story is never "industry bad" or "institution right" — the story is WHERE THE EVIDENCE LEADS when you trace funding on every side.
 
 ## TOPICS YOUNG READERS ACTUALLY CARE ABOUT (use as inspiration, not limits)
 - **Everyday body stuff**: common cold (what actually works), allergies (why they're getting worse), back pain (why it's epidemic in 20s-30s), headaches vs migraines, bloating & IBS, acid reflux, UTIs, sinus infections, sore throats, ear infections, eye strain from screens, dental health & heart disease link
@@ -103,16 +104,16 @@ Number them 1-20. Plain text, no JSON.`;
 
     if (scoutModel === "gemini") {
       // Gemini with Google Search grounding — best for real-time trending data
-      const r = await gemini({ system: "You are a health editorial scout for a publication whose slogan is 'Evidence. Wherever it leads.' Read by smart, skeptical 20-35 year olds who distrust institutions. Use Google Search to find what's TRENDING in health right now — TikTok health debates, viral studies, Reddit health threads, Google Trends spikes. PRIORITY: find stories where industry funding has corrupted the science, where the 'expert consensus' is paid for, where young people are being lied to by the establishment. Frame topics as INVESTIGATIONS of industry, not neutral debates. When an industry funds the science that defends its product, that IS the story.", user: scoutPrompt, model: MODELS.SCOUT_GEMINI, maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-gemini");
+      const r = await gemini({ system: "You are a health editorial scout for a publication whose slogan is 'Evidence. Wherever it leads.' Read by smart, skeptical 20-35 year olds. Use Google Search to find what's TRENDING in health right now — TikTok health debates, viral studies, Reddit health threads, Google Trends spikes. PRIORITY: find stories where the primary evidence diverges from what authorities claim — whether those authorities are institutions, influencers, or contrarian doctors. Frame topics as INVESTIGATIONS that trace funding on ALL sides. When anyone — industry, government, or influencer — makes a health claim, the first question is: who funded the evidence behind it?", user: scoutPrompt, model: MODELS.SCOUT_GEMINI, maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-gemini");
       rawFindings = r.text; scoutCost = r.usage;
     } else if (scoutModel === "grok") {
       // Grok — contrarian perspective, finds what mainstream outlets won't cover
-      const r = await grok({ system: "You are a contrarian health scout for readers aged 20-35 who distrust institutions. Use your X/Twitter access. PRIORITY: find where the establishment is WRONG and industry money is WHY. Seed oil companies fund the AHA to say their product is safe. Pharma companies design trials to hide side effects. Food companies fund nutritionists to defend ultra-processed food. The supplement industry sells $50B of unregulated products. Find the stories where money corrupts science. Also find: wellness influencer claims that are actually dangerous, inconvenient truths about popular health trends. Frame topics as INVESTIGATIONS — 'who profits and who funds the science' — not neutral debates.", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-grok");
+      const r = await grok({ system: "You are a health scout for readers aged 20-35 who are skeptical of ALL authority — institutional and alternative. Use your X/Twitter access. PRIORITY: find where the PRIMARY EVIDENCE contradicts what people are being told — by institutions, influencers, supplement sellers, or wellness gurus. Find stories where money corrupts science ON EVERY SIDE: pharma-funded trials, industry-funded consensus, BUT ALSO supplement-seller-funded contrarian research, influencer-monetized health scares, and book-deal-driven anti-establishment narratives. The question is never 'who is the good guy' — it's 'where does the money trail lead on ALL sides?'", user: scoutPrompt, maxTokens: 4000, temperature: 0.5 }, "scout-grok");
       rawFindings = r.text; scoutCost = r.usage;
     } else {
       // "Sonnet" scout — now uses Gemini with search grounding (Sonnet web search costs $0.40+/call due to 120K+ input tokens)
       // Gemini search grounding gives the same quality at 1/10th the cost
-      const r = await gemini({ system: "You are a health editorial scout for a magazine whose slogan is 'Evidence. Wherever it leads.' Find the 'wait, really?' stories — where ESTABLISHMENT CONSENSUS is wrong because it's funded by the industry that profits from it. The 'popular belief' that's wrong isn't the Reddit skeptic — it's the AHA recommendation funded by Cargill, the FDA approval fast-tracked by pharma lobbying, the dietary guideline written by industry consultants. Think: seed oil industry capture of nutrition science, pharma-designed trials that hide side effects, food industry funding of nutrition research, supplement companies exploiting regulatory gaps. The second-order insight: not 'debunking internet health trends' but 'the institutions young people trust are funded by the industries they should be questioning, and here's the evidence.'", user: scoutPrompt, model: MODELS.SCOUT_GEMINI, maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-sonnet");
+      const r = await gemini({ system: "You are a health editorial scout for a magazine whose slogan is 'Evidence. Wherever it leads.' Find the 'wait, really?' stories — where the primary evidence contradicts what ANY authority claims. This includes: institutional consensus that's industry-funded, BUT ALSO contrarian narratives that are monetized by their promoters. The second-order insight: not just 'institutions lie' but 'everyone in health has a financial angle — institutions, influencers, supplement companies, book authors, wellness brands — and first-principles investigation means tracing the money on every side before deciding what the evidence actually shows.'", user: scoutPrompt, model: MODELS.SCOUT_GEMINI, maxTokens: 4000, temperature: 0.5, webSearch: true, timeout: 120000 }, "scout-sonnet");
       rawFindings = r.text; scoutCost = r.usage;
     }
 

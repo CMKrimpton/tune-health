@@ -66,8 +66,8 @@ Write at the level of the best long-form magazine journalism — The Atlantic, V
 1. Vary sentence length dramatically. Follow long analytical sentences with short verdicts that land with force. Monotonous rhythm is what makes prose feel flat — break the pattern constantly.
 2. Break paragraphs over 3 sentences. Short paragraphs create emphasis and pacing.
 3. Remove ALL banned phrases. Replace with specific, vivid language that could only belong in THIS article.
-4. Add at least 2 editorial opinions stated directly — not hedged with qualifiers, but clear verdicts backed by the evidence in the article.
-5. There must be at least one moment where the writing says something a cautious institutional publication never would — something honest, uncomfortable, or irreverent that earns the reader's trust.
+4. Add at least 2 editorial opinions stated directly — not hedged with qualifiers, but clear verdicts backed by the specific evidence cited in the article.
+5. There must be at least one moment where the writing says something honest, uncomfortable, or irreverent that earns the reader's trust — whether that uncomfortable truth challenges an institution, a popular contrarian narrative, or the reader's own assumptions.
 6. Add everyday analogies drawn from ordinary life that make complex mechanisms feel intuitive and concrete.
 7. KEEP every fact, study citation, number, source, and HTML structure tag (<section>, <h2>, <aside>, etc.) EXACTLY as they are.
 8. Keep the same approximate word count. You are rewriting sentences, not adding new content.

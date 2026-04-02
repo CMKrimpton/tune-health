@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [17.0.0] - 2026-04-02
+
+### Changed — First-Principles Pipeline Audit (7 edge functions)
+
+Rewrote all pipeline prompts to investigate from primary evidence rather than from any authority's conclusion. Replaced directional bias (anti-institutional) with symmetrical funding audit methodology.
+
+#### stage-research
+- **Deleted** 12-topic "KNOWN INDUSTRY-CAPTURED CONSENSUS" list (predetermined conclusions) → replaced with **FUNDING AUDIT PROTOCOL** (a method for tracing funding on ALL sides, including contrarian conflicts)
+- **Added** FIRST-PRINCIPLES INVESTIGATION METHOD — start from primary data, mechanisms, dose-response curves
+- **Fixed** triangulated research lens prompts: dissenting lens now scrutinizes dissenter conflicts (book sales, supplement lines, speaking fees)
+- **Fixed** merge order: primary evidence first (was contrarian-first, which primed editors toward anti-institutional framing)
+
+#### stage-independence
+- Scoring rubric now rewards **evidence-following**, not institution-challenging — a 9-10 means "follows primary evidence wherever it leads"
+- **Symmetrical conflict disclosure**: flags articles that only trace money on ONE side (institutional or contrarian)
+- Category-specific focus updated: nutrition audits supplement-funded contrarian research alongside food industry conflicts
+
+#### pipeline-scout
+- BAD framing now includes uncritical contrarian deference alongside institutional deference
+- GOOD framing requires funding investigation on ALL sides
+- All 3 scout model system prompts rewritten for symmetrical investigation
+
+#### stage-editor
+- Replaced "assume institutional capture" directive with two explicit failure modes: institutional deference AND reflexive contrarianism
+- Dogma check now flags outdated contrarian narratives alongside outdated institutional ones
+
+#### stage-write
+- **Added steel-man requirement** — present opposing position in strongest form before critiquing
+- Funding disclosure mandatory for ALL cited studies (institutional AND contrarian sources)
+
+#### stage-qc
+- "Follow the money" requires symmetrical disclosure — one-sided funding audit triggers revision
+- Scoring: 3-4 now includes "one-sided advocacy in either direction"
+
+#### stage-voice-rewrite
+- "Uncomfortable truth" can challenge contrarian narratives or reader assumptions, not just institutions
+
 ## [16.9.0] - 2026-04-02
 
 ### Added — Realtime Admin Dashboard
