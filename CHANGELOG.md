@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [17.6.0] - 2026-04-02
+
+### Fixed — Accessibility, Navigation & TypeScript (4 files)
+
+**Empty alt text (WCAG)** — Two article hero images had `alt=""` (empty), failing accessibility requirements for content images. Images inside article cards are contextual (not decorative) and require descriptive alt text.
+- `collections/[slug].astro` — article thumbnails now use `heroImageAlt || title` fallback
+- `reading-list.astro` — dynamically-built HTML template string updated with same pattern
+
+**Footer category links (broken navigation)** — Footer was the only navigation component using the stale `/articles?topic=` query-param pattern. The articles index page doesn't handle topic filtering via query params — clicking any category in the Footer landed on the unfiltered articles list. All other nav components (Header, TopicNav, SideNav, ArticleLayout) correctly link to `/topics/[slug]`.
+- Added `getCategorySlug` import from `category-domains`
+- Replaced `href="/articles?topic=${encodeURIComponent(cat)}"` → `href="/topics/${getCategorySlug(cat)}"`
+
+**TypeScript `any` types** — `ContinueReading.astro` script block used `(p: any)`, `(a: any)`, `(b: any)` for localStorage reading progress objects.
+- Added `ReadingProgress` interface: `{ scrollPercent, lastRead, slug, category, title, readTime }`
+- All three filter/sort/forEach callbacks now properly typed
+
 ## [17.5.0] - 2026-04-02
 
 ### Fixed — Pipeline Chain Dispatch + Status Constants (5 edge functions)

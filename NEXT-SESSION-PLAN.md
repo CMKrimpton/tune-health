@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v17.5.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline fully chain-dispatched — no cron wait on any stage transition. All model IDs centralized via MODELS.* constants.
+> **Status**: v17.6.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline fully chain-dispatched — no cron wait on any stage transition. All model IDs centralized via MODELS.* constants.
 
 ---
 
@@ -21,7 +21,14 @@
 - **Admin**: Pipeline/Articles/Agents tabs. Supabase Realtime live updates
 - **Newsletter**: `/api/subscribe` → Supabase + Beehiiv forward (when BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID env vars set)
 
-## What Was Done This Session (v17.5.0)
+## What Was Done This Session (v17.6.0)
+
+1. **Footer category links fixed** — Was linking to `/articles?topic=` (broken); now `/topics/[slug]`. Imported `getCategorySlug` from category-domains
+2. **Empty alt text fixed** — `collections/[slug].astro` and `reading-list.astro` hero images now use `heroImageAlt || title` instead of `alt=""`
+3. **ContinueReading TypeScript** — Added `ReadingProgress` interface, eliminated 3 `any` casts in localStorage progress reader
+4. **Build**: `npm run build` passes clean
+
+## Two Sessions Ago (v17.5.0)
 
 1. **stage-write chain dispatch** — Added `dispatchStage("stage-independence", logId)` to fallback write path. Articles no longer get stuck at "written"
 2. **constants.ts status completeness** — Added `"writing"`, `"rewriting_voice"` to `ACTIVE`; `"voice_rewrite_pending"`, `"voice_rewrite_done"` to `IN_PIPELINE`
