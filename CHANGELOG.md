@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [17.3.0] - 2026-04-02
+
+### Fixed — Model Centralization (9 edge functions)
+
+Eliminated every hardcoded model ID string across the entire codebase. All model references now go through `MODELS.*` constants in `_shared/constants.ts`.
+
+#### Functions updated
+- **`refine-article`** — primary Claude call + fallback Grok: `"claude-sonnet-4-6"` → `MODELS.DEFAULT_CLAUDE`, `"grok-3"` → `MODELS.INDEPENDENCE` (also added `_shared/constants.ts` import)
+- **`stage-publish`** — cost-logging calls: `"gpt-image-1"` → `MODELS.ILLUSTRATION`, `"eleven_multilingual_v2"` → `MODELS.NARRATION_MODEL`
+- **`stage-research`** — `_researchSources` label: `"grok-4"` → `MODELS.INDEPENDENCE`
+- **`pipeline-admin`** — backfill-costs entries: same illustration + narration → constants
+- **`editorial-qc`** — stale model ID `"claude-sonnet-4-20250514"` → `MODELS.DEFAULT_CLAUDE`
+- **`generate-illustration`** — GPT Image API call: `"gpt-image-1"` → `MODELS.ILLUSTRATION`
+- **`process-article`** — primary + cost logging: `"claude-sonnet-4-6"` → `MODELS.DEFAULT_CLAUDE`
+
+### Fixed — Dedup Fingerprint Status Values
+
+`buildFingerprints()` in `_shared/dedup.ts` was querying `daily_article_log` with stale status strings (`"research"`, `"editor"`, `"independence"`) that never matched real rows. Updated to the full set of actual pipeline statuses including all `copy_editing`/`copy_edited` stages. In-flight articles are now correctly excluded from scout suggestions.
+
+### Fixed — backfill-costs Missing Stage 7
+
+`backfill-costs` action in `pipeline-admin` did not include `copy-edit` in `STAGE_ESTIMATES` or `STAGES_BY_STATUS`. Articles at `copy_editing`, `copy_edited`, `publishing`, and `published` status now correctly estimate copy-edit token costs.
+
+### Fixed — Homepage Newsletter Copy
+
+`src/pages/index.astro` homepage newsletter section still had "Real Wealth Starts Here" (alumi Wealth project copy that leaked in). Corrected to "Evidence in Your Inbox" — consistent with `Newsletter.astro` fix from v17.2.0.
+
 ## [17.2.0] - 2026-04-02
 
 ### Fixed — Post-merge Scout Dedup (4 edge functions + migration)
