@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [16.9.0] - 2026-04-02
+
+### Added — Realtime Admin Dashboard
+- **Supabase Realtime subscriptions** — PipelineMonitor now receives live database changes via WebSocket instead of polling. Pipeline stage transitions (Research → Editor → Write → etc.) appear instantly in the dashboard
+- **Live topic queue updates** — INSERT, UPDATE, DELETE on `topic_queue` stream to the dashboard in real time (priority changes, produces, deletes)
+- **Fallback polling** — 60s safety-net poll (was 15s) keeps aggregate stats in sync; Realtime handles row-level updates
+- **Realtime migration** — `daily_article_log` and `topic_queue` added to `supabase_realtime` publication with public SELECT RLS policies
+
 ## [16.8.0] - 2026-04-01
 
 ### Improved — Ultra Audit & Polish Pass (12 files)

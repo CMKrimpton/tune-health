@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v16.8.0 live. ~186 published articles across 9 categories. Ultra audit complete — accessibility, visual polish, interaction, SEO, admin performance.
+> **Status**: v16.9.0 live. ~188 published articles across 9 categories. Admin dashboard now uses Supabase Realtime for live pipeline updates.
 
 ---
 
@@ -23,11 +23,9 @@
 
 ## What Was Done This Session
 
-1. **Accessibility & Contrast** — Footer links stone-400→300, fine print stone-600→500, Newsletter text stone-400→300, AudioNarration aria-pressed, SeriesNav focus rings + transitions, HighlightShare Escape/Tab keyboard support
-2. **Visual Polish** — Scroll progress bar 2→3px, HighlightShare scale entry animation, Newsletter placeholder contrast
-3. **Interaction** — CommandPalette empty state shows topic pills, focus restoration on close, share brand colors to CSS custom properties
-4. **SEO** — Visual breadcrumbs on topic and collection pages
-5. **Performance** — Admin CSS dead code removal (−10.4KB): legacy table, article card, modal selectors
+1. **Supabase Realtime** — Replaced 15s polling with live WebSocket subscriptions on `daily_article_log` and `topic_queue`. Pipeline stage transitions now appear instantly in the admin dashboard
+2. **Migration** — Enabled Realtime publication + RLS SELECT policies for both tables
+3. **Fallback polling** — Reduced from 15s to 60s as safety net for aggregate stats
 
 ## Priority for Next Session
 

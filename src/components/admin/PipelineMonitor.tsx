@@ -6,6 +6,7 @@ import {
   fetchWithTimeout,
 } from './types';
 import { useConfirm } from './ConfirmModal';
+import { createClient } from '@supabase/supabase-js';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -33,7 +34,12 @@ interface Props {
 // ─── Constants ──────────────────────────────────────────────────
 
 const ARTICLE_GOAL = 100;
-const POLL_INTERVAL = 15_000;
+const POLL_INTERVAL = 60_000; // Fallback poll — Realtime handles live updates
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -164,10 +170,71 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     } catch { /* retry on next poll */ }
   }, [apiBase]);
 
+  // ── Realtime subscriptions (live updates) + fallback poll ──
   useEffect(() => {
-    fetchStatus();
-    intervalRef.current = setInterval(fetchStatus, POLL_INTERVAL);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    fetchStatus(); // Initial load
+    intervalRef.current = setInterval(fetchStatus, POLL_INTERVAL); // 60s fallback
+
+    if (!supabase) {
+      // No Realtime available — fall back to faster polling
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(fetchStatus, 15_000);
+      return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    }
+
+    const channel = supabase.channel('admin-pipeline')
+      // Pipeline log changes — INSERT (new article enters pipeline) + UPDATE (stage transitions)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'daily_article_log',
+      }, (payload) => {
+        const newLog = payload.new as PipelineLog;
+        setLogs(prev => [newLog, ...prev.filter(l => l.id !== newLog.id)]);
+        setLastPoll(new Date());
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'daily_article_log',
+      }, (payload) => {
+        const updated = payload.new as PipelineLog;
+        setLogs(prev => {
+          const idx = prev.findIndex(l => l.id === updated.id);
+          if (idx === -1) return [updated, ...prev];
+          const next = [...prev];
+          next[idx] = updated;
+          return next;
+        });
+        setLastPoll(new Date());
+      })
+      // Queue changes — INSERT, UPDATE, DELETE
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'topic_queue',
+      }, (payload) => {
+        const newItem = payload.new as QueueItem;
+        setQueue(prev => [newItem, ...prev.filter(q => q.id !== newItem.id)]);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'topic_queue',
+      }, (payload) => {
+        const updated = payload.new as QueueItem;
+        setQueue(prev => {
+          const idx = prev.findIndex(q => q.id === updated.id);
+          if (idx === -1) return [updated, ...prev];
+          const next = [...prev];
+          next[idx] = updated;
+          return next;
+        });
+      })
+      .on('postgres_changes', {
+        event: 'DELETE', schema: 'public', table: 'topic_queue',
+      }, (payload) => {
+        const deleted = payload.old as { id: string };
+        if (deleted?.id) setQueue(prev => prev.filter(q => q.id !== deleted.id));
+      })
+      .subscribe();
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      supabase.removeChannel(channel);
+    };
   }, [fetchStatus]);
 
   const [, setTick] = useState(0);
