@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { addOverheadCost, calcCost } from "../_shared/db.ts";
+import { MODELS } from "../_shared/constants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -224,7 +225,7 @@ Conduct your editorial review and return ONLY the JSON report. No markdown, no e
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: MODELS.DEFAULT_CLAUDE,
       max_tokens: 8192,
       temperature: 0.3,
       system: QC_SYSTEM_PROMPT,
@@ -244,7 +245,7 @@ Conduct your editorial review and return ONLY the JSON report. No markdown, no e
   // Log cost
   const apiUsage = data.usage;
   if (apiUsage) {
-    const model = "claude-sonnet-4-20250514";
+    const model = MODELS.DEFAULT_CLAUDE;
     const costUsd = calcCost(model, apiUsage.input_tokens || 0, apiUsage.output_tokens || 0);
     await addOverheadCost(db, {
       model, stage: "editorial-qc",

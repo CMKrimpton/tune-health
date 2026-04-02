@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { addOverheadCost, calcCost, supabase } from "../_shared/db.ts";
+import { MODELS } from "../_shared/constants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -140,7 +141,7 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: MODELS.DEFAULT_CLAUDE,
         max_tokens: 8192,
         temperature: 0.3,
         system: SYSTEM_PROMPT,
@@ -162,7 +163,7 @@ Return ONLY valid JSON matching the specified format. No markdown code fences, n
     // Log cost
     const apiUsage = data.usage;
     if (apiUsage) {
-      const model = "claude-sonnet-4-6";
+      const model = MODELS.DEFAULT_CLAUDE;
       const costUsd = calcCost(model, apiUsage.input_tokens || 0, apiUsage.output_tokens || 0);
       await addOverheadCost(supabase(), {
         model, stage: "process-article",

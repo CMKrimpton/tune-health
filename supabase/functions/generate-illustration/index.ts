@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { updateGitHubJson } from "../_shared/github.ts";
+import { MODELS } from "../_shared/constants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -325,7 +326,7 @@ async function generateImage(apiKey: string, prompt: string): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-image-1",
+      model: MODELS.ILLUSTRATION,
       prompt,
       n: 1,
       size: "1536x1024",
