@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [17.5.0] - 2026-04-02
+
+### Fixed — Pipeline Chain Dispatch + Status Constants (5 edge functions)
+
+**stage-write chain dispatch** — After writing an article (fallback auto-write path), `stage-write` was setting status to `"written"` and returning without dispatching `stage-independence`. Articles got stuck at `"written"` waiting for the 5-min safety-net cron. Added `dispatchStage("stage-independence", logId)` + `dispatchStage` import.
+
+**constants.ts status completeness** — `ACTIVE` and `IN_PIPELINE` arrays were missing voice-rewrite statuses added in v17:
+- Added `"writing"` and `"rewriting_voice"` to `ACTIVE` (currently-processing states)
+- Added `"voice_rewrite_pending"` and `"voice_rewrite_done"` to `IN_PIPELINE` (in-flight waiting states)
+- These are used by stale detection and concurrency guards
+
+**Hardcoded model strings** — Two remaining hardcoded model IDs replaced with `MODELS.*` constants:
+- `refine-article/index.ts`: `"gemini-2.5-flash"` → `MODELS.DEFAULT_GEMINI`
+- `_shared/db.ts` (calcCost fallback): `"claude-sonnet-4-6"` → `MODELS.DEFAULT_CLAUDE`; added `MODELS` import
+
+**Deployed** all 11 pipeline functions (all import `_shared/db.ts` or `_shared/constants.ts`).
+
 ## [17.4.0] - 2026-04-02
 
 ### Fixed — Voice-Rewrite Chain Dispatch (2 edge functions)

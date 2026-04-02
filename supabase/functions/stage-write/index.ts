@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, addCostToLog, safeStage } from "../_shared/db.ts";
+import { supabase, addCostToLog, safeStage, dispatchStage } from "../_shared/db.ts";
 import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { VALID_CATEGORIES, getCategoryGradient, pickWriterModel } from "../_shared/constants.ts";
 import { todayISO } from "../_shared/astro.ts";
@@ -301,6 +301,9 @@ CRITICAL STRUCTURE RULE: Every article MUST have a proper ending. The last secti
     if (!stageResult.ok) {
       return json({ error: stageResult.error, logId }, 500);
     }
+
+    // Chain-dispatch: fire independence review immediately (no cron wait)
+    await dispatchStage("stage-independence", logId);
 
     return json({ success: true, logId, status: "written" });
   } catch (err: unknown) {

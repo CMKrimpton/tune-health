@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { PRICING } from "./constants.ts";
+import { PRICING, MODELS } from "./constants.ts";
 import type { ApiUsage } from "./types.ts";
 
 export function supabase() {
@@ -20,7 +20,7 @@ export function parseScore(raw: unknown): number | null {
 }
 
 export function calcCost(model: string, inputTokens: number, outputTokens: number): number {
-  const p = PRICING[model] || PRICING["claude-sonnet-4-6"];
+  const p = PRICING[model] || PRICING[MODELS.DEFAULT_CLAUDE];
   return (inputTokens * p.input + outputTokens * p.output) / 1_000_000;
 }
 

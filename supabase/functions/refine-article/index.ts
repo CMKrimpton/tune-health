@@ -156,7 +156,7 @@ Apply the requested changes and return the complete updated article as JSON.`;
           if (res.ok) {
             const data = await res.json();
             content = (data.candidates?.[0]?.content?.parts || []).map((p: { text?: string }) => p.text || "").join("");
-            if (content && data.usageMetadata) { usedModel = "gemini-2.5-flash"; inputTokens = data.usageMetadata.promptTokenCount || 0; outputTokens = data.usageMetadata.candidatesTokenCount || 0; }
+            if (content && data.usageMetadata) { usedModel = MODELS.DEFAULT_GEMINI; inputTokens = data.usageMetadata.promptTokenCount || 0; outputTokens = data.usageMetadata.candidatesTokenCount || 0; }
           } else { lastError = `Gemini ${res.status}`; }
         } catch (e: unknown) { lastError = e instanceof Error ? e.message : "Gemini failed"; }
       }

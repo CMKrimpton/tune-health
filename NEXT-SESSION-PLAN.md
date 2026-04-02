@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v17.4.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline fully chain-dispatched (including voice-rewrite path).
+> **Status**: v17.5.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline fully chain-dispatched — no cron wait on any stage transition. All model IDs centralized via MODELS.* constants.
 
 ---
 
@@ -21,7 +21,15 @@
 - **Admin**: Pipeline/Articles/Agents tabs. Supabase Realtime live updates
 - **Newsletter**: `/api/subscribe` → Supabase + Beehiiv forward (when BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID env vars set)
 
-## What Was Done This Session (v17.4.0)
+## What Was Done This Session (v17.5.0)
+
+1. **stage-write chain dispatch** — Added `dispatchStage("stage-independence", logId)` to fallback write path. Articles no longer get stuck at "written"
+2. **constants.ts status completeness** — Added `"writing"`, `"rewriting_voice"` to `ACTIVE`; `"voice_rewrite_pending"`, `"voice_rewrite_done"` to `IN_PIPELINE`
+3. **refine-article model fix** — `"gemini-2.5-flash"` → `MODELS.DEFAULT_GEMINI` (hardcoded string, now last remaining in pipeline)
+4. **db.ts calcCost fallback** — `"claude-sonnet-4-6"` → `MODELS.DEFAULT_CLAUDE` (last hardcoded model string in shared utilities)
+5. **Deployed**: All 11 pipeline functions redeployed (shared file changes)
+
+## What Was Done Last Session (v17.4.0)
 
 1. **Voice-rewrite chain dispatch fix** — QC now dispatches `stage-voice-rewrite` immediately on `rewrite_voice` decision (was waiting for 5-min cron). Voice-rewrite now dispatches `stage-copy-edit` immediately on completion (was waiting another 5-min cron). Up to 10-minute pipeline delay eliminated on voice-rewrite path
 2. **Admin types.ts sync** — `MODEL_PEN_NAMES` updated to use "Max Lundin" for all models (was stale: Carl Lundin, Max Quilici, Eli Vance, etc.)
