@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v17.2.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline (stage-copy-edit live).
+> **Status**: v17.3.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline (stage-copy-edit live).
 
 ---
 
@@ -21,15 +21,18 @@
 - **Admin**: Pipeline/Articles/Agents tabs. Supabase Realtime live updates
 - **Newsletter**: `/api/subscribe` → Supabase + Beehiiv forward (when BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID env vars set)
 
-## What Was Done This Session
+## What Was Done This Session (v17.3.0)
 
-1. **Newsletter copy bug** — Fixed "Real Wealth Starts Here" (alumi Wealth leftover) → "Evidence in Your Inbox"
+1. **Newsletter copy bug** — Fixed "Real Wealth Starts Here" (alumi Wealth leftover) → "Evidence in Your Inbox" in both `Newsletter.astro` AND `index.astro` (homepage newsletter section had same stale copy)
 2. **Pipeline type completeness** — Added `copy_editing`/`copy_edited` to `PipelineStatus` type and `getStatusText` map in `types.ts`
 3. **Backend constants** — Added `copy_editing`/`copy_edited` to `ACTIVE`/`IN_PIPELINE` arrays in `_shared/constants.ts`
 4. **Beehiiv integration** — `/api/subscribe` now forwards to Beehiiv API after Supabase save. Graceful non-fatal fallback if env vars not set. Ready to activate once account is created
 5. **Share buttons on collections** — Added `ShareButtons` component to collection hero with dark overlay styling
-6. **CLAUDE.md overhaul** — Updated to reflect 8-stage pipeline, all new pages/components, model chain corrections, Beehiiv env vars, topic_dedup_log, v17 architecture
-7. **Deployed**: `stage-copy-edit` + `pipeline-admin` redeployed with updated constants
+6. **Share buttons on topic pages** — Added `ShareButtons` to `/topics/[slug]` hero alongside article count
+7. **backfill-costs fix** — Added copy-edit to `STAGE_ESTIMATES` + `STAGES_BY_STATUS` in pipeline-admin so cost reporting covers all 8 stages
+8. **refine-article model fix** — Replaced hardcoded `"grok-3"` with `MODELS.INDEPENDENCE` (grok-4). Imported constants.ts.
+9. **CLAUDE.md overhaul** — Updated to reflect 8-stage pipeline, all new pages/components, model chain corrections, Beehiiv env vars, topic_dedup_log, v17 architecture
+10. **Deployed**: `pipeline-admin` + `refine-article` redeployed to Supabase
 
 ## Priority for Next Session
 
@@ -58,4 +61,3 @@
 - Lighthouse audit on new pages (topic, collection)
 - Add `updatedDate` to articles that have been revised
 - Consider "Most Read" section (needs analytics/view counting)
-- Consider adding share buttons to topic landing pages (same pattern as collections)
