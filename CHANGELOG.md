@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [17.2.0] - 2026-04-02
+
+### Fixed — Post-merge Scout Dedup (4 edge functions + migration)
+
+Scouts were re-suggesting topic angles that had already been merged, because the merge operation deleted the original topic rows and their fingerprints disappeared from dedup.
+
+#### Root cause
+`buildFingerprints()` reconstructs dedup memory from live operational tables. When topics were merged, originals were hard-deleted — their text was gone. The merged super-topic has a different title, so scouts could easily slip through with re-suggestions of the original angles.
+
+#### Solution: dedicated `topic_dedup_log` table
+- **New table** `topic_dedup_log(id, topic_text, source, created_at)` — purpose-built for dedup memory, independent of operational tables
+- **90-day TTL** via `pg_cron` — bounded size, no infinite growth
+- **Each original topic gets its own fingerprint entry** (not diluted into one combined fingerprint), giving the dedup check the tightest possible net per original angle
+
+#### Changes
+- **Migration** `20260351_topic_dedup_log.sql` — table + index + cron job applied to Supabase
+- **`_shared/dedup.ts`** — `buildFingerprints()` now queries `topic_dedup_log` with 90-day window; reverted erroneous `skipped` status addition
+- **`topic-merge`** — writes each original topic to dedup log before deleting; reverted `skipped` status approach; restored FK null + hard delete
+- **`pipeline-admin`** — `delete-queue` action now fetches topic text and writes to dedup log before deleting
+
 ## [17.1.1] - 2026-04-02
 
 ### Fixed — Scout Button Timeout

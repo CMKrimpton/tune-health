@@ -77,5 +77,18 @@ export async function buildFingerprints(db: ReturnType<typeof supabase>): Promis
     if (text) fingerprints.push(extractFingerprint(text));
   }
 
+  // Dedup log: merged and manually-deleted topics from the last 90 days.
+  // Each original topic gets its own fingerprint (not diluted into one merged record)
+  // so scouts can't re-suggest the same angle after it's been consumed.
+  const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: dedupLog } = await db
+    .from("topic_dedup_log")
+    .select("topic_text")
+    .gte("created_at", cutoff);
+
+  for (const entry of (dedupLog || []) as Array<{ topic_text: string }>) {
+    if (entry.topic_text) fingerprints.push(extractFingerprint(entry.topic_text));
+  }
+
   return fingerprints;
 }

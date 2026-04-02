@@ -227,13 +227,19 @@ Return ONLY valid JSON:
     .single();
   if (insertErr) throw insertErr;
 
+  // Write each original topic to the dedup log before deleting — gives each its own
+  // fingerprint so scouts can't re-suggest the same angles after they've been merged.
+  await db.from("topic_dedup_log").insert(
+    topics!.map((t) => ({ topic_text: t.topic, source: "merged" }))
+  );
+
   // Clear FK references in daily_article_log before deleting originals
   await db
     .from("daily_article_log")
     .update({ queue_id: null })
     .in("queue_id", topicIds);
 
-  // Delete originals
+  // Delete originals — queue stays clean
   const { error: delErr } = await db
     .from("topic_queue")
     .delete()

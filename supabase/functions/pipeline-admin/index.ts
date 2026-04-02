@@ -290,6 +290,11 @@ Deno.serve(async (req: Request) => {
     if (action === "delete-queue") {
       const queueId = body.queueId as string | undefined;
       if (!queueId) return json({ error: "queueId is required" }, 400);
+      // Fetch topic text before deleting so we can log it for dedup
+      const { data: queueItem } = await db.from("topic_queue").select("topic").eq("id", queueId).maybeSingle();
+      if (queueItem?.topic) {
+        await db.from("topic_dedup_log").insert({ topic_text: queueItem.topic, source: "deleted" });
+      }
       // Clear FK references in daily_article_log first (prevents FK constraint violation)
       await db.from("daily_article_log").update({ queue_id: null }).eq("queue_id", queueId);
       const { error: delErr } = await db.from("topic_queue").delete().eq("id", queueId);
