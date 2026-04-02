@@ -58,7 +58,16 @@ export async function buildFingerprints(db: ReturnType<typeof supabase>): Promis
   const { data: pipelineArticles } = await db
     .from("daily_article_log")
     .select("topic, title")
-    .in("status", ["searching", "research", "editor", "editor_approved", "writing", "independence", "qc", "voice_rewrite", "publishing", "in_progress"]);
+    .in("status", [
+      "started", "searching", "research_done",
+      "editor_reviewing", "editor_approved",
+      "writing", "written",
+      "independence_review", "independence_done",
+      "editor_qc", "qc_approved",
+      "voice_rewrite_pending", "rewriting_voice", "voice_rewrite_done",
+      "copy_editing", "copy_edited",
+      "publishing",
+    ]);
 
   const fingerprints: Set<string>[] = [];
 
