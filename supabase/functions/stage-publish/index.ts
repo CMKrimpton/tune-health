@@ -220,7 +220,7 @@ Deno.serve(async (req: Request) => {
             console.log(`[Publish] Illustration generated for ${slug}: ${illData.imageUrl}`);
             // Log illustration cost to pipeline
             await addCostToLog(db, logId, {
-              model: "gpt-image-1",
+              model: MODELS.ILLUSTRATION,
               stage: "illustration",
               inputTokens: 0,
               outputTokens: 0,
@@ -266,7 +266,7 @@ Deno.serve(async (req: Request) => {
               const charCount = narData.characters || 0;
               if (charCount > 0) {
                 await addCostToLog(db, logId, {
-                  model: "eleven_multilingual_v2",
+                  model: MODELS.NARRATION_MODEL,
                   stage: "narration",
                   inputTokens: charCount,
                   outputTokens: 0,

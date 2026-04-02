@@ -442,7 +442,7 @@ Deno.serve(async (req: Request) => {
         // Add illustration cost if article has hero_image but no illustration cost logged
         if (article.hero_image && !hasIllustrationCost) {
           extraCost += FLAT_PRICING.ILLUSTRATION_USD;
-          newEntries.push({ model: "gpt-image-1", stage: "illustration", inputTokens: 0, outputTokens: 0, costUsd: FLAT_PRICING.ILLUSTRATION_USD });
+          newEntries.push({ model: MODELS.ILLUSTRATION, stage: "illustration", inputTokens: 0, outputTokens: 0, costUsd: FLAT_PRICING.ILLUSTRATION_USD });
         }
 
         // Add narration cost if article has narration_url but no narration cost logged
@@ -450,7 +450,7 @@ Deno.serve(async (req: Request) => {
           const charCount = (article.description || "").length;
           const narCost = Math.round(charCount * FLAT_PRICING.NARRATION_PER_CHAR_USD * 10000) / 10000;
           extraCost += narCost;
-          newEntries.push({ model: "eleven_multilingual_v2", stage: "narration", inputTokens: charCount, outputTokens: 0, costUsd: narCost });
+          newEntries.push({ model: MODELS.NARRATION_MODEL, stage: "narration", inputTokens: charCount, outputTokens: 0, costUsd: narCost });
         }
 
         if (extraCost > 0) {

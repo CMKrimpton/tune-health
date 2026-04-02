@@ -324,7 +324,7 @@ Find: primary studies (sample size, effect size, CI), replication attempts, fund
           // Preserve raw per-model output so editor/writer can see where each finding came from
           _researchSources: {
             establishment: { model: MODELS.RESEARCH_PRIMARY, ...(establishment.data || {}) },
-            contrarian: { model: "grok-4", ...(contrarian.data || {}) },
+            contrarian: { model: MODELS.INDEPENDENCE, ...(contrarian.data || {}) },
             academic: { model: MODELS.RESEARCH_FALLBACK, ...(academic.data || {}) },
           },
           _fromQueue: true,

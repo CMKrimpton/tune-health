@@ -110,13 +110,13 @@ Apply the requested changes and return the complete updated article as JSON.`;
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": anthropicKey!, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: maxTokens, temperature: 0.3, system: SYSTEM_PROMPT, messages: [{ role: "user", content: userPrompt }] }),
+        body: JSON.stringify({ model: MODELS.DEFAULT_CLAUDE, max_tokens: maxTokens, temperature: 0.3, system: SYSTEM_PROMPT, messages: [{ role: "user", content: userPrompt }] }),
         signal: AbortSignal.timeout(135_000),
       });
       if (res.ok) {
         const data = await res.json();
         content = data.content?.[0]?.text || null;
-        if (content && data.usage) { usedModel = "claude-sonnet-4-6"; inputTokens = data.usage.input_tokens || 0; outputTokens = data.usage.output_tokens || 0; }
+        if (content && data.usage) { usedModel = MODELS.DEFAULT_CLAUDE; inputTokens = data.usage.input_tokens || 0; outputTokens = data.usage.output_tokens || 0; }
       } else {
         lastError = `Claude ${res.status}: ${(await res.text()).slice(0, 200)}`;
       }
