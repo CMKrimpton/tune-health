@@ -4,6 +4,7 @@ import { supabase, calcCost, dispatchStage } from "../_shared/db.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
 import { getCategoryGradient, MODELS, FLAT_PRICING } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
+import { isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
 Deno.serve(async (req: Request) => {
@@ -249,6 +250,11 @@ Deno.serve(async (req: Request) => {
     if (action === "queue-topic") {
       const topic = body.topic as string | undefined;
       if (!topic) return json({ error: "topic is required" }, 400);
+      // Dedup check — prevent adding topics that match published articles or existing queue
+      const fingerprints = await buildFingerprints(db);
+      if (isDuplicate(topic, fingerprints)) {
+        return json({ error: "Duplicate topic", detail: `"${topic}" is too similar to an existing article or queued topic.` }, 409);
+      }
       const { data: queueEntry, error: qErr } = await db
         .from("topic_queue")
         .insert({ topic, category: (body.category as string) || null, priority: (body.priority as number) || 50, expedite: body.expedite || false, notes: (body.notes as string) || null })

@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [17.1.0] - 2026-04-02
+
+### Fixed — Topic Dedup Overhaul (4 edge functions)
+
+Scouts and pinger were suggesting topics already published or already in queue. Root causes: truncated title list, missing fingerprint sources, broken dedup calls.
+
+#### dedup.ts (core engine)
+- **Word filter** `> 3` → `>= 3` — "oil", "gut", "IBS", "UTI", "ADHD" now survive fingerprinting (were silently dropped)
+- **Added 3-letter stop words** — prevents noise from relaxed filter ("the", "and", "for", etc.)
+- **buildFingerprints** now checks 3 sources: published articles, completed + active queue items (was active-only), and in-progress `daily_article_log` pipeline articles
+
+#### pipeline-scout
+- **Full title list** — scout AI now sees all 188+ article titles (was truncated at 50 — AI didn't know 138 articles existed)
+- **Queue visibility** — active queue topics now included in scout prompt so AI avoids duplicating queued topics
+
+#### stage-editor
+- **Fixed broken unchosen-candidate dedup** — was passing `topic` as both args; now passes proper `headline_draft`, `category`, `keyFindings`, `mechanism` from candidate data
+- **Moved dedup before `.map()`** — eliminates index misalignment between filtered candidates and mapped queue entries
+
+#### pipeline-admin
+- **Added dedup to `queue-topic`** — manual topic inserts now check against `buildFingerprints()`, returns 409 if duplicate detected
+
 ## [17.0.0] - 2026-04-02
 
 ### Changed — First-Principles Pipeline Audit (7 edge functions)

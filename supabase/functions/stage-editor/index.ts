@@ -461,6 +461,14 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
             const cs = candidateScores.find(s => s.rank === c.rank);
             return !cs || cs.score >= 5; // Only save decent candidates (score 5+)
           })
+          .filter((c: Record<string, unknown>) => {
+            // Dedup against existing articles + queue using full candidate data
+            return !isDuplicate((c.topic as string) || "", (c.headline_draft as string) || "", {
+              category: c.category as string,
+              keyFindings: c.keyFindings as string[],
+              mechanism: c.mechanism as string,
+            });
+          })
           .map((c: Record<string, unknown>) => {
             const cs = candidateScores.find(s => s.rank === c.rank);
             return {
@@ -475,14 +483,7 @@ ${candidates ? "Score ALL candidates, pick the best one considering collection b
           });
 
         if (unchosenTopics.length > 0) {
-          // Use the same isDuplicate check from above
-          const deduped = unchosenTopics.filter((t: Record<string, unknown>) =>
-            !isDuplicate((t.topic as string) || "", (t.topic as string) || "")
-          );
-
-          if (deduped.length > 0) {
-            await db.from("topic_queue").insert(deduped).select();
-          }
+          await db.from("topic_queue").insert(unchosenTopics).select();
         }
       }
 

@@ -1,6 +1,12 @@
 import { supabase } from "./db.ts";
 
 const STOP_WORDS = new Set([
+  // 3-letter common words (now included since filter is >= 3)
+  "the", "and", "for", "are", "but", "not", "you", "all", "can", "her", "was",
+  "one", "our", "out", "how", "why", "now", "may", "its", "has", "his", "who",
+  "got", "let", "say", "too", "use", "way", "did", "get", "had", "him", "own",
+  "yet", "any", "few", "much", "per", "try", "ago", "far",
+  // 4+ letter common words
   "that", "this", "with", "from", "have", "been", "your", "what", "when", "just",
   "more", "most", "than", "also", "about", "into", "does", "will", "could", "would",
   "should", "every", "their", "these", "those", "some", "other", "only", "first",
@@ -18,7 +24,7 @@ const STOP_WORDS = new Set([
 /** Extract subject words from text, filtering stop words and short words */
 export function extractFingerprint(text: string): Set<string> {
   return new Set(
-    text.toLowerCase().split(/[\s\-:,\u2014\u2013.'"?!()]+/).filter(w => w.length > 3 && !STOP_WORDS.has(w))
+    text.toLowerCase().split(/[\s\-:,\u2014\u2013.'"?!()]+/).filter(w => w.length >= 3 && !STOP_WORDS.has(w))
   );
 }
 
@@ -35,17 +41,24 @@ export function isDuplicate(topic: string, fingerprints: Set<string>[]): boolean
   return false;
 }
 
-/** Build fingerprints from existing articles + queued topics for dedup checking */
+/** Build fingerprints from existing articles + queued topics + in-progress pipeline articles for dedup checking */
 export async function buildFingerprints(db: ReturnType<typeof supabase>): Promise<Set<string>[]> {
   const { data: existingArticles } = await db
     .from("articles")
     .select("title, slug, keywords, tags, description")
     .eq("status", "published");
 
+  // All queue items except skipped — includes completed so we don't re-suggest already-produced topics
   const { data: queuedItems } = await db
     .from("topic_queue")
     .select("topic")
-    .in("status", ["queued", "assigned", "in_progress"]);
+    .in("status", ["queued", "assigned", "in_progress", "completed"]);
+
+  // In-progress pipeline articles (not yet published, but already being worked on)
+  const { data: pipelineArticles } = await db
+    .from("daily_article_log")
+    .select("topic, title")
+    .in("status", ["searching", "research", "editor", "editor_approved", "writing", "independence", "qc", "voice_rewrite", "publishing", "in_progress"]);
 
   const fingerprints: Set<string>[] = [];
 
@@ -57,6 +70,11 @@ export async function buildFingerprints(db: ReturnType<typeof supabase>): Promis
 
   for (const q of (queuedItems || []) as Array<{ topic: string }>) {
     fingerprints.push(extractFingerprint(q.topic));
+  }
+
+  for (const p of (pipelineArticles || []) as Array<{ topic: string | null; title: string | null }>) {
+    const text = [p.topic || "", p.title || ""].join(" ").trim();
+    if (text) fingerprints.push(extractFingerprint(text));
   }
 
   return fingerprints;

@@ -24,8 +24,15 @@ Deno.serve(async (req: Request) => {
     const scoutModel = (body.scoutModel as string) || "gemini";
     const { titles, categoryCounts } = await getExistingArticles(db);
 
-    // Build dedup fingerprints from existing articles + queue
+    // Build dedup fingerprints from existing articles + queue + pipeline
     const fingerprints = await buildFingerprints(db);
+
+    // Fetch active queue topics so scout AI knows what's already queued
+    const { data: queuedTopics } = await db
+      .from("topic_queue")
+      .select("topic")
+      .in("status", ["queued", "assigned", "in_progress"]);
+    const queueTitles = (queuedTopics || []).map((q: { topic: string }) => q.topic);
 
     const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / (titles.length || 1) < 0.10).map(([cat]) => cat);
     const missing = VALID_CATEGORIES.filter(c => !categoryCounts[c]);
@@ -94,8 +101,9 @@ For EACH topic, ask: would a 25-year-old text this to a friend OR search for it 
 ${priorityCats.length > 0 ? `Underserved: ${priorityCats.join(", ")}` : "Categories are balanced."}
 Frame these for younger readers: cardiology = "your heart at 30", diabetes = "insulin resistance from your diet", liver = "what alcohol/processed food is doing to your liver", addiction = "why you can't stop scrolling/drinking/vaping".
 
-## ALREADY COVERED (${titles.length} articles — avoid these subjects):
-${titles.slice(0, 50).map(t => `- ${t.split(" (")[0]}`).join("\n")}${titles.length > 50 ? `\n... and ${titles.length - 50} more (diversify away from neuroscience, mental health, longevity — we have plenty)` : ""}
+## ALREADY COVERED (${titles.length} articles — DO NOT suggest these or similar angles):
+${titles.map(t => `- ${t.split(" (")[0]}`).join("\n")}
+${queueTitles.length > 0 ? `\n## ALREADY IN QUEUE (${queueTitles.length} topics — DO NOT duplicate these either):\n${queueTitles.map(t => `- ${t}`).join("\n")}` : ""}
 
 Number them 1-20. Plain text, no JSON.`;
 
