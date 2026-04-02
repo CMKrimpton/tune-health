@@ -33,7 +33,7 @@ interface Props {
 
 // ─── Constants ──────────────────────────────────────────────────
 
-const ARTICLE_GOAL = 100;
+const ARTICLE_GOAL = 250;
 const POLL_INTERVAL = 60_000; // Fallback poll — Realtime handles live updates
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';

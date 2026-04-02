@@ -20,7 +20,7 @@ const {
   canonical
 } = Astro.props;
 
-const siteUrl = 'https://tune-health.vercel.app';
+const siteUrl = Astro.site?.origin || 'https://tune-health.vercel.app';
 const canonicalUrl = canonical || Astro.url.pathname;
 // Ensure OG image is always an absolute URL for social platforms
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
