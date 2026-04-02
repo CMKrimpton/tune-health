@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [17.1.1] - 2026-04-02
+
+### Fixed — Scout Button Timeout
+
+- **UI fetch timeout raised to 130s** — `triggerSingleScout` and `triggerScout` loop both now pass `timeout: 130_000` to `fetchWithTimeout`. Previously used the 60s default, which is shorter than the 120s Gemini/Grok AI timeout in pipeline-scout. Result: scouts completed in the backend but the UI showed a false timeout error.
+
 ## [17.1.0] - 2026-04-02
 
 ### Fixed — Topic Dedup Overhaul (4 edge functions)

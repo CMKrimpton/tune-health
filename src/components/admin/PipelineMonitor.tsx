@@ -283,6 +283,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
         body: JSON.stringify({ action: 'scout', scoutModel: model }),
+        timeout: 130_000,
       });
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
@@ -304,6 +305,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
           body: JSON.stringify({ action: 'scout', scoutModel: model }),
+          timeout: 130_000,
         });
         if (!res.ok) throw new Error(`API error ${res.status}`);
         const data = await res.json();
