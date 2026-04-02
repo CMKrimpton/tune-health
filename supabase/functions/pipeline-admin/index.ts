@@ -313,12 +313,15 @@ Deno.serve(async (req: Request) => {
         "write":           [8000, 6500, MODELS.EDITOR_PRIMARY],
         "independence":    [5500, 1200, MODELS.INDEPENDENCE],
         "qc":              [4500, 1000, MODELS.QC_PRIMARY],
+        "copy-edit":       [6000,  600, MODELS.COPY_EDIT_PRIMARY],
       };
 
       // Which stages completed based on final status
       const STAGES_BY_STATUS: Record<string, string[]> = {
-        "published":          ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc"],
-        "publishing":         ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc"],
+        "published":          ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc", "copy-edit"],
+        "publishing":         ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc", "copy-edit"],
+        "copy_edited":        ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc", "copy-edit"],
+        "copy_editing":       ["scout-gemini", "scout-structure", "editor-brief", "write", "independence", "qc"],
         "editor_qc":          ["scout-gemini", "scout-structure", "editor-brief", "write", "independence"],
         "independence_done":  ["scout-gemini", "scout-structure", "editor-brief", "write", "independence"],
         "independence_review":["scout-gemini", "scout-structure", "editor-brief", "write"],
