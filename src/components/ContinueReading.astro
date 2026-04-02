@@ -41,6 +41,15 @@
 </style>
 
 <script>
+  interface ReadingProgress {
+    scrollPercent: number;
+    lastRead: number;
+    slug: string;
+    category: string;
+    title: string;
+    readTime: string;
+  }
+
   function initContinueReading() {
     const STORAGE_KEY = 'alumi-reading-progress';
     const section = document.getElementById('continueReading');
@@ -48,10 +57,10 @@
     if (!section || !container) return;
 
     try {
-      const progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') as Record<string, ReadingProgress>;
       const inProgress = Object.values(progress)
-        .filter((p: any) => p.scrollPercent >= 5 && p.scrollPercent < 90)
-        .sort((a: any, b: any) => b.lastRead - a.lastRead)
+        .filter((p: ReadingProgress) => p.scrollPercent >= 5 && p.scrollPercent < 90)
+        .sort((a: ReadingProgress, b: ReadingProgress) => b.lastRead - a.lastRead)
         .slice(0, 3);
 
       if (inProgress.length === 0) {
@@ -60,7 +69,7 @@
       }
       container.innerHTML = '';
 
-      inProgress.forEach((p: any) => {
+      inProgress.forEach((p: ReadingProgress) => {
         const card = document.createElement('a');
         card.href = `/articles/${p.slug}`;
         card.className = 'group flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-card transition-[border-color,box-shadow] duration-200';

@@ -167,7 +167,7 @@ const articleMap = Object.fromEntries(
           card.innerHTML = `
             <div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
               ${article.heroImage
-                ? `<img src="${article.heroImage}" alt="" class="w-full h-full object-cover" loading="lazy" />`
+                ? `<img src="${article.heroImage}" alt="${article.heroImageAlt || article.title}" class="w-full h-full object-cover" loading="lazy" />`
                 : `<div class="w-full h-full" style="${article.gradient}"></div>`
               }
             </div>

@@ -1,5 +1,6 @@
 ---
 import { getArticles, getCategories, truncate } from '../utils/articles';
+import { getCategorySlug } from '../utils/category-domains';
 
 const articles = await getArticles();
 const categories = await getCategories();
@@ -54,7 +55,7 @@ const latestArticles = articles.slice(0, 4);
         <ul class="space-y-2.5">
           {categories.slice(0, 6).map((cat) => (
             <li>
-              <a href={`/articles?topic=${encodeURIComponent(cat)}`} class="text-sm text-stone-300 hover:text-white transition-colors duration-200">
+              <a href={`/topics/${getCategorySlug(cat)}`} class="text-sm text-stone-300 hover:text-white transition-colors duration-200">
                 {cat}
               </a>
             </li>

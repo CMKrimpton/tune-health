@@ -92,7 +92,7 @@ const allCollections = getAllCollections().filter(c => c.slug !== collection.slu
             </div>
             <div class="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden hidden sm:block" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
               {article.heroImage && (
-                <img src={article.heroImage} alt="" class="w-full h-full object-cover" loading="lazy" />
+                <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
               )}
             </div>
           </a>
