@@ -1,0 +1,20 @@
+{
+  "title": "Evil Is Not Banal. It's Chosen.",
+  "description": "For decades, psychology offered a comforting story: ordinary people do terrible things because situations overwhelm them. Modern reanalysis of Milgram and the debunking of the Stanford Prison Experiment reveal that the story was wrong — and that the truth is harder to live with.",
+  "category": "Neuroscience",
+  "publishDate": "2026-04-02",
+  "author": {
+    "name": "Max Lundin",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 13,
+  "featured": false,
+  "draft": false,
+  "tags": [],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [],
+  "sortOrder": 1775119110751
+}
