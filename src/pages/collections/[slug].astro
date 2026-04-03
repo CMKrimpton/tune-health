@@ -90,10 +90,15 @@ const allCollections = getAllCollections().filter(c => c.slug !== collection.slu
               <h3 class="font-serif text-lg font-semibold group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">{article.title}</h3>
               <p class="text-base text-stone-500 dark:text-stone-400 line-clamp-1 mt-1 hidden sm:block">{article.description}</p>
             </div>
-            <div class="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden hidden sm:block" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
-              {article.heroImage && (
+            <div class="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden hidden sm:block hero-img-wrap" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+              {article.heroImage && article.heroImageLight ? (
+                <>
+                  <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover hidden dark:block" loading="lazy" />
+                  <img src={article.heroImageLight} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover dark:hidden" loading="lazy" />
+                </>
+              ) : article.heroImage ? (
                 <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
-              )}
+              ) : null}
             </div>
           </a>
         ))}

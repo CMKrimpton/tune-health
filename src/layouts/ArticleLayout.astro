@@ -171,15 +171,38 @@ const nextArticle = await getNextInCategory(slug);
         transition:name={`image-${slug}`}
         transition:animate={slide({ duration: '0.5s', delay: '0.1s' })}
       >
-        <img
-          src={currentArticle.heroImage}
-          alt={currentArticle.heroImageAlt || title}
-          class="w-full h-full object-cover"
-          loading="eager"
-          decoding="async"
-          width="1200"
-          height="675"
-        />
+        {currentArticle.heroImageLight ? (
+          <>
+            <img
+              src={currentArticle.heroImage}
+              alt={currentArticle.heroImageAlt || title}
+              class="w-full h-full object-cover hidden dark:block"
+              loading="eager"
+              decoding="async"
+              width="1200"
+              height="675"
+            />
+            <img
+              src={currentArticle.heroImageLight}
+              alt={currentArticle.heroImageAlt || title}
+              class="w-full h-full object-cover dark:hidden"
+              loading="eager"
+              decoding="async"
+              width="1200"
+              height="675"
+            />
+          </>
+        ) : (
+          <img
+            src={currentArticle.heroImage}
+            alt={currentArticle.heroImageAlt || title}
+            class="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+            width="1200"
+            height="675"
+          />
+        )}
       </div>
     </div>
   ) : (
@@ -274,10 +297,15 @@ const nextArticle = await getNextInCategory(slug);
           {relatedArticles.map((article, i) => (
             <a href={article.href} class={`article-card group reveal${i > 0 ? ` reveal-delay-${i}` : ''}`}>
               <div class="article-card-image">
-                <div class="article-card-image-inner relative overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
-                  {article.heroImage && (
+                <div class="article-card-image-inner hero-img-wrap relative overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+                  {article.heroImage && article.heroImageLight ? (
+                    <>
+                      <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover hidden dark:block" loading="lazy" />
+                      <img src={article.heroImageLight} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover dark:hidden" loading="lazy" />
+                    </>
+                  ) : article.heroImage ? (
                     <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
-                  )}
+                  ) : null}
                 </div>
               </div>
               <div class="article-card-content">

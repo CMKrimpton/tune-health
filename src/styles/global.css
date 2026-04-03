@@ -723,13 +723,14 @@ body.menu-open {
   @apply transition-transform duration-700 ease-editorial;
 }
 
-/* Soften dark AI hero images in light mode.
-   A translucent white overlay lifts shadows uniformly without
-   distorting highlight colors the way brightness() does. */
+/* Hero image containers — theme-aware dark/light illustration pairs.
+   When both variants exist, CSS hidden/dark:block handles the swap.
+   When only the dark variant exists (legacy), a subtle white overlay
+   softens it in light mode as a fallback. */
 .hero-img-wrap {
   position: relative;
 }
-html:not(.dark) .hero-img-wrap::after {
+html:not(.dark) .hero-img-wrap:not(:has(.dark\:hidden))::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -742,6 +743,15 @@ html:not(.dark) .hero-img-wrap::after {
 .article-card:hover .article-card-image-inner,
 .featured-card:hover .featured-image-inner {
   @apply scale-105;
+}
+
+/* When title turns red on hover, flip the red category label to neutral
+   so the two don't clash. Works across all card contexts site-wide. */
+.group:hover .text-primary-600[class*="uppercase"] {
+  color: var(--color-stone-800);
+}
+:is(.dark .group:hover) .text-primary-600[class*="uppercase"] {
+  color: var(--color-stone-300);
 }
 
 .article-card-content {

@@ -17,6 +17,7 @@ export interface Article {
   gradient: { from: string; to: string };
   featured: boolean;
   heroImage?: string;
+  heroImageLight?: string;
   heroImageAlt?: string;
   narrationUrl?: string;
   comingSoon: boolean;
@@ -41,6 +42,7 @@ function mapArticle(article: CollectionEntry<'articles'>): Article {
     gradient: article.data.gradient,
     featured: article.data.featured,
     heroImage: article.data.heroImage,
+    heroImageLight: article.data.heroImageLight,
     heroImageAlt: article.data.heroImageAlt,
     narrationUrl: article.data.narrationUrl,
     comingSoon: article.data.comingSoon ?? false,

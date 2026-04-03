@@ -106,10 +106,15 @@ const relatedTopics = domain
       <div class="container-editorial">
         <a href={featuredArticle.href} class="group block">
           <div class="grid lg:grid-cols-2 gap-6 bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-[border-color,box-shadow] duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700">
-            <div class="relative aspect-[3/2] overflow-hidden" style={featuredArticle.heroImage ? undefined : getArticleGradientStyle(category)}>
-              {featuredArticle.heroImage && (
+            <div class="relative aspect-[3/2] overflow-hidden hero-img-wrap" style={featuredArticle.heroImage ? undefined : getArticleGradientStyle(category)}>
+              {featuredArticle.heroImage && featuredArticle.heroImageLight ? (
+                <>
+                  <img src={featuredArticle.heroImage} alt={featuredArticle.heroImageAlt || featuredArticle.title} class="w-full h-full object-cover hidden dark:block" loading="eager" />
+                  <img src={featuredArticle.heroImageLight} alt={featuredArticle.heroImageAlt || featuredArticle.title} class="w-full h-full object-cover dark:hidden" loading="eager" />
+                </>
+              ) : featuredArticle.heroImage ? (
                 <img src={featuredArticle.heroImage} alt={featuredArticle.heroImageAlt || featuredArticle.title} class="w-full h-full object-cover" loading="eager" />
-              )}
+              ) : null}
               {isNewArticle(featuredArticle.publishDate) && (
                 <span class="absolute top-3 left-3 card-badge card-badge-new">New</span>
               )}
@@ -161,10 +166,15 @@ const relatedTopics = domain
           {gridArticles.map((article) => (
             <a href={article.href} class="topic-grid-card group block" data-read-time={article.readTime} data-date={article.sortOrder || new Date(article.publishDate).getTime()} data-title={article.title.toLowerCase()}>
               <div class="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-[border-color,box-shadow] duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700 h-full flex flex-col">
-                <div class="relative aspect-[3/2] overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(category)}>
-                  {article.heroImage && (
+                <div class="relative aspect-[3/2] overflow-hidden hero-img-wrap" style={article.heroImage ? undefined : getArticleGradientStyle(category)}>
+                  {article.heroImage && article.heroImageLight ? (
+                    <>
+                      <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover hidden dark:block" loading="lazy" />
+                      <img src={article.heroImageLight} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover dark:hidden" loading="lazy" />
+                    </>
+                  ) : article.heroImage ? (
                     <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
-                  )}
+                  ) : null}
                   {isNewArticle(article.publishDate) && (
                     <span class="absolute top-2.5 left-2.5 card-badge card-badge-new">New</span>
                   )}

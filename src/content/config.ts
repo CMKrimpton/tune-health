@@ -26,6 +26,7 @@ const articles = defineCollection({
     keywords: z.array(z.string()).optional(),
     // For collection-driven homepage and article cards
     heroImage: z.string().optional(),
+    heroImageLight: z.string().optional(),
     heroImageAlt: z.string().optional(),
     narrationUrl: z.string().optional(),
     sortOrder: z.number().optional(),

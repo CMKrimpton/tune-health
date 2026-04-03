@@ -17,6 +17,7 @@ interface Props {
   class?: string;
   delay?: number;
   heroImage?: string;
+  heroImageLight?: string;
   heroImageAlt?: string;
   publishDate?: string;
   narrationUrl?: string;
@@ -37,6 +38,7 @@ const {
   class: className = '',
   delay = 0,
   heroImage,
+  heroImageLight,
   heroImageAlt,
   publishDate,
   narrationUrl,
@@ -84,7 +86,12 @@ const slug = href.split('/').pop() || 'article';
   <a href={href} class:list={['article-card group reveal', delayClass, className]}>
     <div class="article-card-image" transition:name={`card-image-${slug}`}>
       <div class:list={['article-card-image-inner hero-img-wrap relative overflow-hidden', heroImage ? '' : `bg-gradient-to-br ${gradientClass}`]}>
-        {heroImage ? (
+        {heroImage && heroImageLight ? (
+          <>
+            <img src={heroImage} alt={heroImageAlt || title} class="w-full h-full object-cover hidden dark:block" loading="lazy" />
+            <img src={heroImageLight} alt={heroImageAlt || title} class="w-full h-full object-cover dark:hidden" loading="lazy" />
+          </>
+        ) : heroImage ? (
           <img src={heroImage} alt={heroImageAlt || title} class="w-full h-full object-cover" loading="lazy" />
         ) : null}
       </div>

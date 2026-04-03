@@ -109,7 +109,12 @@ const featuredLabel = heroArticle ? (FEATURED_LABELS[heroArticle.category] || "E
         <a href={heroArticle.href} class="featured-card group block reveal">
           <div class="featured-image-container">
             <div class="featured-image-inner hero-img-wrap" style={heroArticle.heroImage ? undefined : getArticleGradientStyle(heroArticle.category)}>
-              {heroArticle.heroImage ? (
+              {heroArticle.heroImage && heroArticle.heroImageLight ? (
+                <>
+                  <img src={heroArticle.heroImage} alt={heroArticle.heroImageAlt || heroArticle.title} class="w-full h-full object-cover hidden dark:block" loading="eager" />
+                  <img src={heroArticle.heroImageLight} alt={heroArticle.heroImageAlt || heroArticle.title} class="w-full h-full object-cover dark:hidden" loading="eager" />
+                </>
+              ) : heroArticle.heroImage ? (
                 <img src={heroArticle.heroImage} alt={heroArticle.heroImageAlt || heroArticle.title} class="w-full h-full object-cover" loading="eager" />
               ) : null}
             </div>
@@ -179,9 +184,14 @@ const featuredLabel = heroArticle ? (FEATURED_LABELS[heroArticle.category] || "E
           >
             <div class="article-card-image">
               <div class="article-card-image-inner hero-img-wrap relative overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
-                {article.heroImage && (
+                {article.heroImage && article.heroImageLight ? (
+                  <>
+                    <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover hidden dark:block" loading={i < 3 ? 'eager' : 'lazy'} />
+                    <img src={article.heroImageLight} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover dark:hidden" loading={i < 3 ? 'eager' : 'lazy'} />
+                  </>
+                ) : article.heroImage ? (
                   <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading={i < 3 ? 'eager' : 'lazy'} />
-                )}
+                ) : null}
               </div>
               <div class="absolute top-3 left-3 flex flex-col gap-1.5">
                 {isNewArticle(article.publishDate) && (
@@ -284,7 +294,12 @@ const featuredLabel = heroArticle ? (FEATURED_LABELS[heroArticle.category] || "E
           return (
             <a href={firstArticle.href} class={`deep-dive-card group reveal${i > 0 ? ` reveal-delay-${Math.min(i, 2)}` : ''}`}>
               <div class="deep-dive-image">
-                {firstArticle.heroImage ? (
+                {firstArticle.heroImage && firstArticle.heroImageLight ? (
+                  <>
+                    <img src={firstArticle.heroImage} alt={firstArticle.heroImageAlt || series.name} class="w-full h-full object-cover hidden dark:block" loading="lazy" />
+                    <img src={firstArticle.heroImageLight} alt={firstArticle.heroImageAlt || series.name} class="w-full h-full object-cover dark:hidden" loading="lazy" />
+                  </>
+                ) : firstArticle.heroImage ? (
                   <img src={firstArticle.heroImage} alt={firstArticle.heroImageAlt || series.name} class="w-full h-full object-cover" loading="lazy" />
                 ) : (
                   <div class="w-full h-full" style={getArticleGradientStyle(firstArticle.category)}></div>

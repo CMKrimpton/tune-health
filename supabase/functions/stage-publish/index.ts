@@ -124,21 +124,27 @@ Deno.serve(async (req: Request) => {
 
     const readTime = (articleData.readTime as number) || 12;
 
-    // Check if illustration already exists (handles retry after timeout)
+    // Check if illustration pair already exists (handles retry after timeout)
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     let heroImage: string | undefined;
+    let heroImageLight: string | undefined;
     let heroImageAlt: string | undefined;
 
     const { data: existingArticle } = await db
       .from("articles")
-      .select("hero_image, hero_image_alt")
+      .select("hero_image, hero_image_light, hero_image_alt")
       .eq("slug", slug)
       .maybeSingle();
 
     if (existingArticle?.hero_image) {
       heroImage = existingArticle.hero_image;
+      heroImageLight = existingArticle.hero_image_light || undefined;
       heroImageAlt = existingArticle.hero_image_alt || `Editorial illustration for ${finalTitle}`;
-      console.log(`[Publish] Hero image already exists for ${slug} — skipping illustration generation.`);
+      if (heroImageLight) {
+        console.log(`[Publish] Hero image pair already exists for ${slug} — skipping illustration generation.`);
+      } else {
+        console.log(`[Publish] Dark hero image exists for ${slug} — light variant still needed.`);
+      }
     }
 
     // Publish to GitHub
@@ -175,6 +181,9 @@ Deno.serve(async (req: Request) => {
       jsonMetadata.heroImage = heroImage;
       jsonMetadata.heroImageAlt = heroImageAlt;
     }
+    if (heroImageLight) {
+      jsonMetadata.heroImageLight = heroImageLight;
+    }
 
     commitInfo = await publishToGitHub(slug, astroContent, jsonMetadata);
 
@@ -200,10 +209,14 @@ Deno.serve(async (req: Request) => {
     // Illustration runs AFTER publish (not in parallel with QC) so that:
     // 1. We don't waste GPU time on articles QC kills/revises
     // 2. If the function timed out mid-illustration, retry picks it up here
-    // 3. If hero_image already existed (from a previous run), we skip generation
+    // 3. If hero_image pair already existed (from a previous run), we skip generation
     // generate-illustration handles DB update + GitHub JSON sync internally
-    if (!heroImage && supabaseUrl) {
-      console.log(`[Publish] No hero image for ${slug} — generating illustration post-publish.`);
+    // Determines which variant(s) to generate: "both" if no dark, "light" if only dark exists
+    const needsDark = !heroImage;
+    const needsLight = !heroImageLight;
+    if ((needsDark || needsLight) && supabaseUrl) {
+      const variant = needsDark ? "both" : "light";
+      console.log(`[Publish] Generating illustration (${variant}) for ${slug} post-publish.`);
       try {
         const illRes = await fetch(`${supabaseUrl}/functions/v1/generate-illustration`, {
           method: "POST",
@@ -211,27 +224,28 @@ Deno.serve(async (req: Request) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
           },
-          body: JSON.stringify({ action: "generate", slug, title: finalTitle, category: metadata.category }),
+          body: JSON.stringify({ action: "generate", slug, title: finalTitle, category: metadata.category, variant }),
           signal: AbortSignal.timeout(API_TIMEOUT),
         });
         if (illRes.ok) {
           const illData = await illRes.json();
-          if (illData.success && illData.imageUrl) {
-            console.log(`[Publish] Illustration generated for ${slug}: ${illData.imageUrl}`);
-            // Log illustration cost to pipeline
+          if (illData.success) {
+            console.log(`[Publish] Illustration ${variant} generated for ${slug}: dark=${illData.imageUrl || "existing"} light=${illData.imageUrlLight || "existing"}`);
+            // Log illustration cost — one cost per variant generated
+            const variantsGenerated = (needsDark ? 1 : 0) + (needsLight ? 1 : 0);
             await addCostToLog(db, logId, {
               model: MODELS.ILLUSTRATION,
               stage: "illustration",
               inputTokens: 0,
               outputTokens: 0,
-              costUsd: FLAT_PRICING.ILLUSTRATION_USD,
+              costUsd: FLAT_PRICING.ILLUSTRATION_USD * variantsGenerated,
             });
           }
         } else {
           console.warn(`[Publish] Illustration generation returned ${illRes.status} for ${slug}`);
         }
       } catch (illErr) {
-        console.warn(`[Publish] Illustration generation failed for ${slug}: ${illErr instanceof Error ? illErr.message : "unknown"}. Article published without hero image — will recover on next retry.`);
+        console.warn(`[Publish] Illustration generation failed for ${slug}: ${illErr instanceof Error ? illErr.message : "unknown"}. Article published without full hero image pair — will recover on next retry.`);
       }
     }
 

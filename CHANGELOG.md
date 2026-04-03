@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [19.0.0] - 2026-04-03
+
+### Added — Theme-Aware Illustration Pairs (Dark + Light)
+
+- **Dual illustration system**: every article now gets a dark and light variant, swapped automatically by theme
+- **Light house style**: airy watercolor on cream backgrounds (Scientific American meets Kinfolk) — complements existing dark moody aesthetic
+- **`generate-illustration` updated**: `variant` param (`"dark"` / `"light"` / `"both"`), per-category light palettes, `batch-light` action for migrating existing articles
+- **`stage-publish` updated**: detects which variants are missing, generates only what's needed, tracks cost per variant
+- **Database**: `hero_image_light` column on `articles` table, `heroImageLight` in content collection schema
+- **Frontend**: 13 image locations updated across 8 files — two `<img>` tags with `hidden dark:block` / `dark:hidden` when both variants exist
+- **Graceful fallback**: articles without a light variant keep the legacy white overlay (CSS `:has()` selector auto-removes overlay when light image arrives)
+- **GitHub JSON sync**: `heroImageLight` field synced to article metadata on publish
+
+### Changed — Card Hover Interaction
+
+- **Category label deconflict**: red category label turns neutral (stone-800/stone-300) on card hover so it doesn't clash with the red title highlight
+- Applies site-wide via CSS rule targeting `.group:hover .text-primary-600[class*="uppercase"]`
+
 ## [18.8.1] - 2026-04-03
 
 ### Fixed — Image Aspect Ratios
