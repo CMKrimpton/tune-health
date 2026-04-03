@@ -1,6 +1,6 @@
 ---
 export const prerender = false;
-import ArticleEditor from '../../components/admin/ArticleEditor';
+import SocialPreview from '../../components/admin/SocialPreview';
 
 const edgeFunctionBase = (process.env.PUBLIC_SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL || '').trim();
 const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
@@ -10,7 +10,7 @@ const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>New Article | alumi admin</title>
+  <title>Social Preview | alumi admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet" />
@@ -21,17 +21,18 @@ const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
     <div class="admin-header-inner">
       <div class="admin-logo">
         <span class="admin-logo-accent">a</span>lumi
-        <span class="admin-logo-badge">mission control</span>
+        <span class="admin-logo-badge">social simulator</span>
       </div>
       <nav class="admin-nav">
         <a href="/admin" class="admin-nav-link">Dashboard</a>
-        <a href="/admin/new" class="admin-nav-link active">New Article</a>
-        <a href="/admin/social-preview" class="admin-nav-link">Social Preview</a>
+        <a href="/admin/new" class="admin-nav-link">New Article</a>
+        <a href="/admin/social-preview" class="admin-nav-link active">Social Preview</a>
         <a href="/" class="admin-nav-link" target="_blank">View Site &rarr;</a>
       </nav>
     </div>
   </header>
-
-  <ArticleEditor client:load apiBase={apiBase} />
+  <main style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem;">
+    <SocialPreview client:load apiBase={apiBase} />
+  </main>
 </body>
 </html>

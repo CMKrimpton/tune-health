@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.7.0] - 2026-04-03
+
+### Added — Social Media Simulator (`/admin/social-preview`)
+
+**Platform-native post previews** — see exactly how posts will look on each platform before they go live:
+- **6 platforms**: X (threads with connecting lines, verified badges), Bluesky (dark navy, link cards), Reddit (vote arrows, karma, subreddit headers), Threads (Instagram-dark aesthetic), LinkedIn (professional cards, follow button), Mastodon (boost/favourite icons)
+- **iPhone mockup**: Dynamic Island, status bar, home indicator — full hardware frame. Posts render inside the phone screen
+- **Desktop preview**: Reddit and LinkedIn also render in a browser frame alongside the phone (desktop-first platforms)
+- **Character count per post**: Shows `247/280` overlay, turns red when over platform limit
+- **Copy button**: One-click copy post text to clipboard on every post
+- **Filters**: Persona (brand/reporter/skeptic/curator), status (draft/scheduled/posted/failed/skipped), article
+- **Deterministic fake engagement**: Timestamps, karma, comment counts derived from post ID hash (no jitter on re-render)
+- **Error handling**: API failure shows error message + retry button (not infinite spinner)
+- **Responsive**: Phone frame scales down on viewports under 500px
+- **Accessible**: aria-labels on all interactive elements, keyboard-navigable tabs
+- Nav link added to all admin pages (Dashboard, New Article, Edit, Social Preview)
+
 ## [18.6.0] - 2026-04-03
 
 ### Improved — Social Dashboard UI + Voice Overhaul

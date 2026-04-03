@@ -1,10 +1,10 @@
 # Next Session Plan
 
-> **Status**: v18.6.0 live. ~192 published articles across 9 categories. Social Media System producing quality output with sharp, confrontational voice: follow-the-money framing, named institutions/dollar amounts, forensic skepticism. Dashboard UI polished with readable font sizes.
+> **Status**: v18.7.0 live. ~192 published articles across 9 categories. Social Media System producing quality output with sharp, confrontational voice: follow-the-money framing, named institutions/dollar amounts, forensic skepticism. Dashboard UI polished with readable font sizes.
 
 ---
 
-## What Was Done This Session (v18.6.0 — Social Dashboard UI + Voice Overhaul)
+## What Was Done This Session (v18.7.0 — Social Simulator + Voice Overhaul)
 
 ### Dashboard UI Polish
 - **Systematic font-size bump** — every tier bumped one step up across the board (panel titles, body text, rows, mono, buttons, pills, micro labels, stat values)
@@ -24,6 +24,12 @@
 - Analyzed Health Ranger rhetorical patterns (hooks, follow-the-money, direct address)
 - Adapted structure for evidence-based journalism: same engagement, verifiable citations
 - Key insight: the gap in the market is forensic institutional skepticism with receipts
+
+### Social Media Simulator (`/admin/social-preview`)
+- New admin page with iPhone mockup — posts render in each platform's native UI
+- 6 platforms: X (threads), Bluesky, Reddit (vote arrows, subreddit headers), Threads, LinkedIn, Mastodon
+- Character count warnings per platform, copy button, error handling, responsive scaling
+- Desktop browser frame alongside phone for Reddit/LinkedIn
 
 ### Tested & Deployed
 - Generated social content for seed-oils-aha-funding-cardiovascular-evidence with new voice
