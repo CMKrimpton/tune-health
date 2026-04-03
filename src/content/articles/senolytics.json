@@ -34,5 +34,6 @@
   "comingSoon": false,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/senolytics.png",
   "heroImageAlt": "Editorial illustration for Senolytics: Clearing the Path to Longevity",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/senolytics.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/senolytics.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/senolytics-light.png"
 }
