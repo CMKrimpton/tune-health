@@ -32,5 +32,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/blood-brain-barrier.png",
   "heroImageAlt": "Editorial illustration for The Blood-Brain Barrier Is Leaking. Here's Why That Matters.",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/blood-brain-barrier.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/blood-brain-barrier.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/blood-brain-barrier-light.png"
 }
