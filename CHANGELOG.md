@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [19.2.0] - 2026-04-03
+
+### Changed — Cost Optimization
+
+- **Remove auto-pick from queue** — `dispatch_pipeline_stage()` no longer auto-produces articles from the topic queue. Admin must click "Produce" to start any article. Prevents burning API costs on unreviewed topics
+- **Slow pinger from `*/15` to `*/30`** — halves breaking news detector invocations (96→48/day). Still catches breaking news within 30 minutes
+- **Slow social-poster from `*/5` to `*/15`** — social posts don't need sub-15-minute dispatch precision (288→96 invocations/day)
+- **Fire-and-forget illustration + narration** — `stage-publish` no longer blocks ~120-180s waiting for image generation and TTS narration. Both are dispatched async, self-log their own costs to the pipeline via `logId`. Saves ~$15-20/month in edge function compute time per active article volume
+
 ## [19.1.0] - 2026-04-03
 
 ### Fixed — Human-Opus Prose Protection

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { MODELS, NARRATION_SETTINGS } from "../_shared/constants.ts";
+import { MODELS, NARRATION_SETTINGS, FLAT_PRICING } from "../_shared/constants.ts";
+import { addCostToLog } from "../_shared/db.ts";
 import { readGitHubJson, updateGitHubJson } from "../_shared/github.ts";
 
 const corsHeaders = {
@@ -86,6 +87,7 @@ async function handleGenerate(body: Record<string, unknown>) {
 
   const db = supabase();
   const slug = body.slug as string;
+  const logId = body.logId as string | undefined;
   if (!slug) {
     return json({ error: "slug is required" }, 400);
   }
@@ -207,6 +209,21 @@ async function handleGenerate(body: Record<string, unknown>) {
 
   // Sync narrationUrl to GitHub JSON so the Astro site can render the audio player
   await updateGitHubJson(slug, { narrationUrl: publicUrl }, `feat: Update narration — '${slug}'`);
+
+  // Log cost to pipeline if called from stage-publish
+  if (logId && introText.length > 0) {
+    try {
+      await addCostToLog(db, logId, {
+        model: MODELS.NARRATION_MODEL,
+        stage: "narration",
+        inputTokens: introText.length,
+        outputTokens: 0,
+        costUsd: Math.round(introText.length * FLAT_PRICING.NARRATION_PER_CHAR_USD * 10000) / 10000,
+      });
+    } catch (costErr) {
+      console.warn(`[Narration] Cost logging failed for ${logId}: ${costErr instanceof Error ? costErr.message : "unknown"}`);
+    }
+  }
 
   console.log(`[Narration] Generated for ${slug}: ${publicUrl}`);
 

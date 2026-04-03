@@ -1,9 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, parseScore, addCostToLog, dispatchStage } from "../_shared/db.ts";
+import { supabase, parseScore, dispatchStage } from "../_shared/db.ts";
 import { publishToGitHub } from "../_shared/github.ts";
 import { assembleAstroFile, todayISO } from "../_shared/astro.ts";
-import { getByline, API_TIMEOUT, MODELS, FLAT_PRICING } from "../_shared/constants.ts";
+import { getByline, MODELS } from "../_shared/constants.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
 
 Deno.serve(async (req: Request) => {
@@ -205,53 +205,28 @@ Deno.serve(async (req: Request) => {
       console.log(`[Publish] Archived old article "${replacesSlug}" — replaced by "${slug}"`);
     }
 
-    // ---- POST-PUBLISH ILLUSTRATION RECOVERY ----
-    // Illustration runs AFTER publish (not in parallel with QC) so that:
-    // 1. We don't waste GPU time on articles QC kills/revises
-    // 2. If the function timed out mid-illustration, retry picks it up here
-    // 3. If hero_image pair already existed (from a previous run), we skip generation
-    // generate-illustration handles DB update + GitHub JSON sync internally
-    // Determines which variant(s) to generate: "both" if no dark, "light" if only dark exists
+    // ---- POST-PUBLISH ILLUSTRATION (fire-and-forget) ----
+    // generate-illustration handles DB update, GitHub JSON sync, AND cost logging internally.
+    // No need to block stage-publish waiting for image generation (~60-120s).
     const needsDark = !heroImage;
     const needsLight = !heroImageLight;
     if ((needsDark || needsLight) && supabaseUrl) {
       const variant = needsDark ? "both" : "light";
-      console.log(`[Publish] Generating illustration (${variant}) for ${slug} post-publish.`);
-      try {
-        const illRes = await fetch(`${supabaseUrl}/functions/v1/generate-illustration`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          },
-          body: JSON.stringify({ action: "generate", slug, title: finalTitle, category: metadata.category, variant }),
-          signal: AbortSignal.timeout(API_TIMEOUT),
-        });
-        if (illRes.ok) {
-          const illData = await illRes.json();
-          if (illData.success) {
-            console.log(`[Publish] Illustration ${variant} generated for ${slug}: dark=${illData.imageUrl || "existing"} light=${illData.imageUrlLight || "existing"}`);
-            // Log illustration cost — one cost per variant generated
-            const variantsGenerated = (needsDark ? 1 : 0) + (needsLight ? 1 : 0);
-            await addCostToLog(db, logId, {
-              model: MODELS.ILLUSTRATION,
-              stage: "illustration",
-              inputTokens: 0,
-              outputTokens: 0,
-              costUsd: FLAT_PRICING.ILLUSTRATION_USD * variantsGenerated,
-            });
-          }
-        } else {
-          console.warn(`[Publish] Illustration generation returned ${illRes.status} for ${slug}`);
-        }
-      } catch (illErr) {
-        console.warn(`[Publish] Illustration generation failed for ${slug}: ${illErr instanceof Error ? illErr.message : "unknown"}. Article published without full hero image pair — will recover on next retry.`);
-      }
+      console.log(`[Publish] Dispatching illustration (${variant}) for ${slug} — fire-and-forget.`);
+      fetch(`${supabaseUrl}/functions/v1/generate-illustration`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ action: "generate", slug, title: finalTitle, category: metadata.category, variant, logId }),
+      }).catch(err =>
+        console.warn(`[Publish] Illustration dispatch failed for ${slug}: ${err instanceof Error ? err.message : "unknown"}`)
+      );
     }
 
-    // ---- POST-PUBLISH NARRATION ----
-    // Generate intro narration via ElevenLabs TTS (non-fatal — article publishes without it)
-    // generate-narration handles GitHub JSON sync internally
+    // ---- POST-PUBLISH NARRATION (fire-and-forget) ----
+    // generate-narration handles DB update, GitHub JSON sync, AND cost logging internally.
     if (supabaseUrl) {
       const { data: narrationCheck } = await db
         .from("articles")
@@ -261,39 +236,17 @@ Deno.serve(async (req: Request) => {
 
       const isImproveRun = !!researchData._improves;
       if (!narrationCheck?.narration_url || isImproveRun) {
-        console.log(`[Publish] No narration for ${slug} — generating TTS post-publish.`);
-        try {
-          const narRes = await fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-            },
-            body: JSON.stringify({ action: "generate", slug }),
-            signal: AbortSignal.timeout(API_TIMEOUT),
-          });
-          if (narRes.ok) {
-            const narData = await narRes.json();
-            if (narData.success && narData.narrationUrl) {
-              console.log(`[Publish] Narration generated for ${slug}: ${narData.narrationUrl}`);
-              // Log narration cost to pipeline
-              const charCount = narData.characters || 0;
-              if (charCount > 0) {
-                await addCostToLog(db, logId, {
-                  model: MODELS.NARRATION_MODEL,
-                  stage: "narration",
-                  inputTokens: charCount,
-                  outputTokens: 0,
-                  costUsd: Math.round(charCount * FLAT_PRICING.NARRATION_PER_CHAR_USD * 10000) / 10000,
-                });
-              }
-            }
-          } else {
-            console.warn(`[Publish] Narration generation returned ${narRes.status} for ${slug}`);
-          }
-        } catch (narErr) {
-          console.warn(`[Publish] Narration generation failed for ${slug}: ${narErr instanceof Error ? narErr.message : "unknown"}. Article published without narration.`);
-        }
+        console.log(`[Publish] Dispatching narration for ${slug} — fire-and-forget.`);
+        fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({ action: "generate", slug, logId, force: isImproveRun }),
+        }).catch(err =>
+          console.warn(`[Publish] Narration dispatch failed for ${slug}: ${err instanceof Error ? err.message : "unknown"}`)
+        );
       }
     }
 

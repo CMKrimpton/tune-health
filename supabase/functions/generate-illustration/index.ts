@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { updateGitHubJson } from "../_shared/github.ts";
-import { MODELS } from "../_shared/constants.ts";
+import { addCostToLog } from "../_shared/db.ts";
+import { MODELS, FLAT_PRICING } from "../_shared/constants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -228,6 +229,7 @@ async function handleGenerate(body: Record<string, unknown>) {
   const db = supabase();
   let { slug, title, description, category } = body as Record<string, string>;
   const variant = (body.variant as string) || "both";
+  const logId = body.logId as string | undefined;
 
   // If only slug provided, fetch metadata from database
   if (slug && (!title || !description || !category)) {
@@ -299,6 +301,22 @@ async function handleGenerate(body: Record<string, unknown>) {
 
   if (Object.keys(githubFields).length > 0) {
     await updateGitHubJson(slug, githubFields, `feat: Add hero image${lightUrl ? " pair" : ""} — '${slug}'`);
+  }
+
+  // Log cost to pipeline if called from stage-publish
+  if (logId) {
+    const variantsGenerated = (variant === "both" ? 2 : 1);
+    try {
+      await addCostToLog(db, logId, {
+        model: MODELS.ILLUSTRATION,
+        stage: "illustration",
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: FLAT_PRICING.ILLUSTRATION_USD * variantsGenerated,
+      });
+    } catch (costErr) {
+      console.warn(`[Illustration] Cost logging failed for ${logId}: ${costErr instanceof Error ? costErr.message : "unknown"}`);
+    }
   }
 
   return json({

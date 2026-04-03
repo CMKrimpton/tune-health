@@ -152,7 +152,7 @@ supabase/
     ├── stage-copy-edit/                  # Stage 7: Sonnet → Gemini Pro. Conservative headline + header polish (confidence ≥8 only)
     ├── stage-publish/                    # Stage 8: GitHub commit + Vercel hook + GPT Image illustration + ElevenLabs narration
     ├── pipeline-scout/                   # Scout — 3x/day topic discovery (all Gemini + Google Search)
-    ├── pipeline-pinger/                  # Pinger — 4x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
+    ├── pipeline-pinger/                  # Pinger — 2x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
     ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article, improve-article, merge
     │
     ├── topic-merge/                      # AI topic deduplication + merge (GPT-5.4 analyze, Sonnet merge)
@@ -358,7 +358,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `stage-copy-edit` | Stage 7: Sonnet → Gemini Pro. Conservative headline + section header polish (confidence ≥8 threshold). Failures skip gracefully to publish | None (called by SQL dispatch) |
 | `stage-publish` | Stage 8: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
 | `pipeline-scout` | 3x/day topic discovery — all Gemini + Google Search grounding. Trending signals, search demand, "why now" | None (called by pg_cron) |
-| `pipeline-pinger` | 4x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
+| `pipeline-pinger` | 2x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
 | `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article` (markdown auto-converted to site HTML), `publish-direct` (skip editorial pipeline → art + narration + publish), `improve-article` (full pipeline re-run, same slug), `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `merge-analyze`, `merge-execute` | None (rate-limited internally) |
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
@@ -420,9 +420,9 @@ done
 - `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Gemini + Google Search (editorial lens) discovers 20 topics
 - `scout-grok`: daily 10pm UTC → `pipeline-scout` — Grok discovers 20 contrarian topics
 - `article-produce`: every 5 min (`*/5 * * * *`) → SQL function `dispatch_pipeline_stage()`. Safety net only — recovers stuck articles, advances in-progress stages. **Does NOT auto-pick from queue** (removed in v12.6). Admin must click "Produce"
-- `pinger`: every 15 min (`*/15 * * * *`) → `pipeline-pinger` — rotating breaking news detector (Gemini Flash/:00, PubMed RSS/:15, Grok/:30, PubMed RSS/:45)
+- `pinger`: every 30 min (`*/30 * * * *`) → `pipeline-pinger` — rotating breaking news detector (Gemini Flash/:00, PubMed RSS/:30)
 - `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation
-- `social-poster`: every 5 min (`*/5 * * * *`) → `social-poster` — dispatch scheduled social posts to platform APIs
+- `social-poster`: every 15 min (`*/15 * * * *`) → `social-poster` — dispatch scheduled social posts to platform APIs
 - `social-planner`: daily 5am UTC (`0 5 * * *`) → `social-planner` — daily editorial meeting, catalog mining, arc creation
 - `social-sync`: every 6 hours (`0 */6 * * *`) → `social-sync` — pull engagement metrics from platform APIs
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
