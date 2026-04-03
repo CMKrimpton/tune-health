@@ -4,21 +4,19 @@
   "category": "Neuroscience",
   "publishDate": "2026-04-03",
   "author": {
-    "name": "Marc London",
-    "role": "Editor-at-Large"
+    "name": "alumi news Editorial",
+    "role": "Medical Review Board"
   },
   "readTime": 5,
   "featured": false,
   "draft": false,
   "tags": [],
   "gradient": {
-    "to": "purple-700",
-    "from": "violet-600"
+    "from": "violet-600",
+    "to": "purple-700"
   },
   "keywords": [],
-  "sortOrder": 1775257521314,
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/pull-the-lever.mp3?v=1775257524398",
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pull-the-lever.png",
   "heroImageAlt": "Editorial illustration for Pull the Lever",
-  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pull-the-lever-light.png"
+  "comingSoon": false
 }
