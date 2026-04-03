@@ -167,20 +167,24 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
       }
 
       // ── GROK REWRITE WIRING ──────────────────────────────────────────
-      // When Grok flags major_issues, apply rewrite suggestions via Claude
+      // When Grok flags issues, apply rewrite suggestions via Sonnet
       // before proceeding to QC. Makes independence review actually improve
       // the article rather than just scoring it.
+      //
+      // HUMAN-OPUS PROTECTION: When _writtenBy is "human-opus", Grok still
+      // reviews and scores (editorial independence is the point), but NO
+      // model rewrites the prose. A lesser model rewriting Opus prose is
+      // always a downgrade. Flags are logged for the human to review.
       let revisedHtml = articleHtml;
       let revisionApplied = false;
 
-      // Apply Grok's rewrite suggestions for both major AND minor issues.
-      // Previously only major_issues triggered rewrites — which meant Grok's
-      // feedback was stored but never acted on (and the old prompt always said "minor").
+      const isHumanWritten = researchData._writtenBy === "human-opus" || researchData._writtenBy === "admin-editor";
       const grokVerdict = reviewResult?.verdict as string;
-      // Default to 5 (not 10) when score is missing — a missing score means truncated output,
-      // which should trigger rewrites rather than silently passing
       const grokScore = (typeof reviewResult?.score === "number") ? reviewResult.score as number : 5;
-      if (grokVerdict === "major_issues" || (grokVerdict === "minor_issues" && grokScore < 7)) {
+
+      if (isHumanWritten) {
+        console.log(`[Independence] Human-written article (${researchData._writtenBy}) — Grok scored ${grokScore}, verdict: ${grokVerdict}. Skipping all prose rewrites to preserve author voice.`);
+      } else if (grokVerdict === "major_issues" || (grokVerdict === "minor_issues" && grokScore < 7)) {
         const flags = (reviewResult!.flags as Array<{ type: string; quote: string; rewrite: string; reason: string }>) || [];
         if (flags.length > 0) {
           try {
@@ -188,7 +192,6 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
               .map((f, i) => `${i + 1}. [${f.type}] Find: "${f.quote}" → Replace with: "${f.rewrite}" (Reason: ${f.reason})`)
               .join("\n");
 
-            // Independence revision is mechanical find-and-replace with context — Flash handles this at 70x cheaper
             const { text: revisedRaw, usage: revisionUsage } = await generateWithFallback({
               system: `You are applying editorial corrections flagged by an independent reviewer. Apply each suggested rewrite where it genuinely improves the article's independence and honesty. Preserve the editorial voice and HTML structure. If a suggestion would weaken the article or is wrong, skip it. Return ONLY the corrected HTML — no JSON wrapper, no explanation.`,
               user: `## CORRECTIONS TO APPLY\n${rewritePrompt}\n\n## CURRENT ARTICLE HTML\n${articleHtml}`,
@@ -200,13 +203,11 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
             });
             await addCostToLog(db, logId, revisionUsage);
 
-            // The response should be raw HTML
             const cleaned = revisedRaw.replace(/^```html?\n?/, "").replace(/\n?```$/, "").trim();
             if (cleaned.length > articleHtml.length * 0.5) {
               revisedHtml = cleaned;
               revisionApplied = true;
 
-              // Update article in database with revised HTML
               const slug = (articleData.metadata as Record<string, unknown>)?.slug as string;
               if (slug) {
                 await db.from("articles").update({ article_html: revisedHtml }).eq("slug", slug);
@@ -227,13 +228,15 @@ Score this article honestly. A 7 means "publishable but has real problems." An 8
       const pubmedResult = await pubmedPromise;
 
       // ── FACT-CHECK: If PubMed can't verify studies, revise the article to flag them ──
+      // For human-written articles: log results but never rewrite prose
       const unverifiedStudies = (pubmedResult.details || []).filter(d => !d.found && !d.skipped);
       if (unverifiedStudies.length > 0 && pubmedResult.total > 0) {
         const failRate = unverifiedStudies.length / pubmedResult.total;
         console.log(`[Fact-check] ${unverifiedStudies.length}/${pubmedResult.total} studies unverified on PubMed (${Math.round(failRate * 100)}%)`);
 
-        // If more than half of cited studies can't be found, revise the article
-        if (unverifiedStudies.length >= 2 || failRate > 0.5) {
+        if (isHumanWritten) {
+          console.log(`[Fact-check] Human-written article — logging unverified citations but preserving prose. Unverified: ${unverifiedStudies.map(s => s.title).join(", ")}`);
+        } else if (unverifiedStudies.length >= 2 || failRate > 0.5) {
           try {
             const unverifiedList = unverifiedStudies.map(s => `- "${s.title}"`).join("\n");
             const { text: factCheckedRaw, usage: factCheckUsage } = await generateWithFallback({

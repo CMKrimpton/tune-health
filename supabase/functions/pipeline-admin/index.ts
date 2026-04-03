@@ -7,6 +7,151 @@ import { verifyPubMedCitations } from "../_shared/pubmed.ts";
 import { isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
+// ── Markdown → Site HTML converter ──────────────────────────────────────
+// Converts writer-pasted markdown into the site's HTML format:
+//   <section id="slug" class="reveal"> wrappers, <p>, <h2>, <aside>, etc.
+// Only handles patterns writers actually use — not a full markdown parser.
+function convertMarkdownToSiteHtml(md: string): string {
+  const lines = md.split("\n");
+  const sections: string[] = [];
+  let currentSection: string[] = [];
+  let currentSectionId = "introduction";
+  let isFirstSection = true;
+  let inBlockquote = false;
+  let blockquoteLines: string[] = [];
+  let inList = false;
+  let listLines: string[] = [];
+  let listOrdered = false;
+
+  function slugify(text: string): string {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  function inlineFormat(text: string): string {
+    // Bold + italic: ***text*** or ___text___
+    text = text.replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>");
+    // Bold: **text**
+    text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    // Italic: *text* (but not inside URLs or already-processed tags)
+    text = text.replace(/(?<![\\<])\*(.+?)\*/g, "<em>$1</em>");
+    // Inline code: `text`
+    text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+    // Links: [text](url)
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    return text;
+  }
+
+  function flushList() {
+    if (listLines.length === 0) return;
+    const tag = listOrdered ? "ol" : "ul";
+    const items = listLines.map(l => `    <li>${inlineFormat(l)}</li>`).join("\n");
+    currentSection.push(`  <${tag}>\n${items}\n  </${tag}>`);
+    listLines = [];
+    inList = false;
+  }
+
+  function flushBlockquote() {
+    if (blockquoteLines.length === 0) return;
+    const content = blockquoteLines.map(l => inlineFormat(l)).join(" ");
+    currentSection.push(`\n<aside class="pull-quote reveal">\n  <p>${content}</p>\n</aside>`);
+    blockquoteLines = [];
+    inBlockquote = false;
+  }
+
+  function flushSection() {
+    flushList();
+    flushBlockquote();
+    if (currentSection.length > 0) {
+      const sectionContent = currentSection.join("\n");
+      sections.push(`<section id="${currentSectionId}" class="reveal">\n${sectionContent}\n</section>`);
+    }
+    currentSection = [];
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Skip empty lines (they separate paragraphs)
+    if (trimmed === "") {
+      flushList();
+      if (inBlockquote) flushBlockquote();
+      continue;
+    }
+
+    // Horizontal rule — section divider, skip
+    if (/^---+$/.test(trimmed) || /^\*\*\*+$/.test(trimmed)) {
+      continue;
+    }
+
+    // H1 — skip (title is handled separately in metadata)
+    if (/^# /.test(trimmed) && !/^##/.test(trimmed)) {
+      continue;
+    }
+
+    // H2 — new section
+    if (/^## /.test(trimmed)) {
+      flushSection();
+      const headingText = trimmed.replace(/^## /, "").replace(/\*\*/g, "");
+      currentSectionId = slugify(headingText);
+      isFirstSection = false;
+      currentSection.push(`  <h2>${inlineFormat(headingText)}</h2>`);
+      continue;
+    }
+
+    // H3 — subheading within section
+    if (/^### /.test(trimmed)) {
+      flushList();
+      const headingText = trimmed.replace(/^### /, "").replace(/\*\*/g, "");
+      currentSection.push(`  <h3>${inlineFormat(headingText)}</h3>`);
+      continue;
+    }
+
+    // Blockquote
+    if (/^> /.test(trimmed)) {
+      flushList();
+      inBlockquote = true;
+      const quoteLine = trimmed.replace(/^>\s*/, "").replace(/^\*\*([^*]+)\*\*:?\s*/, "");
+      if (quoteLine.trim()) blockquoteLines.push(quoteLine.trim());
+      continue;
+    }
+
+    // Unordered list
+    if (/^[-*+] /.test(trimmed)) {
+      if (inBlockquote) flushBlockquote();
+      inList = true;
+      listOrdered = false;
+      listLines.push(trimmed.replace(/^[-*+] /, ""));
+      continue;
+    }
+
+    // Ordered list
+    if (/^\d+\.\s/.test(trimmed)) {
+      if (inBlockquote) flushBlockquote();
+      inList = true;
+      listOrdered = true;
+      listLines.push(trimmed.replace(/^\d+\.\s/, ""));
+      continue;
+    }
+
+    // Regular paragraph
+    if (inBlockquote) flushBlockquote();
+    flushList();
+
+    // If this is the start of the article and no section opened yet, open introduction
+    if (isFirstSection && sections.length === 0 && currentSection.length === 0) {
+      // introduction section — no heading needed
+    }
+
+    currentSection.push(`  <p>${inlineFormat(trimmed)}</p>`);
+  }
+
+  // Flush final section
+  flushSection();
+
+  return sections.join("\n\n");
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -680,16 +825,26 @@ Deno.serve(async (req: Request) => {
         console.log("[Admin] submit-article: stripping full HTML page wrapper — extracting body sections");
         const sectionStart = articleHtml.indexOf("<section");
         if (sectionStart > 0) {
-          // Find the last </section> or </div> that's part of the article (before </body>)
           const bodyEnd = articleHtml.indexOf("</body>");
           const contentEnd = bodyEnd > 0 ? bodyEnd : articleHtml.length;
           let extracted = articleHtml.slice(sectionStart, contentEnd).trim();
-          // Strip any trailing wrapper divs
           extracted = extracted.replace(/\s*<\/div>\s*(<\/div>\s*)*$/g, "").trim();
           if (extracted.length > 500) {
             articleHtml = extracted;
           }
         }
+      }
+
+      // ── MARKDOWN DETECTION + CONVERSION ──────────────────────────────
+      // The brief tells Opus to output HTML, but writers may paste markdown.
+      // Detect markdown and convert to the site's HTML format so downstream
+      // stages (TOC parser, independence, publish) all work correctly.
+      const looksLikeMarkdown = !articleHtml.includes("<section") && !articleHtml.includes("<p>") &&
+        (articleHtml.includes("\n## ") || articleHtml.includes("\n# ") || /^\s*#{1,3}\s/m.test(articleHtml));
+
+      if (looksLikeMarkdown) {
+        console.log("[Admin] submit-article: detected markdown input — converting to site HTML");
+        articleHtml = convertMarkdownToSiteHtml(articleHtml);
       }
 
       // Fetch the log entry to get editorial brief data
@@ -878,6 +1033,122 @@ Deno.serve(async (req: Request) => {
       await dispatchStage("stage-independence", logId);
       console.log(`[Admin] New article "${slug}" submitted via editor — dispatched stage-independence`);
       return json({ success: true, slug, logId, status: "written", message: "Article entered pipeline. Independence review dispatched." });
+    }
+
+    // ------ PUBLISH-DIRECT — finished article → format + illustration + narration + publish ------
+    // For articles that are already perfect and don't need editorial review.
+    // Skips: research, editor brief, independence, QC, voice rewrite, copy edit.
+    // Runs: format check, illustration, narration, publish.
+    if (action === "publish-direct") {
+      let articleContent = body.articleHtml as string;
+      const title = (body.title as string)?.trim();
+      let slug = (body.slug as string)?.trim() || "";
+      const description = (body.description as string)?.trim() || "";
+      const category = (body.category as string)?.trim() || "Clinical Evidence";
+      const tags = (body.tags as string[]) || [];
+      const keywords = (body.keywords as string[]) || [];
+
+      if (!articleContent || !title) {
+        return json({ error: "articleHtml and title are required" }, 400);
+      }
+
+      // Auto-generate slug from title if not provided
+      if (!slug) {
+        slug = title.toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .slice(0, 80);
+      }
+
+      // Strip full HTML page wrapper if present
+      if (articleContent.includes("<!DOCTYPE") || articleContent.includes("<html")) {
+        const sectionStart = articleContent.indexOf("<section");
+        if (sectionStart > 0) {
+          const bodyEnd = articleContent.indexOf("</body>");
+          const contentEnd = bodyEnd > 0 ? bodyEnd : articleContent.length;
+          let extracted = articleContent.slice(sectionStart, contentEnd).trim();
+          extracted = extracted.replace(/\s*<\/div>\s*(<\/div>\s*)*$/g, "").trim();
+          if (extracted.length > 500) articleContent = extracted;
+        }
+      }
+
+      // Markdown detection + conversion
+      const looksLikeMarkdown = !articleContent.includes("<section") && !articleContent.includes("<p>") &&
+        (articleContent.includes("\n## ") || articleContent.includes("\n# ") || /^\s*#{1,3}\s/m.test(articleContent));
+      if (looksLikeMarkdown) {
+        console.log("[Admin] publish-direct: detected markdown — converting to site HTML");
+        articleContent = convertMarkdownToSiteHtml(articleContent);
+      }
+
+      // Parse TOC
+      const tocMatches = [...articleContent.matchAll(/<section[^>]*id="([^"]+)"[^>]*>[\s\S]*?<h2[^>]*>([^<]+)<\/h2>/gi)];
+      const toc = tocMatches.map(m => ({ id: m[1], title: m[2].trim() }));
+
+      const plainText = articleContent.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      const wordCount = plainText.split(/\s+/).length;
+      const readTime = Math.ceil(wordCount / 220);
+
+      const gradient = getCategoryGradient(category);
+      const metadata = { title, slug, description, category, tags, keywords, gradient };
+
+      // Create pipeline log — starts at "copy_edited" to skip all editorial stages
+      const { data: logEntry, error: logInsertErr } = await db.from("daily_article_log").insert({
+        topic: title,
+        slug,
+        title,
+        status: "copy_edited",
+        model_used: "human-opus",
+        source: "direct-publish",
+        stage_started_at: new Date().toISOString(),
+        research_data: {
+          topic: title,
+          category,
+          tags,
+          keywords,
+          _article: { metadata, html: articleContent, toc, readTime },
+          _writtenBy: "human-opus",
+          _qcResult: { decision: "publish", headline: title, description },
+        },
+        token_usage: [
+          { model: "human-opus", stage: "direct-publish", inputTokens: 0, outputTokens: 0, costUsd: 0 },
+        ],
+        cost_usd: 0,
+      }).select("id").single();
+
+      if (logInsertErr || !logEntry) {
+        return json({ error: `Failed to create pipeline log: ${logInsertErr?.message}` }, 500);
+      }
+
+      const logId = logEntry.id;
+
+      // Save article to articles table
+      const { error: upsertErr } = await db.from("articles").upsert({
+        slug,
+        title,
+        description,
+        category,
+        tags,
+        keywords,
+        gradient_from: gradient.from,
+        gradient_to: gradient.to,
+        featured: false,
+        draft: true,
+        coming_soon: false,
+        read_time: readTime,
+        publish_date: new Date().toISOString().split("T")[0],
+        article_html: articleContent,
+        toc,
+        source_text: `[Direct Publish — ${new Date().toISOString().split("T")[0]}]`,
+        status: "draft",
+        pipeline_log_id: logId,
+      }, { onConflict: "slug" });
+
+      if (upsertErr) return json({ error: `Failed to save article: ${upsertErr.message}` }, 500);
+
+      // Dispatch directly to stage-publish (illustration + narration + GitHub commit)
+      await dispatchStage("stage-publish", logId);
+      console.log(`[Admin] Direct publish for "${slug}" — dispatched stage-publish (skipping editorial pipeline)`);
+      return json({ success: true, slug, logId, status: "copy_edited", message: "Article saved. Publishing directly (illustration + narration + deploy)." });
     }
 
     // ------ PARSE-FILE — extract text from base64-encoded DOCX or PDF ------

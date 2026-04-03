@@ -193,19 +193,32 @@ Review each element. Return null for proposed on anything that doesn't need chan
     let appliedChanges = 0;
     const appliedDetails: string[] = [];
 
-    // Title
+    // Title — LOCKED for human-written articles (code-level, not prompt-level)
     const titleResult = result.title as Record<string, unknown> | undefined;
     let finalTitle = currentTitle;
-    if (titleResult?.proposed && (titleResult.confidence as number) >= CONFIDENCE_THRESHOLD) {
+    if (isHumanWritten) {
+      if (titleResult?.proposed) {
+        console.log(`[CopyEdit] Human-written article — title change BLOCKED: "${currentTitle}" → "${titleResult.proposed}" (would have been confidence ${titleResult.confidence})`);
+      }
+    } else if (titleResult?.proposed && (titleResult.confidence as number) >= CONFIDENCE_THRESHOLD) {
       finalTitle = titleResult.proposed as string;
       appliedChanges++;
       appliedDetails.push(`Title: "${currentTitle}" → "${finalTitle}" (confidence ${titleResult.confidence})`);
     }
 
-    // Description
+    // Description — for human-written, only fix if clearly broken (truncated/empty)
     const descResult = result.description as Record<string, unknown> | undefined;
     let finalDescription = currentDescription;
-    if (descResult?.proposed && (descResult.confidence as number) >= CONFIDENCE_THRESHOLD) {
+    if (isHumanWritten) {
+      // Only apply if current description is clearly broken
+      if (descResult?.proposed && (currentDescription.length < 50 || currentDescription.endsWith("..."))) {
+        finalDescription = descResult.proposed as string;
+        appliedChanges++;
+        appliedDetails.push(`Description fixed (was truncated/broken, confidence ${descResult.confidence})`);
+      } else if (descResult?.proposed) {
+        console.log(`[CopyEdit] Human-written article — description change BLOCKED (not broken)`);
+      }
+    } else if (descResult?.proposed && (descResult.confidence as number) >= CONFIDENCE_THRESHOLD) {
       finalDescription = descResult.proposed as string;
       appliedChanges++;
       appliedDetails.push(`Description updated (confidence ${descResult.confidence})`);

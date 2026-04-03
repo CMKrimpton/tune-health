@@ -1,0 +1,24 @@
+{
+  "title": "Where the Funding Doesn't Shine",
+  "description": "The longevity debate pits calorie restriction against pharmacology, but the real story is rarely told. Nearly every voice in this fight — from dissenters to defenders — has a financial stake in the outcome.",
+  "category": "Longevity",
+  "publishDate": "2026-04-03",
+  "author": {
+    "name": "Marc London",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 10,
+  "featured": true,
+  "draft": false,
+  "tags": ["longevity", "calorie restriction", "metformin", "funding conflicts", "CALERIE", "fasting", "exercise"],
+  "gradient": {
+    "to": "teal-600",
+    "from": "emerald-500"
+  },
+  "keywords": ["longevity research funding", "calorie restriction evidence", "metformin aging", "Valter Longo ProLon", "TAME trial", "Blue Zones methodology", "CALERIE trial results", "grip strength mortality", "fasting mimicking diet"],
+  "sortOrder": 1775254305380,
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/longevity-funding-conflicts-calorie-restriction-pharmacology.png",
+  "heroImageAlt": "Editorial illustration for Where the Funding Doesn't Shine",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/longevity-funding-conflicts-calorie-restriction-pharmacology-light.png",
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/longevity-funding-conflicts-calorie-restriction-pharmacology.mp3?v=1775254354970"
+}

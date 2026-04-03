@@ -110,7 +110,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
   const [uploadParsing, setUploadParsing] = useState(false);
-  const [uploadEntry, setUploadEntry] = useState<'full' | 'independence'>('full');
+  const [uploadEntry, setUploadEntry] = useState<'full' | 'independence' | 'direct'>('full');
   const [uploadDragOver, setUploadDragOver] = useState(false);
   const [uploadUrl, setUploadUrl] = useState('');
   const [queueSearch, setQueueSearch] = useState('');
@@ -463,11 +463,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const submitArticleToChain = async () => {
     if (!uploadTitle.trim()) return;
-    if (uploadEntry === 'independence' && !uploadHtml.trim()) return;
+    if ((uploadEntry === 'independence' || uploadEntry === 'direct') && !uploadHtml.trim()) return;
     setUploading(true);
     setUploadResult(null);
     try {
       let res: Response;
+      const slug = uploadTitle.toLowerCase().replace(/['']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
       if (uploadEntry === 'full') {
         // Queue as topic — full chain from research
         res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
@@ -482,9 +483,22 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             expedite: true,
           }),
         });
+      } else if (uploadEntry === 'direct') {
+        // Direct publish — skip editorial pipeline, just art + narration + publish
+        res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+          body: JSON.stringify({
+            action: 'publish-direct',
+            articleHtml: uploadHtml.trim(),
+            title: uploadTitle.trim(),
+            slug,
+            description: '',
+            category: uploadCategory || undefined,
+          }),
+        });
       } else {
         // Submit as finished article — independence review
-        const slug = uploadTitle.toLowerCase().replace(/['']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
         res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
@@ -503,6 +517,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       } else {
         const msg = uploadEntry === 'full'
           ? `Queued "${uploadTitle.trim().slice(0, 50)}" — click Produce to start`
+          : uploadEntry === 'direct'
+          ? `Publishing "${uploadTitle.trim().slice(0, 50)}" directly — art + narration + deploy`
           : `Submitted "${uploadTitle.trim().slice(0, 50)}" — independence review dispatched`;
         setUploadResult(msg);
         setUploadTitle('');
@@ -1079,25 +1095,25 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
           <div style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(15,14,12,0.5)', border: '1px solid rgba(168,162,158,0.12)', borderRadius: '6px' }}>
             {/* Entry point toggle */}
             <div style={{ display: 'flex', gap: '2px', marginBottom: '0.5rem', background: 'rgba(168,162,158,0.08)', borderRadius: '4px', padding: '2px' }}>
-              <button
-                onClick={() => setUploadEntry('full')}
-                className="admin-text-md"
-                style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === 'full' ? 'rgba(168,162,158,0.15)' : 'transparent', color: uploadEntry === 'full' ? 'var(--admin-text)' : 'var(--admin-text-3)' }}
-              >
-                Full Chain — Research → Editor → Write → QC → Publish
-              </button>
-              <button
-                onClick={() => setUploadEntry('independence')}
-                className="admin-text-md"
-                style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === 'independence' ? 'rgba(168,162,158,0.15)' : 'transparent', color: uploadEntry === 'independence' ? 'var(--admin-text)' : 'var(--admin-text-3)' }}
-              >
-                Finished Article — Independence → QC → Publish
-              </button>
+              {([
+                { id: 'full' as const, label: 'Topic → Full Chain' },
+                { id: 'independence' as const, label: 'Article → Review → Publish' },
+                { id: 'direct' as const, label: 'Ready → Art + Publish' },
+              ]).map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => setUploadEntry(opt.id)}
+                  className="admin-text-md"
+                  style={{ flex: 1, padding: '0.375rem 0.5rem', borderRadius: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.6875rem', fontWeight: 600, transition: 'all 0.15s', background: uploadEntry === opt.id ? (opt.id === 'direct' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(168,162,158,0.15)') : 'transparent', color: uploadEntry === opt.id ? (opt.id === 'direct' ? 'var(--admin-green)' : 'var(--admin-text)') : 'var(--admin-text-3)' }}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
 
             <input
               type="text"
-              placeholder={uploadEntry === 'full' ? 'Topic or article title (required)' : 'Article title (required)'}
+              placeholder={uploadEntry === 'full' ? 'Topic or article title (required)' : 'Article headline (required)'}
               value={uploadTitle}
               onChange={e => setUploadTitle(e.target.value)}
               className="pipeline-queue-input"
@@ -1146,7 +1162,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               </button>
             </div>
             <textarea
-              placeholder={uploadEntry === 'full' ? 'Paste or drop source material, notes, study text, or a draft (optional)' : 'Paste or drop finished article HTML, or use the file button above'}
+              placeholder={uploadEntry === 'full' ? 'Paste or drop source material, notes, study text, or a draft (optional)' : uploadEntry === 'direct' ? 'Paste finished article (HTML or Markdown) — publishes with art + narration, no editorial review' : 'Paste or drop finished article HTML, or use the file button above'}
               value={uploadHtml}
               onChange={e => setUploadHtml(e.target.value)}
               onPaste={e => { setTimeout(() => { const v = (e.target as HTMLTextAreaElement).value; if (v) suggestTitle(v); }, 0); }}
@@ -1163,14 +1179,17 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                   ? `${uploadHtml.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length} words`
                   : uploadEntry === 'full'
                     ? 'Queues as topic with source material — click Produce to start'
+                    : uploadEntry === 'direct'
+                    ? 'Skips all editorial review — generates art + narration and publishes immediately'
                     : 'Finished article enters at Grok independence review'}
               </span>
               <button
                 onClick={submitArticleToChain}
-                disabled={uploading || !uploadTitle.trim() || (uploadEntry === 'independence' && !uploadHtml.trim())}
+                disabled={uploading || !uploadTitle.trim() || ((uploadEntry === 'independence' || uploadEntry === 'direct') && !uploadHtml.trim())}
                 className="pipeline-trigger-btn primary admin-text-md"
+                style={uploadEntry === 'direct' ? { background: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 0.3)' } : undefined}
               >
-                {uploading ? 'Submitting\u2026' : uploadEntry === 'full' ? 'Queue Topic' : 'Submit Article'}
+                {uploading ? 'Submitting\u2026' : uploadEntry === 'full' ? 'Queue Topic' : uploadEntry === 'direct' ? 'Publish Now' : 'Submit Article'}
               </button>
             </div>
             {uploadResult && (

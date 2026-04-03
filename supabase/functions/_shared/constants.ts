@@ -92,9 +92,9 @@ export const MODELS = {
   // Independence review: adversarial — needs contrarian thinking
   INDEPENDENCE: "grok-4",                     // Best for adversarial review
 
-  // Independence + fact-check revisions: mechanical find-and-replace
-  REVISION_PRIMARY: "gemini-2.5-flash",       // Cheap, fast for mechanical edits
-  REVISION_FALLBACK: "claude-sonnet-4-6",
+  // Independence + fact-check revisions: prose corrections need a real writer
+  REVISION_PRIMARY: "claude-sonnet-4-6",      // Prose corrections require editorial quality
+  REVISION_FALLBACK: "gemini-2.5-pro",        // Pro-tier fallback, not Flash
 
   // QC stage: structured pass/fail — voice audit does most work
   QC_PRIMARY: "gemini-2.5-flash",
