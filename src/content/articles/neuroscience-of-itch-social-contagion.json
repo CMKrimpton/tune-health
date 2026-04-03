@@ -33,5 +33,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/neuroscience-of-itch-social-contagion.png",
   "heroImageAlt": "Editorial illustration for The Itch Is One of Biology's Most Ancient, Mysterious, and Deeply Social Sensations",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/neuroscience-of-itch-social-contagion.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/neuroscience-of-itch-social-contagion.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/neuroscience-of-itch-social-contagion-light.png"
 }
