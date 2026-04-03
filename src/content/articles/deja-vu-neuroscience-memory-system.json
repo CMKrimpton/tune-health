@@ -35,5 +35,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/deja-vu-neuroscience-memory-system.png",
   "heroImageAlt": "Editorial illustration for The Glitch That Proves the System Works",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/deja-vu-neuroscience-memory-system.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/deja-vu-neuroscience-memory-system.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/deja-vu-neuroscience-memory-system-light.png"
 }
