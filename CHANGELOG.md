@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [19.3.0] - 2026-04-03
+
+### Fixed — Admin Editor Data Loss
+
+- **Publish to GitHub no longer drops fields** — `narrationUrl`, `heroImageLight`, `heroImageAlt`, and `sortOrder` are now included in the JSON metadata when publishing from the admin editor. Previously the publish flow built JSON from scratch and omitted these fields, overwriting pipeline-generated data
+- **Metadata save now persists all fields** — `doSaveMetadata` now includes `hero_image_light`, `hero_image_alt`, `gradient_from`, `gradient_to`, and `coming_soon`. Previously these were silently dropped on every save
+- **Metadata tab renders on load** — tab panel had CSS `display:none` without an `active` class override, causing a blank screen until tab-switching. Now uses explicit inline display
+
+### Added — Editor Overhaul
+
+- **Hero image preview** — side-by-side dark/light image preview cards with proper background colors, live-updating when URLs change
+- **Narration audio player** — inline play/pause, progress bar with click-to-seek, time display
+- **Generate Illustration button** — calls `generate-illustration` directly from editor, auto-refreshes preview with new URLs
+- **Generate Narration button** — calls `generate-narration` from editor with force flag
+- **Gradient preview swatch** — live gradient preview updates as you type, "Use Category Preset" button auto-fills from category defaults
+- **Description character count** — SEO-oriented 160-char counter with warning colors
+- **Missing form fields** — `heroImageLight`, `heroImageAlt`, `gradientFrom`, `gradientTo`, `comingSoon` checkbox now editable
+- **Status pill** — Published/Draft badge next to article title
+- **Organized form sections** — Core, Hero Image, Narration, Gradient, Deploy — with labeled dividers
+- **Design system compliance** — all inline styles converted from hardcoded hex to CSS custom properties
+
 ## [19.2.0] - 2026-04-03
 
 ### Changed — Cost Optimization
