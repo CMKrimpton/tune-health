@@ -29,15 +29,18 @@ Style requirements:
 const HOUSE_STYLE_LIGHT = `Create an abstract, editorial illustration for a premium health science magazine called "alumi news".
 
 Style requirements:
-- Light, luminous color palette — warm whites, soft creams, with rich color accents
-- Airy, open composition — bright backgrounds with depth and warmth
+- Light, luminous color palette — clean warm white background (NOT yellow, NOT cream, NOT amber), with rich color accents
+- The background should be a barely-tinted white — like fine watercolor paper, not parchment or aged paper
+- Airy, open composition — bright backgrounds with depth and subtlety
 - Abstract and conceptual — NOT literal, NOT stock-photo-like
 - Minimalist composition with strong focal point
 - Subtle scientific/medical motifs: molecular structures, neural pathways, cellular forms, waveforms
 - Soft watercolor wash quality with gentle grain texture — like an elegant science journal cover
+- Let the SUBJECT MATTER provide the color — keep the background neutral white
 - NO text, NO words, NO letters, NO labels in the image
 - NO human faces or recognizable people
 - NO clipart, NO cartoon style, NO flat design
+- NO yellow or amber tinting on the background
 - Think: Scientific American meets Kinfolk — airy, intellectual, refined
 - Horizontal composition (16:10 aspect ratio)`;
 
@@ -72,32 +75,32 @@ const CATEGORY_PALETTES_DARK: Record<string, string> = {
  */
 const CATEGORY_PALETTES_LIGHT: Record<string, string> = {
   "Mental Health":
-    "Color accents: soft violet, lavender, and warm lilac on a light cream background. Mood: introspective, calm, open.",
+    "Color accents: soft violet, lavender, and warm lilac on a clean white background. Mood: introspective, calm, open.",
   Neuroscience:
-    "Color accents: sky blue, soft cyan, and gentle teal on a warm white background. Mood: complex, luminous, clear.",
+    "Color accents: sky blue, soft cyan, and gentle teal on a clean white background. Mood: complex, luminous, clear.",
   Longevity:
-    "Color accents: sage green, soft teal, and warm gold on a light cream background. Mood: vital, enduring, fresh.",
+    "Color accents: sage green, soft teal, and warm gold on a clean white background. Mood: vital, enduring, fresh.",
   "Clinical Evidence":
-    "Color accents: soft purple, gentle indigo, and warm silver on a light background. Mood: rigorous, clean, authoritative.",
+    "Color accents: soft purple, gentle indigo, and warm silver on a clean white background. Mood: rigorous, clean, authoritative.",
   "Environmental Health":
-    "Color accents: warm amber, soft terracotta, and sandy earth tones on a cream background. Mood: warm, elemental, grounded.",
+    "Color accents: warm amber, soft terracotta, and sandy earth tones on a clean white background. Mood: warm, elemental, grounded.",
   Nutrition:
-    "Color accents: fresh green, warm gold, and soft earth tones on a light cream background. Mood: natural, nourishing, bright.",
+    "Color accents: fresh green, warm gold, and soft earth tones on a clean white background. Mood: natural, nourishing, bright.",
   Fitness:
-    "Color accents: warm coral, soft red, and rose on a light background. Mood: dynamic, energetic, warm.",
+    "Color accents: warm coral, soft red, and rose on a clean white background. Mood: dynamic, energetic, warm.",
   "Sleep Science":
-    "Color accents: soft periwinkle, gentle blue, and warm moonlit silver on a cream background. Mood: serene, gentle, peaceful.",
+    "Color accents: soft periwinkle, gentle blue, and warm moonlit silver on a clean white background. Mood: serene, gentle, peaceful.",
   Pharmacology:
-    "Color accents: soft teal, powder blue, and clean white on a light background. Mood: precise, molecular, clean.",
+    "Color accents: soft teal, powder blue, and clean white on a clean white background. Mood: precise, molecular, clean.",
   "Research Summary":
-    "Color accents: warm stone, soft gold, and muted burgundy on a cream background. Mood: measured, scholarly, warm.",
+    "Color accents: warm stone, soft gold, and muted burgundy on a clean white background. Mood: measured, scholarly, warm.",
 };
 
 const DEFAULT_PALETTE_DARK =
   "Color accents: selective warm tones against a predominantly dark, rich background. Mood: intellectual, editorial.";
 
 const DEFAULT_PALETTE_LIGHT =
-  "Color accents: selective warm tones against a predominantly light, cream background. Mood: intellectual, refined.";
+  "Color accents: selective warm tones against a clean white background (not yellow, not cream). Mood: intellectual, refined.";
 
 function supabase() {
   return createClient(
