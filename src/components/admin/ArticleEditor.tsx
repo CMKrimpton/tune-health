@@ -509,6 +509,9 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     return errors;
   }, [metadata]);
 
+  // Which publish path was used (for done-state messaging)
+  const [publishPath, setPublishPath] = useState<'pipeline' | 'direct' | null>(null);
+
   const submitToPipeline = useCallback(async () => {
     if (!article || !metadata) return;
 
@@ -522,6 +525,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     setIsPublishing(true);
     setState('publishing');
     setShowPublishConfirm(false);
+    setPublishPath('pipeline');
     setStatusMessage('Submitting to pipeline — independence review next...');
 
     try {
@@ -562,6 +566,66 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     }
   }, [article, metadata, validateMetadata, API_BASE]);
 
+  const publishDirectly = useCallback(async () => {
+    if (!article || !metadata) return;
+
+    const errors = validateMetadata();
+    if (errors.length > 0) {
+      setError(`Fix before publishing: ${errors.join(', ')}`);
+      return;
+    }
+
+    if (!await ask({
+      title: 'Publish directly',
+      message: 'This skips independence review and QC — the article goes straight to illustration, narration, and deploy. Only use this for articles you\'ve already reviewed.',
+      confirmLabel: 'Publish Now',
+      danger: true,
+    })) return;
+
+    setIsPublishing(true);
+    setState('publishing');
+    setShowPublishConfirm(false);
+    setPublishPath('direct');
+    setStatusMessage('Publishing directly — generating art + narration + deploying...');
+
+    try {
+      const res = await fetchWithTimeout(`${API_BASE}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({
+          action: 'publish-direct',
+          articleHtml: article.html,
+          title: metadata.title,
+          slug: metadata.slug,
+          description: metadata.description,
+          category: metadata.category,
+          tags: metadata.tags,
+          keywords: metadata.keywords,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Direct publish failed');
+      }
+
+      setState('done');
+      setStatusMessage('');
+      clearDraft();
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `Published directly! Illustration and narration are generating in the background. The article will be live on the site within ~2 minutes.`,
+        timestamp: Date.now(),
+      }]);
+    } catch (err: unknown) {
+      setState('preview');
+      setError(err instanceof Error ? err.message : 'Direct publish failed.');
+      setStatusMessage('');
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [article, metadata, validateMetadata, ask, API_BASE]);
+
   // ─── Metadata helpers ───────────────────────────────────────────
 
   const updateMetadata = useCallback((field: string, value: string | number | boolean | string[] | { from: string; to: string }) => {
@@ -589,6 +653,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     setError('');
     setStatusMessage('');
     setShowPublishConfirm(false);
+    setPublishPath(null);
     clearDraft();
   }, []);
 
@@ -968,8 +1033,8 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                     validationErrors.length > 0 ? 'admin-status-dot-error' :
                     'admin-status-dot-ready'
                   }`}/>
-                  {state === 'done' ? 'In Pipeline' :
-                   state === 'publishing' ? 'Submitting...' :
+                  {state === 'done' ? (publishPath === 'direct' ? 'Published' : 'In Pipeline') :
+                   state === 'publishing' ? (publishPath === 'direct' ? 'Publishing...' : 'Submitting...') :
                    validationErrors.length > 0 ? `${validationErrors.length} issue${validationErrors.length > 1 ? 's' : ''}` :
                    'Ready'}
                 </div>
@@ -982,9 +1047,15 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
               </div>
               {state === 'done' ? (
                 <div className="admin-flex admin-gap-md">
-                  <a href="/admin#pipeline" className="admin-publish-btn admin-publish-btn-view">
-                    Track in Pipeline
-                  </a>
+                  {publishPath === 'direct' ? (
+                    <a href={`/articles/${metadata?.slug}`} target="_blank" rel="noopener" className="admin-publish-btn admin-publish-btn-view">
+                      View Article
+                    </a>
+                  ) : (
+                    <a href="/admin#pipeline" className="admin-publish-btn admin-publish-btn-view">
+                      Track in Pipeline
+                    </a>
+                  )}
                   <button onClick={startOver} className="admin-publish-btn admin-publish-btn-dark">
                     New Article
                   </button>
@@ -1000,13 +1071,24 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                   </button>
                 </div>
               ) : (
-                <button
-                  className="admin-publish-btn"
-                  onClick={() => setShowPublishConfirm(true)}
-                  disabled={isPublishing || validationErrors.length > 0}
-                >
-                  Submit to Pipeline
-                </button>
+                <div className="admin-flex admin-gap-md" style={{ alignItems: 'center' }}>
+                  <button
+                    className="admin-publish-btn"
+                    onClick={() => setShowPublishConfirm(true)}
+                    disabled={isPublishing || validationErrors.length > 0}
+                    title="Independence review → QC → publish"
+                  >
+                    Submit to Pipeline
+                  </button>
+                  <button
+                    onClick={publishDirectly}
+                    disabled={isPublishing || validationErrors.length > 0}
+                    title="Skip editorial review — art + narration + deploy"
+                    style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.3)', background: 'rgba(34, 197, 94, 0.12)', color: 'var(--admin-green-light)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap', opacity: isPublishing || validationErrors.length > 0 ? 0.4 : 1 }}
+                  >
+                    Publish Now
+                  </button>
+                </div>
               )}
             </div>
           </>

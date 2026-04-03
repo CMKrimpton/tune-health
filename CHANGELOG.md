@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added — New Article Editor Improvements
 
+- **Publish Now (direct publish)** — new green button alongside "Submit to Pipeline". Skips independence review and QC, goes straight to illustration + narration + deploy. Confirmation dialog warns this skips editorial review. Done state shows "View Article" link instead of "Track in Pipeline"
 - **Keywords field** — visible in metadata panel (data flowed through but was invisible)
 - **Hero image preview** — dark/light side-by-side preview in metadata panel, updates live
 - **Hero image light URL field** — editable alongside dark variant
