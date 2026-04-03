@@ -142,11 +142,13 @@ const nextArticle = await getNextInCategory(slug);
         </h1>
 
         <p
-          class="font-body text-body-lg text-stone-600 dark:text-stone-400 max-w-2xl mx-auto mb-10"
+          class="standfirst font-body italic text-stone-600 dark:text-stone-400 max-w-2xl mx-auto mb-8"
           transition:animate={fade({ duration: '0.4s', delay: '0.1s' })}
         >
           {description}
         </p>
+
+        <div class="w-12 h-px bg-stone-300 dark:bg-stone-700 mx-auto mb-8" aria-hidden="true"></div>
 
         <div class="flex items-center justify-center gap-3">
           <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-semibold">

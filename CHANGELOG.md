@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.8.0] - 2026-04-03
+
+### Changed — Article Typography
+
+- **Standfirst**: article description styled as italic serif lede with custom size scale, thin rule separator below
+- **Drop "In This Article" TOC blocks**: removed inline TOC from all 160 articles (FloatingTOC sidebar remains)
+- **Lede paragraph**: first paragraph gets slightly darker ink + `font-weight: 450` for subtle presence
+
 ## [18.7.1] - 2026-04-03
 
 ### Changed — Author Pen Names
