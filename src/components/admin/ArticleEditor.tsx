@@ -19,17 +19,18 @@ interface ArticleMetadata {
   tags: string[];
   gradient: { from: string; to: string };
   featured: boolean;
+  comingSoon: boolean;
   readTime: number;
   publishDate: string;
   keywords: string[];
   heroImage: string;
   heroImageAlt: string;
+  heroImageLight: string;
 }
 
 interface GeneratedArticle {
   html: string;
   metadata: ArticleMetadata;
-  svg: string;
   toc: Array<{ id: string; title: string }>;
 }
 
@@ -159,9 +160,13 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
       setSourceText(draft.sourceText || '');
       setArticle(draft.article || null);
       const m = draft.metadata;
-      if (m && !m.gradient) {
-        const cat = CATEGORY_GRADIENTS[m.category];
-        m.gradient = cat ? { from: cat.from, to: cat.to } : { from: 'rose-600', to: 'red-700' };
+      if (m) {
+        if (!m.gradient) {
+          const cat = CATEGORY_GRADIENTS[m.category];
+          m.gradient = cat ? { from: cat.from, to: cat.to } : { from: 'rose-600', to: 'red-700' };
+        }
+        if (!m.heroImageLight) m.heroImageLight = '';
+        if (m.comingSoon === undefined) m.comingSoon = false;
       }
       setMetadata(m || null);
       setChatMessages(draft.chatMessages || []);
@@ -245,7 +250,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
 
     setState('processing');
     setError('');
-    setStatusMessage('Sending to Claude Opus... (30-90 seconds)');
+    setStatusMessage('Generating article... (30-90 seconds)');
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -288,6 +293,8 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
         }
         if (!data.metadata.heroImage) data.metadata.heroImage = '';
         if (!data.metadata.heroImageAlt) data.metadata.heroImageAlt = '';
+        if (!data.metadata.heroImageLight) data.metadata.heroImageLight = '';
+        if (data.metadata.comingSoon === undefined) data.metadata.comingSoon = false;
       }
 
       setArticle(data);
@@ -312,8 +319,12 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
               gradient_from: data.metadata.gradient?.from || 'rose-600',
               gradient_to: data.metadata.gradient?.to || 'red-700',
               featured: data.metadata.featured,
+              coming_soon: false,
               read_time: data.metadata.readTime,
               publish_date: data.metadata.publishDate,
+              hero_image: data.metadata.heroImage || null,
+              hero_image_alt: data.metadata.heroImageAlt || null,
+              hero_image_light: data.metadata.heroImageLight || null,
               article_html: data.html,
               toc: data.toc,
               source_text: sourceText.slice(0, 50000),
@@ -343,9 +354,10 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
         });
         if (illustrationRes.ok) {
           const illustrationData = await illustrationRes.json();
-          if (illustrationData.imageUrl) {
-            data.metadata.heroImage = illustrationData.imageUrl;
-            data.metadata.heroImageAlt = `Editorial illustration for ${data.metadata.title}`;
+          if (illustrationData.imageUrl || illustrationData.darkUrl) {
+            data.metadata.heroImage = illustrationData.imageUrl || illustrationData.darkUrl || '';
+            data.metadata.heroImageAlt = illustrationData.heroImageAlt || `Editorial illustration for ${data.metadata.title}`;
+            data.metadata.heroImageLight = illustrationData.lightUrl || '';
             setMetadata({ ...data.metadata });
           }
         }
@@ -490,7 +502,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     if (!metadata.slug.trim()) errors.push('Slug is required');
     if (!/^[a-z0-9-]+$/.test(metadata.slug)) errors.push('Slug must be lowercase letters, numbers, and hyphens only');
     if (!metadata.description.trim()) errors.push('Description is required');
-    if (metadata.description.length > 300) errors.push('Description should be under 300 characters');
+    if (metadata.description.length > 200) errors.push('Description should be under 200 characters for SEO');
     if (!metadata.category) errors.push('Category is required');
     if (metadata.tags.length === 0) errors.push('At least one tag is required');
     if (metadata.readTime <= 0) errors.push('Read time must be positive');
@@ -683,7 +695,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
               </svg>
-              Generate with Claude Opus
+              Generate Article
             </button>
           </div>
         )}
@@ -714,6 +726,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
               </div>
               {metadataOpen && metadata && (
                 <div className="admin-metadata-grid">
+                  {/* ─── Core ─── */}
                   <div className="admin-field admin-field-full">
                     <label>Title</label>
                     <input value={metadata.title} onChange={(e) => updateMetadata('title', e.target.value)}/>
@@ -726,7 +739,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                     </div>
                   </div>
                   <div className="admin-field admin-field-full">
-                    <label>Description <span className="admin-color-subtle admin-weight-400">({metadata.description.length}/300)</span></label>
+                    <label>Description <span style={{ fontWeight: 400, color: metadata.description.length > 160 ? 'var(--admin-red-light)' : metadata.description.length > 140 ? 'var(--admin-yellow)' : 'var(--admin-text-4)' }}>({metadata.description.length}/160)</span></label>
                     <textarea value={metadata.description} onChange={(e) => updateMetadata('description', e.target.value)} rows={3}/>
                   </div>
                   <div className="admin-field">
@@ -757,18 +770,110 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                     />
                   </div>
                   <div className="admin-field admin-field-full">
-                    <label>Hero Image URL (for homepage card)</label>
+                    <label>Keywords (comma-separated)</label>
+                    <input
+                      value={metadata.keywords.join(', ')}
+                      onChange={(e) => updateMetadata('keywords', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+                      placeholder="SEO keywords for search"
+                    />
+                  </div>
+
+                  {/* ─── Hero Image ─── */}
+                  <div className="admin-field admin-field-full" style={{ borderTop: '1px solid var(--admin-border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <label style={{ margin: 0 }}>Hero Image</label>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!metadata.slug) return;
+                          setStatusMessage('Generating illustration...');
+                          try {
+                            const res = await fetchWithTimeout(`${API_BASE}/generate-illustration`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                action: 'generate',
+                                slug: metadata.slug,
+                                title: metadata.title,
+                                description: metadata.description,
+                                category: metadata.category,
+                                variant: 'both',
+                              }),
+                            });
+                            if (!res.ok) throw new Error('Failed');
+                            const data = await res.json();
+                            // Refresh from DB to get updated URLs
+                            const getRes = await fetchWithTimeout(`${API_BASE}/articles-api`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ action: 'get', slug: metadata.slug }),
+                            });
+                            if (getRes.ok) {
+                              const updated = await getRes.json();
+                              if (updated.hero_image) updateMetadata('heroImage', updated.hero_image);
+                              if (updated.hero_image_light) updateMetadata('heroImageLight', updated.hero_image_light);
+                              if (updated.hero_image_alt) updateMetadata('heroImageAlt', updated.hero_image_alt);
+                            }
+                            setStatusMessage('Illustration generated.');
+                            setTimeout(() => setStatusMessage(''), 3000);
+                          } catch {
+                            setError('Illustration generation failed. You can retry.');
+                            setStatusMessage('');
+                          }
+                        }}
+                        style={{ padding: '0.25rem 0.625rem', borderRadius: '4px', background: 'var(--admin-surface-3)', border: '1px solid var(--admin-border-2)', color: 'var(--admin-text-3)', fontSize: '0.625rem', fontWeight: 500, cursor: 'pointer' }}
+                      >
+                        Generate
+                      </button>
+                    </div>
+                    {/* Preview */}
+                    {(metadata.heroImage || metadata.heroImageLight) && (
+                      <div style={{ display: 'grid', gridTemplateColumns: metadata.heroImageLight ? '1fr 1fr' : '1fr', gap: '0.375rem', marginBottom: '0.5rem', borderRadius: '6px', overflow: 'hidden' }}>
+                        {metadata.heroImage && (
+                          <div style={{ position: 'relative', aspectRatio: '16/10', borderRadius: '6px', overflow: 'hidden', background: '#0f0e0c', border: '1px solid var(--admin-border)' }}>
+                            <img src={metadata.heroImage} alt="Dark" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0.1875rem 0.375rem', fontSize: '0.5625rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', background: 'rgba(0,0,0,0.7)', color: 'var(--admin-text-4)' }}>Dark</span>
+                          </div>
+                        )}
+                        {metadata.heroImageLight && (
+                          <div style={{ position: 'relative', aspectRatio: '16/10', borderRadius: '6px', overflow: 'hidden', background: '#e7e6e3', border: '1px solid var(--admin-border)' }}>
+                            <img src={metadata.heroImageLight} alt="Light" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0.1875rem 0.375rem', fontSize: '0.5625rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', background: 'rgba(255,255,255,0.7)', color: '#57534e' }}>Light</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <input
                       value={metadata.heroImage || ''}
                       onChange={(e) => updateMetadata('heroImage', e.target.value)}
-                      placeholder="https://images.unsplash.com/photo-..."
+                      placeholder="Dark variant URL"
+                      style={{ marginBottom: '0.375rem' }}
+                    />
+                    <input
+                      value={metadata.heroImageLight || ''}
+                      onChange={(e) => updateMetadata('heroImageLight', e.target.value)}
+                      placeholder="Light variant URL"
+                      style={{ marginBottom: '0.375rem' }}
+                    />
+                    <input
+                      value={metadata.heroImageAlt || ''}
+                      onChange={(e) => updateMetadata('heroImageAlt', e.target.value)}
+                      placeholder="Alt text for hero image"
                     />
                   </div>
-                  <div className="admin-field admin-field-full admin-flex-between">
-                    <label className="admin-checkbox-label">
-                      <input type="checkbox" checked={metadata.featured} onChange={(e) => updateMetadata('featured', e.target.checked)}/>
-                      Featured Article
-                    </label>
+
+                  {/* ─── Flags ─── */}
+                  <div className="admin-field admin-field-full" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', borderTop: '1px solid var(--admin-border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <label className="admin-checkbox-label">
+                        <input type="checkbox" checked={metadata.featured} onChange={(e) => updateMetadata('featured', e.target.checked)}/>
+                        Featured
+                      </label>
+                      <label className="admin-checkbox-label">
+                        <input type="checkbox" checked={metadata.comingSoon} onChange={(e) => updateMetadata('comingSoon', e.target.checked)}/>
+                        Coming Soon
+                      </label>
+                    </div>
                     <span className="admin-text-sm admin-color-subtle">{metadata.readTime} min read &middot; {wordCount(article?.html || '')} words</span>
                   </div>
                 </div>

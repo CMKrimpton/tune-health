@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [19.4.0] - 2026-04-03
+
+### Fixed — New Article Editor
+
+- **Button falsely claimed "Claude Opus"** — process-article uses `MODELS.DEFAULT_CLAUDE` (Sonnet). Button now says "Generate Article"
+- **Description validation was 300 chars** — tightened to 200 (SEO best practice is 160)
+- **Hero image placeholder said "unsplash"** — updated to match Supabase Storage workflow
+- **DB save missing fields** — now persists `hero_image`, `hero_image_alt`, `hero_image_light`, `coming_soon` on initial article creation
+- **Illustration callback didn't capture light variant** — now reads `lightUrl` from generate-illustration response and sets `heroImageLight`
+- **`svg` field removed from GeneratedArticle** — deprecated field (article_svg no longer generated)
+
+### Added — New Article Editor Improvements
+
+- **Keywords field** — visible in metadata panel (data flowed through but was invisible)
+- **Hero image preview** — dark/light side-by-side preview in metadata panel, updates live
+- **Hero image light URL field** — editable alongside dark variant
+- **Hero image alt text field** — editable in metadata panel
+- **Generate Illustration button** — manual retry from metadata panel, refreshes URLs from DB after generation
+- **Coming Soon checkbox** — alongside Featured toggle
+- **Description character count** — color-coded (green/yellow/red at 140/160 thresholds)
+
 ## [19.3.0] - 2026-04-03
 
 ### Fixed — Admin Editor Data Loss
