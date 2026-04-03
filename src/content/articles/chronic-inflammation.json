@@ -34,5 +34,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/chronic-inflammation.png",
   "heroImageAlt": "Editorial illustration for The Fire That Never Goes Out",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/chronic-inflammation.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/chronic-inflammation.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/chronic-inflammation-light.png"
 }
