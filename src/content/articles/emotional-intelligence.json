@@ -32,5 +32,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/emotional-intelligence.png",
   "heroImageAlt": "Editorial illustration for Emotional Intelligence Is Real. The Industry Built Around It Mostly Isn't.",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/emotional-intelligence.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/emotional-intelligence.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/emotional-intelligence-light.png"
 }
