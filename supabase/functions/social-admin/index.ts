@@ -12,8 +12,11 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { action } = body;
+    if (!action || typeof action !== "string") {
+      return json({ error: "Missing or invalid 'action' field" }, 400);
+    }
     const db = supabase();
 
     switch (action) {
@@ -241,7 +244,25 @@ Deno.serve(async (req: Request) => {
       // ─── Generate Social for Article ───────────────────────────────
       case "generate": {
         const { slug } = body;
-        if (!slug) return json({ error: "slug required" }, 400);
+        if (!slug || typeof slug !== "string") return json({ error: "slug required (string)" }, 400);
+        const cleanSlug = slug.trim().toLowerCase();
+        if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(cleanSlug)) {
+          return json({ error: "Invalid slug format" }, 400);
+        }
+
+        // Guard: check article exists before burning AI credits
+        const { data: articleCheck } = await db.from("articles").select("slug").eq("slug", cleanSlug).maybeSingle();
+        if (!articleCheck) return json({ error: `Article "${cleanSlug}" not found in database` }, 404);
+
+        // Guard: check for in-progress generation (prevent duplicate spend)
+        const { count: activePlans } = await db
+          .from("social_content_plan")
+          .select("*", { count: "exact", head: true })
+          .eq("article_slug", cleanSlug)
+          .in("status", ["planned", "generating"]);
+        if (activePlans && activePlans > 0) {
+          return json({ error: `Social content already being generated for "${cleanSlug}" (${activePlans} plans in progress)` }, 409);
+        }
 
         const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
         const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -252,7 +273,7 @@ Deno.serve(async (req: Request) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${serviceKey}`,
           },
-          body: JSON.stringify({ slug, mode: "catalog" }),
+          body: JSON.stringify({ slug: cleanSlug, mode: "catalog" }),
           signal: AbortSignal.timeout(120_000),
         });
 
@@ -386,14 +407,101 @@ Deno.serve(async (req: Request) => {
       // ─── Activate/Deactivate Platform ─────────────────────────────
       case "toggle-platform": {
         const { platform, active, apiConfigured } = body;
-        if (!platform) return json({ error: "platform required" }, 400);
+        if (!platform || typeof platform !== "string") return json({ error: "platform required (string)" }, 400);
+        // Validate platform exists
+        const { data: existingPlatform } = await db.from("social_platform_config").select("platform").eq("platform", platform).maybeSingle();
+        if (!existingPlatform) return json({ error: `Unknown platform: ${platform}` }, 404);
         const updates: Record<string, unknown> = {};
         if (typeof active === "boolean") updates.active = active;
         if (typeof apiConfigured === "boolean") updates.api_configured = apiConfigured;
-        if (Object.keys(updates).length === 0) return json({ error: "Nothing to update" }, 400);
+        if (Object.keys(updates).length === 0) return json({ error: "Nothing to update — provide 'active' or 'apiConfigured' (boolean)" }, 400);
         const { error } = await db.from("social_platform_config").update(updates).eq("platform", platform);
         if (error) return json({ error: error.message }, 500);
         return json({ success: true, platform, ...updates });
+      }
+
+      // ─── Batch — all dashboard data in one request ─────────────────
+      case "batch": {
+        const today = new Date().toISOString().slice(0, 10);
+        const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+        const dayAgo = new Date(Date.now() - 86400000).toISOString();
+
+        // Run all queries in parallel within a single function invocation
+        const [
+          totalPostsRes, postedTodayRes, queueSizeRes, draftCountRes, failedTodayRes,
+          engagementRes, costRes, activePlatformsRes, recentPostsRes,
+          postsRes, planRes, configsRes, platformStatsRes, arcsRes, personasRes,
+        ] = await Promise.all([
+          db.from("social_posts").select("*", { count: "exact", head: true }),
+          db.from("social_posts").select("*", { count: "exact", head: true }).eq("status", "posted").gte("posted_at", `${today}T00:00:00Z`),
+          db.from("social_posts").select("*", { count: "exact", head: true }).eq("status", "scheduled"),
+          db.from("social_posts").select("*", { count: "exact", head: true }).eq("status", "draft"),
+          db.from("social_posts").select("*", { count: "exact", head: true }).eq("status", "failed").gte("created_at", `${today}T00:00:00Z`),
+          db.from("social_posts").select("engagement_score").eq("status", "posted").gte("posted_at", weekAgo).not("engagement_score", "is", null),
+          db.from("social_posts").select("cost_usd").gte("created_at", `${today}T00:00:00Z`),
+          db.from("social_platform_config").select("*", { count: "exact", head: true }).eq("active", true),
+          db.from("social_posts").select("platform, status").gte("created_at", dayAgo),
+          // Posts feed
+          db.from("social_posts")
+            .select("id, article_slug, platform, persona, content_type, content_format, content_text, content_meta, status, error, scheduled_at, posted_at, platform_url, impressions, likes, shares, comments, clicks, engagement_score, series_tag, cost_usd, created_at, choreography_group, timing_offset_minutes, retry_count")
+            .order("created_at", { ascending: false }).limit(100),
+          // Plan
+          db.from("social_content_plan").select("*").eq("plan_date", today).order("created_at", { ascending: true }),
+          // Platform configs
+          db.from("social_platform_config").select("*").order("tier", { ascending: true }),
+          // Platform stats (for lastPostAt)
+          db.from("social_posts").select("platform, status, posted_at").eq("status", "posted").order("posted_at", { ascending: false }),
+          // Arcs
+          db.from("social_arcs").select("*").order("week_start", { ascending: false }).limit(4),
+          // Personas
+          db.from("social_personas").select("*").order("id"),
+        ]);
+
+        // Build stats
+        const engagementData = engagementRes.data || [];
+        const avgEngagement = engagementData.length > 0
+          ? engagementData.reduce((s: number, r: { engagement_score: number }) => s + (parseFloat(String(r.engagement_score)) || 0), 0) / engagementData.length
+          : 0;
+        const todayCost = (costRes.data || []).reduce((s: number, r: { cost_usd: number }) => s + (parseFloat(String(r.cost_usd)) || 0), 0);
+
+        const platformBreakdown: Record<string, { posted: number; scheduled: number; failed: number; draft: number }> = {};
+        for (const p of recentPostsRes.data || []) {
+          if (!platformBreakdown[p.platform]) platformBreakdown[p.platform] = { posted: 0, scheduled: 0, failed: 0, draft: 0 };
+          const status = p.status as "posted" | "scheduled" | "failed" | "draft";
+          if (status in platformBreakdown[p.platform]) platformBreakdown[p.platform][status]++;
+        }
+
+        // Build platform health
+        const lastPostMap: Record<string, string> = {};
+        const todayCountMap: Record<string, number> = {};
+        for (const p of platformStatsRes.data || []) {
+          if (!lastPostMap[p.platform] && p.posted_at) lastPostMap[p.platform] = p.posted_at;
+          if (p.posted_at?.startsWith(today)) todayCountMap[p.platform] = (todayCountMap[p.platform] || 0) + 1;
+        }
+        const platforms = (configsRes.data || []).map((c: Record<string, unknown>) => ({
+          ...c,
+          lastPostAt: lastPostMap[c.platform as string] || null,
+          todayPosted: todayCountMap[c.platform as string] || 0,
+        }));
+
+        return json({
+          stats: {
+            totalPosts: totalPostsRes.count || 0,
+            postedToday: postedTodayRes.count || 0,
+            queueSize: queueSizeRes.count || 0,
+            draftCount: draftCountRes.count || 0,
+            failedToday: failedTodayRes.count || 0,
+            avgEngagement: Math.round(avgEngagement * 100) / 100,
+            todayCost: Math.round(todayCost * 10000) / 10000,
+            activePlatforms: activePlatformsRes.count || 0,
+            platformBreakdown,
+          },
+          posts: postsRes.data || [],
+          plan: planRes.data || [],
+          platforms,
+          arcs: arcsRes.data || [],
+          personas: personasRes.data || [],
+        });
       }
 
       default:

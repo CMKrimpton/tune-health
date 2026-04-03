@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.4.0] - 2026-04-03
+
+### Fixed — Full-Stack Hardening & Admin Intelligence
+
+**Critical Bug Fixes**
+- Social dashboard 500 errors — new `batch` endpoint replaces 6 parallel requests with 1
+- social-writer `successIds` bug — plan rows stuck in "generating" forever (was slicing by index, not tracking actual successes)
+- social-writer stuck recovery — auto-resets rows stuck in "generating" for 10+ minutes from crashed runs
+- CommandPalette trigger event listener cleanup — memory leak on View Transitions
+- PipelineMonitor brief copy XSS — replaced `document.write()` with safe `textContent` DOM API
+- dispatchStage silent failures — now logs dispatch errors directly to article record (visible in admin dashboard)
+
+**Intelligent Safeguards (social-admin)**
+- Article existence check before social generation — prevents burning AI credits on non-existent articles
+- Duplicate generation prevention — returns 409 if content already being generated for a slug
+- Slug format validation — rejects malformed slug strings with clear error
+- Platform existence validation — rejects toggle requests for unknown platforms
+- Action field validation — returns 400 instead of 500 on missing/invalid request bodies
+- social-poster auto-drafts posts for unconfigured platforms instead of silently skipping forever
+
+**Admin Dashboard UX**
+- Expandable post rows in Post Feed — click to see full content, metadata, cost, scheduled time, article link
+- Copy button available on all posts (not just drafts) — useful for manual platform posting
+- Content Plan date navigator — browse plans for any date with prev/next arrows, date picker, Today button
+- Better error messages — "Article not found", "already being generated" instead of generic 500s
+
+**Full-Stack Audit**
+- Ran 4 parallel deep audits: social functions, admin dashboard, public site, pipeline functions
+- 9 bugs fixed, 5 safeguards added, 3 UX improvements across 7 files
+
 ## [18.3.1] - 2026-04-02
 
 ### Improved — Social Dashboard Quality & Accessibility

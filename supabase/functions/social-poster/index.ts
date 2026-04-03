@@ -85,8 +85,11 @@ Deno.serve(async (req: Request) => {
       // Skip if platform isn't configured for API posting
       const config = configMap[post.platform];
       if (!config?.configured) {
-        // Leave as scheduled — it'll be picked up when platform is configured
-        // Or move to draft if it's been waiting too long
+        // Move to draft — these need manual posting or the platform needs to be configured
+        await db.from("social_posts").update({
+          status: "draft",
+          error: `${post.platform} API not configured — moved to draft for manual posting`,
+        }).eq("id", post.id);
         skipped++;
         continue;
       }

@@ -528,6 +528,8 @@ export default function SocialDashboard({ apiBase }: Props) {
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [generating, setGenerating] = useState(false);
   const [generateSlug, setGenerateSlug] = useState('');
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+  const [planDate, setPlanDate] = useState(new Date().toISOString().slice(0, 10));
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [setupData, setSetupData] = useState<Record<string, unknown> | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -556,28 +558,25 @@ export default function SocialDashboard({ apiBase }: Props) {
 
   const fetchAll = useCallback(async (silent = false) => {
     try {
-      const headers = { 'Content-Type': 'application/json' };
-      const [statsRes, postsRes, planRes, platformsRes, arcsRes, personasRes] = await Promise.all([
-        fetchWithTimeout(`${apiBase}/social-admin`, { method: 'POST', headers, body: JSON.stringify({ action: 'status' }) }),
-        fetchWithTimeout(`${apiBase}/social-admin`, { method: 'POST', headers, body: JSON.stringify({ action: 'posts', limit: 100 }) }),
-        fetchWithTimeout(`${apiBase}/social-admin`, { method: 'POST', headers, body: JSON.stringify({ action: 'plan' }) }),
-        fetchWithTimeout(`${apiBase}/social-admin`, { method: 'POST', headers, body: JSON.stringify({ action: 'platforms' }) }),
-        fetchWithTimeout(`${apiBase}/social-admin`, { method: 'POST', headers, body: JSON.stringify({ action: 'arcs' }) }),
-        fetchWithTimeout(`${apiBase}/social-admin`, { method: 'POST', headers, body: JSON.stringify({ action: 'personas' }) }),
-      ]);
+      const res = await fetchWithTimeout(`${apiBase}/social-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'batch' }),
+      });
 
-      let errors = 0;
-      if (statsRes.ok) setStats(await statsRes.json()); else errors++;
-      if (postsRes.ok) { const d = await postsRes.json(); setPosts(d.posts || []); } else errors++;
-      if (planRes.ok) { const d = await planRes.json(); setPlan(d.plan || []); } else errors++;
-      if (platformsRes.ok) { const d = await platformsRes.json(); setPlatforms(d.platforms || []); } else errors++;
-      if (arcsRes.ok) { const d = await arcsRes.json(); setArcs(d.arcs || []); } else errors++;
-      if (personasRes.ok) { const d = await personasRes.json(); setPersonas(d.personas || []); } else errors++;
-
-      setLastRefresh(new Date());
-      if (errors > 0 && !silent) {
-        addToast(`${errors} endpoint${errors > 1 ? 's' : ''} failed to respond`, 'error');
+      if (!res.ok) {
+        const errText = await res.text().catch(() => 'Unknown error');
+        throw new Error(`Batch fetch failed (${res.status}): ${errText}`);
       }
+
+      const data = await res.json();
+      setStats(data.stats);
+      setPosts(data.posts || []);
+      setPlan(data.plan || []);
+      setPlatforms(data.platforms || []);
+      setArcs(data.arcs || []);
+      setPersonas(data.personas || []);
+      setLastRefresh(new Date());
     } catch (err) {
       console.error('[SocialDashboard] Fetch error:', err);
       if (!silent) addToast('Failed to connect to social API', 'error');
@@ -716,6 +715,22 @@ export default function SocialDashboard({ apiBase }: Props) {
       setRunningAction(null);
       // Clear feedback indicator after 3s
       setTimeout(() => setActionFeedback(prev => { const n = { ...prev }; delete n[action]; return n; }), 3000);
+    }
+  };
+
+  const fetchPlanForDate = async (date: string) => {
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/social-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'plan', date }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setPlan(data.plan || []);
+      setPlanDate(date);
+    } catch (err) {
+      addToast(`Failed to fetch plan: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
     }
   };
 
@@ -1253,64 +1268,108 @@ export default function SocialDashboard({ apiBase }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPosts.map(post => (
-                    <tr key={post.id} style={{ borderBottom: '1px solid var(--admin-border)', transition: 'background 0.15s' }} className="social-row-hover">
-                      <td style={{ padding: '5px 8px' }}><PlatformBadge platform={post.platform} /></td>
-                      <td style={{ padding: '5px 8px' }}><PersonaBadge persona={post.persona} /></td>
-                      <td style={{ padding: '5px 8px' }}>
-                        <span style={S.pill('#7d7871')}>{post.content_type}</span>
-                      </td>
-                      <td style={{ padding: '5px 8px', maxWidth: '320px' }}>
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--admin-text)' }}>
-                          {truncate(post.content_text, 100)}
-                        </div>
-                        {post.article_slug && (
-                          <div style={{ ...S.mono, color: 'var(--admin-text-4)', marginTop: '1px' }}>
-                            {post.article_slug}
-                          </div>
+                  {filteredPosts.map(post => {
+                    const isExpanded = expandedPostId === post.id;
+                    return (
+                      <Fragment key={post.id}>
+                        <tr
+                          style={{ borderBottom: isExpanded ? 'none' : '1px solid var(--admin-border)', transition: 'background 0.15s', cursor: 'pointer' }}
+                          className="social-row-hover"
+                          onClick={() => setExpandedPostId(isExpanded ? null : post.id)}
+                          aria-expanded={isExpanded}
+                        >
+                          <td style={{ padding: '5px 8px' }}><PlatformBadge platform={post.platform} /></td>
+                          <td style={{ padding: '5px 8px' }}><PersonaBadge persona={post.persona} /></td>
+                          <td style={{ padding: '5px 8px' }}>
+                            <span style={S.pill('#7d7871')}>{post.content_type}</span>
+                          </td>
+                          <td style={{ padding: '5px 8px', maxWidth: '320px' }}>
+                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--admin-text)' }}>
+                              {truncate(post.content_text, 100)}
+                            </div>
+                            {post.article_slug && (
+                              <div style={{ ...S.mono, color: 'var(--admin-text-4)', marginTop: '1px' }}>
+                                {post.article_slug}
+                              </div>
+                            )}
+                            {post.error && (
+                              <div style={{ fontSize: '0.5625rem', color: '#f87171', marginTop: '2px' }} role="alert">
+                                {truncate(post.error, 60)}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '5px 8px' }}><StatusDot status={post.status} /></td>
+                          <td style={{ padding: '5px 8px' }}><EngagementMini post={post} /></td>
+                          <td style={{ padding: '5px 8px', ...S.mono, color: 'var(--admin-text-3)', whiteSpace: 'nowrap' }}>
+                            {timeAgo(post.posted_at || post.created_at)}
+                          </td>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', gap: '3px' }}>
+                              {post.platform_url && (
+                                <a
+                                  href={post.platform_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ ...S.btn(false), textDecoration: 'none', display: 'inline-flex' }}
+                                  aria-label={`View post on ${post.platform}`}
+                                >↗</a>
+                              )}
+                              {post.status === 'failed' && (
+                                <ActionBtn onClick={() => retryPost(post.id)} label="Retry" ariaLabel={`Retry failed post on ${post.platform}`} />
+                              )}
+                              {(post.status === 'draft' || post.status === 'scheduled') && (
+                                <ActionBtn onClick={() => skipPost(post.id)} label="Skip" ariaLabel={`Skip scheduled post on ${post.platform}`} danger />
+                              )}
+                              <ActionBtn
+                                onClick={() => {
+                                  navigator.clipboard.writeText(post.content_text);
+                                  addToast('Content copied to clipboard', 'success');
+                                }}
+                                label="Copy"
+                                ariaLabel="Copy post content to clipboard"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                            <td colSpan={8} style={{ padding: '0.5rem 0.75rem', background: 'var(--admin-surface-2)' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--admin-text)', lineHeight: '1.6', whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto', fontFamily: 'inherit' }}>
+                                {post.content_text}
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                                {post.article_slug && (
+                                  <span style={{ ...S.mono, fontSize: '0.5625rem', color: 'var(--admin-text-3)' }}>
+                                    Article: <a href={`/articles/${post.article_slug}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--admin-accent)' }}>{post.article_slug}</a>
+                                  </span>
+                                )}
+                                {post.choreography_group && (
+                                  <span style={{ ...S.mono, fontSize: '0.5625rem', color: 'var(--admin-text-4)' }}>
+                                    Group: {post.choreography_group.slice(0, 8)}
+                                  </span>
+                                )}
+                                {post.cost_usd > 0 && (
+                                  <span style={{ ...S.mono, fontSize: '0.5625rem', color: 'var(--admin-text-4)' }}>
+                                    Cost: ${post.cost_usd.toFixed(4)}
+                                  </span>
+                                )}
+                                {post.scheduled_at && post.status === 'scheduled' && (
+                                  <span style={{ ...S.mono, fontSize: '0.5625rem', color: '#3b82f6' }}>
+                                    Scheduled: {new Date(post.scheduled_at).toLocaleString()}
+                                  </span>
+                                )}
+                                {post.error && (
+                                  <span style={{ fontSize: '0.5625rem', color: '#f87171' }}>
+                                    Error: {post.error}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                        {post.error && (
-                          <div style={{ fontSize: '0.5625rem', color: '#f87171', marginTop: '2px' }} role="alert">
-                            {truncate(post.error, 60)}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '5px 8px' }}><StatusDot status={post.status} /></td>
-                      <td style={{ padding: '5px 8px' }}><EngagementMini post={post} /></td>
-                      <td style={{ padding: '5px 8px', ...S.mono, color: 'var(--admin-text-3)', whiteSpace: 'nowrap' }}>
-                        {timeAgo(post.posted_at || post.created_at)}
-                      </td>
-                      <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', gap: '3px' }}>
-                          {post.platform_url && (
-                            <a
-                              href={post.platform_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ ...S.btn(false), textDecoration: 'none', display: 'inline-flex' }}
-                              aria-label={`View post on ${post.platform}`}
-                            >↗</a>
-                          )}
-                          {post.status === 'failed' && (
-                            <ActionBtn onClick={() => retryPost(post.id)} label="Retry" ariaLabel={`Retry failed post on ${post.platform}`} />
-                          )}
-                          {(post.status === 'draft' || post.status === 'scheduled') && (
-                            <ActionBtn onClick={() => skipPost(post.id)} label="Skip" ariaLabel={`Skip scheduled post on ${post.platform}`} danger />
-                          )}
-                          {(post.status === 'draft' || post.status === 'scheduled') && (
-                            <ActionBtn
-                              onClick={() => {
-                                navigator.clipboard.writeText(post.content_text);
-                                addToast('Content copied to clipboard', 'success');
-                              }}
-                              label="Copy"
-                              ariaLabel="Copy post content to clipboard"
-                            />
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
               {filteredPosts.length === 0 && (
@@ -1333,7 +1392,51 @@ export default function SocialDashboard({ apiBase }: Props) {
         >
           <div style={S.panel} className="social-panel">
             <div style={S.panelHeader}>
-              <span style={S.panelTitle}>Today's Editorial Plan</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={S.panelTitle}>Editorial Plan</span>
+                <ActionBtn
+                  onClick={() => {
+                    const prev = new Date(planDate);
+                    prev.setDate(prev.getDate() - 1);
+                    fetchPlanForDate(prev.toISOString().slice(0, 10));
+                  }}
+                  label="‹"
+                  ariaLabel="Previous day"
+                  style={{ padding: '2px 6px', fontSize: '0.75rem', minWidth: '24px' }}
+                />
+                <input
+                  type="date"
+                  value={planDate}
+                  onChange={e => fetchPlanForDate(e.target.value)}
+                  aria-label="Plan date"
+                  style={{
+                    padding: '2px 6px',
+                    fontSize: '0.625rem',
+                    fontFamily: 'var(--admin-mono)',
+                    background: 'var(--admin-surface-2)',
+                    border: '1px solid var(--admin-border-2)',
+                    borderRadius: 'var(--admin-radius-xs)',
+                    color: 'var(--admin-text)',
+                    outline: 'none',
+                  }}
+                />
+                <ActionBtn
+                  onClick={() => {
+                    const next = new Date(planDate);
+                    next.setDate(next.getDate() + 1);
+                    fetchPlanForDate(next.toISOString().slice(0, 10));
+                  }}
+                  label="›"
+                  ariaLabel="Next day"
+                  style={{ padding: '2px 6px', fontSize: '0.75rem', minWidth: '24px' }}
+                />
+                <ActionBtn
+                  onClick={() => fetchPlanForDate(new Date().toISOString().slice(0, 10))}
+                  label="Today"
+                  ariaLabel="Go to today"
+                  style={{ fontSize: '0.5625rem' }}
+                />
+              </div>
               <span style={{ ...S.mono, color: 'var(--admin-text-4)' }} aria-live="polite">{plan.length} items</span>
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -1374,7 +1477,7 @@ export default function SocialDashboard({ apiBase }: Props) {
               </table>
               {plan.length === 0 && (
                 <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--admin-text-4)', fontSize: '0.75rem' }}>
-                  No content planned for today. Planner runs daily at 5am UTC.
+                  No content planned for {planDate === new Date().toISOString().slice(0, 10) ? 'today' : planDate}. Planner runs daily at 5am UTC, or click "Planner" above.
                 </div>
               )}
             </div>

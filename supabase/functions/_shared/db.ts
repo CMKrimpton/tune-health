@@ -107,12 +107,24 @@ export async function getExistingArticles(
  *  edge function's connection closes. JS fetch() gets killed. */
 export async function dispatchStage(functionName: string, logId: string): Promise<void> {
   const db = supabase();
-  const { error } = await db.rpc("chain_dispatch", {
-    p_function_name: functionName,
-    p_log_id: logId,
-  });
-  if (error) {
-    console.error(`[dispatchStage] Failed to dispatch ${functionName} for ${logId}: ${error.message}`);
+  try {
+    const { error } = await db.rpc("chain_dispatch", {
+      p_function_name: functionName,
+      p_log_id: logId,
+    });
+    if (error) {
+      console.error(`[dispatchStage] DISPATCH FAILED: ${functionName} for ${logId}: ${error.message}`);
+      // Record dispatch failure on the article so admin dashboard shows it
+      await db.from("daily_article_log").update({
+        error: `Chain dispatch to ${functionName} failed: ${error.message}. Article may need manual retry.`,
+      }).eq("id", logId);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown dispatch error";
+    console.error(`[dispatchStage] DISPATCH EXCEPTION: ${functionName} for ${logId}: ${msg}`);
+    await db.from("daily_article_log").update({
+      error: `Chain dispatch to ${functionName} threw: ${msg}. Article may need manual retry.`,
+    }).eq("id", logId).catch(() => {}); // Don't let the error log fail too
   }
 }
 

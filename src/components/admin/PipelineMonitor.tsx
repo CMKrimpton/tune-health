@@ -1844,7 +1844,10 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
     }).catch(() => {
       const w = window.open('', '_blank');
       if (w) {
-        w.document.write('<pre style="white-space:pre-wrap;font-size:13px;padding:1rem;font-family:monospace">' + prefetchedBrief.replace(/</g, '&lt;') + '</pre>');
+        const pre = w.document.createElement('pre');
+        pre.style.cssText = 'white-space:pre-wrap;font-size:13px;padding:1rem;font-family:monospace';
+        pre.textContent = prefetchedBrief;
+        w.document.body.appendChild(pre);
         w.document.title = 'Brief for Claude';
       }
     });

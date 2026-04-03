@@ -71,6 +71,13 @@ Deno.serve(async (req: Request) => {
     const { articleSlug } = body as { articleSlug?: string };
     const db = supabase();
 
+    // Recovery: unstick plan rows that have been "generating" for 10+ minutes (crashed previous run)
+    const stuckCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    await db.from("social_content_plan")
+      .update({ status: "planned" })
+      .eq("status", "generating")
+      .lt("created_at", stuckCutoff);
+
     // Fetch planned content that needs writing
     let query = db
       .from("social_content_plan")
@@ -103,6 +110,7 @@ Deno.serve(async (req: Request) => {
 
     const posts: Array<Record<string, unknown>> = [];
     const usages: Array<{ costUsd: number }> = [];
+    const succeededPlanIds: string[] = [];
     let failedCount = 0;
 
     for (const row of planRows as PlanRow[]) {
@@ -188,10 +196,6 @@ Generate the post now.`;
         contentMeta.isManual = isManual;
 
         // Calculate scheduled_at from choreography offset
-        const briefData = row.brief || {};
-        const offsetMin = 0; // Default: immediate
-        // Find offset from the original choreography sequence stored in the brief
-        const choreographyRef = (brief.references as string) || null;
         const baseTime = new Date();
 
         // Stagger: brand at 0, reporter at 60min, skeptic at 180min
@@ -217,6 +221,7 @@ Generate the post now.`;
         });
 
         usages.push({ costUsd: result.usage.costUsd });
+        succeededPlanIds.push(row.id);
 
         // Log overhead cost
         await addOverheadCost(db, result.usage);
@@ -240,9 +245,8 @@ Generate the post now.`;
     }
 
     // Mark successfully processed plan rows as generated
-    const successIds = planIds.filter((_: string, i: number) => i < planRows.length - failedCount);
-    if (successIds.length > 0) {
-      await db.from("social_content_plan").update({ status: "generated" }).in("id", successIds);
+    if (succeededPlanIds.length > 0) {
+      await db.from("social_content_plan").update({ status: "generated" }).in("id", succeededPlanIds);
     }
 
     const totalCost = usages.reduce((s, u) => s + u.costUsd, 0);

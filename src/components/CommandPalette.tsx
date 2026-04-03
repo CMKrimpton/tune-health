@@ -201,6 +201,7 @@ export default function CommandPalette() {
 
     return () => {
       document.removeEventListener('keydown', down);
+      triggers.forEach((t) => t.removeEventListener('click', openHandler));
     };
   }, []);
 

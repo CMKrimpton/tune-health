@@ -1,98 +1,48 @@
 # Next Session Plan
 
-> **Status**: v18.3.1 live. ~190 published articles across 9 categories. Social Media System Phase 1B complete: end-to-end automated posting pipeline (Engine → Writer → Poster → Sync). 3 platform APIs implemented (Bluesky, Reddit, Mastodon). 3 cron jobs active. Dashboard upgraded with toast notifications, skeleton loading, WCAG AA accessibility, keyboard shortcuts, sparklines, optimistic updates.
+> **Status**: v18.4.0 live. ~190 published articles across 9 categories. Social Media System fully hardened: batch API, input validation, stuck recovery, dispatch error logging. 9 functions deployed with intelligent safeguards. Dashboard upgraded with expandable posts, plan date navigator, better error messages.
 
 ---
 
-## What Was Done This Session (v18.3.1 — Dashboard Quality & Accessibility)
+## What Was Done This Session (v18.4.0 — Full-Stack Hardening & Admin Intelligence)
 
-### Social Dashboard Overhaul (`SocialDashboard.tsx`)
-- **Toast notification system** — all actions now surface success/error feedback to the user
-- **Skeleton loading** — shimmer animations replace bare "Loading..." text
-- **WCAG AA accessibility** — ARIA roles, labels, tabpanel pairs, keyboard nav, screen reader support
-- **Keyboard shortcuts** — 1-5 tabs, R refresh, G generate focus
-- **Sparkline charts** — SVG 7-day activity trend in stat strip
-- **Optimistic updates** — skip/retry update UI immediately, revert on failure
-- **Action feedback** — trigger buttons show checkmark/X for 3s
-- **Error handling** — every API call guarded, every action wrapped in try/catch
-- **UI polish** — fade animations, hover glow, pulsing active dots, content type breakdown panel
+### Critical Bug Fixes
+- **Social dashboard 500 errors** — new `batch` endpoint replaces 6 parallel requests with 1 (Supabase concurrency limit)
+- **social-writer `successIds` bug** — plan rows stuck in "generating" forever (was slicing by index, now tracks actual success IDs)
+- **social-writer stuck recovery** — auto-resets rows stuck in "generating" for 10+ min from crashed runs
+- **CommandPalette event listener cleanup** — memory leak on View Transitions (missing `removeEventListener`)
+- **PipelineMonitor brief copy XSS** — replaced `document.write()` with safe `textContent` DOM API
+- **dispatchStage silent failures** — now logs dispatch errors directly to article record (visible in admin dashboard)
 
-### Admin Edit Page (`/admin/edit/[slug]`)
-- Replaced `any` type with proper `EditArticle` interface
-- Empty catch block now logs errors
+### Intelligent Safeguards (social-admin)
+- Article existence check before social generation — prevents burning AI credits on non-existent articles
+- Duplicate generation prevention — returns 409 if content already being generated for a slug
+- Slug format validation — rejects malformed slug strings with clear error
+- Platform existence validation — rejects toggle requests for unknown platforms
+- Action field validation — returns 400 instead of 500 on missing/invalid request bodies
+- social-poster auto-drafts posts for unconfigured platforms instead of silently skipping forever
 
-## Current Architecture (v18.3.1)
+### Admin Dashboard UX
+- Expandable post rows in Post Feed — click to see full content, metadata, cost, scheduled time, article link
+- Copy button available on all posts (not just drafts) — useful for manual platform posting
+- Content Plan date navigator — browse plans for any date with prev/next arrows, date picker, Today button
 
-- **Navigation**: domain-grouped dropdown (Mind/Body/Medicine/Environment), TopicNav with per-category hover dropdowns, SideNav grouped by domain, MobileNav with improved scroll sensitivity, QuickNav floating pill
-- **Breadcrumbs**: visual breadcrumbs on topic and collection pages (Home > Articles > Category)
-- **Sort Dropdowns**: custom glass dropdowns on articles index + category pages
-- **Category Landing Pages**: `/topics/[slug]` — 9 pages with gradient hero, editorial metadata, featured article, sorted grid, breadcrumbs
-- **Collections**: 5 curated themed reading lists at `/collections/[slug]` — now with share buttons in hero
-- **Start Here**: `/start-here` — onboarding with 5 handpicked articles, editorial philosophy, domain browser
-- **How We Write**: `/howwewrite` — editorial manual (pipeline transparency, voice standards)
-- **Author Bylines**: all articles use "Max Lundin" with model-specific roles
-- **Reading Progress**: localStorage scroll tracking per article, "Continue Reading" section on homepage
-- **Pipeline**: 8-stage (added stage-copy-edit between QC and publish). Hybrid model (human writes with Opus). ~$0.13/article
-- **Narration**: ElevenLabs TTS with admin voice settings panel (6 presets + custom sliders)
-- **Security**: HSTS preload, CSP hardening, immutable asset caching
-- **Admin**: Pipeline/Articles/Agents/Social tabs. Supabase Realtime live updates
-- **Newsletter**: `/api/subscribe` → Supabase + Beehiiv forward (when BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID env vars set)
-- **Social Media System**: 8 tables, 4 AI personas, 14 platform configs, 6 edge functions (engine + writer + poster + planner + sync + admin), 3 cron jobs, Bloomberg-inspired dashboard with setup guide
-
-## What Was Done This Session (v18.3.0 — Social Media Phase 1B)
-
-### Phase 1B — Execution Layer (complete)
-1. **Social Writer** (`social-writer/index.ts`) — content factory:
-   - Takes Content Briefs from `social_content_plan` → generates platform-native post text
-   - Each persona uses their assigned AI model (Sonnet/Gemini/Grok)
-   - Platform-specific rules: Bluesky (300 char), Reddit (markdown + subreddit selection), Mastodon (500 + hashtags), etc.
-   - Choreography timing offsets: brand=0, reporter=60min, skeptic=180min, curator=120min
-   - Outputs to `social_posts` with scheduled_at (API platforms) or draft (manual platforms)
-   - Cost tracking per post via `cost_usd` column
-
-2. **Social Poster** (`social-poster/index.ts`) — dispatcher:
-   - Reads scheduled posts due for posting → calls `postToPlatform()` API
-   - Choreography-aware: skips posts whose parent hasn't been posted yet
-   - Rate limit checks against platform `rate_limit_per_hour`
-   - Exponential backoff on failure (5min, 25min, 125min), max 3 retries
-   - Cron: `*/5 * * * *`
-
-3. **Social Planner** (`social-planner/index.ts`) — daily editorial meeting:
-   - Mines catalog: articles not promoted in 14+ days, independence score ≥ 5
-   - Creates weekly arcs via AI (theme, category focus, recurring series)
-   - Selects 4 articles/day with category diversity + arc alignment
-   - Recurring series schedule: "Actually..." Mon, "Study of the Week" Wed, "By the Numbers" Fri
-   - Chain-dispatches to social-engine for each selected article
-   - Cron: `0 5 * * *`
-
-4. **Social Sync** (`social-sync/index.ts`) — engagement feedback:
-   - Pulls metrics from Bluesky + Reddit APIs for posted content (last 7 days)
-   - Weighted engagement score: likes×1, shares×3, comments×2, impressions×0.01, clicks×1.5
-   - Velocity detection: flags posts exceeding 3× average
-   - Updates `social_engagement_log` time-series + `social_angle_registry` scores
-   - Cron: `0 */6 * * *`
-
-5. **Social Admin** — 6 new endpoints:
-   - `run-planner`, `run-writer`, `run-poster`, `run-sync` — manual triggers
-   - `setup-status` — credential status + setup instructions per platform
-   - `toggle-platform` — activate/deactivate platforms
-
-6. **Dashboard Updates** (`SocialDashboard.tsx`):
-   - New "Setup" tab with credential guide (Bluesky, Reddit, Mastodon)
-   - System architecture diagram (Planner → Engine → Writer → Poster → Sync)
-   - Manual trigger buttons in tab bar
-   - Quick Start Guide with step-by-step instructions
-
-7. **Bug Fixes**:
-   - Fixed arc_id assignment (was always null)
-   - Added chain-dispatch from social-engine → social-writer
-
-8. **Cron Jobs** migration applied (`20260403_social_cron_jobs.sql`)
+### Full-Stack Audit (4 parallel deep audits)
+- **Social functions**: Found/fixed successIds bug, stuck generating recovery, unconfigured platform handling
+- **Admin dashboard**: Found/fixed brief copy XSS, CommandPalette listener leak
+- **Public site**: Found/fixed CommandPalette cleanup; noted HighlightShare race condition (low priority)
+- **Pipeline functions**: Found/fixed dispatchStage silent failures; noted independence review skip monitoring (future)
 
 ### Deployed
-- Migration applied (3 cron jobs)
-- All 7 functions deployed: social-writer, social-poster, social-planner, social-sync, social-engine, social-admin, stage-publish
+- 9 functions deployed: stage-research, stage-editor, stage-independence, stage-qc, stage-voice-rewrite, stage-copy-edit, stage-publish, social-admin, social-writer, social-poster
 - Build passes clean
+
+## Current Architecture (v18.4.0)
+
+- **Navigation**: domain-grouped dropdown (Mind/Body/Medicine/Environment), TopicNav with per-category hover dropdowns, SideNav grouped by domain, MobileNav with improved scroll sensitivity, QuickNav floating pill
+- **Pipeline**: 8-stage hybrid model (human writes with Opus). ~$0.13/article. Chain-dispatch via pg_net with error logging
+- **Admin**: Pipeline/Articles/Agents/Social tabs. Supabase Realtime live updates. Batch API for Social tab
+- **Social Media System**: 8 tables, 4 AI personas, 14 platform configs, 6 edge functions (engine + writer + poster + planner + sync + admin), 3 cron jobs, Bloomberg-inspired dashboard with setup guide. Input validation on all endpoints. Stuck recovery on writer. Draft auto-move on poster
 
 ## Priority for Next Session
 
@@ -114,21 +64,30 @@
 - Click "Sync" → verify engagement metrics pulled back
 - Verify the full chain works on next article publish
 
-### 3. Social Media — Phase 2 (Intelligence Layer)
+### 3. Audit Findings — Medium Priority (from this session's audits)
+- **social-engine mode validation** — validate `mode` parameter is "new_article" or "catalog"
+- **social-writer choreography references** — wire up `brief.references` to actual persona chaining
+- **social-sync velocity averaging** — compute baseline BEFORE syncing new scores
+- **Independence review skip monitoring** — alert when Grok is unavailable and review skipped
+- **Cost dedup on retries** — track retry count per article, only log cost once per stage
+
+### 4. Social Media — Phase 2 (Intelligence Layer)
 - Template learning: analyze top-performing posts → extract patterns → `social_templates`
 - Velocity amplification: when post goes viral, auto-generate amplification on other platforms
 - Pinger integration: connect breaking news signals to emergency social dispatch
 - Additional desk functions for visual (Pinterest, Instagram) and broadcast (Telegram, newsletter)
 
-### 4. Additional Platform APIs (Phase 2+)
+### 5. Additional Platform APIs (Phase 2+)
 - LinkedIn API (requires company page + OAuth2 app)
 - Threads API (Meta developer account)
 - Telegram Bot API (create bot via BotFather)
 - Medium API (integration tokens)
 
-### 5. Deferred Items
+### 6. Deferred Items
 - Beehiiv account activation + newsletter integration
 - Content production to fill category gaps
 - Visual verification & device testing
 - Narration voice tuning
 - Lighthouse audit
+- HighlightShare selection race condition (low priority)
+- FloatingTOC tablet height constraint (low priority)
