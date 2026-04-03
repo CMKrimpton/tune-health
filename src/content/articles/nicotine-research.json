@@ -33,5 +33,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/nicotine-research.png",
   "heroImageAlt": "Editorial illustration for Nicotine's Promising Health Benefits",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/nicotine-research.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/nicotine-research.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/nicotine-research-light.png"
 }
