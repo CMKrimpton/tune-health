@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v17.6.0 live. ~190 published articles across 9 categories. Admin dashboard uses Supabase Realtime for live pipeline updates. 8-stage pipeline fully chain-dispatched — no cron wait on any stage transition. All model IDs centralized via MODELS.* constants.
+> **Status**: v18.0.0 live. ~190 published articles across 9 categories. Comprehensive SEO system: NewsArticle schema, E-E-A-T signals, CollectionPage on topics, dynamic robots.txt, smart sitemap, all site URLs centralized in `src/config/site.ts`. Domain migration: set `SITE_URL` env var in Vercel + update `FALLBACK_URL` in site.ts.
 
 ---
 
@@ -21,14 +21,29 @@
 - **Admin**: Pipeline/Articles/Agents tabs. Supabase Realtime live updates
 - **Newsletter**: `/api/subscribe` → Supabase + Beehiiv forward (when BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID env vars set)
 
-## What Was Done This Session (v17.6.0)
+## What Was Done This Session (v18.0.0)
+
+1. **Centralized site identity** — `src/config/site.ts` — brand name, URL, social handles, editorial paths, OG dimensions, author constants. Single `FALLBACK_URL` replaces 5 scattered hardcoded URLs
+2. **NewsArticle schema** — `Article` → `NewsArticle` in JSON-LD. Google News eligible. Includes wordCount, copyrightYear, inLanguage
+3. **E-E-A-T for YMYL health content** — Organization schema: `publishingPrinciples` (→ /howwewrite), `actionableFeedbackPolicy` (→ /about), `foundingDate`, `sameAs` (Twitter + Bluesky), logo with dimensions
+4. **Person author** — Schema author is now `Person` with `jobTitle` + `worksFor` Organization, using actual per-article name
+5. **CollectionPage on topic pages** — All 10 `/topics/[slug]` pages emit `CollectionPage` + `BreadcrumbList` JSON-LD
+6. **Homepage JSON-LD** — `index.astro` now has `Organization` + `WebSite` schemas (enables Sitelinks Search Box)
+7. **Article OG tags** — `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag` on every article
+8. **Enhanced meta** — `og:locale`, `og:image:alt`, `twitter:image:alt` on all pages
+9. **Dynamic robots.txt** — Reads `Astro.site`, auto-updates on domain migration. Added `Disallow: /admin/`
+10. **Smart sitemap** — `SITE_URL` env var, filters /admin/, per-page priorities (homepage 1.0, articles 0.9, topics 0.8)
+11. **Admin noindex** — `X-Robots-Tag: noindex, nofollow` in vercel.json for `/admin/*`
+12. **RSS enrichment** — copyright, managingEditor, Atom self-link, per-article author
+13. **Build**: `npm run build` passes clean
+
+## Two Sessions Ago (v17.6.0)
 
 1. **Footer category links fixed** — Was linking to `/articles?topic=` (broken); now `/topics/[slug]`. Imported `getCategorySlug` from category-domains
 2. **Empty alt text fixed** — `collections/[slug].astro` and `reading-list.astro` hero images now use `heroImageAlt || title` instead of `alt=""`
 3. **ContinueReading TypeScript** — Added `ReadingProgress` interface, eliminated 3 `any` casts in localStorage progress reader
-4. **Build**: `npm run build` passes clean
 
-## Two Sessions Ago (v17.5.0)
+## Three Sessions Ago (v17.5.0)
 
 1. **stage-write chain dispatch** — Added `dispatchStage("stage-independence", logId)` to fallback write path. Articles no longer get stuck at "written"
 2. **constants.ts status completeness** — Added `"writing"`, `"rewriting_voice"` to `ACTIVE`; `"voice_rewrite_pending"`, `"voice_rewrite_done"` to `IN_PIPELINE`

@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://tune-health.vercel.app/sitemap-index.xml

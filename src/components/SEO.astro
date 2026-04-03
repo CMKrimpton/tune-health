@@ -1,164 +1,242 @@
 ---
 /**
- * SEO Component - Generates JSON-LD structured data for rich search results
- * Supports Article, WebSite, Organization, and BreadcrumbList schemas
+ * SEO.astro — Generates JSON-LD structured data for rich search results.
+ *
+ * Supports three page types:
+ *   type="website"    → Organization + WebSite schemas (homepage)
+ *   type="article"    → NewsArticle + BreadcrumbList + WebPage (article pages)
+ *   type="collection" → CollectionPage + BreadcrumbList (topic/category pages)
+ *
+ * All site identity comes from src/config/site.ts.
+ * To move to a new domain: update FALLBACK_URL in site.ts + SITE_URL in Vercel.
  */
+
+import {
+  FALLBACK_URL,
+  SITE_NAME,
+  SITE_LOGO_PATH,
+  SITE_OG_IMAGE_PATH,
+  SITE_OG_IMAGE_WIDTH,
+  SITE_OG_IMAGE_HEIGHT,
+  WORDS_PER_MINUTE,
+  SOCIAL,
+  EDITORIAL,
+  EDITORIAL_ORG_NAME,
+} from '../config/site';
+
+// ─── Type Definitions ─────────────────────────────────────────────────────────
 
 interface ArticleData {
   title: string;
   description: string;
   publishDate: string;
   updatedDate?: string;
+  /** Author display name — pulled from article JSON, e.g. "Max Lundin" */
   author: string;
+  /** Author role — e.g. "Editor-at-Large" */
+  authorRole?: string;
   category: string;
   tags?: string[];
+  /** Reading time in minutes (used to estimate wordCount) */
   readTime?: number;
-  wordCount?: number;
   heroImage?: string;
   heroImageAlt?: string;
 }
 
-interface Props {
-  type: 'website' | 'article';
-  article?: ArticleData;
+interface CollectionData {
+  /** Page title, e.g. "Nutrition" */
+  title: string;
+  description: string;
+  /** Breadcrumb path for this collection, e.g. [{label:'Home',href:'/'}, {label:'Topics',href:'/topics'}, {label:'Nutrition',href:'/topics/nutrition'}] */
+  breadcrumbs?: Array<{ label: string; href: string }>;
+  /** How many articles in this collection */
+  articleCount?: number;
 }
 
-const { type, article } = Astro.props;
+interface Props {
+  type: 'website' | 'article' | 'collection';
+  article?: ArticleData;
+  collection?: CollectionData;
+}
 
-const siteUrl = Astro.site?.origin || 'https://tune-health.vercel.app';
-const siteName = 'alumi news';
-const logo = `${siteUrl}/assets/logo.png`;
+const { type, article, collection } = Astro.props;
 
-// Organization schema (always included)
+const siteUrl = Astro.site?.origin || FALLBACK_URL;
+const logo = `${siteUrl}${SITE_LOGO_PATH}`;
+const defaultOgImage = `${siteUrl}${SITE_OG_IMAGE_PATH}`;
+
+// ─── Organization Schema ──────────────────────────────────────────────────────
+// E-E-A-T signals for YMYL (health) content. Google uses publishingPrinciples
+// and actionableFeedbackPolicy to evaluate editorial trustworthiness.
+
 const organizationSchema = {
   '@type': 'Organization',
   '@id': `${siteUrl}/#organization`,
-  name: siteName,
+  name: EDITORIAL_ORG_NAME,
   url: siteUrl,
+  foundingDate: EDITORIAL.foundingYear,
   logo: {
     '@type': 'ImageObject',
+    '@id': `${siteUrl}/#logo`,
     url: logo,
+    width: 200,
+    height: 60,
+    caption: SITE_NAME,
   },
-  sameAs: [],
+  image: {
+    '@id': `${siteUrl}/#logo`,
+  },
+  sameAs: [
+    SOCIAL.twitterUrl,
+    SOCIAL.blueskyUrl,
+  ],
+  publishingPrinciples: `${siteUrl}${EDITORIAL.publishingPrinciples}`,
+  actionableFeedbackPolicy: `${siteUrl}${EDITORIAL.aboutUrl}`,
 };
 
-// Website schema (always included)
+// ─── WebSite Schema ───────────────────────────────────────────────────────────
+// Enables Sitelinks Search Box in Google when users search for "alumi news"
+
 const websiteSchema = {
   '@type': 'WebSite',
   '@id': `${siteUrl}/#website`,
   url: siteUrl,
-  name: siteName,
+  name: SITE_NAME,
+  description: 'Evidence-based health journalism. Independent analysis of health claims.',
   publisher: {
     '@id': `${siteUrl}/#organization`,
   },
   potentialAction: {
     '@type': 'SearchAction',
-    target: `${siteUrl}/?s={search_term_string}`,
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${siteUrl}/articles?q={search_term_string}`,
+    },
     'query-input': 'required name=search_term_string',
   },
+  inLanguage: 'en-US',
 };
 
-// Build the schema graph
-const schemaGraph: any[] = [organizationSchema, websiteSchema];
+// ─── Build Schema Graph ───────────────────────────────────────────────────────
 
-// Add article-specific schemas
+const schemaGraph: object[] = [organizationSchema, websiteSchema];
+
+// ── Article page ──────────────────────────────────────────────────────────────
 if (type === 'article' && article) {
   const articleUrl = Astro.url.href;
+  const wordCount = article.readTime ? article.readTime * WORDS_PER_MINUTE : undefined;
 
-  // Breadcrumb schema
+  // Breadcrumb schema — Home > Articles > Category > Article title
   const breadcrumbSchema = {
     '@type': 'BreadcrumbList',
     '@id': `${articleUrl}#breadcrumb`,
     itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        item: {
-          '@id': siteUrl,
-          name: 'Home',
-        },
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        item: {
-          '@id': `${siteUrl}/articles`,
-          name: 'Articles',
-        },
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        item: {
-          '@id': articleUrl,
-          name: article.title,
-        },
-      },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Articles', item: `${siteUrl}/articles` },
+      { '@type': 'ListItem', position: 3, name: article.category, item: `${siteUrl}/topics/${article.category.toLowerCase().replace(/\s+/g, '-')}` },
+      { '@type': 'ListItem', position: 4, name: article.title, item: articleUrl },
     ],
   };
 
-  // Article schema
-  const articleSchema = {
-    '@type': 'Article',
+  // NewsArticle schema — more specific than Article for news/health sites.
+  // Required for Google News eligibility and health-related rich results.
+  const newsArticleSchema = {
+    '@type': 'NewsArticle',
     '@id': `${articleUrl}#article`,
-    isPartOf: {
-      '@id': `${siteUrl}/#website`,
-    },
+    isPartOf: { '@id': `${siteUrl}/#website` },
     author: {
-      '@type': 'Organization',
+      '@type': 'Person',
       name: article.author,
-      url: siteUrl,
+      ...(article.authorRole && { jobTitle: article.authorRole }),
+      worksFor: { '@id': `${siteUrl}/#organization` },
     },
     headline: article.title,
     description: article.description,
     datePublished: article.publishDate,
     dateModified: article.updatedDate || article.publishDate,
-    mainEntityOfPage: {
-      '@id': articleUrl,
-    },
-    publisher: {
-      '@id': `${siteUrl}/#organization`,
-    },
+    mainEntityOfPage: { '@id': articleUrl },
+    publisher: { '@id': `${siteUrl}/#organization` },
     articleSection: article.category,
     keywords: article.tags?.join(', '),
-    ...(article.heroImage && {
-      image: {
-        '@type': 'ImageObject',
-        url: article.heroImage,
-        ...(article.heroImageAlt && { description: article.heroImageAlt }),
-      },
-    }),
-    ...(article.wordCount && { wordCount: article.wordCount }),
-    ...(article.readTime && {
-      timeRequired: `PT${article.readTime}M`,
-    }),
+    inLanguage: 'en-US',
+    copyrightYear: new Date(article.publishDate).getFullYear(),
+    copyrightHolder: { '@id': `${siteUrl}/#organization` },
+    image: {
+      '@type': 'ImageObject',
+      url: article.heroImage || defaultOgImage,
+      width: SITE_OG_IMAGE_WIDTH,
+      height: SITE_OG_IMAGE_HEIGHT,
+      ...(article.heroImageAlt && { caption: article.heroImageAlt }),
+    },
+    ...(wordCount && { wordCount }),
+    ...(article.readTime && { timeRequired: `PT${article.readTime}M` }),
   };
 
-  // WebPage schema
+  // WebPage schema — links everything together for Google's graph
   const webPageSchema = {
     '@type': 'WebPage',
     '@id': articleUrl,
     url: articleUrl,
     name: article.title,
     description: article.description,
-    isPartOf: {
-      '@id': `${siteUrl}/#website`,
-    },
-    breadcrumb: {
-      '@id': `${articleUrl}#breadcrumb`,
-    },
-    about: {
-      '@type': 'Thing',
-      name: article.category,
-    },
+    isPartOf: { '@id': `${siteUrl}/#website` },
+    breadcrumb: { '@id': `${articleUrl}#breadcrumb` },
+    about: { '@type': 'Thing', name: article.category },
     datePublished: article.publishDate,
     dateModified: article.updatedDate || article.publishDate,
+    inLanguage: 'en-US',
+    potentialAction: {
+      '@type': 'ReadAction',
+      target: [articleUrl],
+    },
   };
 
-  schemaGraph.push(breadcrumbSchema, articleSchema, webPageSchema);
+  schemaGraph.push(breadcrumbSchema, newsArticleSchema, webPageSchema);
 }
 
-// Build the final JSON-LD
+// ── Collection / Category page ────────────────────────────────────────────────
+if (type === 'collection' && collection) {
+  const pageUrl = Astro.url.href;
+
+  const breadcrumbItems = collection.breadcrumbs
+    ? collection.breadcrumbs.map((crumb, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: crumb.label,
+        item: crumb.href.startsWith('http') ? crumb.href : `${siteUrl}${crumb.href}`,
+      }))
+    : [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+        { '@type': 'ListItem', position: 2, name: 'Topics', item: `${siteUrl}/topics` },
+        { '@type': 'ListItem', position: 3, name: collection.title, item: pageUrl },
+      ];
+
+  const breadcrumbSchema = {
+    '@type': 'BreadcrumbList',
+    '@id': `${pageUrl}#breadcrumb`,
+    itemListElement: breadcrumbItems,
+  };
+
+  const collectionPageSchema = {
+    '@type': 'CollectionPage',
+    '@id': pageUrl,
+    url: pageUrl,
+    name: collection.title,
+    description: collection.description,
+    isPartOf: { '@id': `${siteUrl}/#website` },
+    breadcrumb: { '@id': `${pageUrl}#breadcrumb` },
+    publisher: { '@id': `${siteUrl}/#organization` },
+    inLanguage: 'en-US',
+    ...(collection.articleCount && {
+      numberOfItems: collection.articleCount,
+    }),
+  };
+
+  schemaGraph.push(breadcrumbSchema, collectionPageSchema);
+}
+
+// ─── Final JSON-LD ────────────────────────────────────────────────────────────
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': schemaGraph,

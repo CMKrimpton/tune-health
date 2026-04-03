@@ -3,11 +3,13 @@ import { ViewTransitions } from 'astro:transitions';
 import MobileNav from '../components/MobileNav.astro';
 import TopicNav from '../components/TopicNav.astro';
 import '../styles/global.css';
+import { FALLBACK_URL, SITE_NAME, SOCIAL } from '../config/site';
 
 interface Props {
   title: string;
   description: string;
   ogImage?: string;
+  ogImageAlt?: string;
   ogType?: string;
   canonical?: string;
 }
@@ -16,14 +18,17 @@ const {
   title,
   description,
   ogImage = '/assets/og-image.png',
+  ogImageAlt,
   ogType = 'website',
   canonical
 } = Astro.props;
 
-const siteUrl = Astro.site?.origin || 'https://tune-health.vercel.app';
+const siteUrl = Astro.site?.origin || FALLBACK_URL;
 const canonicalUrl = canonical || Astro.url.pathname;
 // Ensure OG image is always an absolute URL for social platforms
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
+// OG image alt: explicit prop > description (description always present)
+const resolvedOgImageAlt = ogImageAlt || description;
 ---
 
 <!DOCTYPE html>
@@ -46,14 +51,17 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogIm
   <meta property="og:image" content={resolvedOgImage}>
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="675">
-  <meta property="og:site_name" content="alumi news">
+  <meta property="og:image:alt" content={resolvedOgImageAlt}>
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content={SITE_NAME}>
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:site" content="@aluminews">
+  <meta name="twitter:site" content={SOCIAL.twitterHandle}>
   <meta name="twitter:title" content={title}>
   <meta name="twitter:description" content={description}>
   <meta name="twitter:image" content={resolvedOgImage}>
+  <meta name="twitter:image:alt" content={resolvedOgImageAlt}>
 
   <!-- Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

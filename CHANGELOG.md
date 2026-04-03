@@ -6,6 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.0.0] - 2026-04-02
+
+### Added — Comprehensive SEO System (13 files)
+
+**Centralized site identity** (`src/config/site.ts`) — Single source of truth for site URL, brand name, social handles, editorial policy paths, OG image dimensions, and author constants. The hardcoded `tune-health.vercel.app` URL now exists in exactly one location across the entire codebase. Domain migration: set `SITE_URL` env var in Vercel + update `FALLBACK_URL` in `site.ts`.
+
+**NewsArticle structured data** — `Article` → `NewsArticle` schema on all article pages. Required for Google News eligibility and health-related rich results. Includes `wordCount` (estimated from readTime), `copyrightYear`, `copyrightHolder`, `inLanguage`, and `timeRequired`.
+
+**E-E-A-T signals for YMYL health content** — Organization schema now includes `publishingPrinciples` (→ `/howwewrite`), `actionableFeedbackPolicy` (→ `/about`), `foundingDate`, `sameAs` (Twitter + Bluesky), and logo with explicit dimensions. Critical for Google's evaluation of health/medical content trustworthiness.
+
+**Person author schema** — Author is now a `Person` with `jobTitle` and `worksFor` Organization, using the actual per-article author name from content collection (not a hardcoded string).
+
+**CollectionPage schema on topic pages** — All 10 category pages (`/topics/[slug]`) now emit `CollectionPage` + `BreadcrumbList` JSON-LD with `numberOfItems`. Helps Google present these as curated topic hubs.
+
+**Homepage JSON-LD** — `index.astro` now includes `Organization` + `WebSite` schemas. Enables Sitelinks Search Box when users Google "alumi news".
+
+**Article-specific Open Graph tags** — Every article page now emits `article:published_time`, `article:modified_time`, `article:author`, `article:section`, and per-tag `article:tag` meta properties. Significantly improves link previews in Slack, Discord, iMessage, and LinkedIn.
+
+**Enhanced meta tags** — Added `og:locale` (`en_US`), `og:image:alt`, and `twitter:image:alt` to all pages via BaseLayout. Twitter handle now reads from site config.
+
+**Dynamic robots.txt** — Static `public/robots.txt` replaced by `src/pages/robots.txt.ts` that reads `Astro.site`, so the Sitemap URL auto-updates on domain migration. Added `Disallow: /admin/`.
+
+**Smart sitemap** — `astro.config.mjs` now reads `SITE_URL` from env var, filters `/admin/` routes from sitemap, and assigns priorities: homepage 1.0 daily, articles 0.9 monthly, topics/collections 0.8 weekly, everything else 0.7 monthly.
+
+**Admin noindex** — `vercel.json` adds `X-Robots-Tag: noindex, nofollow` header for all `/admin/` routes.
+
+**RSS enrichment** — Added `copyright`, `managingEditor`, `webMaster`, `ttl`, Atom self-link, and per-article `author` fields. All values read from site config.
+
+**Zero hardcoded URLs** — `ShareButtons.astro` and `HighlightShare.astro` now import `FALLBACK_URL` from site config instead of hardcoding the URL string.
+
+#### Files changed
+- `src/config/site.ts` (new) — centralized site identity
+- `src/pages/robots.txt.ts` (new) — dynamic robots.txt
+- `public/robots.txt` (deleted) — replaced by dynamic endpoint
+- `astro.config.mjs` — env-driven URL + smart sitemap
+- `src/components/SEO.astro` — NewsArticle, E-E-A-T, Person, CollectionPage
+- `src/layouts/BaseLayout.astro` — og:locale, og:image:alt, site config imports
+- `src/layouts/ArticleLayout.astro` — updatedDate, readTime, author pass-through + article:* OG
+- `src/pages/index.astro` — homepage JSON-LD
+- `src/pages/topics/[slug].astro` — CollectionPage schema
+- `vercel.json` — admin X-Robots-Tag
+- `src/pages/rss.xml.ts` — copyright, managing editor, Atom link
+- `src/components/ShareButtons.astro` — FALLBACK_URL import
+- `src/components/HighlightShare.astro` — FALLBACK_URL import
+
 ## [17.6.0] - 2026-04-02
 
 ### Fixed — Accessibility, Navigation & TypeScript (4 files)

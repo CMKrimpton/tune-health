@@ -9,6 +9,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import ShareButtons from '../../components/ShareButtons.astro';
 import { getArticlesForCategory, getArticleGradientStyle, formatPublishDateShort, isNewArticle } from '../../utils/articles';
 import { CATEGORY_DOMAINS, CATEGORY_META, getCategorySlug, getCategoryFromSlug, getDomainForCategory } from '../../utils/category-domains';
+import SEO from '../../components/SEO.astro';
 
 export async function getStaticPaths() {
   const { getArticles } = await import('../../utils/articles');
@@ -38,6 +39,22 @@ const relatedTopics = domain
   title={`${category} | alumi news`}
   description={meta?.description || `${category} articles from alumi news.`}
 >
+  <!-- CollectionPage + BreadcrumbList JSON-LD -->
+  <SEO
+    slot="head"
+    type="collection"
+    collection={{
+      title: category,
+      description: meta?.description || `${category} articles from alumi news.`,
+      breadcrumbs: [
+        { label: 'Home', href: '/' },
+        { label: 'Topics', href: '/topics' },
+        { label: category, href: `/topics/${getCategorySlug(category)}` },
+      ],
+      articleCount: articles.length,
+    }}
+  />
+
   <Header slot="header" />
 
   <!-- Hero -->

@@ -6,6 +6,7 @@ import CommandPaletteWrapper from '../components/CommandPaletteWrapper.astro';
 import SideNav from '../components/SideNav.astro';
 import AppPromo from '../components/AppPromo.astro';
 import ContinueReading from '../components/ContinueReading.astro';
+import SEO from '../components/SEO.astro';
 import { getArticles, getComingSoonArticles, getFeaturedArticles, formatPublishDateShort, getArticleGradientStyle, getAllSeries, getCategoriesWithCounts, isNewArticle } from '../utils/articles';
 
 const allArticles = await getArticles();
@@ -34,6 +35,9 @@ const featuredLabel = heroArticle ? (FEATURED_LABELS[heroArticle.category] || "E
   title="alumi news | Evidence. Wherever It Leads."
   description="The bullshit filter for health. Independent analysis of health claims from any source - peer-reviewed journals and naturopathic remedies alike."
 >
+  <!-- Organization + WebSite JSON-LD (enables Sitelinks Search Box in Google) -->
+  <SEO slot="head" type="website" />
+
   <Header slot="header" variant="home" />
 
   <!-- Loader - only shown on initial page load, not View Transitions -->

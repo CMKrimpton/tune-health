@@ -13,7 +13,8 @@ interface Props {
 
 const { title, url, description = '', variant = 'inline' } = Astro.props;
 
-const siteUrl = Astro.site?.origin || 'https://tune-health.vercel.app';
+import { FALLBACK_URL } from '../config/site';
+const siteUrl = Astro.site?.origin || FALLBACK_URL;
 const fullUrl = `${siteUrl}${url}`;
 const encodedTitle = encodeURIComponent(title);
 const encodedUrl = encodeURIComponent(fullUrl);

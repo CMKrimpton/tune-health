@@ -63,6 +63,7 @@ const nextArticle = await getNextInCategory(slug);
   description={description}
   ogType="article"
   ogImage={resolvedOgImage}
+  ogImageAlt={currentArticle?.heroImageAlt || title}
 >
   <!-- Structured Data -->
   <SEO
@@ -72,13 +73,23 @@ const nextArticle = await getNextInCategory(slug);
       title,
       description,
       publishDate,
-      author: 'alumi news Editorial',
+      updatedDate,
+      author: authorName,
+      authorRole,
       category,
       tags,
+      readTime: currentArticle?.readTime,
       heroImage: resolvedOgImage,
       heroImageAlt: currentArticle?.heroImageAlt,
     }}
   />
+
+  <!-- Article-specific Open Graph tags (improves previews in Slack, Discord, iMessage, LinkedIn) -->
+  <meta slot="head" property="article:published_time" content={publishDate} />
+  {updatedDate && <meta slot="head" property="article:modified_time" content={updatedDate} />}
+  <meta slot="head" property="article:author" content={authorName} />
+  <meta slot="head" property="article:section" content={category} />
+  {tags.map((tag) => <meta slot="head" property="article:tag" content={tag} />)}
 
   <Header slot="header" variant="article" />
 
