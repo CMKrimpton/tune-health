@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [19.5.0] - 2026-04-03
+
+### Fixed — Full Article Deletion + Honest Published List
+
+- **"Delete from GitHub" now deletes everything** — renamed to "Delete Article". Now cleans up: GitHub files, `articles` table row, pipeline logs (marked as deleted), illustration files in storage, narration MP3 in storage. Previously only deleted GitHub files, leaving orphaned database rows and storage files
+- **"Recently Published" list now shows actual published articles** — previously only showed pipeline log entries, missing articles published via the admin editor. Now queries the `articles` table as source of truth, enriched with pipeline log data. Articles without pipeline history show "Admin" tag
+- **Confirmation dialog updated** — clearly states all systems that will be cleaned up on delete
+
 ## [19.4.0] - 2026-04-03
 
 ### Fixed — New Article Editor
