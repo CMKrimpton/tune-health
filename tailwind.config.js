@@ -143,7 +143,7 @@ export default {
             '--tw-prose-quotes': theme('colors.stone.800'),
             '--tw-prose-quote-borders': theme('colors.primary.500'),
             maxWidth: '720px',
-            fontSize: '1.125rem',
+            fontSize: '1.25rem',
             lineHeight: '1.8',
             h1: {
               fontFamily: 'Playfair Display, Georgia, serif',
@@ -180,6 +180,16 @@ export default {
             },
             'code::after': {
               content: '""',
+            },
+          },
+        },
+        lg: {
+          css: {
+            fontSize: '1.25rem',
+            lineHeight: '1.8',
+            p: {
+              marginTop: '1.33em',
+              marginBottom: '1.33em',
             },
           },
         },

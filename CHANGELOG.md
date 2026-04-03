@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed — Article Typography
 
+- **Body copy bumped to 20px** (`1.25rem`) with line-height 1.8 — matches NYT/Atlantic standards
 - **Standfirst**: article description styled as italic serif lede with custom size scale, thin rule separator below
 - **Drop "In This Article" TOC blocks**: removed inline TOC from all 160 articles (FloatingTOC sidebar remains)
 - **Lede paragraph**: first paragraph gets slightly darker ink + `font-weight: 450` for subtle presence
