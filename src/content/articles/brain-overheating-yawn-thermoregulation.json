@@ -33,5 +33,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/brain-overheating-yawn-thermoregulation.png",
   "heroImageAlt": "Editorial illustration for Your Brain Is Overheating. Time to Yawn.",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/brain-overheating-yawn-thermoregulation.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/brain-overheating-yawn-thermoregulation.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/brain-overheating-yawn-thermoregulation-light.png"
 }
