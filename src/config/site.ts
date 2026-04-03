@@ -30,7 +30,7 @@ export const SITE_OG_IMAGE_WIDTH = 1200;
 export const SITE_OG_IMAGE_HEIGHT = 675;
 
 /** The pen name used for all articles */
-export const EDITORIAL_AUTHOR_NAME = 'Max Lundin';
+export const EDITORIAL_AUTHOR_NAME = 'Marc London';
 export const EDITORIAL_AUTHOR_ROLE = 'Editor-at-Large';
 export const EDITORIAL_ORG_NAME = 'alumi news';
 

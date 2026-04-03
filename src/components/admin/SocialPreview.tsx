@@ -39,7 +39,7 @@ interface SocialPost {
 
 const PERSONA_PROFILES: Record<string, { name: string; handle: string; avatar: string; verified: boolean }> = {
   brand:    { name: 'alumi news',            handle: 'aluminews',        avatar: '📰', verified: true },
-  reporter: { name: 'Max Lundin',            handle: 'maxlundin_health', avatar: '🔬', verified: false },
+  reporter: { name: 'Marc London',            handle: 'marclondon_health', avatar: '🔬', verified: false },
   skeptic:  { name: "The Devil's Advocate",  handle: 'devils_advocate',  avatar: '🔥', verified: false },
   curator:  { name: 'The alumi Digest',      handle: 'alumidigest',      avatar: '📚', verified: true },
 };

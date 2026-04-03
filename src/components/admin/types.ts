@@ -65,21 +65,21 @@ export const GRADIENT_PRESETS = Object.entries(CATEGORY_GRADIENTS).map(([label, 
 }));
 
 // ─── Model Pen Names ─────────────────────────────────────────────────────────
-// Synced from backend MODEL_BYLINES. All articles publish under "Max Lundin"
+// Synced from backend MODEL_BYLINES. Articles publish under "Marc London" or "Paul Quilici"
 // with model-specific roles for admin display.
-// Last synced: 2026-04-02
+// Last synced: 2026-04-03
 
 export const MODEL_PEN_NAMES: Record<string, { name: string; role: string }> = {
-  "human-opus":               { name: "Max Lundin",  role: "Editor-at-Large" },
-  "claude-opus-4-6":          { name: "Max Lundin",  role: "Editor-at-Large" },
-  "claude-sonnet-4-6":        { name: "Max Lundin",  role: "Senior Health Correspondent" },
-  "gpt-5.4":                  { name: "Max Lundin",  role: "Health & Science Editor" },
-  "gpt-5":                    { name: "Max Lundin",  role: "Health & Science Editor" },
-  "gemini-3.1-pro-preview":   { name: "Max Lundin",  role: "Science & Evidence Desk" },
-  "gemini-2.5-pro":           { name: "Max Lundin",  role: "Science & Evidence Desk" },
-  "grok-4":                   { name: "Max Lundin",  role: "Investigative Health Reporter" },
-  "grok-3":                   { name: "Max Lundin",  role: "Investigative Health Reporter" },
-  "gemini-2.5-flash":         { name: "Max Lundin",  role: "Science & Evidence Desk" },
+  "human-opus":               { name: "Marc London",   role: "Editor-at-Large" },
+  "claude-opus-4-6":          { name: "Marc London",   role: "Editor-at-Large" },
+  "claude-sonnet-4-6":        { name: "Marc London",   role: "Senior Health Correspondent" },
+  "gpt-5.4":                  { name: "Marc London",   role: "Health & Science Editor" },
+  "gpt-5":                    { name: "Marc London",   role: "Health & Science Editor" },
+  "gemini-3.1-pro-preview":   { name: "Paul Quilici",  role: "Science & Evidence Desk" },
+  "gemini-2.5-pro":           { name: "Paul Quilici",  role: "Science & Evidence Desk" },
+  "grok-4":                   { name: "Paul Quilici",  role: "Investigative Health Reporter" },
+  "grok-3":                   { name: "Paul Quilici",  role: "Investigative Health Reporter" },
+  "gemini-2.5-flash":         { name: "Paul Quilici",  role: "Science & Evidence Desk" },
 };
 
 export function getPenName(model: string | null | undefined): string {

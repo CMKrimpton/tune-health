@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.7.1] - 2026-04-03
+
+### Changed — Author Pen Names
+
+- Replaced single pen name "Max Lundin" with two authors: **Marc London** and **Paul Quilici**
+- 162 existing articles split 50/50 between the two authors (alphabetical sort)
+- Pipeline `MODEL_BYLINES`: Human/Claude/GPT models → Marc London, Gemini/Grok models → Paul Quilici
+- Updated site config, SEO component, admin types, social preview, and social writer persona
+
 ## [18.7.0] - 2026-04-03
 
 ### Added — Social Media Simulator (`/admin/social-preview`)
