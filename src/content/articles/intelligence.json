@@ -32,5 +32,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/intelligence.png",
   "heroImageAlt": "Editorial illustration for The Intelligence Trap: What IQ Actually Measures — and What It Doesn't",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/intelligence.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/intelligence.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/intelligence-light.png"
 }
