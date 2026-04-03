@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.3.1] - 2026-04-02
+
+### Improved — Social Dashboard Quality & Accessibility
+
+**Error Handling (bulletproof)**
+- Every API action (`skipPost`, `retryPost`, `generateForArticle`, `runAction`) wrapped in try/catch with user-facing feedback
+- All `res.json()` calls guarded by `res.ok` checks — non-JSON error responses no longer crash the UI
+- Failed JSON parsing has fallback error extraction
+
+**Toast Notification System**
+- Fixed-position toast container with `role="log"` + `aria-live="polite"`
+- 3 types: success (green), error (red), info (blue) with animated entrance/exit
+- Auto-dismiss after 4s, max 5 visible, manual dismiss button
+
+**Skeleton Loading States**
+- Shimmer-animated skeleton strips replace bare "Loading..." text
+- Skeleton rows in panels, skeleton stat strip, skeleton setup cards
+
+**Accessibility (WCAG AA)**
+- All tabs: `role="tab"`, `aria-selected`, `aria-controls`, proper id pairs
+- All panels: `role="tabpanel"`, `aria-labelledby`
+- All buttons: descriptive `aria-label` for screen readers
+- Platform/status badges: `role="img"`/`role="status"` with labels
+- Progress bars: `role="progressbar"` + `aria-valuenow/min/max`
+- Filter groups: `role="toolbar"`, `aria-labelledby`
+- Tables: `scope="col"` on headers, `role="table"` + `aria-label`
+
+**Keyboard Shortcuts**
+- `1`–`5` switch tabs, `R` refresh, `G` focus generate input
+- Shortcut hints on tab hover, reference panel in Setup tab
+
+**UI Enhancements**
+- SVG sparkline mini-charts (7-day post activity)
+- Optimistic updates on skip/retry with revert on failure
+- Action button feedback: checkmark/X for 3s after completion
+- Fade-in animations on tab switch, hover glow on panels
+- Pulsing status dots for active operations, pulsing failed count
+- Content type breakdown panel (new)
+- Last refresh timestamp in action bar
+- Architecture diagram expanded to 5 columns (includes Sync)
+- Copy-to-clipboard feedback via toast
+
+**Type Safety**
+- Admin edit page: replaced `let article: any` with proper `EditArticle` interface
+- Empty catch block now logs errors with article slug context
+
 ## [18.3.0] - 2026-04-02
 
 ### Added — Social Media System Phase 1B (Execution Layer)

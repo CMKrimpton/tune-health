@@ -7,7 +7,18 @@ const edgeFunctionBase = (process.env.PUBLIC_SUPABASE_URL || import.meta.env.PUB
 const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
 
 // Fetch article from database
-let article: any = null;
+interface EditArticle {
+  slug: string; title: string; description: string; category: string;
+  tags: string[]; keywords: string[]; featured: boolean; draft: boolean;
+  coming_soon: boolean; read_time: number; publish_date: string;
+  gradient_from: string; gradient_to: string; hero_image: string | null;
+  hero_image_alt: string | null; article_html: string; toc: unknown[];
+  source_text: string | null; status: string; sort_order: number | null;
+  independence_score: number | null; editor_score: number | null;
+  narration_url: string | null; error?: string;
+  created_at: string; updated_at: string; published_at: string | null;
+}
+let article: EditArticle | null = null;
 try {
   const res = await fetch(`${apiBase}/articles-api`, {
     method: 'POST',
@@ -15,7 +26,9 @@ try {
     body: JSON.stringify({ action: 'get', slug }),
   });
   if (res.ok) article = await res.json();
-} catch {}
+} catch (err) {
+  console.error(`[admin/edit] Failed to fetch article "${slug}":`, err);
+}
 
 if (!article || article.error) {
   return Astro.redirect('/admin');

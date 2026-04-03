@@ -1,10 +1,27 @@
 # Next Session Plan
 
-> **Status**: v18.3.0 live. ~190 published articles across 9 categories. Social Media System Phase 1B complete: end-to-end automated posting pipeline (Engine → Writer → Poster → Sync). 3 platform APIs implemented (Bluesky, Reddit, Mastodon). 3 cron jobs active. Dashboard with manual triggers + setup guide.
+> **Status**: v18.3.1 live. ~190 published articles across 9 categories. Social Media System Phase 1B complete: end-to-end automated posting pipeline (Engine → Writer → Poster → Sync). 3 platform APIs implemented (Bluesky, Reddit, Mastodon). 3 cron jobs active. Dashboard upgraded with toast notifications, skeleton loading, WCAG AA accessibility, keyboard shortcuts, sparklines, optimistic updates.
 
 ---
 
-## Current Architecture (v18.3.0)
+## What Was Done This Session (v18.3.1 — Dashboard Quality & Accessibility)
+
+### Social Dashboard Overhaul (`SocialDashboard.tsx`)
+- **Toast notification system** — all actions now surface success/error feedback to the user
+- **Skeleton loading** — shimmer animations replace bare "Loading..." text
+- **WCAG AA accessibility** — ARIA roles, labels, tabpanel pairs, keyboard nav, screen reader support
+- **Keyboard shortcuts** — 1-5 tabs, R refresh, G generate focus
+- **Sparkline charts** — SVG 7-day activity trend in stat strip
+- **Optimistic updates** — skip/retry update UI immediately, revert on failure
+- **Action feedback** — trigger buttons show checkmark/X for 3s
+- **Error handling** — every API call guarded, every action wrapped in try/catch
+- **UI polish** — fade animations, hover glow, pulsing active dots, content type breakdown panel
+
+### Admin Edit Page (`/admin/edit/[slug]`)
+- Replaced `any` type with proper `EditArticle` interface
+- Empty catch block now logs errors
+
+## Current Architecture (v18.3.1)
 
 - **Navigation**: domain-grouped dropdown (Mind/Body/Medicine/Environment), TopicNav with per-category hover dropdowns, SideNav grouped by domain, MobileNav with improved scroll sensitivity, QuickNav floating pill
 - **Breadcrumbs**: visual breadcrumbs on topic and collection pages (Home > Articles > Category)
