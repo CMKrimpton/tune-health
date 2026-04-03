@@ -88,7 +88,7 @@ const allCollections = getAllCollections().filter(c => c.slug !== collection.slu
                 <span class="text-stone-400">{article.readTime} min</span>
               </div>
               <h3 class="font-serif text-lg font-semibold group-hover:text-primary-600 transition-colors leading-snug line-clamp-2">{article.title}</h3>
-              <p class="text-sm text-stone-500 dark:text-stone-400 line-clamp-1 mt-1 hidden sm:block">{article.description}</p>
+              <p class="text-base text-stone-500 dark:text-stone-400 line-clamp-1 mt-1 hidden sm:block">{article.description}</p>
             </div>
             <div class="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden hidden sm:block" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
               {article.heroImage && (
@@ -113,7 +113,7 @@ const allCollections = getAllCollections().filter(c => c.slug !== collection.slu
           {allCollections.slice(0, 3).map((c) => (
             <a href={`/collections/${c.slug}`} class="group block p-5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-lg transition-[border-color,box-shadow] duration-300">
               <h3 class="font-serif text-base font-semibold mb-1 group-hover:text-primary-600 transition-colors">{c.title}</h3>
-              <p class="text-sm text-stone-500 dark:text-stone-400 line-clamp-2">{c.description}</p>
+              <p class="text-base text-stone-500 dark:text-stone-400 line-clamp-2">{c.description}</p>
             </a>
           ))}
         </div>

@@ -200,7 +200,7 @@ const featuredLabel = heroArticle ? (FEATURED_LABELS[heroArticle.category] || "E
                 <span class="text-xs text-stone-400">{formatPublishDateShort(article.publishDate)}</span>
               </div>
               <h3 class={`font-serif ${i === 0 ? 'text-heading-3' : 'text-xl'} font-semibold mb-2 group-hover:text-primary-600 transition-colors`}>{article.title}</h3>
-              <p class={`font-body ${i === 0 ? '' : 'text-sm '}text-stone-600 dark:text-stone-400 ${i === 0 ? 'mb-4 line-clamp-3' : 'line-clamp-2'}`}>{article.description}</p>
+              <p class={`font-body ${i === 0 ? '' : 'text-base '}text-stone-600 dark:text-stone-400 ${i === 0 ? 'mb-4 line-clamp-3' : 'line-clamp-2'}`}>{article.description}</p>
               <div class="flex items-center justify-between pt-3 mt-auto border-t border-stone-100 dark:border-stone-800">
                 <span class="text-xs text-stone-400 font-medium">{article.readTime} min read</span>
                 <svg class="w-4 h-4 text-stone-300 dark:text-stone-600 group-hover:text-primary-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,7 +295,7 @@ const featuredLabel = heroArticle ? (FEATURED_LABELS[heroArticle.category] || "E
               <div class="min-w-0 flex-1">
                 <span class="text-xs font-semibold uppercase tracking-widest text-primary-600 mb-2 block">Series &middot; {series.articles.length} Parts</span>
                 <h3 class="font-serif text-xl font-semibold mb-1 group-hover:text-primary-600 transition-colors">{series.name}</h3>
-                <p class="text-sm text-stone-500 dark:text-stone-400 hidden md:block mb-2">{firstArticle.description}</p>
+                <p class="text-base text-stone-500 dark:text-stone-400 hidden md:block mb-2">{firstArticle.description}</p>
                 <div class="flex gap-2 text-xs text-stone-400">
                   <span>{series.articles.length} Parts</span>
                   <span>&middot;</span>

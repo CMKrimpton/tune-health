@@ -47,10 +47,10 @@ export default {
         'heading-1': ['clamp(1.75rem, 1.35rem + 2vw, 2.75rem)', { lineHeight: '1.15', letterSpacing: '-0.015em' }],
         'heading-2': ['clamp(1.375rem, 1.15rem + 1.1vw, 1.875rem)', { lineHeight: '1.2' }],
         'heading-3': ['clamp(1.125rem, 1rem + 0.6vw, 1.5rem)', { lineHeight: '1.3' }],
-        'body-lg': ['clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem)', { lineHeight: '1.7' }],
-        'body': ['clamp(1rem, 0.95rem + 0.25vw, 1.0625rem)', { lineHeight: '1.65' }],
+        'body-lg': ['clamp(1.25rem, 1.2rem + 0.25vw, 1.3125rem)', { lineHeight: '1.75' }],
+        'body': ['clamp(1.0625rem, 1.02rem + 0.2vw, 1.125rem)', { lineHeight: '1.7' }],
         'caption': ['0.8125rem', { lineHeight: '1.5', letterSpacing: '0.02em' }],
-        'overline': ['0.6875rem', { lineHeight: '1.4', letterSpacing: '0.12em', textTransform: 'uppercase' }],
+        'overline': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.1em', textTransform: 'uppercase' }],
       },
       spacing: {
         '18': '4.5rem',
