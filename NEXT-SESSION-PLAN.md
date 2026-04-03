@@ -21,7 +21,17 @@
 - **Admin**: Pipeline/Articles/Agents tabs. Supabase Realtime live updates
 - **Newsletter**: `/api/subscribe` → Supabase + Beehiiv forward (when BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID env vars set)
 
-## What Was Done This Session (v18.0.0)
+## What Was Done This Session (v18.1.0 — Social Media System Design)
+
+1. **Designed Social Media Mega-Viral System** — complete architecture for an autonomous social media newsroom:
+   - Agency model: Editorial Engine → 5 specialized Desks (microblog, forum, professional, visual, broadcast) → platform-native content
+   - 4 AI personas (brand, reporter, skeptic, curator) using different AI models for genuine voice diversity
+   - 10+ posts/day/platform across 10+ services — all free APIs, $0/month platform costs
+   - Intelligence features: trend surfing via pinger, persona choreography, engagement→article funnels, weekly thematic arcs, angle registry (never repeat), viral velocity detection, competitive intelligence
+   - ~$5-6/month total AI cost for 60+ daily posts
+   - Full plan in `SOCIAL-MEDIA-SYSTEM-PLAN.md`
+
+## Last Session (v18.0.0)
 
 1. **Centralized site identity** — `src/config/site.ts` — brand name, URL, social handles, editorial paths, OG dimensions, author constants. Single `FALLBACK_URL` replaces 5 scattered hardcoded URLs
 2. **NewsArticle schema** — `Article` → `NewsArticle` in JSON-LD. Google News eligible. Includes wordCount, copyrightYear, inLanguage
@@ -72,28 +82,32 @@
 
 ## Priority for Next Session
 
-### 1. Beehiiv Account Activation
-- Create Beehiiv account at beehiiv.com
-- Set `BEEHIIV_API_KEY` + `BEEHIIV_PUBLICATION_ID` in Vercel env vars
-- Test subscription flow end-to-end (subscribe → verify in Beehiiv dashboard)
-- Configure welcome email in Beehiiv (first touchpoint for new subscribers)
+### 1. Social Media Mega-Viral System — Phase 1A (Foundation)
+Full plan in `SOCIAL-MEDIA-SYSTEM-PLAN.md`. Build the foundation:
+- Create migration `20260402_social_media_system.sql` — all 8 tables, indexes, RLS, seed personas + platform config
+- Add social model constants to `_shared/constants.ts` (SOCIAL_BRAND, SOCIAL_REPORTER, SOCIAL_SKEPTIC, etc.)
+- Create `_shared/social-clients.ts` — Bluesky (AT Protocol) + Reddit API clients
+- Create `social-engine/index.ts` — Content Brief generator (the strategic brain)
+- Add `dispatchStage("social-engine", logId)` to `stage-publish/index.ts`
+- Deploy and test: publish an article → verify Content Brief is generated
 
-### 2. Content Production
-- Use merge system to clean up topic queue
-- Produce articles to fill content gaps (cardiology, diabetes, immunology, musculoskeletal, respiratory)
-- Pick 3-5 topics, produce, write with Opus, verify end-to-end
+### 2. Social Media — Phase 1B (Desks + Posting)
+- Create `social-desk-microblog/index.ts` — X + Bluesky + Threads content
+- Create `social-desk-forum/index.ts` — Reddit + Quora content
+- Create `social-review/index.ts` — brand safety QC pass
+- Create `social-planner/index.ts` — daily editorial meeting (fill to 10/platform)
+- Create `social-miner/index.ts` — catalog mining + engagement content
+- Create `social-poster/index.ts` — free API dispatch + velocity detection
+- Set up cron jobs for planner (daily 5am), poster (*/5), engagement sync (*/6h)
 
-### 3. Visual Verification & Device Testing
-- Test all changes on real iPhone (SE, 14 Pro) — collection share buttons, contrast, SeriesNav, HighlightShare
-- Verify CommandPalette empty state on mobile
-- Check breadcrumbs truncation on narrow screens (375px)
-- Light + dark mode verification on topic/collection pages
+### 3. Social Media — Phase 1C (Admin Dashboard)
+- Create `social-admin/index.ts` — dashboard API
+- Create `SocialDashboard.tsx` — React island (content calendar, post feed, platform health, engagement leaderboard)
+- Add Social tab to `/admin/index.astro`
 
-### 4. Narration Voice Tuning
-- Listen to narrations generated with different presets, pick a house standard
-- Consider logging voice settings per article for reproducibility
-
-### 5. Further Polish
-- Lighthouse audit on new pages (topic, collection)
-- Add `updatedDate` to articles that have been revised
-- Consider "Most Read" section (needs analytics/view counting)
+### 4. Deferred Items (after social system is live)
+- Beehiiv account activation + newsletter integration with social-desk-broadcast
+- Content production to fill category gaps
+- Visual verification & device testing
+- Narration voice tuning
+- Lighthouse audit

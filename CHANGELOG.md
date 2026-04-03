@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.1.0] - 2026-04-02
+
+### Added — Social Media Mega-Viral System Design
+
+**Complete architecture plan** (`SOCIAL-MEDIA-SYSTEM-PLAN.md`) for an autonomous social media newsroom that sits downstream of the article pipeline:
+
+- **Agency model**: Editorial Engine → 5 specialized Desks (microblog, forum, professional, visual, broadcast) → platform-native content for 10+ services
+- **4 AI personas** (brand, reporter, skeptic, curator) using different AI models (Sonnet, Gemini Pro, Grok, Flash) for genuine voice diversity
+- **10+ posts/day/platform** across X, Bluesky, Reddit, LinkedIn, Threads, Mastodon, Pinterest, Medium, Telegram, WhatsApp, Newsletter — all free APIs, $0/month platform costs
+- **Intelligence features**: trend surfing via pinger integration, persona cross-promotion choreography, engagement→article funnels, weekly thematic arcs, angle registry (never repeat), viral velocity detection, competitive intelligence
+- **8 new database tables**: social_personas, social_platform_config, social_posts, social_content_plan, social_angle_registry, social_arcs, social_engagement_log, social_templates
+- **14 new edge functions** planned: arc-planner, planner, engine, miner, 5 desks, review, poster, engagement-sync, learn, admin
+- **~$5-6/month total AI cost** for 60+ daily posts
+
+#### Files changed
+- `SOCIAL-MEDIA-SYSTEM-PLAN.md` (new) — complete implementation plan
+- `NEXT-SESSION-PLAN.md` — updated priorities for social system build
+
 ## [18.0.0] - 2026-04-02
 
 ### Added — Comprehensive SEO System (13 files)
