@@ -17,5 +17,8 @@
   },
   "keywords": [],
   "sortOrder": 1775257521314,
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/pull-the-lever.mp3?v=1775257524398"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/pull-the-lever.mp3?v=1775257524398",
+  "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pull-the-lever.png",
+  "heroImageAlt": "Editorial illustration for Pull the Lever",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/pull-the-lever-light.png"
 }
