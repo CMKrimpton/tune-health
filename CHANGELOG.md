@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [19.1.0] - 2026-04-03
+
+### Fixed — Human-Opus Prose Protection
+
+- **`stage-independence`: prose rewrite guard** — when `_writtenBy` is `human-opus` or `admin-editor`, Grok still reviews and scores (editorial independence check), but Flash/Sonnet never rewrite the prose. PubMed verification runs and logs results but does not modify article text
+- **`stage-copy-edit`: code-level title lock** — human-written article titles are now locked in code (not just a prompt instruction). No model can override the author's headline. Description changes blocked unless clearly broken (truncated < 50 chars or trailing `...`)
+- **`constants.ts`: REVISION_PRIMARY upgraded** — prose correction model changed from `gemini-2.5-flash` to `claude-sonnet-4-6`. AI-written article corrections now use editorial-quality models. Fallback changed from Sonnet to `gemini-2.5-pro`
+
+### Added — Markdown Auto-Conversion in submit-article
+
+- **`submit-article` detects markdown** — if submitted content lacks `<section>` / `<p>` tags but contains `# ` / `## ` patterns, auto-converts to site HTML format
+- Converts `## Heading` → `<section id="slug" class="reveal"><h2>`, paragraphs → `<p>`, `> quote` → `<aside class="pull-quote reveal">`, inline formatting (`*`, `**`, `` ` ``, links)
+- TOC parser now works on converted content (previously returned empty for markdown input)
+- Brief still asks Opus for HTML, but markdown is now handled gracefully as a safety net
+
+### Added — Direct Publish Path
+
+- **New `publish-direct` action** in `pipeline-admin` — finished articles skip the entire editorial pipeline (research, editor, independence, QC, voice rewrite, copy edit) and go straight to illustration + narration + GitHub publish
+- **Three-way toggle in admin Upload Article UI**: "Topic → Full Chain", "Article → Review → Publish", "Ready → Art + Publish"
+- Green-highlighted button and helper text distinguish the direct publish path from editorial flows
+- Auto-generates slug from title if not provided, supports markdown auto-conversion
+
+### Fixed — "Where the Funding Doesn't Shine" Article
+
+- Republished with original Opus prose (pipeline had rewritten 3 paragraphs via Flash)
+- Restored original title (pipeline copy-edit had changed to generic SEO headline)
+- Converted from raw markdown to proper site HTML with sections, paragraphs, pull-quotes
+- Added TOC (7 sections), tags (7), keywords (9), and disclaimer
+
 ## [19.0.1] - 2026-04-03
 
 ### Fixed — Pipeline Admin 502 Errors

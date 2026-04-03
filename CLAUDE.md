@@ -261,6 +261,7 @@ const articles = await getCollection('articles');
   - Real-time polling (15s), "in flight" counter, progress bar to 100 articles
   - **Manual triggers**: individual scout buttons (Gemini / Sonnet / Grok / All 3) + "Produce Now"
   - **Topic Queue with full controls**: Produce, Expedite, Priority ↑↓, Delete, Reset. BREAKING badge for pinger-promoted topics
+  - **Upload Article**: three-way toggle — "Topic → Full Chain" (queues for research), "Article → Review → Publish" (independence review entry), "Ready → Art + Publish" (direct publish, skips editorial pipeline). Accepts HTML or Markdown (auto-converted). File upload (.pdf, .md, .docx, .html, .txt) and URL fetch supported
   - Published articles with model pen names, independence/editor scores, cost per article, Edit + View links
   - Failed articles show actual error message
 - **Articles tab** (React island: `ArticlesManager`): search, filter (status/category), sort (newest/oldest/A-Z/read time/independence score), inline editing, bulk actions, featured toggle, **Improve button** (sends article back through full pipeline, same slug), Refresh button, independence & editor score display per row
@@ -303,9 +304,9 @@ Each stage is its own edge function with shared utilities in `_shared/`. The SQL
 **Safety-net cron**: `dispatch_pipeline_stage()` runs every 5 min (`*/5 * * * *`) to recover stuck articles and advance in-progress stages. Does NOT pick from queue.
 **Manual production only**: Admin clicks "Produce" on a topic → `produce-topic` action → research → editor brief → pause. No auto-production.
 **Error handling**: `safeStage()` wrapper + `parseScore()` for safe integer parsing. All stages log errors to DB on failure.
-**Model chains**: Writer (fallback path): Gemini 3.1 Pro → Sonnet → GPT-5.4. Editor: Sonnet → Gemini 3.1 Pro. QC: Flash → Sonnet. Voice rewrite: Sonnet → Gemini → GPT-5.4 → Grok. Copy edit: Sonnet → Gemini Pro. Independence revision: Flash → Sonnet.
+**Model chains**: Writer (fallback path): Gemini 3.1 Pro → Sonnet → GPT-5.4. Editor: Sonnet → Gemini 3.1 Pro. QC: Flash → Sonnet. Voice rewrite: Sonnet → Gemini → GPT-5.4 → Grok. Copy edit: Sonnet → Gemini Pro. Independence revision: Sonnet → Gemini Pro (upgraded from Flash — prose corrections need editorial quality).
 **API timeout**: 75s constant (`API_TIMEOUT`).
-**Human-article protections**: QC detects `_writtenBy: "human-opus"` → skips voice rewrite, force-publishes on revise. Never degrades Opus prose.
+**Human-article protections**: `_writtenBy: "human-opus"` triggers multi-stage guards: (1) `stage-independence` — Grok reviews + scores but NO prose rewrites (Flash/Sonnet never touch human text), PubMed verifies but logs only; (2) `stage-qc` — skips voice rewrite, force-publishes on revise; (3) `stage-copy-edit` — code-level title lock (no model can change the headline), description changes blocked unless truncated/broken. Never degrades Opus prose.
 **Mechanical voice audit**: `auditVoiceQuality()` — 30+ banned phrases, "you" count (min 6), paragraph length (max 3 sentences).
 **Editorial independence**: Manually queued topics get "MANDATORY EDITORIAL DIRECTION".
 **Duplicate filter**: `isDuplicate()` — bidirectional 55% word overlap with 5+ matching subject words. Backed by `topic_dedup_log` table for permanent dedup memory (survives topic merges + queue deletes).
@@ -358,7 +359,7 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `stage-publish` | Stage 8: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
 | `pipeline-scout` | 3x/day topic discovery — all Gemini + Google Search grounding. Trending signals, search demand, "why now" | None (called by pg_cron) |
 | `pipeline-pinger` | 4x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
-| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article`, `improve-article` (full pipeline re-run, same slug), `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `merge-analyze`, `merge-execute` | None (rate-limited internally) |
+| `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article` (markdown auto-converted to site HTML), `publish-direct` (skip editorial pipeline → art + narration + publish), `improve-article` (full pipeline re-run, same slug), `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `merge-analyze`, `merge-execute` | None (rate-limited internally) |
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |
