@@ -33,5 +33,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/the-serotonin-deception.png",
   "heroImageAlt": "Editorial illustration for The Serotonin Deception: How a Flawed Theory Became Medicine's Most Profitable Myth",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/the-serotonin-deception.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/the-serotonin-deception.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/the-serotonin-deception-light.png"
 }
