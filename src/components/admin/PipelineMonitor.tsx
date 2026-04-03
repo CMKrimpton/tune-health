@@ -93,6 +93,14 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [logs, setLogs] = useState<PipelineLog[]>(initialLogs);
   const [articleCount, setArticleCount] = useState(initialArticleCount);
   const [queue, setQueue] = useState<QueueItem[]>([]);
+  interface RecentArticle {
+    slug: string; title: string; category: string;
+    hero_image: string | null; hero_image_light: string | null;
+    independence_score: number | null; editor_score: number | null;
+    published_at: string | null; updated_at: string; status: string;
+    publish_date: string; pipeline_log_id: string | null;
+  }
+  const [recentArticles, setRecentArticles] = useState<RecentArticle[]>([]);
   const [triggering, setTriggering] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -166,6 +174,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       if (typeof data.totalCost === 'number') setTotalCost(data.totalCost);
       if (typeof data.overheadSpend === 'number') setOverheadSpend(data.overheadSpend);
       if (typeof data.avgCostPerArticle === 'number') setAvgCostPerArticle(data.avgCostPerArticle);
+      if (data.recentArticles) setRecentArticles(data.recentArticles);
       setLastPoll(new Date());
     } catch { /* retry on next poll */ }
   }, [apiBase]);
@@ -1551,54 +1560,102 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       {/* ── Right column: Published + Kills + Errors ── */}
       <div>
       {/* ── Recently Published ── */}
-      {completedLogs.length > 0 && (
+      {(() => {
+        // Build published list from articles table (source of truth), enriched with pipeline log data
+        const logBySlug = new Map<string, PipelineLog>();
+        for (const log of completedLogs) {
+          if (log.slug) logBySlug.set(log.slug, log);
+        }
+        // Also index by pipeline_log_id for articles that have one
+        const logById = new Map<string, PipelineLog>();
+        for (const log of completedLogs) {
+          logById.set(log.id, log);
+        }
+
+        // Merge: start from recentArticles, fall back to completedLogs for any not in articles table
+        const publishedItems = recentArticles.map(art => ({
+          key: art.slug,
+          slug: art.slug,
+          title: art.title,
+          category: art.category,
+          heroImage: art.hero_image,
+          independenceScore: art.independence_score,
+          editorScore: art.editor_score,
+          publishedAt: art.published_at || art.updated_at,
+          log: (art.pipeline_log_id ? logById.get(art.pipeline_log_id) : null) || logBySlug.get(art.slug) || null,
+        }));
+
+        // Add any completedLogs whose slugs aren't already in the articles list
+        const seenSlugs = new Set(publishedItems.map(p => p.slug));
+        for (const log of completedLogs) {
+          if (log.slug && !seenSlugs.has(log.slug)) {
+            publishedItems.push({
+              key: log.id,
+              slug: log.slug,
+              title: log.title || log.topic || 'Untitled',
+              category: '',
+              heroImage: null,
+              independenceScore: log.grok_score ?? null,
+              editorScore: log.editor_score ?? null,
+              publishedAt: log.completed_at || log.created_at,
+              log,
+            });
+          }
+        }
+
+        if (publishedItems.length === 0) return null;
+
+        return (
         <section>
           <h3 className="pipeline-section-title">
-            Recently Published {'\u2014'} {completedLogs.length}
+            Recently Published {'\u2014'} {publishedItems.length}
           </h3>
           <div className="pipeline-completed-list">
-            {completedLogs.slice(0, 10).map(log => {
-              const indScore = getIndependenceScore(log);
-              const penName = log.model_used ? getPenName(log.model_used) : null;
+            {publishedItems.slice(0, 15).map(item => {
+              const log = item.log;
+              const indScore = item.independenceScore ?? (log ? getIndependenceScore(log) : null);
+              const penName = log?.model_used ? getPenName(log.model_used) : null;
               const showPenName = penName && penName !== 'alumi Editorial';
-              const isExpanded = expandedId === log.id;
-              const rd = log.research_data || {};
+              const isExpanded = expandedId === item.key;
+              const rd = log?.research_data || {};
               const brief = (rd as PipelineResearchData)._editorBrief as Record<string, unknown> | undefined;
               const indReview = (rd as PipelineResearchData)._independenceReview as Record<string, unknown> | undefined;
               const pubmed = (rd as PipelineResearchData)._pubmedVerification as { verified?: number; failed?: number; skipped?: number; total?: number; details?: Array<{ title: string; found: boolean; skipped?: boolean; source?: string; pmid?: string; doi?: string; url?: string }> } | undefined;
               const qcResult = (rd as PipelineResearchData)._qcResult as Record<string, unknown> | undefined;
-              const copyEditResult = (rd as Record<string, unknown>)._copyEditResult as { appliedChanges: number; totalProposed: number; summary: string; details: string[] } | undefined;
+              const copyEditResult = (rd as Record<string, unknown>)?._copyEditResult as { appliedChanges: number; totalProposed: number; summary: string; details: string[] } | undefined;
               const briefDetails = brief?.brief as Record<string, unknown> | undefined;
-              const tokenUsage = log.token_usage as Array<{ model: string; stage: string; inputTokens: number; outputTokens: number; costUsd: number }> | null;
+              const tokenUsage = log?.token_usage as Array<{ model: string; stage: string; inputTokens: number; outputTokens: number; costUsd: number }> | null;
+              const hasPipelineData = !!log;
 
               return (
-                <div key={log.id} className="pipeline-card completed admin-pointer" onClick={() => setExpandedId(isExpanded ? null : log.id)}>
+                <div key={item.key} className="pipeline-card completed admin-pointer" onClick={() => setExpandedId(isExpanded ? null : item.key)}>
                   <div className="admin-flex-between">
                     <div className="admin-flex-1">
                       <div className="pipeline-card-title admin-mb-sm">
-                        {log.title || log.topic || 'Untitled'}
+                        {item.title}
                       </div>
                       <div className="admin-flex admin-gap-lg admin-text-sm admin-color-subtle admin-flex-wrap admin-flex-center">
                         {showPenName && <span className="admin-weight-500 admin-color-purple">{penName}</span>}
+                        {!hasPipelineData && <span className="admin-weight-500" style={{ color: 'var(--admin-blue)' }}>Admin</span>}
                         {indScore !== null && (
                           <span style={{ color: getScoreColor(indScore) }}>
                             Independence: {indScore}/10
                           </span>
                         )}
-                        {log.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
+                        {log?.cost_usd && parseFloat(String(log.cost_usd)) > 0 && (
                           <span className="admin-color-secondary admin-tabular-nums">{formatCost(log.cost_usd)}</span>
                         )}
-                        <span>{timeAgo(log.completed_at || log.created_at)}</span>
-                        <span className="admin-color-muted admin-text-xs">{isExpanded ? '\u25B2' : '\u25BC'}</span>
+                        <span>{timeAgo(item.publishedAt)}</span>
+                        {hasPipelineData && <span className="admin-color-muted admin-text-xs">{isExpanded ? '\u25B2' : '\u25BC'}</span>}
                       </div>
                     </div>
                     <div className="admin-flex admin-gap-sm admin-flex-shrink-0" onClick={e => e.stopPropagation()}>
-                      {log.slug && <a href={`/admin/edit/${log.slug}`} className="pipeline-retry-btn admin-no-underline">Edit</a>}
-                      {log.slug && <a href={`/articles/${log.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn admin-no-underline">{'\u2192'} View</a>}
+                      <a href={`/admin/edit/${item.slug}`} className="pipeline-retry-btn admin-no-underline">Edit</a>
+                      <a href={`/articles/${item.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn admin-no-underline">{'\u2192'} View</a>
                     </div>
                   </div>
 
-                  {isExpanded && (
+                  {isExpanded && hasPipelineData && log && (
                     <div className="admin-expanded-section">
                       {/* ── Research ── */}
                       <div className="admin-expanded-block">
@@ -1739,7 +1796,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
             })}
           </div>
         </section>
-      )}
+        );
+      })()}
 
       {/* ── Editor Decisions (kills) ── */}
       {editorKills.length > 0 && (

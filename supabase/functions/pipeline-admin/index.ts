@@ -334,7 +334,17 @@ Deno.serve(async (req: Request) => {
       const totalCost = Math.round((articleSpend + overheadSpend) * 100) / 100;
       const avgCostPerArticle = publishedWithCost > 0 ? Math.round((articleSpend / publishedWithCost) * 100) / 100 : 0;
 
-      return json({ logs: data, articleCount, queue: queue || [], totalCost, overheadSpend: Math.round(overheadSpend * 100) / 100, avgCostPerArticle });
+      // Fetch recently published articles from the articles table (source of truth)
+      // This catches articles published via the admin editor that have no pipeline log
+      const { data: recentArticles } = await db
+        .from("articles")
+        .select("slug,title,category,hero_image,hero_image_light,independence_score,editor_score,published_at,updated_at,status,publish_date,pipeline_log_id")
+        .eq("status", "published")
+        .eq("draft", false)
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .limit(20);
+
+      return json({ logs: data, articleCount, queue: queue || [], totalCost, overheadSpend: Math.round(overheadSpend * 100) / 100, avgCostPerArticle, recentArticles: recentArticles || [] });
     }
 
     // ------ READER QUESTIONS — mine user chat data for article ideas ------
