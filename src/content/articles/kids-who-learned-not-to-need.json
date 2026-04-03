@@ -43,5 +43,6 @@
   "comingSoon": false,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/kids-who-learned-not-to-need.png",
   "heroImageAlt": "Editorial illustration for The Kids Who Learned Not to Need",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/kids-who-learned-not-to-need.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/kids-who-learned-not-to-need.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/kids-who-learned-not-to-need-light.png"
 }
