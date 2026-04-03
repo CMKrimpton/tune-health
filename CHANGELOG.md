@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.2.0] - 2026-04-02
+
+### Added — Social Media System Phase 1A+1C (Foundation + Dashboard)
+
+**Database** (`20260402_social_media_system.sql`) — 8 new tables with full schema, indexes, RLS, and seed data:
+- `social_personas` — 4 AI personas (brand/reporter/skeptic/curator) with model assignments, voice prompts, platform arrays
+- `social_platform_config` — 14 platforms with desk assignments, tiers, rate limits, content format arrays
+- `social_posts` — core post table with choreography groups, scheduling, engagement tracking, 7 indexes
+- `social_content_plan` — daily editorial plans per platform/persona/desk
+- `social_angle_registry` — never-repeat angle tracking per article
+- `social_arcs` — weekly thematic arcs with recurring series
+- `social_engagement_log` — time-series engagement snapshots for velocity detection
+- `social_templates` — learned + manual content templates with engagement scoring
+
+**Social Engine** (`social-engine/index.ts`) — strategic brain that generates Content Briefs:
+- Fetches article data from pipeline log + articles table
+- Loads existing angles (never repeats), active platforms, personas, current weekly arc
+- Generates Content Brief via AI (Sonnet with Gemini Pro fallback) with choreography sequence
+- Writes content plan rows and registers angles
+- Triggered by stage-publish (new articles) or social-admin (catalog mining)
+
+**Social Admin** (`social-admin/index.ts`) — dashboard API with 10 actions:
+- `status`, `posts`, `plan`, `platforms`, `arcs`, `angles`, `leaderboard`, `personas`, `skip`/`retry`, `generate`
+
+**Social Dashboard** (`SocialDashboard.tsx`) — Bloomberg Terminal-inspired admin UI:
+- 8-KPI stats strip matching existing admin design system
+- 4 section tabs: Overview (platform matrix + arc + personas), Post Feed (filtered table), Content Plan (editorial schedule), Platforms (health cards with fill rate progress bars)
+- Generate-for-article widget in tab bar
+- All inline styles reference admin.css custom properties (warm dark palette, tabular-nums, glass surfaces)
+
+**Pipeline integration** — `stage-publish` now fires social-engine (non-blocking) after every successful publish
+
+**Shared utilities**:
+- `_shared/social-clients.ts` — Bluesky (AT Protocol), Reddit (OAuth2), Mastodon (ActivityPub) clients with session caching + platform router
+- `_shared/constants.ts` — 6 new MODELS entries (SOCIAL_BRAND/REPORTER/SKEPTIC/CURATOR/REVIEW/PLANNER) + SOCIAL_CHAINS fallback chains
+
+#### Files changed
+- `supabase/migrations/20260402_social_media_system.sql` (new) — 8 tables, seed data
+- `supabase/functions/_shared/constants.ts` — social model constants + chains
+- `supabase/functions/_shared/social-clients.ts` (new) — platform API clients
+- `supabase/functions/social-engine/index.ts` (new) — Content Brief generator
+- `supabase/functions/social-admin/index.ts` (new) — dashboard API
+- `supabase/functions/stage-publish/index.ts` — social-engine dispatch hook
+- `src/components/admin/SocialDashboard.tsx` (new) — Bloomberg-inspired dashboard
+- `src/pages/admin/index.astro` — Social tab added (4th tab)
+- `public/admin.css` — social dashboard table hover + scrollbar styles
+
 ## [18.1.0] - 2026-04-02
 
 ### Added — Social Media Mega-Viral System Design

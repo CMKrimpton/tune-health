@@ -2921,6 +2921,32 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   Social Dashboard
+   ═══════════════════════════════════════════════════════════ */
+
+#tab-social table tbody tr:hover {
+  background: var(--admin-surface-2);
+}
+
+#tab-social table th {
+  position: sticky;
+  top: 0;
+  background: var(--admin-surface);
+  z-index: 1;
+}
+
+/* Scrollbar in social panels */
+#tab-social ::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+#tab-social ::-webkit-scrollbar-track { background: transparent; }
+#tab-social ::-webkit-scrollbar-thumb {
+  background: var(--admin-border-2);
+  border-radius: 2px;
+}
+
 /* Respect reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   * {

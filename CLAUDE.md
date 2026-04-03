@@ -89,6 +89,7 @@ src/
 │       ├── ArticlesManager.tsx   # Articles tab React island
 │       ├── AgentsPanel.tsx       # AI Agents tab React island
 │       ├── ArticleEditor.tsx     # New article editor React component
+│       ├── SocialDashboard.tsx   # Social media dashboard React island (Bloomberg-inspired)
 │       ├── ConfirmModal.tsx      # Shared confirm dialog
 │       └── types.ts              # Shared admin types, pipeline config, status maps
 ├── pages/
@@ -139,7 +140,8 @@ supabase/
     │   ├── github.ts                     # publishToGitHub() with retry
     │   ├── pubmed.ts                     # verifyPubMedCitations()
     │   ├── types.ts                      # ApiResult, ApiUsage, VoiceAudit interfaces
-    │   └── voice-audit.ts               # auditVoiceQuality()
+    │   ├── voice-audit.ts               # auditVoiceQuality()
+    │   └── social-clients.ts            # Bluesky (AT Protocol), Reddit (OAuth2), Mastodon, platform router
     │
     ├── stage-research/                   # Stage 1: Gemini 2.5 Pro + Google Search → Sonnet fallback
     ├── stage-editor/                     # Stage 2: Sonnet → Gemini 3.1 Pro. Editor brief — archetype/tone
@@ -163,7 +165,10 @@ supabase/
     ├── fetch-article/                    # GitHub fetch
     ├── generate-illustration/            # AI illustration (GPT Image 1)
     ├── generate-narration/               # ElevenLabs TTS narration of article description
-    └── editorial-qc/                     # Collection-wide QC
+    ├── editorial-qc/                     # Collection-wide QC
+    │
+    ├── social-engine/                    # Content Brief generator — strategic brain for social media
+    └── social-admin/                     # Social dashboard API (status, posts, plan, platforms, etc.)
 ```
 
 ### Content Collections
@@ -243,7 +248,7 @@ const articles = await getCollection('articles');
 - **Glass design system**: CSS served from `public/admin.css` (SSR pages cannot use frontmatter CSS imports — Astro silently drops them). CSS custom properties (`--admin-bg`, `--admin-surface`, `--admin-border`, `--admin-accent`, etc.). Glass morphism header/cards/modals, ambient gradient glow background, layered shadows, `cubic-bezier(0.22, 1, 0.36, 1)` easing, border-radius scale (12px/8px/6px). All React component inline styles use the same palette. **IMPORTANT**: when adding new admin pages, always link CSS via `<link rel="stylesheet" href="/admin.css">` in `<head>`, never via frontmatter import
 - **Login**: glass card with animated gradient orbs, entrance animation, "mission control" pill badge
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix). Wrong token redirects to `/admin/login?error=1` with inline error display.
-- **Dashboard**: 4-column stat grid (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 3 tab panels with fade-in animation (Pipeline, Articles, AI Agents). Max-width 1400px. Multi-column layouts: Pipeline tab has 2-col grid (queue + published side-by-side), AI Agents tab has 2-col grid (6 sections split). Articles tab is single-column (rows need full width for inline editing)
+- **Dashboard**: 4-column stat grid (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 4 tab panels with fade-in animation (Pipeline, Articles, AI Agents, Social). Max-width 1400px. Multi-column layouts: Pipeline tab has 2-col grid (queue + published side-by-side), AI Agents tab has 2-col grid (6 sections split). Articles tab is single-column (rows need full width for inline editing). Social tab has Bloomberg-inspired data-dense layout with platform activity matrix, post feed, content plan, platform health cards
 - **Pipeline tab** (React island: `PipelineMonitor`):
   - 8-stage visual pipeline: Research (Gemini 2.5 Pro + Search) → Editor (Sonnet → Gemini) → **PAUSE for Opus writing** → Independence (Grok 4) → QC (Flash → Sonnet) → Voice Polish (Sonnet → Gemini, skipped for human articles) → Copy Edit (Sonnet → Gemini Pro, conservative headline/header polish) → Publish (GitHub + GPT Image)
   - **Hybrid workflow UI**: editor_approved articles show purple highlight, "Copy Brief for Claude" button (client-side clipboard), "Submit Written Article" textarea + submit button
@@ -360,13 +365,15 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
 | `topic-merge` | AI-powered topic deduplication: `analyze` (GPT-5.4 clusters queue semantically) + `merge` (Sonnet synthesizes super-brief) | None (proxied via pipeline-admin) |
+| `social-engine` | Content Brief generator — strategic brain for social media. Generates briefs per article with angle registry, choreography, persona assignments | None (chain from stage-publish) |
+| `social-admin` | Social dashboard API: `status`, `posts`, `plan`, `platforms`, `arcs`, `angles`, `leaderboard`, `personas`, `skip`, `retry`, `generate` | None |
 
 **Deploy commands:**
 ```bash
 supabase functions deploy <function-name> --no-verify-jwt
 
 # Deploy all pipeline functions at once
-for fn in stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-copy-edit stage-publish pipeline-scout pipeline-pinger pipeline-admin topic-merge; do
+for fn in stage-research stage-editor stage-write stage-independence stage-qc stage-voice-rewrite stage-copy-edit stage-publish pipeline-scout pipeline-pinger pipeline-admin topic-merge social-engine social-admin; do
   supabase functions deploy $fn --no-verify-jwt
 done
 ```
@@ -390,6 +397,14 @@ done
 - `pinger_signals` — breaking news signal tracking. Key columns: `signal_hash`, `topic`, `source` (gemini_search/grok_social/pubmed_rss), `urgency`, `why_breaking`, `promoted_to_queue`, `queue_id`, `expires_at` (48h auto-cleanup)
 - `newsletter_subscribers` — email subscriptions (email unique, subscribed_at, source)
 - `topic_dedup_log` — permanent dedup memory for scouts/pinger. Written when topics are merged or deleted. 90-day TTL via pg_cron. Prevents re-suggesting angles that were already explored
+- `social_personas` — 4 AI personas (brand/reporter/skeptic/curator) with model assignments, voice prompts, platform arrays
+- `social_platform_config` — 14 platforms with desk, tier, rate limits, content formats, API status
+- `social_posts` — generated social content with choreography, scheduling, engagement tracking. Realtime-enabled
+- `social_content_plan` — daily editorial plans per platform/persona/desk. Realtime-enabled
+- `social_angle_registry` — never-repeat angle tracking per article
+- `social_arcs` — weekly thematic arcs with recurring series
+- `social_engagement_log` — time-series engagement snapshots for velocity detection
+- `social_templates` — learned + manual content templates
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
 - `scout-gemini`: daily 6am UTC → `pipeline-scout` — Gemini + Google Search discovers 20 trending topics

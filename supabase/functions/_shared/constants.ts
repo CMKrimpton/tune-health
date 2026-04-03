@@ -123,6 +123,14 @@ export const MODELS = {
   // Narration (ElevenLabs TTS)
   NARRATION_MODEL: "eleven_multilingual_v2",
   NARRATION_VOICE: "GK8yfgyvbDZaYf0rm78A",
+
+  // Social media — per-persona model assignments
+  SOCIAL_BRAND: "claude-sonnet-4-6",
+  SOCIAL_REPORTER: "gemini-3.1-pro-preview",
+  SOCIAL_SKEPTIC: "grok-4",
+  SOCIAL_CURATOR: "claude-sonnet-4-6",
+  SOCIAL_REVIEW: "gemini-2.5-flash",
+  SOCIAL_PLANNER: "claude-sonnet-4-6",
 } as const;
 
 export const NARRATION_SETTINGS = {
@@ -163,6 +171,16 @@ export function pickWriterModel(): string[] {
 }
 
 // Category keyword classifier for scouts
+// Social media fallback chains — per-persona
+export const SOCIAL_CHAINS: Record<string, string[]> = {
+  brand:    [MODELS.SOCIAL_BRAND, "gemini-3.1-pro-preview"],
+  reporter: [MODELS.SOCIAL_REPORTER, MODELS.SOCIAL_BRAND],
+  skeptic:  [MODELS.SOCIAL_SKEPTIC, MODELS.SOCIAL_BRAND],
+  curator:  [MODELS.SOCIAL_CURATOR, "gemini-3.1-pro-preview"],
+  review:   [MODELS.SOCIAL_REVIEW, MODELS.SOCIAL_BRAND],
+  planner:  [MODELS.SOCIAL_PLANNER, "gemini-3.1-pro-preview"],
+};
+
 export const CATEGORY_KEYWORDS: Array<[string, string[]]> = [
   ["Pharmacology", ["drug", "drugs", "medication", "pharmaceutical", "pharma", "prescri", "dosing", "FDA", "therapy", "therapeutic", "GLP-1", "SGLT2", "statin", "antibiotic", "opioid", "psychedelic", "psilocybin", "MDMA", "ketamine", "SSRI", "biologic", "inhibitor", "receptor", "agonist"]],
   ["Neuroscience", ["brain", "neuron", "neural", "cortex", "hippocampus", "dopamine", "serotonin", "synap", "neuro", "cognitive", "cognition", "amygdala", "prefrontal", "cerebell", "neuroplasticity", "EEG", "fMRI"]],

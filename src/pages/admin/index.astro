@@ -3,6 +3,7 @@ export const prerender = false;
 import PipelineMonitor from '../../components/admin/PipelineMonitor';
 import ArticlesManager from '../../components/admin/ArticlesManager';
 import AgentsPanel from '../../components/admin/AgentsPanel';
+import SocialDashboard from '../../components/admin/SocialDashboard';
 
 const edgeFunctionBase = (process.env.PUBLIC_SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL || '').trim();
 const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
@@ -143,6 +144,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
       <button class="admin-dashboard-tab active" data-tab="pipeline" role="tab" aria-selected="true" aria-controls="tab-pipeline" id="tab-btn-pipeline">Pipeline</button>
       <button class="admin-dashboard-tab" data-tab="articles" role="tab" aria-selected="false" aria-controls="tab-articles" id="tab-btn-articles">Articles</button>
       <button class="admin-dashboard-tab" data-tab="agents" role="tab" aria-selected="false" aria-controls="tab-agents" id="tab-btn-agents">AI Agents</button>
+      <button class="admin-dashboard-tab" data-tab="social" role="tab" aria-selected="false" aria-controls="tab-social" id="tab-btn-social">Social</button>
     </div>
 
     <!-- Pipeline Tab -->
@@ -171,6 +173,14 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
         client:only="react"
         apiBase={apiBase}
         initialArticleCount={articleCount}
+      />
+    </div>
+
+    <!-- Social Tab -->
+    <div id="tab-social" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-btn-social">
+      <SocialDashboard
+        client:only="react"
+        apiBase={apiBase}
       />
     </div>
   </main>

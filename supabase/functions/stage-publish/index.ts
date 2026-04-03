@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, parseScore, addCostToLog } from "../_shared/db.ts";
+import { supabase, parseScore, addCostToLog, dispatchStage } from "../_shared/db.ts";
 import { publishToGitHub } from "../_shared/github.ts";
 import { assembleAstroFile, todayISO } from "../_shared/astro.ts";
 import { getByline, API_TIMEOUT, MODELS, FLAT_PRICING } from "../_shared/constants.ts";
@@ -290,6 +290,23 @@ Deno.serve(async (req: Request) => {
       .from("daily_article_log")
       .update({ status: "published", completed_at: new Date().toISOString() })
       .eq("id", logId);
+
+    // ── Social media content generation (non-blocking) ──
+    // Fire-and-forget: social-engine generates Content Briefs for all platforms.
+    // Uses direct fetch (not chain_dispatch) because logId is already "published"
+    // and chain_dispatch targets pipeline stages that check active statuses.
+    if (supabaseUrl) {
+      fetch(`${supabaseUrl}/functions/v1/social-engine`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ logId, mode: "new_article" }),
+      }).catch(err =>
+        console.warn(`[Publish] Social engine dispatch failed: ${err instanceof Error ? err.message : "unknown"}`)
+      );
+    }
 
     // Complete the queue item (if this article came from the queue).
     // queue_id is a proper column — can't be overwritten by research_data updates.
