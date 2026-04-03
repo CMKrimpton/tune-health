@@ -34,5 +34,6 @@
   "heroImageAlt": "Editorial illustration for The Poisoned Well: Industrial Chemicals and the Slow-Motion Assault on Your Thyroid",
   "series": "The Thyroid Deep Dive",
   "seriesOrder": 3,
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/thyroid-poisoned-well.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/thyroid-poisoned-well.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-poisoned-well-light.png"
 }
