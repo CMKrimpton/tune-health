@@ -33,5 +33,6 @@
   ],
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/depression-energy-problem.png",
   "heroImageAlt": "Editorial illustration for Depression May Be an Energy Problem, Not a Chemistry One",
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/depression-energy-problem.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/depression-energy-problem.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/depression-energy-problem-light.png"
 }
