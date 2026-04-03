@@ -693,7 +693,7 @@ body.menu-open {
 }
 
 .featured-image-container {
-  @apply relative aspect-[4/3] lg:aspect-auto overflow-hidden;
+  @apply relative aspect-[3/2] overflow-hidden;
 }
 
 .featured-image-inner {

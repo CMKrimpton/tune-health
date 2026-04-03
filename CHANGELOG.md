@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.8.1] - 2026-04-03
+
+### Fixed — Image Aspect Ratios
+
+- **Unified all image containers to 3:2** — matches the 1536x1024 dimensions illustrations are generated at
+- Eliminated `aspect-auto` on featured cards (homepage, topics, start-here) that caused height guessing from text column
+- Replaced mixed ratios (4:3, 16:10) across articles index, topics, deep-dives, and start-here pages
+- Zero cropping, zero black gaps — every image fills its container perfectly
+
 ## [18.8.0] - 2026-04-03
 
 ### Changed — Article Typography

@@ -63,7 +63,7 @@ const curatedArticles = CURATED_SLUGS
         {curatedArticles.map((article, i) => article && (
           <a href={article.href} class="group block reveal">
             <div class="grid sm:grid-cols-[200px_1fr] gap-5 bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-[border-color,box-shadow] duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700">
-              <div class="relative aspect-[16/10] sm:aspect-auto overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+              <div class="relative aspect-[3/2] overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
                 {article.heroImage && (
                   <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading={i < 2 ? 'eager' : 'lazy'} />
                 )}

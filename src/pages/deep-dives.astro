@@ -106,7 +106,7 @@ const comingSoonSeries = [
               {series.articles.map((article, i) => (
                 <a href={article.href} class={`group block reveal${i > 0 ? ` reveal-delay-${Math.min(i, 5)}` : ''}`}>
                   <div class="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 transition-[border-color,box-shadow] duration-300 hover:shadow-lg hover:border-stone-300 dark:hover:border-stone-700 h-full flex flex-col">
-                    <div class="relative aspect-[16/10] overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
+                    <div class="relative aspect-[3/2] overflow-hidden" style={article.heroImage ? undefined : getArticleGradientStyle(article.category)}>
                       {article.heroImage && (
                         <img src={article.heroImage} alt={article.heroImageAlt || article.title} class="w-full h-full object-cover" loading="lazy" />
                       )}
