@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.6.0] - 2026-04-03
+
+### Improved — Social Dashboard UI + Voice Overhaul
+
+**Dashboard font-size bump (SocialDashboard.tsx)**
+- Every font tier bumped one step: panel titles 10→11px, body text 11→12px, row content 12→13px, mono/data 11→12px, buttons 10→11px, pills 9→10px, micro labels 8→9px, stat values 20→22px
+- Increased row height (32→36px), panel padding, pill padding, button touch targets for better readability
+- Expanded post preview now 13px with more max-height
+
+**Social persona voice overhaul — "receipts, not vibes"**
+- All 4 persona voices rewritten with sharper, younger, more confrontational energy
+- Brand: Bill Maher's health desk — second-person address ("You've been told X"), lead with the gut-punch stat
+- Reporter (Max Lundin): "I read the actual paper, not the press release" — names sample sizes, funding sources, what headlines omit
+- Skeptic: forensic follow-the-money — names institutions, dollar amounts, revolving doors. John Oliver compressed to 280 chars
+- Curator: pattern-finder — "A sleep study, a glucose study, and an EPA report walk into a bar..."
+- Engine brief prompts updated to match: requires dollar amounts, institution names, at least one funny quotable line
+- Choreography templates rewritten: "the one-line gut punch," "the receipts," "who funded this?"
+
+**Research basis**: Health Ranger rhetorical structure analysis (hooks, follow-the-money, direct address) adapted for evidence-based journalism — same engagement patterns, but with verifiable citations instead of conspiracy
+
 ## [18.5.0] - 2026-04-03
 
 ### Improved — Social Content Quality Revolution

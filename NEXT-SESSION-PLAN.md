@@ -1,32 +1,33 @@
 # Next Session Plan
 
-> **Status**: v18.5.0 live. ~192 published articles across 9 categories. Social Media System producing quality output: 5-6 unique posts per article across 2-3 platforms, each with a distinct hook/angle. Parallel writer processing. Tested on 3 articles with strong results.
+> **Status**: v18.6.0 live. ~192 published articles across 9 categories. Social Media System producing quality output with sharp, confrontational voice: follow-the-money framing, named institutions/dollar amounts, forensic skepticism. Dashboard UI polished with readable font sizes.
 
 ---
 
-## What Was Done This Session (v18.5.0 — Social Content Quality)
+## What Was Done This Session (v18.6.0 — Social Dashboard UI + Voice Overhaul)
 
-### Social Engine Overhaul
-- **Capped choreography to 5-6 posts** across 2-3 platforms (was spraying 10-18 identical posts everywhere)
-- **Per-item hook field** — each choreography item carries a unique angle/entry point
-- **Stronger prompt constraints** — varied quotable lines, platform-appropriate targeting
+### Dashboard UI Polish
+- **Systematic font-size bump** — every tier bumped one step up across the board (panel titles, body text, rows, mono, buttons, pills, micro labels, stat values)
+- **Increased spacing** — row height 32→36px, panel padding, pill padding, button touch targets
+- **Expanded post preview** — larger font, more max-height for reading content
 
-### Social Writer Overhaul
-- **Parallel processing** — 5 concurrent AI calls per batch (was sequential, causing timeouts)
-- **Hook-first prompts** — writer uses per-item hook, not global viral_angle
-- **Pre-fetched platform configs** — eliminated N+1 queries
-- **2-min stuck recovery** (was 10 min), max tokens 2000 (was 1500), batch size 10 (was 20)
-- **Stronger JSON enforcement** for Gemini reporter persona
+### Social Voice Overhaul — "Receipts, Not Vibes"
+- **All 4 persona voices rewritten** — sharper, younger, more Bill Maher energy
+- **Brand**: second-person address, gut-punch stats, "You've been told X. The data says Y."
+- **Reporter**: "I read the actual paper, not the press release" — names sample sizes, funding sources
+- **Skeptic**: forensic follow-the-money — John Oliver compressed to 280 chars
+- **Curator**: surprise pattern-finder connecting disparate studies
+- **Engine prompts updated** — requires dollar amounts, institution names, at least one funny line
+- **Choreography templates rewritten** for the new voice direction
 
-### Verified Output Quality
-- Tested on 3 articles: migraine/pharma, seed oils/AHA, contact lenses
-- Brand posts: platform-native, data-forward, no marketing energy
-- Skeptic posts (Grok): genuine devil's advocate
-- Reddit posts: structural analysis with discussion prompts
-- X threads: numbered multi-tweet format
-- Reporter/Gemini: occasional truncation on threads (non-blocking)
+### Research & Strategy
+- Analyzed Health Ranger rhetorical patterns (hooks, follow-the-money, direct address)
+- Adapted structure for evidence-based journalism: same engagement, verifiable citations
+- Key insight: the gap in the market is forensic institutional skepticism with receipts
 
-### Deployed
+### Tested & Deployed
+- Generated social content for seed-oils-aha-funding-cardiovascular-evidence with new voice
+- Quotable output: "The AHA didn't follow the science. It followed the $1.7 million."
 - 2 functions deployed: social-engine, social-writer
 
 ## Current Architecture (v18.4.0)

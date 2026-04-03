@@ -184,7 +184,7 @@ const S = {
     transition: 'border-color 0.2s var(--admin-ease)',
   } as React.CSSProperties,
   panelHeader: {
-    padding: '0.5rem 0.75rem',
+    padding: '0.625rem 0.875rem',
     borderBottom: '1px solid var(--admin-border)',
     display: 'flex',
     alignItems: 'center',
@@ -192,14 +192,14 @@ const S = {
     gap: '0.5rem',
   } as React.CSSProperties,
   panelTitle: {
-    fontSize: '0.625rem',
+    fontSize: '0.6875rem',
     fontWeight: 700,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.08em',
     color: 'var(--admin-text-2)',
   } as React.CSSProperties,
   panelBody: {
-    padding: '0.5rem 0.75rem',
+    padding: '0.625rem 0.875rem',
     maxHeight: '480px',
     overflowY: 'auto' as const,
   } as React.CSSProperties,
@@ -207,33 +207,33 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    padding: '0.375rem 0',
+    padding: '0.4375rem 0',
     borderBottom: '1px solid var(--admin-border)',
-    fontSize: '0.75rem',
-    minHeight: '32px',
+    fontSize: '0.8125rem',
+    minHeight: '36px',
   } as React.CSSProperties,
   mono: {
     fontFamily: 'var(--admin-mono)',
-    fontSize: '0.6875rem',
+    fontSize: '0.75rem',
     fontVariantNumeric: 'tabular-nums',
   } as React.CSSProperties,
   pill: (color: string, bg?: string) => ({
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '1px 6px',
+    padding: '2px 7px',
     borderRadius: '3px',
-    fontSize: '0.5625rem',
+    fontSize: '0.625rem',
     fontWeight: 600,
     letterSpacing: '0.04em',
     textTransform: 'uppercase' as const,
     color,
     background: bg || `${color}18`,
     whiteSpace: 'nowrap' as const,
-    lineHeight: '16px',
+    lineHeight: '18px',
   } as React.CSSProperties),
   btn: (accent = false) => ({
-    padding: '3px 8px',
-    fontSize: '0.625rem',
+    padding: '4px 10px',
+    fontSize: '0.6875rem',
     fontWeight: 600,
     border: accent ? 'none' : '1px solid var(--admin-border-2)',
     borderRadius: 'var(--admin-radius-xs)',
@@ -247,7 +247,7 @@ const S = {
     whiteSpace: 'nowrap' as const,
   } as React.CSSProperties),
   microLabel: {
-    fontSize: '0.5rem',
+    fontSize: '0.5625rem',
     fontWeight: 600,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.1em',
@@ -291,7 +291,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
               borderLeft: `3px solid ${borderColor}`,
               borderRadius: 'var(--admin-radius)',
               padding: '0.5rem 0.75rem',
-              fontSize: '0.6875rem',
+              fontSize: '0.75rem',
               color: 'var(--admin-text)',
               display: 'flex',
               alignItems: 'center',
@@ -412,7 +412,7 @@ function PlatformBadge({ platform, compact }: { platform: string; compact?: bool
       role="img"
       aria-label={platform}
     >
-      <span style={{ fontSize: compact ? '0.5rem' : '0.625rem' }} aria-hidden="true">{cfg.icon}</span>
+      <span style={{ fontSize: compact ? '0.5625rem' : '0.6875rem' }} aria-hidden="true">{cfg.icon}</span>
       {!compact && <span>{cfg.abbr}</span>}
     </span>
   );
@@ -440,7 +440,7 @@ function StatusDot({ status }: { status: string }) {
         }}
         aria-hidden="true"
       />
-      <span style={{ fontSize: '0.625rem', color, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{status}</span>
+      <span style={{ fontSize: '0.75rem', color, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{status}</span>
     </span>
   );
 }
@@ -795,7 +795,7 @@ export default function SocialDashboard({ apiBase }: Props) {
         @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .social-panel:hover { border-color: var(--admin-border-2) !important; }
         .social-row-hover:hover { background: var(--admin-surface-2); }
-        .social-tab-hint { opacity: 0; transition: opacity 0.15s; font-size: 0.5rem; }
+        .social-tab-hint { opacity: 0; transition: opacity 0.15s; font-size: 0.5625rem; }
         .social-tab-btn:hover .social-tab-hint { opacity: 1; }
       `}</style>
 
@@ -851,7 +851,7 @@ export default function SocialDashboard({ apiBase }: Props) {
               color: activeSection === s.id ? 'var(--admin-text)' : 'var(--admin-text-3)',
               background: 'none',
               padding: '0.375rem 0.75rem',
-              fontSize: '0.6875rem',
+              fontSize: '0.75rem',
               position: 'relative',
               display: 'flex',
               alignItems: 'center',
@@ -867,7 +867,7 @@ export default function SocialDashboard({ apiBase }: Props) {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem', paddingRight: '0.25rem' }}>
           {/* Last refresh indicator */}
           <span
-            style={{ ...S.mono, color: 'var(--admin-text-4)', fontSize: '0.5625rem', marginRight: '4px' }}
+            style={{ ...S.mono, color: 'var(--admin-text-4)', fontSize: '0.75rem', marginRight: '4px' }}
             title={`Last refreshed: ${lastRefresh.toLocaleTimeString()}`}
             aria-label={`Last refreshed: ${lastRefresh.toLocaleTimeString()}`}
           >
@@ -886,7 +886,7 @@ export default function SocialDashboard({ apiBase }: Props) {
             style={{
               width: '120px',
               padding: '2px 6px',
-              fontSize: '0.625rem',
+              fontSize: '0.75rem',
               fontFamily: 'var(--admin-mono)',
               background: 'var(--admin-surface-2)',
               border: '1px solid var(--admin-border-2)',
@@ -925,7 +925,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                 label={feedback === 'success' ? '\u2713' : feedback === 'error' ? '\u2717' : label}
                 ariaLabel={`Manually trigger ${label.toLowerCase()}`}
                 style={{
-                  fontSize: '0.5625rem',
+                  fontSize: '0.75rem',
                   color: feedbackColor || undefined,
                   borderColor: feedbackColor ? `${feedbackColor}40` : undefined,
                 }}
@@ -974,7 +974,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       <div key={platform} style={{ ...S.row, gap: '0.375rem' }} className="social-row-hover">
                         <PlatformBadge platform={platform} />
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ display: 'flex', gap: '8px', fontSize: '0.625rem' }}>
+                          <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem' }}>
                             <span style={{ color: '#22c55e' }}>{counts.posted} posted</span>
                             <span style={{ color: '#3b82f6' }}>{counts.scheduled} queued</span>
                             {counts.failed > 0 && <span style={{ color: '#ef4444' }}>{counts.failed} failed</span>}
@@ -1022,7 +1022,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       </span>
                     )}
                     {currentArc.article_slugs?.length > 0 && (
-                      <div style={{ marginTop: '8px', fontSize: '0.6875rem', color: 'var(--admin-text-3)' }}>
+                      <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--admin-text-3)' }}>
                         {currentArc.article_slugs.length} articles in arc
                       </div>
                     )}
@@ -1057,7 +1057,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       <PersonaBadge persona={p.id} />
                       <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--admin-text)' }}>{p.display_name}</span>
                       {postedByPersona[p.id] != null && (
-                        <span style={{ ...S.mono, color: '#22c55e', fontSize: '0.5625rem' }}>
+                        <span style={{ ...S.mono, color: '#22c55e', fontSize: '0.75rem' }}>
                           {postedByPersona[p.id]} posted
                         </span>
                       )}
@@ -1065,12 +1065,12 @@ export default function SocialDashboard({ apiBase }: Props) {
                         {p.model_override || 'default'}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.625rem', color: 'var(--admin-text-3)', lineHeight: '1.4', paddingLeft: '2px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-3)', lineHeight: '1.4', paddingLeft: '2px' }}>
                       {truncate(p.bio, 80)}
                     </div>
                     <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
                       {p.platforms.slice(0, 6).map(pl => <PlatformBadge key={pl} platform={pl} compact />)}
-                      {p.platforms.length > 6 && <span style={{ fontSize: '0.5625rem', color: 'var(--admin-text-4)' }}>+{p.platforms.length - 6}</span>}
+                      {p.platforms.length > 6 && <span style={{ fontSize: '0.75rem', color: 'var(--admin-text-4)' }}>+{p.platforms.length - 6}</span>}
                     </div>
                   </div>
                 ))}
@@ -1092,7 +1092,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                   <span style={S.panelTitle}>Persona Distribution</span>
                   {engagementByDay.some(v => v > 0) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ ...S.mono, color: 'var(--admin-text-4)', fontSize: '0.5625rem' }}>7d</span>
+                      <span style={{ ...S.mono, color: 'var(--admin-text-4)', fontSize: '0.75rem' }}>7d</span>
                       <Sparkline data={engagementByDay} color="#3b82f6" />
                     </div>
                   )}
@@ -1134,7 +1134,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                     <span key={type} style={{
                       ...S.pill('#7d7871'),
                       padding: '3px 8px',
-                      fontSize: '0.625rem',
+                      fontSize: '0.75rem',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '4px',
@@ -1167,7 +1167,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                     <PlatformBadge platform={post.platform} compact />
                     <PersonaBadge persona={post.persona} />
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                      <span style={{ fontSize: '0.6875rem', color: 'var(--admin-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--admin-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {truncate(post.content_text, 80)}
                       </span>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -1214,7 +1214,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                   aria-pressed={postFilter === s}
                   style={{
                     ...S.btn(postFilter === s),
-                    fontSize: '0.5625rem',
+                    fontSize: '0.75rem',
                   }}
                 >
                   {s}
@@ -1233,7 +1233,7 @@ export default function SocialDashboard({ apiBase }: Props) {
               aria-labelledby="platform-filter-label"
               style={{
                 padding: '2px 6px',
-                fontSize: '0.625rem',
+                fontSize: '0.75rem',
                 background: 'var(--admin-surface-2)',
                 border: '1px solid var(--admin-border-2)',
                 borderRadius: 'var(--admin-radius-xs)',
@@ -1254,7 +1254,7 @@ export default function SocialDashboard({ apiBase }: Props) {
           {/* Post Table */}
           <div style={S.panel} className="social-panel">
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.6875rem' }} role="table" aria-label="Social posts">
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }} role="table" aria-label="Social posts">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border-2)' }}>
                     {['Platform', 'Persona', 'Type', 'Content', 'Status', 'Engagement', 'Time', 'Actions'].map(h => (
@@ -1293,7 +1293,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                               </div>
                             )}
                             {post.error && (
-                              <div style={{ fontSize: '0.5625rem', color: '#f87171', marginTop: '2px' }} role="alert">
+                              <div style={{ fontSize: '0.75rem', color: '#f87171', marginTop: '2px' }} role="alert">
                                 {truncate(post.error, 60)}
                               </div>
                             )}
@@ -1334,32 +1334,32 @@ export default function SocialDashboard({ apiBase }: Props) {
                         {isExpanded && (
                           <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
                             <td colSpan={8} style={{ padding: '0.5rem 0.75rem', background: 'var(--admin-surface-2)' }}>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--admin-text)', lineHeight: '1.6', whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto', fontFamily: 'inherit' }}>
+                              <div style={{ fontSize: '0.8125rem', color: 'var(--admin-text)', lineHeight: '1.6', whiteSpace: 'pre-wrap', maxHeight: '240px', overflowY: 'auto', fontFamily: 'inherit' }}>
                                 {post.content_text}
                               </div>
                               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
                                 {post.article_slug && (
-                                  <span style={{ ...S.mono, fontSize: '0.5625rem', color: 'var(--admin-text-3)' }}>
+                                  <span style={{ ...S.mono, fontSize: '0.75rem', color: 'var(--admin-text-3)' }}>
                                     Article: <a href={`/articles/${post.article_slug}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--admin-accent)' }}>{post.article_slug}</a>
                                   </span>
                                 )}
                                 {post.choreography_group && (
-                                  <span style={{ ...S.mono, fontSize: '0.5625rem', color: 'var(--admin-text-4)' }}>
+                                  <span style={{ ...S.mono, fontSize: '0.75rem', color: 'var(--admin-text-4)' }}>
                                     Group: {post.choreography_group.slice(0, 8)}
                                   </span>
                                 )}
                                 {post.cost_usd > 0 && (
-                                  <span style={{ ...S.mono, fontSize: '0.5625rem', color: 'var(--admin-text-4)' }}>
+                                  <span style={{ ...S.mono, fontSize: '0.75rem', color: 'var(--admin-text-4)' }}>
                                     Cost: ${post.cost_usd.toFixed(4)}
                                   </span>
                                 )}
                                 {post.scheduled_at && post.status === 'scheduled' && (
-                                  <span style={{ ...S.mono, fontSize: '0.5625rem', color: '#3b82f6' }}>
+                                  <span style={{ ...S.mono, fontSize: '0.75rem', color: '#3b82f6' }}>
                                     Scheduled: {new Date(post.scheduled_at).toLocaleString()}
                                   </span>
                                 )}
                                 {post.error && (
-                                  <span style={{ fontSize: '0.5625rem', color: '#f87171' }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#f87171' }}>
                                     Error: {post.error}
                                   </span>
                                 )}
@@ -1411,7 +1411,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                   aria-label="Plan date"
                   style={{
                     padding: '2px 6px',
-                    fontSize: '0.625rem',
+                    fontSize: '0.75rem',
                     fontFamily: 'var(--admin-mono)',
                     background: 'var(--admin-surface-2)',
                     border: '1px solid var(--admin-border-2)',
@@ -1434,13 +1434,13 @@ export default function SocialDashboard({ apiBase }: Props) {
                   onClick={() => fetchPlanForDate(new Date().toISOString().slice(0, 10))}
                   label="Today"
                   ariaLabel="Go to today"
-                  style={{ fontSize: '0.5625rem' }}
+                  style={{ fontSize: '0.75rem' }}
                 />
               </div>
               <span style={{ ...S.mono, color: 'var(--admin-text-4)' }} aria-live="polite">{plan.length} items</span>
             </div>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.6875rem' }} role="table" aria-label="Content plan">
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }} role="table" aria-label="Content plan">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border-2)' }}>
                     {['Platform', 'Persona', 'Desk', 'Type', 'Format', 'Article', 'Status', 'Series'].map(h => (
@@ -1543,7 +1543,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       transition: 'width 0.6s var(--admin-ease)',
                     }} />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.625rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
                     <span style={{ color: 'var(--admin-text-3)' }}>Desk: {p.desk}</span>
                     <span style={{ color: 'var(--admin-text-4)' }}>
                       {p.lastPostAt ? `Last: ${timeAgo(p.lastPostAt)}` : 'Never posted'}
@@ -1616,12 +1616,12 @@ export default function SocialDashboard({ apiBase }: Props) {
                         {!info.ready && (
                           <>
                             {info.missing.length > 0 && (
-                              <div style={{ fontSize: '0.6875rem', color: '#f87171', marginBottom: '6px' }} role="alert">
+                              <div style={{ fontSize: '0.75rem', color: '#f87171', marginBottom: '6px' }} role="alert">
                                 Missing: {info.missing.join(', ')}
                               </div>
                             )}
                             <div style={{
-                              fontSize: '0.6875rem',
+                              fontSize: '0.75rem',
                               fontFamily: 'var(--admin-mono)',
                               color: 'var(--admin-text-2)',
                               whiteSpace: 'pre-line',
@@ -1635,7 +1635,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                           </>
                         )}
                         {info.ready && (
-                          <div style={{ fontSize: '0.6875rem', color: '#22c55e' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#22c55e' }}>
                             All credentials configured. Platform ready for automated posting.
                           </div>
                         )}
@@ -1670,13 +1670,13 @@ export default function SocialDashboard({ apiBase }: Props) {
                       height: '100%',
                     }}>
                       <div style={{ fontWeight: 600, color: 'var(--admin-text)', marginBottom: '2px', fontSize: '0.75rem' }}>{fn.name}</div>
-                      <div style={{ ...S.mono, color: 'var(--admin-accent)', fontSize: '0.5625rem', marginBottom: '4px' }}>{fn.schedule}</div>
-                      <div style={{ fontSize: '0.5625rem', color: 'var(--admin-text-3)', lineHeight: '1.4' }}>{fn.desc}</div>
+                      <div style={{ ...S.mono, color: 'var(--admin-accent)', fontSize: '0.75rem', marginBottom: '4px' }}>{fn.schedule}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-3)', lineHeight: '1.4' }}>{fn.desc}</div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: 'var(--admin-text-4)', fontSize: '0.625rem', fontFamily: 'var(--admin-mono)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: 'var(--admin-text-4)', fontSize: '0.75rem', fontFamily: 'var(--admin-mono)' }}>
                 <span>Article publishes</span>
                 <span style={{ color: 'var(--admin-accent)' }}>&rarr;</span>
                 <span>Engine (brief)</span>
@@ -1696,12 +1696,12 @@ export default function SocialDashboard({ apiBase }: Props) {
               <span style={S.panelTitle}>Cron Jobs (pg_cron)</span>
             </div>
             <div style={{ padding: '0.75rem' }}>
-              <div style={{ fontSize: '0.6875rem', fontFamily: 'var(--admin-mono)', color: 'var(--admin-text-2)', lineHeight: '2' }}>
+              <div style={{ fontSize: '0.75rem', fontFamily: 'var(--admin-mono)', color: 'var(--admin-text-2)', lineHeight: '2' }}>
                 <div><span style={{ color: 'var(--admin-accent)' }}>*/5 * * * *</span> &nbsp; social-poster &mdash; dispatch scheduled posts</div>
                 <div><span style={{ color: 'var(--admin-accent)' }}>0 5 * * *</span> &nbsp;&nbsp; social-planner &mdash; daily editorial meeting</div>
                 <div><span style={{ color: 'var(--admin-accent)' }}>0 */6 * * *</span> &nbsp; social-sync &mdash; engagement metrics sync</div>
               </div>
-              <div style={{ marginTop: '0.75rem', padding: '0.5rem', background: 'var(--admin-surface-2)', borderRadius: 'var(--admin-radius-xs)', fontSize: '0.625rem', color: 'var(--admin-text-3)' }}>
+              <div style={{ marginTop: '0.75rem', padding: '0.5rem', background: 'var(--admin-surface-2)', borderRadius: 'var(--admin-radius-xs)', fontSize: '0.75rem', color: 'var(--admin-text-3)' }}>
                 <strong style={{ color: 'var(--admin-text-2)' }}>Setup commands:</strong><br />
                 These cron jobs are set up via SQL in the Supabase Dashboard (Database &gt; Extensions &gt; pg_cron + pg_net).<br />
                 See the migration file or CLAUDE.md for the exact SQL.
@@ -1714,23 +1714,23 @@ export default function SocialDashboard({ apiBase }: Props) {
             <div style={S.panelHeader}>
               <span style={S.panelTitle}>Quick Start Guide</span>
             </div>
-            <div style={{ padding: '0.75rem', fontSize: '0.6875rem', color: 'var(--admin-text-2)', lineHeight: '1.8' }}>
+            <div style={{ padding: '0.75rem', fontSize: '0.75rem', color: 'var(--admin-text-2)', lineHeight: '1.8' }}>
               <ol style={{ margin: 0, paddingLeft: '1.25rem' }}>
                 <li style={{ marginBottom: '8px' }}>
                   <strong style={{ color: 'var(--admin-text)' }}>Set up Bluesky</strong> (free, easiest start):<br />
-                  <code style={{ fontSize: '0.625rem', color: 'var(--admin-accent)' }}>supabase secrets set BLUESKY_HANDLE=youraccount.bsky.social BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx</code>
+                  <code style={{ fontSize: '0.75rem', color: 'var(--admin-accent)' }}>supabase secrets set BLUESKY_HANDLE=youraccount.bsky.social BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx</code>
                 </li>
                 <li style={{ marginBottom: '8px' }}>
                   <strong style={{ color: 'var(--admin-text)' }}>Mark platform as configured</strong>:<br />
-                  <code style={{ fontSize: '0.625rem', color: 'var(--admin-accent)' }}>UPDATE social_platform_config SET api_configured = true WHERE platform = 'bluesky';</code>
+                  <code style={{ fontSize: '0.75rem', color: 'var(--admin-accent)' }}>UPDATE social_platform_config SET api_configured = true WHERE platform = 'bluesky';</code>
                 </li>
                 <li style={{ marginBottom: '8px' }}>
                   <strong style={{ color: 'var(--admin-text)' }}>Deploy functions</strong>:<br />
-                  <code style={{ fontSize: '0.625rem', color: 'var(--admin-accent)' }}>for fn in social-writer social-poster social-planner social-sync social-engine social-admin; do supabase functions deploy $fn --no-verify-jwt; done</code>
+                  <code style={{ fontSize: '0.75rem', color: 'var(--admin-accent)' }}>for fn in social-writer social-poster social-planner social-sync social-engine social-admin; do supabase functions deploy $fn --no-verify-jwt; done</code>
                 </li>
                 <li style={{ marginBottom: '8px' }}>
                   <strong style={{ color: 'var(--admin-text)' }}>Set up cron jobs</strong> (run in Supabase SQL editor):<br />
-                  <code style={{ fontSize: '0.625rem', color: 'var(--admin-accent)' }}>SELECT cron.schedule('social-poster', '*/5 * * * *', ...);</code>
+                  <code style={{ fontSize: '0.75rem', color: 'var(--admin-accent)' }}>SELECT cron.schedule('social-poster', '*/5 * * * *', ...);</code>
                 </li>
                 <li style={{ marginBottom: '8px' }}>
                   <strong style={{ color: 'var(--admin-text)' }}>Test manually</strong>: Use the buttons above (Planner, Writer, Poster) to test each step, or enter an article slug and click Generate.
@@ -1747,7 +1747,7 @@ export default function SocialDashboard({ apiBase }: Props) {
             <div style={S.panelHeader}>
               <span style={S.panelTitle}>Keyboard Shortcuts</span>
             </div>
-            <div style={{ padding: '0.75rem', display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px', fontSize: '0.6875rem' }}>
+            <div style={{ padding: '0.75rem', display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px', fontSize: '0.75rem' }}>
               {[
                 ['1–5', 'Switch tabs'],
                 ['R', 'Refresh all data'],
@@ -1759,7 +1759,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                     background: 'var(--admin-surface-3)',
                     borderRadius: '3px',
                     fontFamily: 'var(--admin-mono)',
-                    fontSize: '0.625rem',
+                    fontSize: '0.75rem',
                     color: 'var(--admin-text)',
                     border: '1px solid var(--admin-border-2)',
                     textAlign: 'center',
@@ -1806,7 +1806,7 @@ function StatCell({
         <span style={{
           display: 'block',
           fontFamily: "'Inter', sans-serif",
-          fontSize: '1.25rem',
+          fontSize: '1.375rem',
           fontWeight: 600,
           fontVariantNumeric: 'tabular-nums',
           letterSpacing: '-0.02em',
@@ -1822,11 +1822,11 @@ function StatCell({
       </div>
       <span style={{
         display: 'block',
-        fontSize: '0.5625rem',
+        fontSize: '0.625rem',
         textTransform: 'uppercase',
         letterSpacing: '0.08em',
         color: 'var(--admin-text-3)',
-        marginTop: '2px',
+        marginTop: '3px',
         fontWeight: 500,
       }}>
         {label}
