@@ -1,0 +1,20 @@
+{
+  "title": "Pull the Lever",
+  "description": "The trolley problem has a correct answer. Philosophy departments just don't like saying so.",
+  "category": "Neuroscience",
+  "publishDate": "2026-04-03",
+  "author": {
+    "name": "Marc London",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 5,
+  "featured": false,
+  "draft": false,
+  "tags": [],
+  "gradient": {
+    "to": "purple-700",
+    "from": "violet-600"
+  },
+  "keywords": [],
+  "sortOrder": 1775257521314
+}
