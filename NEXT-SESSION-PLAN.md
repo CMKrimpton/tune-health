@@ -1,41 +1,33 @@
 # Next Session Plan
 
-> **Status**: v18.4.0 live. ~190 published articles across 9 categories. Social Media System fully hardened: batch API, input validation, stuck recovery, dispatch error logging. 9 functions deployed with intelligent safeguards. Dashboard upgraded with expandable posts, plan date navigator, better error messages.
+> **Status**: v18.5.0 live. ~192 published articles across 9 categories. Social Media System producing quality output: 5-6 unique posts per article across 2-3 platforms, each with a distinct hook/angle. Parallel writer processing. Tested on 3 articles with strong results.
 
 ---
 
-## What Was Done This Session (v18.4.0 — Full-Stack Hardening & Admin Intelligence)
+## What Was Done This Session (v18.5.0 — Social Content Quality)
 
-### Critical Bug Fixes
-- **Social dashboard 500 errors** — new `batch` endpoint replaces 6 parallel requests with 1 (Supabase concurrency limit)
-- **social-writer `successIds` bug** — plan rows stuck in "generating" forever (was slicing by index, now tracks actual success IDs)
-- **social-writer stuck recovery** — auto-resets rows stuck in "generating" for 10+ min from crashed runs
-- **CommandPalette event listener cleanup** — memory leak on View Transitions (missing `removeEventListener`)
-- **PipelineMonitor brief copy XSS** — replaced `document.write()` with safe `textContent` DOM API
-- **dispatchStage silent failures** — now logs dispatch errors directly to article record (visible in admin dashboard)
+### Social Engine Overhaul
+- **Capped choreography to 5-6 posts** across 2-3 platforms (was spraying 10-18 identical posts everywhere)
+- **Per-item hook field** — each choreography item carries a unique angle/entry point
+- **Stronger prompt constraints** — varied quotable lines, platform-appropriate targeting
 
-### Intelligent Safeguards (social-admin)
-- Article existence check before social generation — prevents burning AI credits on non-existent articles
-- Duplicate generation prevention — returns 409 if content already being generated for a slug
-- Slug format validation — rejects malformed slug strings with clear error
-- Platform existence validation — rejects toggle requests for unknown platforms
-- Action field validation — returns 400 instead of 500 on missing/invalid request bodies
-- social-poster auto-drafts posts for unconfigured platforms instead of silently skipping forever
+### Social Writer Overhaul
+- **Parallel processing** — 5 concurrent AI calls per batch (was sequential, causing timeouts)
+- **Hook-first prompts** — writer uses per-item hook, not global viral_angle
+- **Pre-fetched platform configs** — eliminated N+1 queries
+- **2-min stuck recovery** (was 10 min), max tokens 2000 (was 1500), batch size 10 (was 20)
+- **Stronger JSON enforcement** for Gemini reporter persona
 
-### Admin Dashboard UX
-- Expandable post rows in Post Feed — click to see full content, metadata, cost, scheduled time, article link
-- Copy button available on all posts (not just drafts) — useful for manual platform posting
-- Content Plan date navigator — browse plans for any date with prev/next arrows, date picker, Today button
-
-### Full-Stack Audit (4 parallel deep audits)
-- **Social functions**: Found/fixed successIds bug, stuck generating recovery, unconfigured platform handling
-- **Admin dashboard**: Found/fixed brief copy XSS, CommandPalette listener leak
-- **Public site**: Found/fixed CommandPalette cleanup; noted HighlightShare race condition (low priority)
-- **Pipeline functions**: Found/fixed dispatchStage silent failures; noted independence review skip monitoring (future)
+### Verified Output Quality
+- Tested on 3 articles: migraine/pharma, seed oils/AHA, contact lenses
+- Brand posts: platform-native, data-forward, no marketing energy
+- Skeptic posts (Grok): genuine devil's advocate
+- Reddit posts: structural analysis with discussion prompts
+- X threads: numbered multi-tweet format
+- Reporter/Gemini: occasional truncation on threads (non-blocking)
 
 ### Deployed
-- 9 functions deployed: stage-research, stage-editor, stage-independence, stage-qc, stage-voice-rewrite, stage-copy-edit, stage-publish, social-admin, social-writer, social-poster
-- Build passes clean
+- 2 functions deployed: social-engine, social-writer
 
 ## Current Architecture (v18.4.0)
 

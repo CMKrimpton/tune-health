@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.5.0] - 2026-04-03
+
+### Improved — Social Content Quality Revolution
+
+**Social Engine (strategic brain)**
+- Capped choreography to 5-6 posts max across 2-3 platforms (was spraying 10-18 identical posts across every platform)
+- Each choreography item now carries a unique `hook` field — a different angle/entry point per post
+- Stronger prompt constraints: varied quotable lines, platform-appropriate audience targeting
+- Example output: brand/Bluesky gets the punchy finding, brand/Reddit gets the systems analysis, skeptic/Reddit challenges what the article left unresolved
+
+**Social Writer (content factory)**
+- Parallel processing: 5 concurrent AI calls per batch (was sequential, causing edge function timeouts)
+- Hook-first prompts: writer uses the per-item hook as its opening angle, not the global viral_angle
+- Explicit uniqueness enforcement: "do NOT default to the core thesis as your opener"
+- Pre-fetched platform configs (eliminated N+1 database queries)
+- Stuck recovery threshold reduced from 10 min to 2 min (faster iteration on timeouts)
+- Stronger JSON output enforcement for Gemini (reduced truncation on reporter persona)
+- Max tokens bumped from 1500 → 2000 for thread-format posts
+- Batch size reduced from 20 → 10 to stay within edge function timeout
+
+**Verified output quality** — tested on 3 articles (migraine/pharma, seed oils/AHA, contact lenses):
+- Brand posts: platform-native, data-forward, no marketing energy
+- Skeptic posts (Grok): genuine devil's advocate, pushes back on article's own thesis
+- Reddit posts: deep structural analysis with discussion prompts
+- X threads: numbered multi-tweet format with article link in final tweet
+
 ## [18.4.0] - 2026-04-03
 
 ### Fixed — Full-Stack Hardening & Admin Intelligence

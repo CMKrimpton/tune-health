@@ -41,6 +41,7 @@ interface ContentBrief {
         format: string;
         offset_min: number;
         references?: string;
+        hook?: string;
       }>;
     };
   };
@@ -163,7 +164,13 @@ STRATEGY RULES:
 - Quotable lines should be standalone-compelling (no context needed)
 - Choreography: brand posts first, reporter amplifies 1h later, skeptic reacts 3h later
 - Assign desks and personas based on where the content fits naturally
-- Skip desks that don't fit (e.g., skip visual desk for complex policy articles)`;
+- Skip desks that don't fit (e.g., skip visual desk for complex policy articles)
+
+CRITICAL CONSTRAINTS:
+- MAX 5-6 posts total. Quality over quantity. Never spam 10+ platforms with the same take.
+- Pick 2-3 PLATFORMS max (the ones where this article's audience actually lives)
+- Each choreography item MUST have a unique "hook" — a different angle or entry point. If brand leads with the core finding, reporter leads with the methodology, skeptic leads with what's missing. NEVER repeat the same hook across items.
+- The quotable_lines array should have 5+ VARIED lines — not variations of the same sentence`;
 
     const user = `Generate a Content Brief for this article:
 
@@ -191,28 +198,35 @@ Return a JSON Content Brief with this structure:
 {
   "strategy": {
     "core_thesis": "one sentence — the article's central claim",
-    "viral_angle": "the hook that makes someone stop scrolling",
+    "viral_angle": "the primary hook that makes someone stop scrolling",
     "controversy": "the uncomfortable question this raises (optional)",
     "emotional_triggers": ["surprise", "curiosity", etc.],
     "key_findings": [{"finding": "...", "stat": "X%", "source": "Journal 2025"}],
-    "quotable_lines": ["standalone-compelling quotes from or about the article"],
+    "quotable_lines": ["5+ standalone-compelling lines — each one DIFFERENT, covering different aspects of the article"],
     "visual_concept": "image/graphic idea for visual platforms",
     "target_segments": ["who cares most about this"],
     "hashtags": {"primary": ["3-5 broad"], "niche": ["3-5 specific"]}
   },
   "assignments": {
-    "desks": ["microblog", "forum", etc.],
-    "personas": {"brand": ["bluesky", "reddit"], "reporter": ["bluesky"], "skeptic": ["bluesky", "reddit"]},
+    "desks": ["microblog", "forum"],
+    "personas": {"brand": ["bluesky", "reddit"], "reporter": ["bluesky"], "skeptic": ["reddit"]},
     "priority": "high" | "normal" | "low",
     "choreography": {
       "sequence": [
-        {"persona": "brand", "platform": "bluesky", "format": "post", "offset_min": 0},
-        {"persona": "reporter", "platform": "bluesky", "format": "thread", "offset_min": 60, "references": "brand"},
-        {"persona": "skeptic", "platform": "bluesky", "format": "quote", "offset_min": 180, "references": "reporter"}
+        {"persona": "brand", "platform": "bluesky", "format": "post", "offset_min": 0, "hook": "Lead with the shocking finding — the specific stat or claim that stops scrolling"},
+        {"persona": "brand", "platform": "reddit", "format": "link_post", "offset_min": 15, "hook": "Frame as a systems analysis — follow the money, name the incentive structure"},
+        {"persona": "reporter", "platform": "bluesky", "format": "thread", "offset_min": 60, "hook": "Lead with the methodology — what the study actually measured vs. what headlines said", "references": "brand"},
+        {"persona": "skeptic", "platform": "reddit", "format": "comment", "offset_min": 180, "hook": "Challenge what the article leaves unresolved — the uncomfortable question it doesn't fully answer", "references": "brand"}
       ]
     }
   }
-}`;
+}
+
+RULES FOR CHOREOGRAPHY:
+- MAX 5-6 items. Think carefully — which 5 posts will have the most impact?
+- Each item's "hook" field describes a UNIQUE angle. The writer will use this hook, NOT the viral_angle, to write the post. If two hooks sound similar, delete one.
+- 2-3 platforms max. Pick where the audience for THIS topic actually is.
+- Brand gets 2-3 posts (different platforms, different hooks). Reporter and skeptic get 1-2 each.`;
 
     const result = await generateWithFallback({
       system,
@@ -264,6 +278,7 @@ Return a JSON Content Brief with this structure:
           ...brief.strategy,
           article: brief.article,
           references: item.references || null,
+          hook: (item as Record<string, unknown>).hook || null,
         },
         arc_id: currentArc?.id || null,
         status: "planned",

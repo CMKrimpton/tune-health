@@ -11,7 +11,8 @@ import { SOCIAL_CHAINS } from "../_shared/constants.ts";
 // Triggered by: social-engine (chain) or social-planner (chain) or manual.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const MAX_BATCH = 20; // Max plan rows to process per invocation
+const MAX_BATCH = 10; // Max plan rows to process per invocation
+const MAX_CONCURRENCY = 5; // Parallel AI calls (avoid rate limits + stay within edge fn timeout)
 
 // Platform character limits and format rules
 const PLATFORM_RULES: Record<string, { maxChars: number; rules: string }> = {
@@ -71,8 +72,8 @@ Deno.serve(async (req: Request) => {
     const { articleSlug } = body as { articleSlug?: string };
     const db = supabase();
 
-    // Recovery: unstick plan rows that have been "generating" for 10+ minutes (crashed previous run)
-    const stuckCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    // Recovery: unstick plan rows that have been "generating" for 2+ minutes (crashed/timed-out previous run)
+    const stuckCutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     await db.from("social_content_plan")
       .update({ status: "planned" })
       .eq("status", "generating")
@@ -113,7 +114,16 @@ Deno.serve(async (req: Request) => {
     const succeededPlanIds: string[] = [];
     let failedCount = 0;
 
-    for (const row of planRows as PlanRow[]) {
+    // Pre-fetch platform configs once (avoid N+1 queries)
+    const { data: allPlatformConfigs } = await db
+      .from("social_platform_config")
+      .select("platform, api_configured, config");
+    const platformConfigMap = new Map(
+      (allPlatformConfigs || []).map((c: { platform: string; api_configured: boolean; config: unknown }) => [c.platform, c])
+    );
+
+    // Process a single plan row → returns post data or null on failure
+    async function processRow(row: PlanRow): Promise<{ post: Record<string, unknown>; usage: { costUsd: number }; planId: string } | null> {
       try {
         const brief = row.brief || {};
         const article = (brief.article as Record<string, unknown>) || {};
@@ -121,14 +131,13 @@ Deno.serve(async (req: Request) => {
         const personaVoice = PERSONA_VOICES[row.persona] || PERSONA_VOICES.brand;
         const chain = SOCIAL_CHAINS[row.persona] || SOCIAL_CHAINS.brand;
 
-        // Check if platform is configured for automated posting
-        const { data: platformConfig } = await db
-          .from("social_platform_config")
-          .select("api_configured, config")
-          .eq("platform", row.platform)
-          .maybeSingle();
-
+        const platformConfig = platformConfigMap.get(row.platform);
         const isManual = !platformConfig?.api_configured;
+
+        const articleUrl = (article.url as string) || `https://tune-health.vercel.app/articles/${row.article_slug}`;
+        const hookDirective = (brief.hook as string)
+          ? `\nYOUR UNIQUE HOOK (use THIS as your opening angle — not the viral_angle):\n${brief.hook}`
+          : "";
 
         const system = `You are writing a social media post for ${row.platform}.
 
@@ -152,27 +161,29 @@ ${row.platform === "reddit" ? `{
   "body": "The full post text including article URL"
 }`}
 
-IMPORTANT:
+CRITICAL RULES:
+- Return ONLY a valid JSON object. No prose before or after. No markdown fences.
 - The post must be COMPLETE and ready to publish as-is
-- Article URL: ${article.url || `https://tune-health.vercel.app/articles/${row.article_slug}`}
-- Stay within the character limit
+- Article URL: ${articleUrl}
+- Stay STRICTLY within the character limit (${platformRule.maxChars} chars max)
 - Sound like a real person, not a marketing bot
-- No "Check out our latest article!" energy — lead with the insight`;
+- No "Check out our latest article!" energy — lead with the insight
+- Your opening sentence MUST follow the UNIQUE HOOK directive below — do NOT default to the core thesis or viral angle as your opener
+- For threads: put the ENTIRE thread in the "body" field as one text block (the poster will handle splitting)`;
 
         const user = `Write a ${row.content_format} for ${row.platform} about this article:
 
 ARTICLE: "${article.title || row.article_slug}"
 CATEGORY: ${article.category || "Health"}
+${hookDirective}
 
-CONTENT BRIEF:
+CONTENT BRIEF (background context — but lead with YOUR HOOK, not these):
 - Core thesis: ${(brief.core_thesis as string) || ""}
-- Viral angle: ${(brief.viral_angle as string) || ""}
-- Controversy: ${(brief.controversy as string) || "none"}
 - Key findings: ${JSON.stringify((brief.key_findings as unknown[]) || [])}
-- Quotable lines: ${JSON.stringify((brief.quotable_lines as unknown[]) || [])}
-- Emotional triggers: ${JSON.stringify((brief.emotional_triggers as unknown[]) || [])}
+- Quotable lines (pick ONE that fits your hook, don't reuse across posts): ${JSON.stringify((brief.quotable_lines as unknown[]) || [])}
+- Controversy: ${(brief.controversy as string) || "none"}
 - Hashtags: ${JSON.stringify((brief.hashtags as unknown) || {})}
-${(brief.references as string) ? `\nThis is a REPLY to the ${brief.references} persona's post — reference their angle and build on it or challenge it.` : ""}
+${(brief.references as string) ? `\nThis is a REPLY/REACTION to the ${brief.references} persona's post — reference their angle and build on it or challenge it.` : ""}
 
 Generate the post now.`;
 
@@ -180,7 +191,7 @@ Generate the post now.`;
           system,
           user,
           models: chain,
-          maxTokens: 1500,
+          maxTokens: 2000,
           temperature: 0.5,
           stage: `social-writer-${row.persona}`,
         });
@@ -195,41 +206,54 @@ Generate the post now.`;
         contentMeta.modelUsed = result.modelUsed;
         contentMeta.isManual = isManual;
 
-        // Calculate scheduled_at from choreography offset
         const baseTime = new Date();
-
-        // Stagger: brand at 0, reporter at 60min, skeptic at 180min
         const personaOffsets: Record<string, number> = { brand: 0, reporter: 60, skeptic: 180, curator: 120 };
         const offset = personaOffsets[row.persona] || 0;
         const scheduledAt = new Date(baseTime.getTime() + offset * 60 * 1000);
 
-        posts.push({
-          article_slug: row.article_slug,
-          platform: row.platform,
-          persona: row.persona,
-          content_type: row.desk === "forum" ? "discussion" : "promotion",
-          content_format: row.content_format,
-          content_text: contentText,
-          content_meta: contentMeta,
-          choreography_group: choreographyGroups[row.article_slug],
-          timing_offset_minutes: offset,
-          scheduled_at: isManual ? null : scheduledAt.toISOString(),
-          status: isManual ? "draft" : "scheduled",
-          arc_id: row.arc_id,
-          series_tag: row.series_tag,
-          cost_usd: Math.round(result.usage.costUsd * 10000) / 10000,
-        });
-
-        usages.push({ costUsd: result.usage.costUsd });
-        succeededPlanIds.push(row.id);
-
-        // Log overhead cost
         await addOverheadCost(db, result.usage);
+
+        return {
+          post: {
+            article_slug: row.article_slug,
+            platform: row.platform,
+            persona: row.persona,
+            content_type: row.desk === "forum" ? "discussion" : "promotion",
+            content_format: row.content_format,
+            content_text: contentText,
+            content_meta: contentMeta,
+            choreography_group: choreographyGroups[row.article_slug],
+            timing_offset_minutes: offset,
+            scheduled_at: isManual ? null : scheduledAt.toISOString(),
+            status: isManual ? "draft" : "scheduled",
+            arc_id: row.arc_id,
+            series_tag: row.series_tag,
+            cost_usd: Math.round(result.usage.costUsd * 10000) / 10000,
+          },
+          usage: { costUsd: result.usage.costUsd },
+          planId: row.id,
+        };
       } catch (err) {
         console.error(`[Social Writer] Failed to write for ${row.platform}/${row.persona}: ${err instanceof Error ? err.message : "unknown"}`);
-        failedCount++;
-        // Mark this plan row as failed
         await db.from("social_content_plan").update({ status: "failed" }).eq("id", row.id);
+        return null;
+      }
+    }
+
+    // Process in parallel batches of MAX_CONCURRENCY
+    const rows = planRows as PlanRow[];
+    for (let i = 0; i < rows.length; i += MAX_CONCURRENCY) {
+      const batch = rows.slice(i, i + MAX_CONCURRENCY);
+      const results = await Promise.allSettled(batch.map(processRow));
+
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value) {
+          posts.push(result.value.post);
+          usages.push(result.value.usage);
+          succeededPlanIds.push(result.value.planId);
+        } else {
+          failedCount++;
+        }
       }
     }
 
