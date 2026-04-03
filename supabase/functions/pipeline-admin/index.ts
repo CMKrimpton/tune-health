@@ -90,9 +90,11 @@ Deno.serve(async (req: Request) => {
 
       // Fetch recent activity (all statuses) + ensure published articles aren't lost
       // Exclude _system_overhead rows — those are just for cost tracking
+      // Only select columns the frontend needs (research_data is huge — trim it server-side)
+      const LOG_COLUMNS = "id,run_date,topic,slug,title,status,error,model_used,revision_count,source,queue_id,cost_usd,grok_score,editor_score,created_at,completed_at,stage_started_at,research_data,token_usage";
       const { data: recentLogs } = await db
         .from("daily_article_log")
-        .select("*")
+        .select(LOG_COLUMNS)
         .neq("slug", "_system_overhead")
         .order("created_at", { ascending: false })
         .limit(30);
@@ -100,20 +102,62 @@ Deno.serve(async (req: Request) => {
       // Also fetch recent published articles separately (may be outside the 30 window)
       const { data: publishedLogs } = await db
         .from("daily_article_log")
-        .select("*")
+        .select(LOG_COLUMNS)
         .eq("status", "published")
         .order("completed_at", { ascending: false })
         .limit(15);
 
       // Merge: recent activity + published (deduplicated by id)
       const seenIds = new Set<string>();
-      const data: typeof recentLogs = [];
+      const mergedLogs: typeof recentLogs = [];
       for (const log of [...(recentLogs || []), ...(publishedLogs || [])]) {
         if (!seenIds.has(log.id)) {
           seenIds.add(log.id);
-          data.push(log);
+          mergedLogs.push(log);
         }
       }
+
+      // Trim research_data to only fields the frontend needs (strips 90%+ of payload)
+      const data = (mergedLogs || []).map((log: Record<string, unknown>) => {
+        const rd = log.research_data as Record<string, unknown> | null;
+        if (!rd) return log;
+        // Trim _editorBrief.brief to only used sub-fields (saves ~6KB/article)
+        const editorBrief = rd._editorBrief as Record<string, unknown> | undefined;
+        let trimmedBrief: Record<string, unknown> | undefined;
+        if (editorBrief) {
+          const fullBrief = editorBrief.brief as Record<string, unknown> | undefined;
+          trimmedBrief = {
+            topicScore: editorBrief.topicScore,
+            angle: editorBrief.angle,
+            archetype: editorBrief.archetype,
+            categoryOverride: editorBrief.categoryOverride,
+            candidateScores: editorBrief.candidateScores,
+            brief: fullBrief ? {
+              tonePreset: fullBrief.tonePreset,
+              density: fullBrief.density,
+              pacing: fullBrief.pacing,
+              dogmaWarnings: fullBrief.dogmaWarnings,
+            } : undefined,
+          };
+        }
+        return {
+          ...log,
+          research_data: {
+            _editorBrief: trimmedBrief,
+            _independenceReview: rd._independenceReview ?? undefined,
+            _pubmedVerification: rd._pubmedVerification ?? undefined,
+            _qcResult: rd._qcResult ?? undefined,
+            _copyEditResult: rd._copyEditResult ?? undefined,
+            _writtenBy: rd._writtenBy ?? undefined,
+            _queueId: rd._queueId ?? undefined,
+            _queueSource: rd._queueSource ?? undefined,
+            category: rd.category ?? undefined,
+            topic: rd.topic ?? undefined,
+            keyFindings: rd.keyFindings ? (rd.keyFindings as string[]).slice(0, 5) : undefined,
+            candidates: rd.candidates ?? undefined,
+          },
+        };
+      });
 
       const { count: articleCount } = await db
         .from("articles")
@@ -121,27 +165,31 @@ Deno.serve(async (req: Request) => {
 
       const { data: queue } = await db
         .from("topic_queue")
-        .select("*")
+        .select("id,topic,notes,category,priority,expedite,source,status,created_at,research_summary,editor_score")
+        .neq("status", "completed")
+        .neq("status", "skipped")
         .order("expedite", { ascending: false })
         .order("priority", { ascending: true })
         .order("created_at", { ascending: true });
 
-      // Calculate total spend across all logs (article + overhead separately)
+      // Calculate total spend using server-side aggregation (no need to fetch all rows)
       const { data: costData } = await db
         .from("daily_article_log")
-        .select("cost_usd, slug");
+        .select("cost_usd, slug")
+        .gt("cost_usd", 0);
       let articleSpend = 0;
       let overheadSpend = 0;
+      let publishedWithCost = 0;
       for (const row of costData || []) {
         const c = parseFloat(String(row.cost_usd ?? "0")) || 0;
+        if (c <= 0) continue;
         if (row.slug === "_system_overhead") overheadSpend += c;
-        else articleSpend += c;
+        else { articleSpend += c; publishedWithCost++; }
       }
       const totalCost = Math.round((articleSpend + overheadSpend) * 100) / 100;
-      const publishedWithCost = (costData || []).filter((r: { cost_usd: number | string | null; slug: string }) => r.slug !== "_system_overhead" && (parseFloat(String(r.cost_usd ?? "0")) || 0) > 0).length;
       const avgCostPerArticle = publishedWithCost > 0 ? Math.round((articleSpend / publishedWithCost) * 100) / 100 : 0;
 
-      return json({ logs: data || [], articleCount, queue: queue || [], totalCost, overheadSpend: Math.round(overheadSpend * 100) / 100, avgCostPerArticle });
+      return json({ logs: data, articleCount, queue: queue || [], totalCost, overheadSpend: Math.round(overheadSpend * 100) / 100, avgCostPerArticle });
     }
 
     // ------ READER QUESTIONS — mine user chat data for article ideas ------

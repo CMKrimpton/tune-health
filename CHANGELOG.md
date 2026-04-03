@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [19.0.1] - 2026-04-03
+
+### Fixed — Pipeline Admin 502 Errors
+
+- **Status response reduced 80%**: 1.7MB → 328KB by trimming `research_data` to only frontend-needed fields server-side
+- **Explicit column selection**: replaced `select("*")` with specific columns on `daily_article_log` and `topic_queue` queries
+- **Queue payload trimmed**: excluded completed/skipped queue items (213 rows were being sent unnecessarily)
+- **Cost query optimized**: filtered to `cost_usd > 0` to skip zero-cost rows
+- **Result**: eliminates 502 errors on cold starts, enables Realtime to show Research/Editor stages in real time
+
 ## [19.0.0] - 2026-04-03
 
 ### Added — Theme-Aware Illustration Pairs (Dark + Light)
