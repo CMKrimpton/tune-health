@@ -294,11 +294,13 @@ export default function SocialDashboard({ apiBase }: Props) {
   const [arcs, setArcs] = useState<Arc[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'overview' | 'posts' | 'plan' | 'platforms'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'posts' | 'plan' | 'platforms' | 'setup'>('overview');
   const [postFilter, setPostFilter] = useState<string>('all');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [generating, setGenerating] = useState(false);
   const [generateSlug, setGenerateSlug] = useState('');
+  const [runningAction, setRunningAction] = useState<string | null>(null);
+  const [setupData, setSetupData] = useState<Record<string, unknown> | null>(null);
 
   // ─── Data Fetching ───────────────────────────────────────────────────
 
@@ -370,6 +372,38 @@ export default function SocialDashboard({ apiBase }: Props) {
     }
   };
 
+  const runAction = async (action: string) => {
+    setRunningAction(action);
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/social-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+        timeout: 120_000,
+      });
+      const data = await res.json();
+      console.log(`[Social] ${action} result:`, data);
+      fetchAll();
+    } catch (err) {
+      console.error(`[Social] ${action} failed:`, err);
+    } finally {
+      setRunningAction(null);
+    }
+  };
+
+  const fetchSetup = async () => {
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/social-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'setup-status' }),
+      });
+      if (res.ok) setSetupData(await res.json());
+    } catch (err) {
+      console.error('[Social] Setup fetch failed:', err);
+    }
+  };
+
   // ─── Filtering ───────────────────────────────────────────────────────
 
   const filteredPosts = posts.filter(p => {
@@ -409,12 +443,12 @@ export default function SocialDashboard({ apiBase }: Props) {
         <StatCell label="Platforms" value={stats?.activePlatforms ?? 0} color="#22c55e" />
       </div>
 
-      {/* ═══ Section Tabs ═══ */}
-      <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid var(--admin-border)', marginBottom: '0.75rem' }}>
-        {(['overview', 'posts', 'plan', 'platforms'] as const).map(s => (
+      {/* ═══ Section Tabs + Actions ═══ */}
+      <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid var(--admin-border)', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+        {(['overview', 'posts', 'plan', 'platforms', 'setup'] as const).map(s => (
           <button
             key={s}
-            onClick={() => setActiveSection(s)}
+            onClick={() => { setActiveSection(s); if (s === 'setup') fetchSetup(); }}
             style={{
               ...S.btn(false),
               border: 'none',
@@ -426,18 +460,18 @@ export default function SocialDashboard({ apiBase }: Props) {
               fontSize: '0.6875rem',
             }}
           >
-            {s === 'overview' ? 'Overview' : s === 'posts' ? 'Post Feed' : s === 'plan' ? 'Content Plan' : 'Platforms'}
+            {s === 'overview' ? 'Overview' : s === 'posts' ? 'Post Feed' : s === 'plan' ? 'Content Plan' : s === 'platforms' ? 'Platforms' : 'Setup'}
           </button>
         ))}
-        {/* Quick action: generate */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.375rem', paddingRight: '0.25rem' }}>
+        {/* Quick actions: generate + manual triggers */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem', paddingRight: '0.25rem' }}>
           <input
             type="text"
             value={generateSlug}
             onChange={e => setGenerateSlug(e.target.value)}
             placeholder="article-slug"
             style={{
-              width: '140px',
+              width: '120px',
               padding: '2px 6px',
               fontSize: '0.625rem',
               fontFamily: 'var(--admin-mono)',
@@ -452,13 +486,27 @@ export default function SocialDashboard({ apiBase }: Props) {
           <button
             onClick={generateForArticle}
             disabled={generating || !generateSlug.trim()}
-            style={{
-              ...S.btn(true),
-              opacity: generating || !generateSlug.trim() ? 0.5 : 1,
-            }}
+            style={{ ...S.btn(true), opacity: generating || !generateSlug.trim() ? 0.5 : 1 }}
           >
             {generating ? 'Gen\u2026' : 'Generate'}
           </button>
+          <span style={{ width: '1px', height: '14px', background: 'var(--admin-border-2)', margin: '0 2px' }} />
+          {[
+            { action: 'run-planner', label: 'Planner' },
+            { action: 'run-writer', label: 'Writer' },
+            { action: 'run-poster', label: 'Poster' },
+            { action: 'run-sync', label: 'Sync' },
+          ].map(({ action, label }) => (
+            <button
+              key={action}
+              onClick={() => runAction(action)}
+              disabled={!!runningAction}
+              style={{ ...S.btn(false), opacity: runningAction ? 0.5 : 1, fontSize: '0.5625rem' }}
+              title={`Manually trigger ${label.toLowerCase()}`}
+            >
+              {runningAction === action ? '\u2026' : label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -554,7 +602,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                   </div>
                 ) : (
                   <div style={{ padding: '0.75rem 0', textAlign: 'center', color: 'var(--admin-text-4)', fontSize: '0.75rem' }}>
-                    No active arc. Arc planner runs Sunday 11pm UTC.
+                    No active arc. Click "Planner" above or wait for the daily 5am UTC run.
                   </div>
                 )}
               </div>
@@ -905,6 +953,165 @@ export default function SocialDashboard({ apiBase }: Props) {
               No platforms configured. Run the migration to seed platform configs.
             </div>
           )}
+        </div>
+      )}
+
+      {/* ═══ SETUP GUIDE ═══ */}
+      {activeSection === 'setup' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {/* Credential Status */}
+          <div style={S.panel}>
+            <div style={S.panelHeader}>
+              <span style={S.panelTitle}>Platform Credentials</span>
+              <button onClick={fetchSetup} style={S.btn(false)}>Refresh</button>
+            </div>
+            <div style={{ padding: '0.75rem' }}>
+              {!setupData ? (
+                <div style={{ textAlign: 'center', color: 'var(--admin-text-4)', fontSize: '0.75rem', padding: '1rem' }}>
+                  Loading setup status...
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {Object.entries((setupData.credentials || {}) as Record<string, { ready: boolean; missing: string[]; instructions: string }>).map(([platform, info]) => {
+                    const cfg = PLATFORM_ICONS[platform];
+                    return (
+                      <div key={platform} style={{
+                        padding: '0.75rem',
+                        background: info.ready ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)',
+                        border: `1px solid ${info.ready ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+                        borderRadius: 'var(--admin-radius-sm)',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '1.125rem' }}>{cfg?.icon || '?'}</span>
+                          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--admin-text)', textTransform: 'capitalize' }}>{platform}</span>
+                          <span style={S.pill(info.ready ? '#22c55e' : '#ef4444')}>
+                            {info.ready ? 'READY' : 'NOT CONFIGURED'}
+                          </span>
+                        </div>
+                        {!info.ready && (
+                          <>
+                            {info.missing.length > 0 && (
+                              <div style={{ fontSize: '0.6875rem', color: '#f87171', marginBottom: '6px' }}>
+                                Missing: {info.missing.join(', ')}
+                              </div>
+                            )}
+                            <div style={{
+                              fontSize: '0.6875rem',
+                              fontFamily: 'var(--admin-mono)',
+                              color: 'var(--admin-text-2)',
+                              whiteSpace: 'pre-line',
+                              lineHeight: '1.6',
+                              padding: '0.5rem',
+                              background: 'var(--admin-surface-2)',
+                              borderRadius: 'var(--admin-radius-xs)',
+                            }}>
+                              {info.instructions}
+                            </div>
+                          </>
+                        )}
+                        {info.ready && (
+                          <div style={{ fontSize: '0.6875rem', color: '#22c55e' }}>
+                            All credentials configured. Platform ready for automated posting.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* System Architecture */}
+          <div style={S.panel}>
+            <div style={S.panelHeader}>
+              <span style={S.panelTitle}>Social System Architecture</span>
+            </div>
+            <div style={{ padding: '0.75rem', fontSize: '0.75rem', color: 'var(--admin-text-2)', lineHeight: '1.8' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
+                {[
+                  { name: 'Planner', schedule: 'Daily 5am UTC', desc: 'Selects articles, creates weekly arcs, dispatches to Engine' },
+                  { name: 'Engine', schedule: 'On publish + planner', desc: 'Generates Content Brief (strategy, choreography, assignments)' },
+                  { name: 'Writer', schedule: 'Chained from Engine', desc: 'Writes platform-native posts per persona using their AI model' },
+                  { name: 'Poster', schedule: 'Every 5 min', desc: 'Dispatches scheduled posts to platform APIs' },
+                ].map(fn => (
+                  <div key={fn.name} style={{
+                    padding: '0.625rem',
+                    background: 'var(--admin-surface-2)',
+                    borderRadius: 'var(--admin-radius-sm)',
+                    border: '1px solid var(--admin-border)',
+                  }}>
+                    <div style={{ fontWeight: 600, color: 'var(--admin-text)', marginBottom: '2px' }}>{fn.name}</div>
+                    <div style={{ ...S.mono, color: 'var(--admin-accent)', fontSize: '0.5625rem', marginBottom: '4px' }}>{fn.schedule}</div>
+                    <div style={{ fontSize: '0.625rem', color: 'var(--admin-text-3)' }}>{fn.desc}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: 'var(--admin-text-4)', fontSize: '0.625rem', fontFamily: 'var(--admin-mono)' }}>
+                <span>Article publishes</span>
+                <span style={{ color: 'var(--admin-accent)' }}>&rarr;</span>
+                <span>Engine (brief)</span>
+                <span style={{ color: 'var(--admin-accent)' }}>&rarr;</span>
+                <span>Writer (posts)</span>
+                <span style={{ color: 'var(--admin-accent)' }}>&rarr;</span>
+                <span>Poster (dispatch)</span>
+                <span style={{ color: 'var(--admin-accent)' }}>&rarr;</span>
+                <span>Sync (metrics)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cron Jobs */}
+          <div style={S.panel}>
+            <div style={S.panelHeader}>
+              <span style={S.panelTitle}>Cron Jobs (pg_cron)</span>
+            </div>
+            <div style={{ padding: '0.75rem' }}>
+              <div style={{ fontSize: '0.6875rem', fontFamily: 'var(--admin-mono)', color: 'var(--admin-text-2)', lineHeight: '2' }}>
+                <div><span style={{ color: 'var(--admin-accent)' }}>*/5 * * * *</span> &nbsp; social-poster &mdash; dispatch scheduled posts</div>
+                <div><span style={{ color: 'var(--admin-accent)' }}>0 5 * * *</span> &nbsp;&nbsp; social-planner &mdash; daily editorial meeting</div>
+                <div><span style={{ color: 'var(--admin-accent)' }}>0 */6 * * *</span> &nbsp; social-sync &mdash; engagement metrics sync</div>
+              </div>
+              <div style={{ marginTop: '0.75rem', padding: '0.5rem', background: 'var(--admin-surface-2)', borderRadius: 'var(--admin-radius-xs)', fontSize: '0.625rem', color: 'var(--admin-text-3)' }}>
+                <strong style={{ color: 'var(--admin-text-2)' }}>Setup commands:</strong><br />
+                These cron jobs are set up via SQL in the Supabase Dashboard (Database &gt; Extensions &gt; pg_cron + pg_net).<br />
+                See the migration file or CLAUDE.md for the exact SQL.
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Start Guide */}
+          <div style={S.panel}>
+            <div style={S.panelHeader}>
+              <span style={S.panelTitle}>Quick Start Guide</span>
+            </div>
+            <div style={{ padding: '0.75rem', fontSize: '0.6875rem', color: 'var(--admin-text-2)', lineHeight: '1.8' }}>
+              <ol style={{ margin: 0, paddingLeft: '1.25rem' }}>
+                <li style={{ marginBottom: '8px' }}>
+                  <strong style={{ color: 'var(--admin-text)' }}>Set up Bluesky</strong> (free, easiest start):<br />
+                  <code style={{ fontSize: '0.625rem', color: 'var(--admin-accent)' }}>supabase secrets set BLUESKY_HANDLE=youraccount.bsky.social BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx</code>
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  <strong style={{ color: 'var(--admin-text)' }}>Mark platform as configured</strong>:<br />
+                  <code style={{ fontSize: '0.625rem', color: 'var(--admin-accent)' }}>UPDATE social_platform_config SET api_configured = true WHERE platform = 'bluesky';</code>
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  <strong style={{ color: 'var(--admin-text)' }}>Deploy functions</strong>:<br />
+                  <code style={{ fontSize: '0.625rem', color: 'var(--admin-accent)' }}>for fn in social-writer social-poster social-planner social-sync social-engine social-admin; do supabase functions deploy $fn --no-verify-jwt; done</code>
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  <strong style={{ color: 'var(--admin-text)' }}>Set up cron jobs</strong> (run in Supabase SQL editor):<br />
+                  <code style={{ fontSize: '0.625rem', color: 'var(--admin-accent)' }}>SELECT cron.schedule('social-poster', '*/5 * * * *', ...);</code>
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  <strong style={{ color: 'var(--admin-text)' }}>Test manually</strong>: Use the buttons above (Planner, Writer, Poster) to test each step, or enter an article slug and click Generate.
+                </li>
+                <li>
+                  <strong style={{ color: 'var(--admin-text)' }}>Verify</strong>: Check the Overview tab for activity, the Post Feed for content, and Platforms for API status.
+                </li>
+              </ol>
+            </div>
+          </div>
         </div>
       )}
     </div>

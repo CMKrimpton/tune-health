@@ -269,6 +269,133 @@ Deno.serve(async (req: Request) => {
         return json({ personas: personas || [] });
       }
 
+      // ─── Trigger Daily Planner ─────────────────────────────────────
+      case "run-planner": {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+        const res = await fetch(`${supabaseUrl}/functions/v1/social-planner`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+          body: JSON.stringify({}),
+          signal: AbortSignal.timeout(120_000),
+        });
+        const data = await res.json();
+        return json(data, res.ok ? 200 : 500);
+      }
+
+      // ─── Trigger Writer for planned content ───────────────────────
+      case "run-writer": {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+        const res = await fetch(`${supabaseUrl}/functions/v1/social-writer`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+          body: JSON.stringify({ articleSlug: body.slug || undefined }),
+          signal: AbortSignal.timeout(120_000),
+        });
+        const data = await res.json();
+        return json(data, res.ok ? 200 : 500);
+      }
+
+      // ─── Trigger Poster for scheduled posts ───────────────────────
+      case "run-poster": {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+        const res = await fetch(`${supabaseUrl}/functions/v1/social-poster`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+          body: JSON.stringify({}),
+          signal: AbortSignal.timeout(60_000),
+        });
+        const data = await res.json();
+        return json(data, res.ok ? 200 : 500);
+      }
+
+      // ─── Trigger Engagement Sync ──────────────────────────────────
+      case "run-sync": {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+        const res = await fetch(`${supabaseUrl}/functions/v1/social-sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+          body: JSON.stringify({}),
+          signal: AbortSignal.timeout(60_000),
+        });
+        const data = await res.json();
+        return json(data, res.ok ? 200 : 500);
+      }
+
+      // ─── Platform Setup Status ────────────────────────────────────
+      case "setup-status": {
+        const { data: configs } = await db
+          .from("social_platform_config")
+          .select("platform, tier, desk, api_configured, config, active")
+          .order("tier", { ascending: true });
+
+        // Check which env vars are set (without revealing values)
+        const envChecks: Record<string, boolean> = {
+          BLUESKY_HANDLE: !!(Deno.env.get("BLUESKY_HANDLE") || "").trim(),
+          BLUESKY_APP_PASSWORD: !!(Deno.env.get("BLUESKY_APP_PASSWORD") || "").trim(),
+          REDDIT_CLIENT_ID: !!(Deno.env.get("REDDIT_CLIENT_ID") || "").trim(),
+          REDDIT_CLIENT_SECRET: !!(Deno.env.get("REDDIT_CLIENT_SECRET") || "").trim(),
+          REDDIT_USERNAME: !!(Deno.env.get("REDDIT_USERNAME") || "").trim(),
+          REDDIT_PASSWORD: !!(Deno.env.get("REDDIT_PASSWORD") || "").trim(),
+          MASTODON_ACCESS_TOKEN: !!(Deno.env.get("MASTODON_ACCESS_TOKEN") || "").trim(),
+          MASTODON_INSTANCE: !!(Deno.env.get("MASTODON_INSTANCE") || "").trim(),
+        };
+
+        const platformSetup = {
+          bluesky: {
+            ready: envChecks.BLUESKY_HANDLE && envChecks.BLUESKY_APP_PASSWORD,
+            missing: [
+              ...(!envChecks.BLUESKY_HANDLE ? ["BLUESKY_HANDLE"] : []),
+              ...(!envChecks.BLUESKY_APP_PASSWORD ? ["BLUESKY_APP_PASSWORD"] : []),
+            ],
+            instructions: "1. Go to bsky.app → Settings → App Passwords → Add App Password\n2. Run: supabase secrets set BLUESKY_HANDLE=your.handle BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx",
+          },
+          reddit: {
+            ready: envChecks.REDDIT_CLIENT_ID && envChecks.REDDIT_CLIENT_SECRET && envChecks.REDDIT_USERNAME && envChecks.REDDIT_PASSWORD,
+            missing: [
+              ...(!envChecks.REDDIT_CLIENT_ID ? ["REDDIT_CLIENT_ID"] : []),
+              ...(!envChecks.REDDIT_CLIENT_SECRET ? ["REDDIT_CLIENT_SECRET"] : []),
+              ...(!envChecks.REDDIT_USERNAME ? ["REDDIT_USERNAME"] : []),
+              ...(!envChecks.REDDIT_PASSWORD ? ["REDDIT_PASSWORD"] : []),
+            ],
+            instructions: "1. Go to reddit.com/prefs/apps → Create app → Script type\n2. Note: Client ID (under app name) + Secret\n3. Run: supabase secrets set REDDIT_CLIENT_ID=xxx REDDIT_CLIENT_SECRET=xxx REDDIT_USERNAME=xxx REDDIT_PASSWORD=xxx",
+          },
+          mastodon: {
+            ready: envChecks.MASTODON_ACCESS_TOKEN,
+            missing: [
+              ...(!envChecks.MASTODON_ACCESS_TOKEN ? ["MASTODON_ACCESS_TOKEN"] : []),
+            ],
+            instructions: "1. Go to your Mastodon instance → Preferences → Development → New Application\n2. Scopes: read, write:statuses\n3. Run: supabase secrets set MASTODON_ACCESS_TOKEN=xxx MASTODON_INSTANCE=mastodon.social",
+          },
+        };
+
+        // Check cron jobs
+        const { data: cronJobs } = await db.rpc("get_cron_jobs").catch(() => ({ data: null }));
+
+        return json({
+          platforms: configs || [],
+          credentials: platformSetup,
+          envStatus: envChecks,
+          cronJobs: cronJobs || "Unable to check cron jobs (pg_cron query failed)",
+        });
+      }
+
+      // ─── Activate/Deactivate Platform ─────────────────────────────
+      case "toggle-platform": {
+        const { platform, active, apiConfigured } = body;
+        if (!platform) return json({ error: "platform required" }, 400);
+        const updates: Record<string, unknown> = {};
+        if (typeof active === "boolean") updates.active = active;
+        if (typeof apiConfigured === "boolean") updates.api_configured = apiConfigured;
+        if (Object.keys(updates).length === 0) return json({ error: "Nothing to update" }, 400);
+        const { error } = await db.from("social_platform_config").update(updates).eq("platform", platform);
+        if (error) return json({ error: error.message }, 500);
+        return json({ success: true, platform, ...updates });
+      }
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
     }

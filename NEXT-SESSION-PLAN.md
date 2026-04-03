@@ -1,10 +1,10 @@
 # Next Session Plan
 
-> **Status**: v18.2.0 live. ~190 published articles across 9 categories. Social Media System Phase 1A+1C complete: 8 database tables, social-engine (Content Brief generator), social-admin (dashboard API), Bloomberg-inspired Social tab in admin dashboard. Stage-publish auto-triggers social content generation for every new article.
+> **Status**: v18.3.0 live. ~190 published articles across 9 categories. Social Media System Phase 1B complete: end-to-end automated posting pipeline (Engine → Writer → Poster → Sync). 3 platform APIs implemented (Bluesky, Reddit, Mastodon). 3 cron jobs active. Dashboard with manual triggers + setup guide.
 
 ---
 
-## Current Architecture (v18.2.0)
+## Current Architecture (v18.3.0)
 
 - **Navigation**: domain-grouped dropdown (Mind/Body/Medicine/Environment), TopicNav with per-category hover dropdowns, SideNav grouped by domain, MobileNav with improved scroll sensitivity, QuickNav floating pill
 - **Breadcrumbs**: visual breadcrumbs on topic and collection pages (Home > Articles > Category)
@@ -20,98 +20,96 @@
 - **Security**: HSTS preload, CSP hardening, immutable asset caching
 - **Admin**: Pipeline/Articles/Agents/Social tabs. Supabase Realtime live updates
 - **Newsletter**: `/api/subscribe` → Supabase + Beehiiv forward (when BEEHIIV_API_KEY + BEEHIIV_PUBLICATION_ID env vars set)
-- **Social Media System**: 8 tables, 4 AI personas, 14 platform configs, social-engine + social-admin edge functions, Bloomberg-inspired dashboard
+- **Social Media System**: 8 tables, 4 AI personas, 14 platform configs, 6 edge functions (engine + writer + poster + planner + sync + admin), 3 cron jobs, Bloomberg-inspired dashboard with setup guide
 
-## What Was Done This Session (v18.2.0 — Social Media System Build)
+## What Was Done This Session (v18.3.0 — Social Media Phase 1B)
 
-### Phase 1A — Foundation (complete)
-1. **Database migration** (`20260402_social_media_system.sql`) — 8 tables with full schema:
-   - `social_personas` — 4 seeded personas (brand/reporter/skeptic/curator) with model assignments + voice prompts
-   - `social_platform_config` — 14 platforms seeded with desk assignments, tier, rate limits, content formats
-   - `social_posts` — core table with choreography, scheduling, engagement tracking, 7 indexes
-   - `social_content_plan` — daily editorial plans per platform/persona/desk
-   - `social_angle_registry` — never-repeat angle tracking per article
-   - `social_arcs` — weekly thematic arcs
-   - `social_engagement_log` — time-series engagement snapshots
-   - `social_templates` — learned + manual content templates
-   - All tables: RLS enabled, service_role full access, Realtime on posts + plan
+### Phase 1B — Execution Layer (complete)
+1. **Social Writer** (`social-writer/index.ts`) — content factory:
+   - Takes Content Briefs from `social_content_plan` → generates platform-native post text
+   - Each persona uses their assigned AI model (Sonnet/Gemini/Grok)
+   - Platform-specific rules: Bluesky (300 char), Reddit (markdown + subreddit selection), Mastodon (500 + hashtags), etc.
+   - Choreography timing offsets: brand=0, reporter=60min, skeptic=180min, curator=120min
+   - Outputs to `social_posts` with scheduled_at (API platforms) or draft (manual platforms)
+   - Cost tracking per post via `cost_usd` column
 
-2. **Social model constants** in `_shared/constants.ts`:
-   - 6 new MODELS entries: SOCIAL_BRAND, SOCIAL_REPORTER, SOCIAL_SKEPTIC, SOCIAL_CURATOR, SOCIAL_REVIEW, SOCIAL_PLANNER
-   - SOCIAL_CHAINS fallback chains per persona
+2. **Social Poster** (`social-poster/index.ts`) — dispatcher:
+   - Reads scheduled posts due for posting → calls `postToPlatform()` API
+   - Choreography-aware: skips posts whose parent hasn't been posted yet
+   - Rate limit checks against platform `rate_limit_per_hour`
+   - Exponential backoff on failure (5min, 25min, 125min), max 3 retries
+   - Cron: `*/5 * * * *`
 
-3. **Social API clients** (`_shared/social-clients.ts`):
-   - Bluesky AT Protocol: auth session caching, facet detection (URLs), createRecord
-   - Reddit OAuth2: token caching, submit (link/self), engagement fetch
-   - Mastodon ActivityPub: status posting
-   - Platform router: `postToPlatform()` dispatches to correct client
-   - Stubs for Phase 2 platforms (LinkedIn, Threads, Telegram, Pinterest, Medium, Instagram, WhatsApp)
+3. **Social Planner** (`social-planner/index.ts`) — daily editorial meeting:
+   - Mines catalog: articles not promoted in 14+ days, independence score ≥ 5
+   - Creates weekly arcs via AI (theme, category focus, recurring series)
+   - Selects 4 articles/day with category diversity + arc alignment
+   - Recurring series schedule: "Actually..." Mon, "Study of the Week" Wed, "By the Numbers" Fri
+   - Chain-dispatches to social-engine for each selected article
+   - Cron: `0 5 * * *`
 
-4. **Social Engine** (`social-engine/index.ts`) — the strategic brain:
-   - Fetches article data from pipeline log + articles table
-   - Loads existing angles (never repeat), active platforms, personas, current arc
-   - Generates Content Brief via AI (Sonnet with Gemini fallback)
-   - Writes content plan rows (one per choreography sequence item)
-   - Registers angle in angle_registry
-   - Logs overhead cost
+4. **Social Sync** (`social-sync/index.ts`) — engagement feedback:
+   - Pulls metrics from Bluesky + Reddit APIs for posted content (last 7 days)
+   - Weighted engagement score: likes×1, shares×3, comments×2, impressions×0.01, clicks×1.5
+   - Velocity detection: flags posts exceeding 3× average
+   - Updates `social_engagement_log` time-series + `social_angle_registry` scores
+   - Cron: `0 */6 * * *`
 
-5. **Stage-publish hook** — non-blocking fire-and-forget dispatch to social-engine after every publish
+5. **Social Admin** — 6 new endpoints:
+   - `run-planner`, `run-writer`, `run-poster`, `run-sync` — manual triggers
+   - `setup-status` — credential status + setup instructions per platform
+   - `toggle-platform` — activate/deactivate platforms
 
-### Phase 1C — Admin Dashboard (complete, moved up from plan)
-6. **Social Admin** (`social-admin/index.ts`) — dashboard API with 10 actions:
-   - `status`: stats strip (total, today, queued, drafts, failed, engagement, cost, platforms)
-   - `posts`: paginated post feed with platform + status filters
-   - `plan`: today's content plan
-   - `platforms`: platform health with last-post time + today's count
-   - `arcs`: recent weekly arcs
-   - `angles`: angle registry per article
-   - `leaderboard`: top posts by engagement
-   - `personas`: persona list
-   - `skip`/`retry`: post management
-   - `generate`: trigger social-engine for any article slug
+6. **Dashboard Updates** (`SocialDashboard.tsx`):
+   - New "Setup" tab with credential guide (Bluesky, Reddit, Mastodon)
+   - System architecture diagram (Planner → Engine → Writer → Poster → Sync)
+   - Manual trigger buttons in tab bar
+   - Quick Start Guide with step-by-step instructions
 
-7. **SocialDashboard.tsx** — Bloomberg Terminal-inspired React island:
-   - **Stats strip**: 8 KPIs matching existing admin design (total, today, queued, drafts, failed, engagement, AI cost, platforms)
-   - **4 section tabs**: Overview, Post Feed, Content Plan, Platforms
-   - **Overview**: Platform Activity Matrix (24h with progress bars to target), Weekly Arc display, AI Personas panel, Persona Distribution chart, Recent Posts compact feed
-   - **Post Feed**: filterable by status + platform, full table with platform/persona badges, engagement metrics, action buttons (retry/skip/copy/view)
-   - **Content Plan**: today's editorial plan table with desk/persona/format breakdown
-   - **Platforms**: 2-column grid of platform cards with health status, fill rate progress bars, last post time, content format pills
-   - **Generate widget**: slug input + generate button in tab bar for on-demand social generation
-   - All inline styles reference admin.css custom properties (warm dark palette, glass surfaces, tabular-nums)
+7. **Bug Fixes**:
+   - Fixed arc_id assignment (was always null)
+   - Added chain-dispatch from social-engine → social-writer
 
-8. **Admin integration** — Social tab added as 4th tab in `/admin/index.astro`
+8. **Cron Jobs** migration applied (`20260403_social_cron_jobs.sql`)
 
 ### Deployed
-- Migration applied to Supabase (8 tables, seed data confirmed)
-- `social-engine`, `social-admin`, `stage-publish` deployed
+- Migration applied (3 cron jobs)
+- All 7 functions deployed: social-writer, social-poster, social-planner, social-sync, social-engine, social-admin, stage-publish
 - Build passes clean
 
 ## Priority for Next Session
 
-### 1. Social Media — Phase 1B (Desks + Posting)
-- Create `social-desk-microblog/index.ts` — X + Bluesky + Threads + Mastodon content generation
-- Create `social-desk-forum/index.ts` — Reddit + Quora content generation
-- Create `social-review/index.ts` — brand safety QC pass before posting
-- Create `social-planner/index.ts` — daily editorial meeting (fill to 10/platform, 2-day lookahead)
-- Create `social-miner/index.ts` — catalog mining + engagement content generation
-- Create `social-poster/index.ts` — free API dispatch + viral velocity detection
-- Set up cron jobs: planner (daily 5am), poster (*/5), engagement sync (*/6h)
-- Test end-to-end: article → social-engine → desks → review → poster → platform
+### 1. Platform Account Setup (CRITICAL — system needs credentials to actually post)
+- **Bluesky**: Create account on bsky.app → Settings → App Passwords → Add
+  - `supabase secrets set BLUESKY_HANDLE=alumihealth.bsky.social BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx`
+  - `UPDATE social_platform_config SET api_configured = true WHERE platform = 'bluesky';`
+- **Reddit**: Create app at reddit.com/prefs/apps → Script type
+  - `supabase secrets set REDDIT_CLIENT_ID=xxx REDDIT_CLIENT_SECRET=xxx REDDIT_USERNAME=xxx REDDIT_PASSWORD=xxx`
+  - `UPDATE social_platform_config SET api_configured = true WHERE platform = 'reddit';`
+- **Mastodon**: Create app at mastodon.social → Preferences → Development
+  - `supabase secrets set MASTODON_ACCESS_TOKEN=xxx MASTODON_INSTANCE=mastodon.social`
+  - `UPDATE social_platform_config SET api_configured = true WHERE platform = 'mastodon';`
 
-### 2. Social Media — Phase 2 (Intelligence Layer)
-- Create `social-arc-planner/index.ts` — weekly themes (Sunday 11pm UTC)
-- Create `social-engagement-sync/index.ts` — pull metrics from platform APIs
-- Create `social-learn/index.ts` — weekly analysis + template evolution
-- Add pinger integration for trend surfing (emergency social dispatch)
-- Remaining desk functions: professional, visual, broadcast
+### 2. End-to-End Verification
+- Click "Planner" in admin dashboard → verify articles selected + briefs generated
+- Click "Writer" → verify posts created in social_posts table
+- Click "Poster" → verify posts dispatched to platforms (after credentials are set)
+- Click "Sync" → verify engagement metrics pulled back
+- Verify the full chain works on next article publish
 
-### 3. Platform API Setup
-- Set up Bluesky account + app password → set BLUESKY_HANDLE + BLUESKY_APP_PASSWORD secrets
-- Set up Reddit app → set REDDIT_CLIENT_ID/SECRET/USERNAME/PASSWORD secrets
-- Mark platforms as api_configured=true as credentials are added
+### 3. Social Media — Phase 2 (Intelligence Layer)
+- Template learning: analyze top-performing posts → extract patterns → `social_templates`
+- Velocity amplification: when post goes viral, auto-generate amplification on other platforms
+- Pinger integration: connect breaking news signals to emergency social dispatch
+- Additional desk functions for visual (Pinterest, Instagram) and broadcast (Telegram, newsletter)
 
-### 4. Deferred Items
+### 4. Additional Platform APIs (Phase 2+)
+- LinkedIn API (requires company page + OAuth2 app)
+- Threads API (Meta developer account)
+- Telegram Bot API (create bot via BotFather)
+- Medium API (integration tokens)
+
+### 5. Deferred Items
 - Beehiiv account activation + newsletter integration
 - Content production to fill category gaps
 - Visual verification & device testing

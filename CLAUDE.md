@@ -168,7 +168,11 @@ supabase/
     ├── editorial-qc/                     # Collection-wide QC
     │
     ├── social-engine/                    # Content Brief generator — strategic brain for social media
-    └── social-admin/                     # Social dashboard API (status, posts, plan, platforms, etc.)
+    ├── social-writer/                    # Content factory — generates platform-native post text per persona
+    ├── social-poster/                    # Dispatcher — posts scheduled content to platform APIs
+    ├── social-planner/                   # Daily editorial meeting — mines catalog, creates arcs, fills schedule
+    ├── social-sync/                      # Engagement feedback — pulls metrics, detects velocity
+    └── social-admin/                     # Social dashboard API (status, posts, plan, platforms, setup, triggers)
 ```
 
 ### Content Collections
@@ -248,7 +252,7 @@ const articles = await getCollection('articles');
 - **Glass design system**: CSS served from `public/admin.css` (SSR pages cannot use frontmatter CSS imports — Astro silently drops them). CSS custom properties (`--admin-bg`, `--admin-surface`, `--admin-border`, `--admin-accent`, etc.). Glass morphism header/cards/modals, ambient gradient glow background, layered shadows, `cubic-bezier(0.22, 1, 0.36, 1)` easing, border-radius scale (12px/8px/6px). All React component inline styles use the same palette. **IMPORTANT**: when adding new admin pages, always link CSS via `<link rel="stylesheet" href="/admin.css">` in `<head>`, never via frontmatter import
 - **Login**: glass card with animated gradient orbs, entrance animation, "mission control" pill badge
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix). Wrong token redirects to `/admin/login?error=1` with inline error display.
-- **Dashboard**: 4-column stat grid (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 4 tab panels with fade-in animation (Pipeline, Articles, AI Agents, Social). Max-width 1400px. Multi-column layouts: Pipeline tab has 2-col grid (queue + published side-by-side), AI Agents tab has 2-col grid (6 sections split). Articles tab is single-column (rows need full width for inline editing). Social tab has Bloomberg-inspired data-dense layout with platform activity matrix, post feed, content plan, platform health cards
+- **Dashboard**: 4-column stat grid (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 4 tab panels with fade-in animation (Pipeline, Articles, AI Agents, Social). Max-width 1400px. Multi-column layouts: Pipeline tab has 2-col grid (queue + published side-by-side), AI Agents tab has 2-col grid (6 sections split). Articles tab is single-column (rows need full width for inline editing). Social tab has Bloomberg-inspired data-dense layout with platform activity matrix, post feed, content plan, platform health cards, Setup tab with credential guide + architecture diagram
 - **Pipeline tab** (React island: `PipelineMonitor`):
   - 8-stage visual pipeline: Research (Gemini 2.5 Pro + Search) → Editor (Sonnet → Gemini) → **PAUSE for Opus writing** → Independence (Grok 4) → QC (Flash → Sonnet) → Voice Polish (Sonnet → Gemini, skipped for human articles) → Copy Edit (Sonnet → Gemini Pro, conservative headline/header polish) → Publish (GitHub + GPT Image)
   - **Hybrid workflow UI**: editor_approved articles show purple highlight, "Copy Brief for Claude" button (client-side clipboard), "Submit Written Article" textarea + submit button
@@ -365,8 +369,12 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
 | `topic-merge` | AI-powered topic deduplication: `analyze` (GPT-5.4 clusters queue semantically) + `merge` (Sonnet synthesizes super-brief) | None (proxied via pipeline-admin) |
-| `social-engine` | Content Brief generator — strategic brain for social media. Generates briefs per article with angle registry, choreography, persona assignments | None (chain from stage-publish) |
-| `social-admin` | Social dashboard API: `status`, `posts`, `plan`, `platforms`, `arcs`, `angles`, `leaderboard`, `personas`, `skip`, `retry`, `generate` | None |
+| `social-engine` | Content Brief generator — strategic brain for social media. Generates briefs per article with angle registry, choreography, persona assignments. Chains to social-writer | None (chain from stage-publish) |
+| `social-writer` | Content factory — takes briefs from social_content_plan, generates platform-native post text per persona using persona-specific AI models. Outputs to social_posts | None (chain from social-engine) |
+| `social-poster` | Dispatcher — reads scheduled posts due for posting, calls platform APIs (Bluesky/Reddit/Mastodon), respects choreography + rate limits, exponential backoff | None (called by pg_cron `*/5 * * * *`) |
+| `social-planner` | Daily editorial meeting — mines catalog for reshare candidates, creates weekly arcs, selects 4 articles/day, chain-dispatches to social-engine | None (called by pg_cron `0 5 * * *`) |
+| `social-sync` | Engagement feedback loop — pulls metrics from platform APIs (last 7 days), updates scores, logs time-series, detects viral velocity (3x avg) | None (called by pg_cron `0 */6 * * *`) |
+| `social-admin` | Social dashboard API: `status`, `posts`, `plan`, `platforms`, `arcs`, `angles`, `leaderboard`, `personas`, `skip`, `retry`, `generate`, `run-planner`, `run-writer`, `run-poster`, `run-sync`, `setup-status`, `toggle-platform` | None |
 
 **Deploy commands:**
 ```bash
@@ -413,6 +421,9 @@ done
 - `article-produce`: every 5 min (`*/5 * * * *`) → SQL function `dispatch_pipeline_stage()`. Safety net only — recovers stuck articles, advances in-progress stages. **Does NOT auto-pick from queue** (removed in v12.6). Admin must click "Produce"
 - `pinger`: every 15 min (`*/15 * * * *`) → `pipeline-pinger` — rotating breaking news detector (Gemini Flash/:00, PubMed RSS/:15, Grok/:30, PubMed RSS/:45)
 - `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation
+- `social-poster`: every 5 min (`*/5 * * * *`) → `social-poster` — dispatch scheduled social posts to platform APIs
+- `social-planner`: daily 5am UTC (`0 5 * * *`) → `social-planner` — daily editorial meeting, catalog mining, arc creation
+- `social-sync`: every 6 hours (`0 */6 * * *`) → `social-sync` — pull engagement metrics from platform APIs
 - Requires `pg_cron` and `pg_net` extensions enabled in Supabase Dashboard > Database > Extensions
 - View schedule: `SELECT * FROM cron.job;`
 - View run history: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`

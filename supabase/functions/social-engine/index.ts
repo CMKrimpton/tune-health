@@ -135,7 +135,7 @@ Deno.serve(async (req: Request) => {
     const today = new Date().toISOString().slice(0, 10);
     const { data: currentArc } = await db
       .from("social_arcs")
-      .select("theme, description, category_focus, recurring_series")
+      .select("id, theme, description, category_focus, recurring_series")
       .eq("status", "active")
       .limit(1)
       .maybeSingle();
@@ -265,7 +265,7 @@ Return a JSON Content Brief with this structure:
           article: brief.article,
           references: item.references || null,
         },
-        arc_id: currentArc ? undefined : null,
+        arc_id: currentArc?.id || null,
         status: "planned",
       });
     }
@@ -276,6 +276,22 @@ Return a JSON Content Brief with this structure:
       if (planError) {
         console.error(`[Social Engine] Failed to insert content plan: ${planError.message}`);
       }
+    }
+
+    // Chain-dispatch to social-writer to generate actual post text
+    // social-writer reads all planned content_plan rows — no need to pass IDs
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    if (supabaseUrl && planRows.length > 0) {
+      fetch(`${supabaseUrl}/functions/v1/social-writer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ articleSlug }),
+      }).catch(err =>
+        console.warn(`[Social Engine] Writer dispatch failed: ${err instanceof Error ? err.message : "unknown"}`)
+      );
     }
 
     // Register the angle

@@ -6,6 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [18.3.0] - 2026-04-02
+
+### Added — Social Media System Phase 1B (Execution Layer)
+
+**Social Writer** (`social-writer/index.ts`) — the content factory:
+- Takes Content Briefs from `social_content_plan` → generates platform-native post text
+- Uses each persona's assigned AI model (Sonnet for brand, Gemini for reporter, Grok for skeptic)
+- Platform-specific formatting: Bluesky (300 char, no hashtags), Reddit (markdown + subreddit selection), Mastodon (500 char + hashtags), LinkedIn (professional), etc.
+- Choreography timing: brand at 0min, reporter at 60min, skeptic at 180min, curator at 120min
+- Outputs to `social_posts` table with status=scheduled (API platforms) or status=draft (manual platforms)
+- Chain-dispatched by social-engine after brief generation
+
+**Social Poster** (`social-poster/index.ts`) — the dispatcher:
+- Reads scheduled posts that are due → calls platform APIs via `postToPlatform()`
+- Respects choreography ordering: skips posts whose parent hasn't been posted yet
+- Rate limit awareness: checks hourly post count per platform against `rate_limit_per_hour`
+- Exponential backoff on failure (5min, 25min, 125min), max 3 retries
+- Cron: every 5 min
+
+**Social Planner** (`social-planner/index.ts`) — the daily editorial meeting:
+- Mines article catalog for reshare candidates (not promoted in 14+ days, independence score ≥ 5)
+- Creates weekly arcs via AI (theme, category focus, recurring series)
+- Selects 4 articles/day with category diversity + arc alignment
+- Recurring series: "Actually..." Monday, "Study of the Week" Wednesday, "By the Numbers" Friday
+- Chain-dispatches to social-engine for each selected article
+- Cron: daily 5am UTC
+
+**Social Sync** (`social-sync/index.ts`) — engagement feedback loop:
+- Pulls metrics from Bluesky + Reddit APIs for posted content (last 7 days)
+- Updates `social_posts` engagement columns + `social_engagement_log` time-series
+- Calculates weighted engagement score (likes×1, shares×3, comments×2, impressions×0.01, clicks×1.5)
+- Velocity detection: flags posts exceeding 3× average engagement
+- Updates `social_angle_registry` engagement scores for learning
+- Cron: every 6 hours
+
+**Social Admin** — 6 new endpoints:
+- `run-planner`: manually trigger daily editorial meeting
+- `run-writer`: manually trigger content writing for planned items
+- `run-poster`: manually trigger post dispatch
+- `run-sync`: manually trigger engagement sync
+- `setup-status`: credential status for all platforms + setup instructions
+- `toggle-platform`: activate/deactivate platform or mark as API-configured
+
+**Dashboard Updates** (`SocialDashboard.tsx`):
+- New "Setup" tab with platform credential guide (Bluesky, Reddit, Mastodon)
+- System architecture diagram showing Planner → Engine → Writer → Poster → Sync flow
+- Cron job reference with schedules
+- Quick Start Guide with step-by-step setup instructions
+- Manual trigger buttons in tab bar: Planner, Writer, Poster, Sync
+- Updated arc message to reflect automatic creation via planner
+
+**Cron Jobs** (`20260403_social_cron_jobs.sql`):
+- `social-poster`: `*/5 * * * *` — dispatch scheduled posts
+- `social-planner`: `0 5 * * *` — daily editorial meeting
+- `social-sync`: `0 */6 * * *` — engagement metrics sync
+
+### Fixed
+- Social engine arc_id assignment (was always null due to `undefined` vs `currentArc.id`)
+- Chain-dispatch from social-engine → social-writer (posts now auto-generate after briefs)
+
+### Architecture
+- **End-to-end flow**: Article publishes → social-engine (brief) → social-writer (posts) → social-poster (dispatch) → social-sync (metrics)
+- 4 new edge functions, 3 new cron jobs, 6 new admin endpoints
+- Platform-native content generation (not cross-posting)
+- Multi-model persona system: each persona writes with their assigned AI model
+
 ## [18.2.0] - 2026-04-02
 
 ### Added — Social Media System Phase 1A+1C (Foundation + Dashboard)
