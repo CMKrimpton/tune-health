@@ -34,5 +34,6 @@
   "heroImageAlt": "Editorial illustration for The War Within: Hashimoto's, Graves', and the Gut That May Be Starting the Fight",
   "series": "The Thyroid Deep Dive",
   "seriesOrder": 2,
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/thyroid-war-within.mp3"
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/thyroid-war-within.mp3",
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/thyroid-war-within-light.png"
 }
