@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -132,12 +133,63 @@ Deno.serve(async (req: Request) => {
     });
     if (!updateRefRes.ok) throw new Error(`Failed to update ref: ${updateRefRes.status}`);
 
+    // ─── Sync to database (prevents ghost articles visible on site but not in admin) ───
+    const dbSync: string[] = [];
+    try {
+      const db = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+
+      const now = new Date().toISOString();
+      const dbFields: Record<string, unknown> = {
+        title: metadata.title,
+        description: metadata.description,
+        category: metadata.category,
+        tags: metadata.tags || [],
+        keywords: metadata.keywords || [],
+        read_time: metadata.readTime || 5,
+        publish_date: metadata.publishDate || now.slice(0, 10),
+        sort_order: metadata.sortOrder,
+        gradient_from: metadata.gradient?.from,
+        gradient_to: metadata.gradient?.to,
+        featured: metadata.featured ?? false,
+        draft: false,
+        coming_soon: false,
+        status: "published",
+        published_at: now,
+        updated_at: now,
+      };
+
+      // Optional fields — only set if present
+      if (metadata.heroImage) dbFields.hero_image = metadata.heroImage;
+      if (metadata.heroImageAlt) dbFields.hero_image_alt = metadata.heroImageAlt;
+      if (metadata.heroImageLight) dbFields.hero_image_light = metadata.heroImageLight;
+      if (metadata.narrationUrl) dbFields.narration_url = metadata.narrationUrl;
+
+      // Upsert — create if new, update if exists
+      const { error: dbErr } = await db
+        .from("articles")
+        .upsert({ slug, ...dbFields }, { onConflict: "slug" });
+
+      if (dbErr) {
+        console.error(`[publish-article] DB sync failed for "${slug}":`, dbErr.message);
+        dbSync.push(`DB sync failed: ${dbErr.message}`);
+      } else {
+        dbSync.push("DB synced");
+      }
+    } catch (syncErr) {
+      console.error(`[publish-article] DB sync error:`, syncErr);
+      dbSync.push(`DB sync error: ${syncErr instanceof Error ? syncErr.message : "unknown"}`);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         commitSha: newCommitData.sha,
         commitUrl: newCommitData.html_url,
         articleUrl: `/articles/${slug}`,
+        dbSync,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

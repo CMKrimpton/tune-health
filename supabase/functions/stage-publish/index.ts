@@ -103,6 +103,7 @@ Deno.serve(async (req: Request) => {
         draft: false,
         status: "published",
         published_at: new Date().toISOString(),
+        sort_order: Date.now(),
         independence_score: logScores?.grok_score || null,
         editor_score: logScores?.editor_score || null,
         pipeline_log_id: logId,
