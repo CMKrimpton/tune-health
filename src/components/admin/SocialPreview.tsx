@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchWithTimeout, timeAgo, getAdminToken } from './types';
+import { ErrorBoundary } from './ConfirmModal';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Social Preview — Platform Simulator
@@ -565,7 +566,15 @@ function MastodonPost({ post }: { post: SocialPost }) {
 // Main Component
 // ═══════════════════════════════════════════════════════════════════════════
 
-export default function SocialPreview({ apiBase }: Props) {
+export default function SocialPreviewWrapped(props: Props) {
+  return (
+    <ErrorBoundary fallbackLabel="Social Preview encountered an error">
+      <SocialPreviewInner {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function SocialPreviewInner({ apiBase }: Props) {
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

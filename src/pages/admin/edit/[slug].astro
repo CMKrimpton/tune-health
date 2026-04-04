@@ -5,6 +5,7 @@ export const prerender = false;
 const { slug } = Astro.params;
 const edgeFunctionBase = (process.env.PUBLIC_SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL || '').trim();
 const apiBase = edgeFunctionBase ? `${edgeFunctionBase}/functions/v1` : '';
+const adminTokenValue = Astro.cookies.get('admin_token')?.value || '';
 
 // Fetch article from database
 interface EditArticle {
@@ -66,6 +67,7 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin.css" />
+  <meta name="admin-token" content={adminTokenValue} />
   <style>
     /* ─── Edit page overrides ─── */
     .autosave-indicator {
@@ -548,12 +550,12 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
           </svg>
         </a>
       </div>
-      <iframe id="previewFrame" src={liveUrl} class="admin-preview-frame" title="Article Preview"></iframe>
+      <iframe id="previewFrame" src={liveUrl} class="admin-preview-frame" title="Article Preview" sandbox="allow-same-origin allow-popups"></iframe>
     </div>
   </div>
 
   <script define:vars={{ slug, apiBase, articleData: article, gradientPresets }}>
-    const getToken = () => (document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/)?.[1] || '');
+    const getToken = () => document.querySelector('meta[name="admin-token"]')?.getAttribute('content') || '';
     const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
     // ─── Styled confirm dialog ───
@@ -841,10 +843,11 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
       if (!suppressAutosave) scheduleAutosave(doSaveContent);
     });
 
-    // Logout
+    // Logout (server-side cookie clear via POST)
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
-      document.cookie = 'admin_token=; path=/; max-age=0';
-      window.location.href = '/admin/login';
+      fetch('/admin/logout', { method: 'POST' }).finally(() => {
+        window.location.href = '/admin/login';
+      });
     });
 
     // ─── Generate Illustration ───
@@ -1137,6 +1140,14 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
           const saveRefine = document.getElementById('saveRefineBtn');
           if (saveRefine && !saveRefine.disabled) saveRefine.click();
         }
+      }
+    });
+
+    // ─── beforeunload: warn about unsaved changes ───
+    window.addEventListener('beforeunload', (e) => {
+      if (autosaveTimer) {
+        e.preventDefault();
+        e.returnValue = '';
       }
     });
 

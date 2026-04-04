@@ -1,4 +1,55 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { Component, useEffect, useRef, useCallback, useState, type ReactNode } from 'react';
+
+// ─── Error Boundary ─────────────────────────────────────────────────
+// Wrap React islands to prevent white-screen crashes.
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallbackLabel?: string;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div role="alert" style={{
+          padding: '2rem', textAlign: 'center',
+          background: 'var(--admin-surface)', borderRadius: 'var(--admin-radius)',
+          border: '1px solid var(--admin-border-2)', color: 'var(--admin-text-3)',
+        }}>
+          <p style={{ fontWeight: 600, marginBottom: '0.5rem', color: 'var(--admin-red-light)' }}>
+            {this.props.fallbackLabel || 'Something went wrong'}
+          </p>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--admin-text-4)' }}>
+            {this.state.error?.message || 'An unexpected error occurred.'}
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            style={{
+              marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer',
+              background: 'var(--admin-surface-2)', border: '1px solid var(--admin-border)',
+              borderRadius: '6px', color: 'var(--admin-text)', fontFamily: 'inherit', fontSize: '0.8125rem',
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -118,11 +169,11 @@ export default function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+    <div className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-desc">
       <div className="admin-modal-backdrop" onClick={onCancel} />
       <div className="admin-modal-card" ref={cardRef}>
         <h3 className="admin-modal-title" id="confirm-modal-title">{title}</h3>
-        <p className="admin-modal-text">{message}</p>
+        <p className="admin-modal-text" id="confirm-modal-desc">{message}</p>
         <div className="admin-modal-actions">
           <button
             ref={cancelRef}

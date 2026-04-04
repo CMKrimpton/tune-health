@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { fetchWithTimeout, timeAgo, getAdminToken, CATEGORY_GRADIENTS } from './types';
+import { ErrorBoundary } from './ConfirmModal';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Social Dashboard — Bloomberg Terminal-Inspired
@@ -515,7 +516,15 @@ function ActionBtn({
 
 // ─── Main Component ──────────────────────────────────────────────────────
 
-export default function SocialDashboard({ apiBase }: Props) {
+export default function SocialDashboardWrapped(props: Props) {
+  return (
+    <ErrorBoundary fallbackLabel="Social Dashboard encountered an error">
+      <SocialDashboardInner {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function SocialDashboardInner({ apiBase }: Props) {
   const [stats, setStats] = useState<SocialStats | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [plan, setPlan] = useState<ContentPlan[]>([]);

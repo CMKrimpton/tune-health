@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import { type ArticleRecord, type PipelineLog, type PipelineResearchData, getAdminToken, getCategoryColor, getGradientHex, getScoreColor, getPenName, fetchWithTimeout } from './types';
-import ConfirmModal from './ConfirmModal';
+import ConfirmModal, { ErrorBoundary } from './ConfirmModal';
 
 // Extended article with scores (returned by DB but not in base type)
 interface ArticleWithScores extends ArticleRecord {
@@ -344,7 +344,15 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
 
 // ─── Component ──────────────────────────────────────────────────────
 
-export default function ArticlesManager({ initialArticles, apiBase }: Props) {
+export default function ArticlesManagerWrapped(props: Props) {
+  return (
+    <ErrorBoundary fallbackLabel="Articles Manager encountered an error">
+      <ArticlesManagerInner {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function ArticlesManagerInner({ initialArticles, apiBase }: Props) {
   const [articles, setArticles] = useState<ArticleWithScores[]>(initialArticles as ArticleWithScores[]);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');

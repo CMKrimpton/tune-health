@@ -32,6 +32,7 @@ if (hasError && cookie) {
       font-family: 'Inter', -apple-system, sans-serif;
       background: #0f0e0c;
       color: #eae8e4;
+      min-height: 100vh;
       min-height: 100dvh;
       display: flex;
       align-items: center;
@@ -273,27 +274,27 @@ if (hasError && cookie) {
       btn.textContent = 'Verifying\u2026';
       btn.disabled = true;
 
-      // Set cookie client-side, then verify against /admin
-      document.cookie = `admin_token=${encodeURIComponent(token)}; path=/; max-age=${60*60*24*7}; samesite=lax${location.protocol === 'https:' ? '; secure' : ''}`;
-
       try {
-        const res = await fetch('/admin', { redirect: 'manual' });
-        // If middleware rejects: opaque redirect (type 'opaqueredirect') or non-200
-        if (res.type === 'opaqueredirect' || res.status === 302 || res.status === 301) {
-          // Token was wrong — clear the bad cookie
-          document.cookie = 'admin_token=; path=/; max-age=0';
-          errorEl.textContent = 'Invalid admin token. Please try again.';
-          errorEl.style.display = 'block';
-          btn.textContent = 'Sign In';
-          btn.disabled = false;
-          document.getElementById('token').value = '';
-          document.getElementById('token').focus();
+        // POST to middleware — sets HttpOnly cookie server-side
+        const res = await fetch('/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          window.location.href = '/admin';
           return;
         }
-        // Success — navigate
-        window.location.href = '/admin';
+        // Token was wrong
+        errorEl.textContent = 'Invalid admin token. Please try again.';
+        errorEl.style.display = 'block';
+        btn.textContent = 'Sign In';
+        btn.disabled = false;
+        document.getElementById('token').value = '';
+        document.getElementById('token').focus();
       } catch {
-        // Network error or other failure — just navigate and let server handle it
+        // Network error — try navigating and let server handle it
         window.location.href = '/admin';
       }
     });

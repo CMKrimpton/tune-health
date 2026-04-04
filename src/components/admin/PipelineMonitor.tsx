@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
 import {
   type PipelineLog, type PipelineResearchData, type StageConfig,
   PIPELINE_STAGE_CONFIG, ACTIVE_STATUSES, VALID_CATEGORIES,
   getAdminToken, timeAgo, getStatusText, getPenName, getScoreColor,
   fetchWithTimeout,
 } from './types';
-import { useConfirm } from './ConfirmModal';
+import { useConfirm, ErrorBoundary } from './ConfirmModal';
 import { createClient } from '@supabase/supabase-js';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -89,7 +89,15 @@ function formatCost(value: number | string | null | undefined): string {
 
 // ─── Component ──────────────────────────────────────────────────
 
-export default function PipelineMonitor({ initialLogs, initialArticleCount, apiBase, initialTotalCost }: Props) {
+export default function PipelineMonitorWrapped(props: Props) {
+  return (
+    <ErrorBoundary fallbackLabel="Pipeline Monitor encountered an error">
+      <PipelineMonitorInner {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initialTotalCost }: Props) {
   const [logs, setLogs] = useState<PipelineLog[]>(initialLogs);
   const [articleCount, setArticleCount] = useState(initialArticleCount);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -151,12 +159,55 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
   const [actionFeedback, setActionFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rapidPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { ask, ConfirmDialog } = useConfirm();
 
   const flashFeedback = useCallback((ok: boolean, msg: string) => {
     setActionFeedback({ ok, msg });
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 4000);
+  }, []);
+
+  // ── Rapid polling: 5s interval for 3 min after produce/dispatch actions ──
+  // Ensures Research + Editor stage transitions are visible to the admin.
+  const startRapidPolling = useCallback(() => {
+    if (rapidPollRef.current) clearInterval(rapidPollRef.current);
+    const RAPID_INTERVAL = 5_000;
+    const RAPID_DURATION = 3 * 60_000;
+    rapidPollRef.current = setInterval(fetchStatus, RAPID_INTERVAL);
+    setTimeout(() => {
+      if (rapidPollRef.current) {
+        clearInterval(rapidPollRef.current);
+        rapidPollRef.current = null;
+      }
+    }, RAPID_DURATION);
+  }, [fetchStatus]);
+
+  // ── Inject an optimistic log so the article appears instantly in the stage box ──
+  const injectOptimisticLog = useCallback((logId: string, topic: string, status: string) => {
+    const optimistic: PipelineLog = {
+      id: logId,
+      run_date: new Date().toISOString().split('T')[0],
+      topic,
+      slug: null,
+      title: null,
+      status,
+      error: null,
+      search_queries: [],
+      research_snippets: [],
+      research_data: null,
+      cost_usd: null,
+      model_used: null,
+      editor_score: null,
+      grok_score: null,
+      revision_count: null,
+      source: 'queue',
+      stage_started_at: new Date().toISOString(),
+      token_usage: null,
+      created_at: new Date().toISOString(),
+      completed_at: null,
+    };
+    setLogs(prev => [optimistic, ...prev.filter(l => l.id !== logId)]);
   }, []);
 
   const fetchStatus = useCallback(async () => {
@@ -242,6 +293,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (rapidPollRef.current) clearInterval(rapidPollRef.current);
       supabase.removeChannel(channel);
     };
   }, [fetchStatus]);
@@ -276,8 +328,10 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         const topic = result.topic ? ` — "${result.topic.replace(/\*\*/g, '').slice(0, 60)}"` : '';
         const dispatched = result.dispatched || data.stage || 'produce';
         setProduceResult(`Dispatched ${dispatched}${topic}`);
+        // Start rapid polling to catch stage transitions through Research → Editor
+        startRapidPolling();
       }
-      setTimeout(fetchStatus, 2000);
+      setTimeout(fetchStatus, 1000);
     } catch (err) {
       setProduceResult(`Network error: ${err instanceof Error ? err.message : 'unknown'}`);
     }
@@ -566,8 +620,14 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         setProduceResult(`Error: ${data.error}`);
       } else {
         setProduceResult(data.message || `Dispatched research for "${topic.replace(/\*\*/g, '').slice(0, 60)}"`);
+        // Optimistic: inject a "started" log so it appears in Research immediately
+        if (data.logId) {
+          injectOptimisticLog(data.logId, topic.replace(/\*\*/g, ''), 'started');
+        }
+        // Rapid polling: 5s for 3 min to catch Research → Editor transitions
+        startRapidPolling();
       }
-      setTimeout(fetchStatus, 2000);
+      setTimeout(fetchStatus, 1000);
     } catch (err) {
       setProduceResult(`Network error: ${err instanceof Error ? err.message : 'unknown'}`);
     }
@@ -878,34 +938,45 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     } catch { /* ignore */ }
   };
 
-  // ─── Derived ────────────────────────────────────────────────────
-
-  const overallStatus = getOverallStatus(logs);
+  // ─── Derived (memoized — only recalculates when logs change) ────
 
   type PipelineStageKey = StageConfig['key'];
-  const stageLogsMap: Record<PipelineStageKey, PipelineLog[]> = {
-    research: [], editor_brief: [], write: [], independence: [], qc: [], voice_rewrite: [], copy_edit: [], publish: [],
-  };
-  const completedLogs: PipelineLog[] = [];
-  const editorKills: PipelineLog[] = [];
-  const failedLogs: PipelineLog[] = [];
 
-  for (const log of logs) {
-    if (log.status === 'published') {
-      completedLogs.push(log);
-    } else if (log.status === 'failed') {
-      if (isEditorKill(log)) {
-        editorKills.push(log);
+  const { overallStatus, stageLogsMap, completedLogs, editorKills, failedLogs, inPipeline } = useMemo(() => {
+    const _overallStatus = getOverallStatus(logs);
+    const _stageLogsMap: Record<PipelineStageKey, PipelineLog[]> = {
+      research: [], editor_brief: [], write: [], independence: [], qc: [], voice_rewrite: [], copy_edit: [], publish: [],
+    };
+    const _completedLogs: PipelineLog[] = [];
+    const _editorKills: PipelineLog[] = [];
+    const _failedLogs: PipelineLog[] = [];
+
+    for (const log of logs) {
+      if (log.status === 'published') {
+        _completedLogs.push(log);
+      } else if (log.status === 'failed') {
+        if (isEditorKill(log)) {
+          _editorKills.push(log);
+        } else {
+          _failedLogs.push(log);
+        }
       } else {
-        failedLogs.push(log);
+        const stage = getStageForLog(log);
+        if (stage) _stageLogsMap[stage].push(log);
       }
-    } else {
-      const stage = getStageForLog(log);
-      if (stage) stageLogsMap[stage].push(log);
     }
-  }
 
-  const inPipeline = Object.values(stageLogsMap).reduce((n, arr) => n + arr.length, 0);
+    const _inPipeline = Object.values(_stageLogsMap).reduce((n, arr) => n + arr.length, 0);
+    return {
+      overallStatus: _overallStatus,
+      stageLogsMap: _stageLogsMap,
+      completedLogs: _completedLogs,
+      editorKills: _editorKills,
+      failedLogs: _failedLogs,
+      inPipeline: _inPipeline,
+    };
+  }, [logs]);
+
   const progressPct = Math.min(100, Math.round((articleCount / ARTICLE_GOAL) * 100));
   const statusColors: Record<string, string> = {
     running: 'var(--admin-green)', waiting: 'var(--admin-yellow)', failed: 'var(--admin-accent)', idle: 'var(--admin-text-3)',
@@ -998,25 +1069,27 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         </div>
       </div>
 
-      {/* ── Action Results ── */}
-      {scoutResult && (
-        <div className="admin-toast admin-toast-success admin-pre-wrap">
-          <span>{scoutResult}</span>
-          <button className="admin-toast-dismiss" onClick={() => setScoutResult(null)}>{'\u00d7'}</button>
-        </div>
-      )}
-      {produceResult && (
-        <div className={`admin-toast ${produceResult.includes('Error') || produceResult.includes('Skipped') ? 'admin-toast-error' : 'admin-toast-success'}`}>
-          <span>{produceResult}</span>
-          <button className="admin-toast-dismiss" onClick={() => setProduceResult(null)}>{'\u00d7'}</button>
-        </div>
-      )}
-      {actionFeedback && (
-        <div className={`admin-toast ${actionFeedback.ok ? 'admin-toast-success' : 'admin-toast-error'}`}>
-          <span>{actionFeedback.msg}</span>
-          <button className="admin-toast-dismiss" onClick={() => setActionFeedback(null)}>{'\u00d7'}</button>
-        </div>
-      )}
+      {/* ── Action Results (aria-live for screen readers) ── */}
+      <div aria-live="polite" aria-atomic="true">
+        {scoutResult && (
+          <div className="admin-toast admin-toast-success admin-pre-wrap" role="status">
+            <span>{scoutResult}</span>
+            <button className="admin-toast-dismiss" onClick={() => setScoutResult(null)} aria-label="Dismiss">{'\u00d7'}</button>
+          </div>
+        )}
+        {produceResult && (
+          <div className={`admin-toast ${produceResult.includes('Error') || produceResult.includes('Skipped') ? 'admin-toast-error' : 'admin-toast-success'}`} role="status">
+            <span>{produceResult}</span>
+            <button className="admin-toast-dismiss" onClick={() => setProduceResult(null)} aria-label="Dismiss">{'\u00d7'}</button>
+          </div>
+        )}
+        {actionFeedback && (
+          <div className={`admin-toast ${actionFeedback.ok ? 'admin-toast-success' : 'admin-toast-error'}`} role="status">
+            <span>{actionFeedback.msg}</span>
+            <button className="admin-toast-dismiss" onClick={() => setActionFeedback(null)} aria-label="Dismiss">{'\u00d7'}</button>
+          </div>
+        )}
+      </div>
 
       {/* ── Pipeline Stages — 2-row layout ── */}
       <div className="pipeline-container">
@@ -1686,6 +1759,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                       <button
                         className="pipeline-dismiss-btn"
                         title="Delete article"
+                        aria-label={`Delete ${item.title}`}
                         disabled={killingId === item.slug}
                         onClick={() => deletePublishedArticle(item.slug, item.title)}
                       >{killingId === item.slug ? '\u2026' : '\u00D7'}</button>
@@ -2021,6 +2095,7 @@ function PipelineCard({ log, expanded, onToggle, onKill, killing, apiBase, onRef
           onClick={(e) => { e.stopPropagation(); onKill(); }}
           disabled={killing}
           title="Dismiss this article"
+          aria-label={`Dismiss ${displayTitle}`}
         >
           ×
         </button>

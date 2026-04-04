@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAdminToken, timeAgo, getScoreColor, fetchWithTimeout } from './types';
 import type { EditorBrief, QCResult } from './types';
-import { useConfirm } from './ConfirmModal';
+import { useConfirm, ErrorBoundary } from './ConfirmModal';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -97,7 +97,15 @@ function Panel({ title, badge, children, maxHeight }: {
 
 // ─── Main Component ─────────────────────────────────────────────────
 
-export default function AgentsPanel({ apiBase, initialArticleCount }: Props) {
+export default function AgentsPanelWrapped(props: Props) {
+  return (
+    <ErrorBoundary fallbackLabel="AI Agents panel encountered an error">
+      <AgentsPanelInner {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function AgentsPanelInner({ apiBase, initialArticleCount }: Props) {
   return (
     <div className="agents-layout">
       {/* Row 1: Compact status strip */}

@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [20.4.0] - 2026-04-04
+
+### Security — Admin Hardening
+
+- **HttpOnly cookies** — Login now POSTs to server-side middleware which sets the auth cookie with `HttpOnly; Secure; SameSite=Lax`. Cookie can no longer be read by client-side JavaScript. Admin token injected via `<meta>` tag for cross-origin API calls
+- **Server-side logout** — Logout clears cookie via server POST (`/admin/logout`) instead of client-side `document.cookie` manipulation
+- **Iframe sandbox** — Article preview iframe on edit page now has `sandbox="allow-same-origin allow-popups"` preventing script execution from article HTML
+- **beforeunload warning** — Edit page warns before navigation if there are unsaved changes (autosave timer active)
+- **100dvh fallback** — Login page adds `min-height: 100vh` fallback for older Safari before `100dvh`
+
+### Added — Error Boundaries & Accessibility
+
+- **ErrorBoundary component** — All 6 React islands (PipelineMonitor, ArticlesManager, AgentsPanel, SocialDashboard, ArticleEditor, SocialPreview) wrapped in error boundaries. Crashes show styled error message with "Try again" button instead of white screen
+- **aria-live toast region** — Pipeline action feedback toasts wrapped in `aria-live="polite"` for screen reader announcements
+- **aria-labels** — Dismiss buttons on pipeline cards and toast messages have descriptive labels. ConfirmModal adds `aria-describedby` linking to the message body
+- **Color-only indicator text** — Stats strip adds `⚠`/`✓` text alongside color-only illustrated/narrated counts, plus `title` tooltips with exact counts
+
+### Fixed — Pipeline Stage Visibility
+
+- **Optimistic log injection** — When producing a topic, a synthetic log entry with status `started` is immediately injected into state, making the article appear in the Research box instantly instead of waiting for the next poll
+- **Rapid polling** — After any produce action, polling switches to every 5 seconds for 3 minutes (was 60s). Admin now sees Research → Editor stage transitions in near-realtime
+- **Reduced initial poll delay** — Post-produce fetch reduced from 2s to 1s
+
+### Improved — Performance
+
+- **useMemo for derived state** — Pipeline stage log mapping (`stageLogsMap`, `completedLogs`, `failedLogs`, `inPipeline`) wrapped in `useMemo`, only recalculates when `logs` array changes
+
+### Changed — Research Prompt Anti-Hedging
+
+- **No-hedging rule** added to both research prompts (trending + directed). Explicit ban on defensive formulas like "the story isn't that X is a fraud", "this doesn't mean X is bad". Research agent now reports evidence without pre-emptive institutional defense
+
 ## [20.3.1] - 2026-04-04
 
 ### Added — Delete from Recently Published

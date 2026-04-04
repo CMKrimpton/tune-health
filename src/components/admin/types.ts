@@ -355,6 +355,10 @@ export interface QCResult {
 
 export function getAdminToken(): string {
   if (typeof document === 'undefined') return '';
+  // Read from server-injected meta tag (HttpOnly cookie can't be read by JS)
+  const meta = document.querySelector('meta[name="admin-token"]');
+  if (meta) return meta.getAttribute('content') || '';
+  // Fallback: try cookie (for backwards compatibility during migration)
   const match = document.cookie.match(/(?:^|;\s*)admin_token=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : '';
 }

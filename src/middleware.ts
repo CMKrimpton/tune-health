@@ -1,18 +1,65 @@
 import { defineMiddleware } from 'astro:middleware';
 
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+function getAdminToken(): string {
+  return (process.env.ADMIN_TOKEN || import.meta.env.ADMIN_TOKEN || process.env.PUBLIC_ADMIN_TOKEN || import.meta.env.PUBLIC_ADMIN_TOKEN || '').trim();
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const url = new URL(context.request.url);
 
-  // Only protect /admin routes (except /admin/login)
+  // ─── Login POST: validate token, set HttpOnly cookie server-side ───
+  if (url.pathname === '/admin/login' && context.request.method === 'POST') {
+    try {
+      const body = await context.request.json();
+      const token = (body?.token || '').trim();
+      const adminToken = getAdminToken();
+
+      if (token && token === adminToken) {
+        context.cookies.set('admin_token', token, {
+          path: '/',
+          maxAge: COOKIE_MAX_AGE,
+          httpOnly: true,
+          secure: url.protocol === 'https:',
+          sameSite: 'lax',
+        });
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ ok: false, error: 'Invalid token' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch {
+      return new Response(JSON.stringify({ ok: false, error: 'Bad request' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
+  // ─── Logout POST: clear the HttpOnly cookie ───
+  if (url.pathname === '/admin/logout' && context.request.method === 'POST') {
+    context.cookies.delete('admin_token', { path: '/' });
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // ─── Protect /admin routes (except /admin/login) ───
   if (url.pathname.startsWith('/admin') && !url.pathname.startsWith('/admin/login')) {
     const cookie = context.cookies.get('admin_token');
-    const adminToken = (process.env.ADMIN_TOKEN || import.meta.env.ADMIN_TOKEN || process.env.PUBLIC_ADMIN_TOKEN || import.meta.env.PUBLIC_ADMIN_TOKEN || '').trim();
+    const adminToken = getAdminToken();
 
     if (!cookie) {
       return context.redirect('/admin/login');
     }
     if (cookie.value !== adminToken) {
-      // They tried a token and it was wrong — redirect with error flag
+      context.cookies.delete('admin_token', { path: '/' });
       return context.redirect('/admin/login?error=1');
     }
   }

@@ -7,7 +7,7 @@ import {
   CATEGORY_GRADIENTS,
   fetchWithTimeout,
 } from './types';
-import { useConfirm } from './ConfirmModal';
+import { useConfirm, ErrorBoundary } from './ConfirmModal';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -112,7 +112,15 @@ function clearDraft() {
 
 // ─── Component ──────────────────────────────────────────────────
 
-export default function ArticleEditor({ apiBase }: { apiBase: string }) {
+export default function ArticleEditorWrapped(props: { apiBase: string }) {
+  return (
+    <ErrorBoundary fallbackLabel="Article Editor encountered an error">
+      <ArticleEditorInner {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function ArticleEditorInner({ apiBase }: { apiBase: string }) {
   const API_BASE = apiBase;
 
   // Core state
