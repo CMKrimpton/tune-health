@@ -133,6 +133,12 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
   const [queueFilter, setQueueFilter] = useState<'all' | 'queued' | 'completed' | 'in_progress' | 'merged'>('queued');
   const uploadFileRef = useRef<HTMLInputElement>(null);
   const [killingId, setKillingId] = useState<string | null>(null);
+  // Replace article state
+  const [replaceTarget, setReplaceTarget] = useState<{ slug: string; title: string } | null>(null);
+  const [replaceHtml, setReplaceHtml] = useState('');
+  const [replaceEntry, setReplaceEntry] = useState<'independence' | 'direct'>('independence');
+  const [replaceSubmitting, setReplaceSubmitting] = useState(false);
+  const [replaceResult, setReplaceResult] = useState<string | null>(null);
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
   const [overheadSpend, setOverheadSpend] = useState<number>(0);
   const [avgCostPerArticle, setAvgCostPerArticle] = useState<number>(0);
@@ -944,6 +950,43 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
       setTimeout(fetchStatus, 1000);
     } catch (err) { flashFeedback(false, `Delete failed: ${err instanceof Error ? err.message : 'unknown'}`); }
     finally { setKillingId(null); }
+  };
+
+  const submitReplaceArticle = async () => {
+    if (!replaceTarget || !replaceHtml.trim()) return;
+    setReplaceSubmitting(true);
+    setReplaceResult(null);
+    try {
+      const action = replaceEntry === 'direct' ? 'publish-direct' : 'submit-new-article';
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({
+          action,
+          articleHtml: replaceHtml.trim(),
+          title: replaceTarget.title,
+          slug: replaceTarget.slug,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setReplaceResult(`Failed: ${data.error || res.status}`);
+      } else {
+        const msg = replaceEntry === 'direct'
+          ? `Replacing "${replaceTarget.title.slice(0, 50)}" — publishing directly`
+          : `Replacing "${replaceTarget.title.slice(0, 50)}" — independence review dispatched`;
+        flashFeedback(true, msg);
+        setReplaceTarget(null);
+        setReplaceHtml('');
+        setReplaceResult(null);
+        startRapidPolling();
+        setTimeout(fetchStatus, 2000);
+      }
+    } catch (err) {
+      setReplaceResult(`Error: ${err instanceof Error ? err.message : 'Unknown'}`);
+    } finally {
+      setReplaceSubmitting(false);
+    }
   };
 
   const clearAllBriefs = async () => {
@@ -1780,6 +1823,12 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
                       </div>
                     </div>
                     <div className="admin-flex admin-gap-sm admin-flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      <button
+                        className="pipeline-retry-btn"
+                        title="Replace article content"
+                        aria-label={`Replace ${item.title}`}
+                        onClick={() => { setReplaceTarget({ slug: item.slug, title: item.title }); setReplaceHtml(''); setReplaceResult(null); setReplaceEntry('independence'); }}
+                      >Replace</button>
                       <a href={`/admin/edit/${item.slug}`} className="pipeline-retry-btn admin-no-underline">Edit</a>
                       <a href={`/articles/${item.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn admin-no-underline">{'\u2192'} View</a>
                       <button
@@ -2007,6 +2056,75 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
       )}
       </div>{/* end right column */}
       </div>{/* end pipeline-lower-grid */}
+
+      {/* ── Replace Article Modal ── */}
+      {replaceTarget && (
+        <div className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="replace-modal-title">
+          <div className="admin-modal-backdrop" onClick={() => { if (!replaceSubmitting) { setReplaceTarget(null); setReplaceResult(null); } }} />
+          <div className="admin-modal-card" style={{ maxWidth: '640px', width: '90vw' }}>
+            <h3 className="admin-modal-title" id="replace-modal-title">Replace Article</h3>
+            <div className="admin-text-sm admin-color-secondary admin-mb-md">
+              <span className="admin-weight-600">{replaceTarget.title}</span>
+              <br />
+              <code className="admin-color-muted">{replaceTarget.slug}</code>
+            </div>
+
+            {/* Entry toggle */}
+            <div className="admin-flex admin-gap-sm admin-mb-md">
+              <button
+                className={`pipeline-retry-btn${replaceEntry === 'independence' ? ' admin-action-btn-primary' : ''}`}
+                style={replaceEntry === 'independence' ? { background: 'var(--admin-accent)', color: '#fff', borderColor: 'var(--admin-accent)' } : {}}
+                onClick={() => setReplaceEntry('independence')}
+              >Review → Publish</button>
+              <button
+                className={`pipeline-retry-btn${replaceEntry === 'direct' ? ' admin-action-btn-primary' : ''}`}
+                style={replaceEntry === 'direct' ? { background: 'var(--admin-accent)', color: '#fff', borderColor: 'var(--admin-accent)' } : {}}
+                onClick={() => setReplaceEntry('direct')}
+              >Direct Publish</button>
+            </div>
+            <div className="admin-text-xs admin-color-muted admin-mb-md">
+              {replaceEntry === 'independence'
+                ? 'New content goes through Grok independence review → QC → copy edit → publish'
+                : 'Skips all editorial stages — publishes immediately with new art + narration'}
+            </div>
+
+            {/* HTML textarea */}
+            <textarea
+              value={replaceHtml}
+              onChange={e => setReplaceHtml(e.target.value)}
+              placeholder="Paste new article HTML or Markdown here…"
+              rows={12}
+              style={{
+                width: '100%', fontFamily: 'monospace', fontSize: '0.8125rem',
+                background: 'var(--admin-surface-2)', color: 'var(--admin-text)',
+                border: '1px solid var(--admin-border)', borderRadius: '6px',
+                padding: '0.75rem', resize: 'vertical', marginBottom: '0.75rem',
+              }}
+            />
+            <div className="admin-text-xs admin-color-muted admin-mb-md">
+              {replaceHtml.trim() ? `${replaceHtml.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length} words` : 'No content yet'}
+            </div>
+
+            {replaceResult && (
+              <div className="admin-text-sm admin-mb-md" style={{ color: 'var(--admin-red-light)' }}>{replaceResult}</div>
+            )}
+
+            <div className="admin-modal-actions">
+              <button
+                className="admin-action-btn admin-action-btn-muted"
+                onClick={() => { setReplaceTarget(null); setReplaceResult(null); }}
+                disabled={replaceSubmitting}
+              >Cancel</button>
+              <button
+                className="admin-action-btn admin-action-btn-primary"
+                onClick={submitReplaceArticle}
+                disabled={replaceSubmitting || !replaceHtml.trim()}
+              >{replaceSubmitting ? 'Submitting…' : 'Replace Article'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {ConfirmDialog}
     </div>
   );
