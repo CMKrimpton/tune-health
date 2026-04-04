@@ -94,8 +94,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
 
   <main class="admin-main">
     {fetchError && (
-      <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8125rem; color:#fca5a5; display:flex; align-items:center; gap:0.5rem">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div class="admin-toast admin-toast-error">
         <span><strong>Database error:</strong> {fetchError}</span>
       </div>
     )}
@@ -107,23 +106,23 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
         <span class="admin-stat-label">Total</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number" style="color: #22c55e">{published.length}</span>
+        <span class="admin-stat-number" style="color: var(--admin-green)">{published.length}</span>
         <span class="admin-stat-label">Published</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number" style={drafts.length > 0 ? "color: #f59e0b" : ""}>{drafts.length}</span>
+        <span class="admin-stat-number" style={drafts.length > 0 ? "color: var(--admin-yellow)" : ""}>{drafts.length}</span>
         <span class="admin-stat-label">Drafts</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number" style="color: #ef4444">{featuredCount}</span>
+        <span class="admin-stat-number" style="color: var(--admin-accent)">{featuredCount}</span>
         <span class="admin-stat-label">Featured</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number" style={withIllustration.length < articles.length ? "color: #f59e0b" : "color: #22c55e"}>{withIllustration.length}</span>
+        <span class="admin-stat-number" style={withIllustration.length < articles.length ? "color: var(--admin-yellow)" : "color: var(--admin-green)"}>{withIllustration.length}</span>
         <span class="admin-stat-label">Illustrated</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number" style={withNarration.length < articles.length ? "color: #f59e0b" : "color: #22c55e"}>{withNarration.length}</span>
+        <span class="admin-stat-number" style={withNarration.length < articles.length ? "color: var(--admin-yellow)" : "color: var(--admin-green)"}>{withNarration.length}</span>
         <span class="admin-stat-label">Narrated</span>
       </div>
       <div class="admin-stat-card">
@@ -131,7 +130,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
         <span class="admin-stat-label">Avg Read</span>
       </div>
       <div class="admin-stat-card">
-        <span class="admin-stat-number" style={totalCost > 50 ? "color: #f87171" : totalCost > 20 ? "color: #f59e0b" : ""}>${totalCost > 0 ? totalCost.toFixed(2) : '—'}</span>
+        <span class="admin-stat-number" style={totalCost > 50 ? "color: var(--admin-red-light)" : totalCost > 20 ? "color: var(--admin-yellow)" : ""}>${totalCost > 0 ? totalCost.toFixed(2) : '—'}</span>
         <span class="admin-stat-label">Pipeline Spend</span>
       </div>
       <div class="admin-stat-card">

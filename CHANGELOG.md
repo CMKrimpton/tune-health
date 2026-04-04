@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [20.2.0] - 2026-04-03
+
+### Improved — Admin Design System Hardening
+
+- **14 new CSS custom properties** added to `:root` — `--admin-blue-light`, `--admin-green-lighter`, `--admin-accent-hover`, `--admin-indigo-*`, `--admin-surface-deep`, `--admin-surface-invert`, `--admin-surface-dark`, `--admin-text-warm`, `--admin-green-hover`, `--admin-green-dark`
+- **~60 hardcoded hex values replaced** in `public/admin.css` with CSS variable references — single source of truth for all colors
+- **Stats strip** (`index.astro`) now uses `var(--admin-*)` instead of inline hex. Error banner uses proper toast class
+- **ArticlesManager** — 15 inline hex replaced (verdicts, scores, voice checks, PubMed citations)
+- **AgentsPanel** — white-on-color text uses `var(--admin-text)` instead of `#fff`
+- **SocialDashboard** — ~40 inline hex replaced (persona colors, status colors, toast borders, health indicators, pill styles). External platform brand colors correctly remain hardcoded
+- **types.ts** — `getScoreColor()` and all 8 `PIPELINE_STAGE_CONFIG` modelColors now use CSS variables
+- **`src/styles/admin.css` synced** with `public/admin.css`
+
 ## [20.1.0] - 2026-04-03
 
 ### Fixed — Paste-and-Publish Flow

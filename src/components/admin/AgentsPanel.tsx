@@ -930,7 +930,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
               fontSize: 11,
               padding: '4px 12px',
               background: voiceKey === key ? 'var(--admin-accent)' : 'var(--admin-surface-hover)',
-              color: voiceKey === key ? '#fff' : 'var(--admin-text-secondary)',
+              color: voiceKey === key ? 'var(--admin-text)' : 'var(--admin-text-secondary)',
               borderRadius: 6,
               border: voiceKey === key ? '1px solid var(--admin-accent)' : '1px solid var(--admin-border)',
             }}
@@ -964,7 +964,7 @@ function NarrationAgent({ apiBase }: { apiBase: string }) {
                     fontSize: 11,
                     padding: '5px 10px',
                     background: preset === key ? 'var(--admin-accent)' : 'var(--admin-surface-hover)',
-                    color: preset === key ? '#fff' : 'var(--admin-text-secondary)',
+                    color: preset === key ? 'var(--admin-text)' : 'var(--admin-text-secondary)',
                     borderRadius: 6,
                     border: preset === key ? '1px solid var(--admin-accent)' : '1px solid var(--admin-border)',
                   }}

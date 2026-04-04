@@ -209,7 +209,7 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
           <div className="articles-detail-heading">Independence Review</div>
           <div className="articles-detail-kv">
             <span className="articles-detail-key">Verdict</span>
-            <span style={{ color: indReview.verdict === 'clean' ? '#4ade80' : indReview.verdict === 'minor_issues' ? '#fbbf24' : '#f87171' }}>
+            <span style={{ color: indReview.verdict === 'clean' ? 'var(--admin-green-light)' : indReview.verdict === 'minor_issues' ? 'var(--admin-yellow-light)' : 'var(--admin-red-light)' }}>
               {indReview.verdict || '\u2014'}
             </span>
             <span className="articles-detail-key">Score</span>
@@ -245,7 +245,7 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
           <div className="articles-detail-heading">QC Result</div>
           <div className="articles-detail-kv">
             <span className="articles-detail-key">Decision</span>
-            <span style={{ color: qcResult.decision === 'publish' ? '#4ade80' : qcResult.decision === 'kill' ? '#f87171' : '#fbbf24' }}>
+            <span style={{ color: qcResult.decision === 'publish' ? 'var(--admin-green-light)' : qcResult.decision === 'kill' ? 'var(--admin-red-light)' : 'var(--admin-yellow-light)' }}>
               {qcResult.decision}
             </span>
             {qcResult.edits?.notes && (
@@ -267,7 +267,7 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
               <div className="articles-voice-grid">
                 {Object.entries(qcResult.voiceCheck).map(([key, val]) => (
                   <span key={key} className="articles-voice-item">
-                    <span style={{ color: val ? '#4ade80' : '#f87171' }}>{val ? '\u2713' : '\u2717'}</span>{' '}
+                    <span style={{ color: val ? 'var(--admin-green-light)' : 'var(--admin-red-light)' }}>{val ? '\u2713' : '\u2717'}</span>{' '}
                     {key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}
                   </span>
                 ))}
@@ -284,15 +284,15 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
           <div className="articles-score-cards">
             <div className="articles-score-card">
               <div className="articles-score-label">Verified</div>
-              <div className="articles-score-value" style={{ color: '#4ade80' }}>{pubmed.verified ?? 0}</div>
+              <div className="articles-score-value" style={{ color: 'var(--admin-green-light)' }}>{pubmed.verified ?? 0}</div>
             </div>
             <div className="articles-score-card">
               <div className="articles-score-label">Failed</div>
-              <div className="articles-score-value" style={{ color: '#f87171' }}>{pubmed.failed ?? 0}</div>
+              <div className="articles-score-value" style={{ color: 'var(--admin-red-light)' }}>{pubmed.failed ?? 0}</div>
             </div>
             <div className="articles-score-card">
               <div className="articles-score-label">Skipped</div>
-              <div className="articles-score-value" style={{ color: '#7d7871' }}>{pubmed.skipped ?? 0}</div>
+              <div className="articles-score-value" style={{ color: 'var(--admin-text-3)' }}>{pubmed.skipped ?? 0}</div>
             </div>
           </div>
           {Array.isArray(pubmed.details) && pubmed.details.length > 0 && (
@@ -300,7 +300,7 @@ function ArticleDetailPanel({ article, pipelineLog, loading }: {
               <div className="articles-detail-subheading">Citations</div>
               {pubmed.details.map((d, i) => (
                 <div key={i} className="articles-detail-citation">
-                  <span style={{ color: d.found ? '#4ade80' : d.skipped ? '#7d7871' : '#f87171' }}>
+                  <span style={{ color: d.found ? 'var(--admin-green-light)' : d.skipped ? 'var(--admin-text-3)' : 'var(--admin-red-light)' }}>
                     {d.found ? '\u2713' : d.skipped ? '\u2013' : '\u2717'}
                   </span>{' '}
                   {d.title}

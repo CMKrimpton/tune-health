@@ -119,7 +119,7 @@ const PLATFORM_ICONS: Record<string, { icon: string; color: string; abbr: string
   telegram:   { icon: '✈️', color: '#26a5e4', abbr: 'TLG' },
   medium:     { icon: '📝', color: '#00ab6c', abbr: 'MED' },
   pinterest:  { icon: '📌', color: '#e60023', abbr: 'PIN' },
-  newsletter: { icon: '📨', color: '#f59e0b', abbr: 'NWS' },
+  newsletter: { icon: '📨', color: 'var(--admin-yellow)', abbr: 'NWS' },
   x:          { icon: '𝕏', color: '#ffffff', abbr: 'X' },
   quora:      { icon: '❓', color: '#b92b27', abbr: 'QRA' },
   hackernews: { icon: '🟧', color: '#ff6600', abbr: 'HN' },
@@ -128,22 +128,22 @@ const PLATFORM_ICONS: Record<string, { icon: string; color: string; abbr: string
 };
 
 const PERSONA_COLORS: Record<string, string> = {
-  brand: '#ef4444',
-  reporter: '#3b82f6',
-  skeptic: '#f59e0b',
-  curator: '#a78bfa',
+  brand: 'var(--admin-accent)',
+  reporter: 'var(--admin-blue)',
+  skeptic: 'var(--admin-yellow)',
+  curator: 'var(--admin-purple)',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: '#7d7871',
-  scheduled: '#3b82f6',
-  posting: '#f59e0b',
-  posted: '#22c55e',
-  failed: '#ef4444',
-  skipped: '#5c5752',
-  planned: '#7d7871',
-  generating: '#f59e0b',
-  generated: '#22c55e',
+  draft: 'var(--admin-text-3)',
+  scheduled: 'var(--admin-blue)',
+  posting: 'var(--admin-yellow)',
+  posted: 'var(--admin-green)',
+  failed: 'var(--admin-accent)',
+  skipped: 'var(--admin-text-4)',
+  planned: 'var(--admin-text-3)',
+  generating: 'var(--admin-yellow)',
+  generated: 'var(--admin-green)',
 };
 
 type SectionId = 'overview' | 'posts' | 'plan' | 'platforms' | 'setup';
@@ -238,7 +238,7 @@ const S = {
     border: accent ? 'none' : '1px solid var(--admin-border-2)',
     borderRadius: 'var(--admin-radius-xs)',
     background: accent ? 'var(--admin-accent)' : 'var(--admin-surface-2)',
-    color: accent ? '#fff' : 'var(--admin-text-2)',
+    color: accent ? 'var(--admin-text)' : 'var(--admin-text-2)',
     cursor: 'pointer',
     transition: 'all 0.15s var(--admin-ease)',
     fontFamily: 'inherit',
@@ -277,7 +277,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
       }}
     >
       {toasts.map(toast => {
-        const borderColor = toast.type === 'success' ? '#22c55e' : toast.type === 'error' ? '#ef4444' : '#3b82f6';
+        const borderColor = toast.type === 'success' ? 'var(--admin-green)' : toast.type === 'error' ? 'var(--admin-accent)' : 'var(--admin-blue)';
         const iconColor = borderColor;
         const icon = toast.type === 'success' ? '\u2713' : toast.type === 'error' ? '\u2717' : '\u2139';
         return (
@@ -405,7 +405,7 @@ function Sparkline({ data, color, width = 64, height = 20 }: { data: number[]; c
 // ─── Sub-components ──────────────────────────────────────────────────────
 
 function PlatformBadge({ platform, compact }: { platform: string; compact?: boolean }) {
-  const cfg = PLATFORM_ICONS[platform] || { icon: '?', color: '#7d7871', abbr: platform.slice(0, 3).toUpperCase() };
+  const cfg = PLATFORM_ICONS[platform] || { icon: '?', color: 'var(--admin-text-3)', abbr: platform.slice(0, 3).toUpperCase() };
   return (
     <span
       style={{ ...S.pill(cfg.color), gap: '3px', background: `${cfg.color}15` }}
@@ -419,12 +419,12 @@ function PlatformBadge({ platform, compact }: { platform: string; compact?: bool
 }
 
 function PersonaBadge({ persona }: { persona: string }) {
-  const color = PERSONA_COLORS[persona] || '#7d7871';
+  const color = PERSONA_COLORS[persona] || 'var(--admin-text-3)';
   return <span style={S.pill(color)} aria-label={`Persona: ${persona}`}>{persona}</span>;
 }
 
 function StatusDot({ status }: { status: string }) {
-  const color = STATUS_COLORS[status] || '#7d7871';
+  const color = STATUS_COLORS[status] || 'var(--admin-text-3)';
   const isActive = status === 'posting' || status === 'generating';
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }} role="status" aria-label={`Status: ${status}`}>
@@ -498,7 +498,7 @@ function ActionBtn({
         ...base,
         opacity: disabled ? 0.4 : 1,
         background: hover && !disabled ? hoverBg : base.background,
-        color: danger && hover ? '#f87171' : base.color,
+        color: danger && hover ? 'var(--admin-red-light)' : base.color,
         borderColor: danger && hover ? 'rgba(239, 68, 68, 0.3)' : undefined,
         ...extraStyle,
       }}
@@ -817,14 +817,14 @@ export default function SocialDashboard({ apiBase }: Props) {
           role="region"
           aria-label="Social media statistics"
         >
-          <StatCell label="Total Posts" value={stats?.totalPosts ?? 0} sparkData={engagementByDay} sparkColor="#3b82f6" />
-          <StatCell label="Today" value={stats?.postedToday ?? 0} color="#22c55e" />
-          <StatCell label="Queued" value={stats?.queueSize ?? 0} color="#3b82f6" />
-          <StatCell label="Drafts" value={stats?.draftCount ?? 0} color="#f59e0b" />
-          <StatCell label="Failed" value={stats?.failedToday ?? 0} color={stats?.failedToday ? '#ef4444' : undefined} pulse={!!stats?.failedToday} />
+          <StatCell label="Total Posts" value={stats?.totalPosts ?? 0} sparkData={engagementByDay} sparkColor="var(--admin-blue)" />
+          <StatCell label="Today" value={stats?.postedToday ?? 0} color="var(--admin-green)" />
+          <StatCell label="Queued" value={stats?.queueSize ?? 0} color="var(--admin-blue)" />
+          <StatCell label="Drafts" value={stats?.draftCount ?? 0} color="var(--admin-yellow)" />
+          <StatCell label="Failed" value={stats?.failedToday ?? 0} color={stats?.failedToday ? 'var(--admin-accent)' : undefined} pulse={!!stats?.failedToday} />
           <StatCell label="Avg Engage" value={stats?.avgEngagement?.toFixed(1) ?? '0'} />
           <StatCell label="AI Cost" value={`$${(stats?.todayCost ?? 0).toFixed(3)}`} />
-          <StatCell label="Platforms" value={stats?.activePlatforms ?? 0} color="#22c55e" />
+          <StatCell label="Platforms" value={stats?.activePlatforms ?? 0} color="var(--admin-green)" />
         </div>
       )}
 
@@ -915,7 +915,7 @@ export default function SocialDashboard({ apiBase }: Props) {
             { action: 'run-sync', label: 'Sync' },
           ].map(({ action, label }) => {
             const feedback = actionFeedback[action];
-            const feedbackColor = feedback === 'success' ? '#22c55e' : feedback === 'error' ? '#ef4444' : undefined;
+            const feedbackColor = feedback === 'success' ? 'var(--admin-green)' : feedback === 'error' ? 'var(--admin-accent)' : undefined;
             return (
               <ActionBtn
                 key={action}
@@ -975,15 +975,15 @@ export default function SocialDashboard({ apiBase }: Props) {
                         <PlatformBadge platform={platform} />
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem' }}>
-                            <span style={{ color: '#22c55e' }}>{counts.posted} posted</span>
-                            <span style={{ color: '#3b82f6' }}>{counts.scheduled} queued</span>
-                            {counts.failed > 0 && <span style={{ color: '#ef4444' }}>{counts.failed} failed</span>}
+                            <span style={{ color: 'var(--admin-green)' }}>{counts.posted} posted</span>
+                            <span style={{ color: 'var(--admin-blue)' }}>{counts.scheduled} queued</span>
+                            {counts.failed > 0 && <span style={{ color: 'var(--admin-accent)' }}>{counts.failed} failed</span>}
                           </div>
                           <div style={{ height: '3px', background: 'var(--admin-surface-3)', borderRadius: '2px', overflow: 'hidden' }} role="progressbar" aria-valuenow={counts.posted} aria-valuemax={target} aria-label={`${platform} daily progress: ${counts.posted} of ${target}`}>
                             <div style={{
                               width: `${Math.min(100, (counts.posted / target) * 100)}%`,
                               height: '100%',
-                              background: counts.posted >= target ? '#22c55e' : counts.posted > 0 ? '#3b82f6' : 'var(--admin-surface-3)',
+                              background: counts.posted >= target ? 'var(--admin-green)' : counts.posted > 0 ? 'var(--admin-blue)' : 'var(--admin-surface-3)',
                               borderRadius: '2px',
                               transition: 'width 0.6s var(--admin-ease)',
                             }} />
@@ -1017,7 +1017,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       </div>
                     )}
                     {currentArc.category_focus && (
-                      <span style={S.pill(CATEGORY_GRADIENTS[currentArc.category_focus]?.hex || '#7d7871')}>
+                      <span style={S.pill(CATEGORY_GRADIENTS[currentArc.category_focus]?.hex || 'var(--admin-text-3)')}>
                         {currentArc.category_focus}
                       </span>
                     )}
@@ -1029,7 +1029,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                     {Object.keys(currentArc.recurring_series || {}).length > 0 && (
                       <div style={{ marginTop: '6px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         {Object.keys(currentArc.recurring_series).map(series => (
-                          <span key={series} style={S.pill('#a78bfa')}>
+                          <span key={series} style={S.pill('var(--admin-purple)')}>
                             {series.replace(/_/g, ' ')}
                           </span>
                         ))}
@@ -1057,7 +1057,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       <PersonaBadge persona={p.id} />
                       <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--admin-text)' }}>{p.display_name}</span>
                       {postedByPersona[p.id] != null && (
-                        <span style={{ ...S.mono, color: '#22c55e', fontSize: '0.75rem' }}>
+                        <span style={{ ...S.mono, color: 'var(--admin-green)', fontSize: '0.75rem' }}>
                           {postedByPersona[p.id]} posted
                         </span>
                       )}
@@ -1093,14 +1093,14 @@ export default function SocialDashboard({ apiBase }: Props) {
                   {engagementByDay.some(v => v > 0) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ ...S.mono, color: 'var(--admin-text-4)', fontSize: '0.75rem' }}>7d</span>
-                      <Sparkline data={engagementByDay} color="#3b82f6" />
+                      <Sparkline data={engagementByDay} color="var(--admin-blue)" />
                     </div>
                   )}
                 </div>
                 <div style={{ padding: '0.5rem 0.75rem', display: 'flex', gap: '0.75rem' }}>
                   {Object.entries(postedByPersona).sort((a, b) => b[1] - a[1]).map(([persona, count]) => {
                     const max = Math.max(...Object.values(postedByPersona));
-                    const color = PERSONA_COLORS[persona] || '#7d7871';
+                    const color = PERSONA_COLORS[persona] || 'var(--admin-text-3)';
                     return (
                       <div key={persona} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                         <div style={{ width: '100%', height: '48px', background: 'var(--admin-surface-2)', borderRadius: '3px', display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
@@ -1132,7 +1132,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                 <div style={{ padding: '0.5rem 0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   {Object.entries(postedByType).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
                     <span key={type} style={{
-                      ...S.pill('#7d7871'),
+                      ...S.pill('var(--admin-text-3)'),
                       padding: '3px 8px',
                       fontSize: '0.75rem',
                       display: 'flex',
@@ -1281,7 +1281,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                           <td style={{ padding: '5px 8px' }}><PlatformBadge platform={post.platform} /></td>
                           <td style={{ padding: '5px 8px' }}><PersonaBadge persona={post.persona} /></td>
                           <td style={{ padding: '5px 8px' }}>
-                            <span style={S.pill('#7d7871')}>{post.content_type}</span>
+                            <span style={S.pill('var(--admin-text-3)')}>{post.content_type}</span>
                           </td>
                           <td style={{ padding: '5px 8px', maxWidth: '320px' }}>
                             <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--admin-text)' }}>
@@ -1293,7 +1293,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                               </div>
                             )}
                             {post.error && (
-                              <div style={{ fontSize: '0.75rem', color: '#f87171', marginTop: '2px' }} role="alert">
+                              <div style={{ fontSize: '0.75rem', color: 'var(--admin-red-light)', marginTop: '2px' }} role="alert">
                                 {truncate(post.error, 60)}
                               </div>
                             )}
@@ -1354,12 +1354,12 @@ export default function SocialDashboard({ apiBase }: Props) {
                                   </span>
                                 )}
                                 {post.scheduled_at && post.status === 'scheduled' && (
-                                  <span style={{ ...S.mono, fontSize: '0.75rem', color: '#3b82f6' }}>
+                                  <span style={{ ...S.mono, fontSize: '0.75rem', color: 'var(--admin-blue)' }}>
                                     Scheduled: {new Date(post.scheduled_at).toLocaleString()}
                                   </span>
                                 )}
                                 {post.error && (
-                                  <span style={{ fontSize: '0.75rem', color: '#f87171' }}>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--admin-red-light)' }}>
                                     Error: {post.error}
                                   </span>
                                 )}
@@ -1454,7 +1454,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       <td style={{ padding: '5px 8px' }}><PlatformBadge platform={item.platform} /></td>
                       <td style={{ padding: '5px 8px' }}><PersonaBadge persona={item.persona} /></td>
                       <td style={{ padding: '5px 8px' }}>
-                        <span style={S.pill('#7d7871')}>{item.desk}</span>
+                        <span style={S.pill('var(--admin-text-3)')}>{item.desk}</span>
                       </td>
                       <td style={{ padding: '5px 8px', color: 'var(--admin-text-2)' }}>{item.content_type}</td>
                       <td style={{ padding: '5px 8px', color: 'var(--admin-text-3)' }}>{item.content_format}</td>
@@ -1468,7 +1468,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       <td style={{ padding: '5px 8px' }}><StatusDot status={item.status} /></td>
                       <td style={{ padding: '5px 8px' }}>
                         {item.series_tag ? (
-                          <span style={S.pill('#a78bfa')}>{item.series_tag.replace(/_/g, ' ')}</span>
+                          <span style={S.pill('var(--admin-purple)')}>{item.series_tag.replace(/_/g, ' ')}</span>
                         ) : <span aria-label="No series">—</span>}
                       </td>
                     </tr>
@@ -1494,8 +1494,8 @@ export default function SocialDashboard({ apiBase }: Props) {
           style={{ ...S.grid2, animation: 'fade-in 0.2s var(--admin-ease)' }}
         >
           {platforms.map(p => {
-            const cfg = PLATFORM_ICONS[p.platform] || { icon: '?', color: '#7d7871', abbr: p.platform };
-            const healthColor = p.api_configured ? '#22c55e' : p.active ? '#f59e0b' : '#ef4444';
+            const cfg = PLATFORM_ICONS[p.platform] || { icon: '?', color: 'var(--admin-text-3)', abbr: p.platform };
+            const healthColor = p.api_configured ? 'var(--admin-green)' : p.active ? 'var(--admin-yellow)' : 'var(--admin-accent)';
             const pct = p.daily_post_target > 0 ? Math.round((p.todayPosted / p.daily_post_target) * 100) : 0;
             return (
               <div key={p.platform} style={S.panel} className="social-panel">
@@ -1509,7 +1509,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       {p.api_configured ? 'API LIVE' : p.active ? 'PENDING' : 'DISABLED'}
                     </span>
                   </div>
-                  <span style={S.pill('#7d7871')}>Tier {p.tier}</span>
+                  <span style={S.pill('var(--admin-text-3)')}>Tier {p.tier}</span>
                 </div>
                 <div style={{ padding: '0.5rem 0.75rem' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '8px' }}>
@@ -1522,7 +1522,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                       <div style={S.microLabel}>Daily Target</div>
                     </div>
                     <div>
-                      <div style={{ ...S.mono, fontSize: '1rem', fontWeight: 600, color: pct >= 100 ? '#22c55e' : pct > 50 ? '#f59e0b' : 'var(--admin-text-3)' }}>{pct}%</div>
+                      <div style={{ ...S.mono, fontSize: '1rem', fontWeight: 600, color: pct >= 100 ? 'var(--admin-green)' : pct > 50 ? 'var(--admin-yellow)' : 'var(--admin-text-3)' }}>{pct}%</div>
                       <div style={S.microLabel}>Fill Rate</div>
                     </div>
                   </div>
@@ -1538,7 +1538,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                     <div style={{
                       width: `${Math.min(100, pct)}%`,
                       height: '100%',
-                      background: pct >= 100 ? '#22c55e' : pct > 50 ? '#3b82f6' : 'var(--admin-text-4)',
+                      background: pct >= 100 ? 'var(--admin-green)' : pct > 50 ? 'var(--admin-blue)' : 'var(--admin-text-4)',
                       borderRadius: '2px',
                       transition: 'width 0.6s var(--admin-ease)',
                     }} />
@@ -1551,7 +1551,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                   </div>
                   <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', marginTop: '6px' }}>
                     {p.content_formats.map(f => (
-                      <span key={f} style={S.pill('#7d7871')}>{f}</span>
+                      <span key={f} style={S.pill('var(--admin-text-3)')}>{f}</span>
                     ))}
                   </div>
                 </div>
@@ -1609,14 +1609,14 @@ export default function SocialDashboard({ apiBase }: Props) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                           <span style={{ fontSize: '1.125rem' }} aria-hidden="true">{cfg?.icon || '?'}</span>
                           <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--admin-text)', textTransform: 'capitalize' }}>{platform}</span>
-                          <span style={S.pill(info.ready ? '#22c55e' : '#ef4444')}>
+                          <span style={S.pill(info.ready ? 'var(--admin-green)' : 'var(--admin-accent)')}>
                             {info.ready ? 'READY' : 'NOT CONFIGURED'}
                           </span>
                         </div>
                         {!info.ready && (
                           <>
                             {info.missing.length > 0 && (
-                              <div style={{ fontSize: '0.75rem', color: '#f87171', marginBottom: '6px' }} role="alert">
+                              <div style={{ fontSize: '0.75rem', color: 'var(--admin-red-light)', marginBottom: '6px' }} role="alert">
                                 Missing: {info.missing.join(', ')}
                               </div>
                             )}
@@ -1635,7 +1635,7 @@ export default function SocialDashboard({ apiBase }: Props) {
                           </>
                         )}
                         {info.ready && (
-                          <div style={{ fontSize: '0.75rem', color: '#22c55e' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--admin-green)' }}>
                             All credentials configured. Platform ready for automated posting.
                           </div>
                         )}

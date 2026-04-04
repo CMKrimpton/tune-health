@@ -48,12 +48,12 @@ const GRADIENT_HEX_MAP: Record<string, string> = {
 
 /** Get the hex color for an article's category stripe. */
 export function getCategoryColor(category: string): string {
-  return CATEGORY_GRADIENTS[category]?.hex ?? '#dc2626';
+  return CATEGORY_GRADIENTS[category]?.hex ?? 'var(--admin-accent)';
 }
 
 /** Get the hex color for a Tailwind gradient class name. */
 export function getGradientHex(gradientClass: string): string {
-  return GRADIENT_HEX_MAP[gradientClass] ?? '#dc2626';
+  return GRADIENT_HEX_MAP[gradientClass] ?? 'var(--admin-accent)';
 }
 
 /** Gradient presets for the article editor color picker. */
@@ -264,14 +264,14 @@ export interface StageConfig {
 }
 
 export const PIPELINE_STAGE_CONFIG: StageConfig[] = [
-  { key: 'research',      icon: '🔍', label: 'Research',     model: 'Gemini 2.5 Pro + Search',    modelColor: '#fbbf24', statuses: ['started', 'searching', 'research_done'] },
-  { key: 'editor_brief',  icon: '📋', label: 'Editor',       model: 'Sonnet → Gemini 3.1 Pro',    modelColor: '#f97316', statuses: ['editor_reviewing'] },
-  { key: 'write',         icon: '✍️', label: 'Write',        model: 'Human (Opus)',                modelColor: '#a78bfa', statuses: ['editor_approved', 'writing', 'written'] },
-  { key: 'independence',  icon: '⚖️', label: 'Independence', model: 'Grok 4',                     modelColor: '#3b82f6', statuses: ['independence_review', 'independence_done'] },
-  { key: 'qc',            icon: '✅', label: 'QC',           model: 'Flash → Sonnet',              modelColor: '#f97316', statuses: ['editor_qc', 'qc_approved'] },
-  { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Sonnet → Gemini → GPT-5.4',  modelColor: '#8b5cf6', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
-  { key: 'copy_edit',     icon: '✏️', label: 'Copy Edit',    model: 'Sonnet → Gemini Pro',         modelColor: '#ec4899', statuses: ['copy_editing', 'copy_edited'] },
-  { key: 'publish',       icon: '📡', label: 'Publish',      model: 'GitHub + GPT Image',          modelColor: '#10b981', statuses: ['publishing', 'published'] },
+  { key: 'research',      icon: '🔍', label: 'Research',     model: 'Gemini 2.5 Pro + Search',    modelColor: 'var(--admin-yellow-light)', statuses: ['started', 'searching', 'research_done'] },
+  { key: 'editor_brief',  icon: '📋', label: 'Editor',       model: 'Sonnet → Gemini 3.1 Pro',    modelColor: 'var(--admin-yellow)', statuses: ['editor_reviewing'] },
+  { key: 'write',         icon: '✍️', label: 'Write',        model: 'Human (Opus)',                modelColor: 'var(--admin-purple)', statuses: ['editor_approved', 'writing', 'written'] },
+  { key: 'independence',  icon: '⚖️', label: 'Independence', model: 'Grok 4',                     modelColor: 'var(--admin-blue)', statuses: ['independence_review', 'independence_done'] },
+  { key: 'qc',            icon: '✅', label: 'QC',           model: 'Flash → Sonnet',              modelColor: 'var(--admin-yellow)', statuses: ['editor_qc', 'qc_approved'] },
+  { key: 'voice_rewrite', icon: '🎨', label: 'Voice Polish', model: 'Sonnet → Gemini → GPT-5.4',  modelColor: 'var(--admin-purple-light)', statuses: ['voice_rewrite_pending', 'rewriting_voice', 'voice_rewrite_done'] },
+  { key: 'copy_edit',     icon: '✏️', label: 'Copy Edit',    model: 'Sonnet → Gemini Pro',         modelColor: 'var(--admin-accent)', statuses: ['copy_editing', 'copy_edited'] },
+  { key: 'publish',       icon: '📡', label: 'Publish',      model: 'GitHub + GPT Image',          modelColor: 'var(--admin-green)', statuses: ['publishing', 'published'] },
 ];
 
 /** Terminal statuses that indicate the pipeline run is complete. */
@@ -436,10 +436,10 @@ export function getStatusText(status: string, modelName?: string): string {
 
 /** Score color helper — green for 7+, yellow for 5-6, red for <5. */
 export function getScoreColor(score: number | null | undefined): string {
-  if (score == null) return '#7d7871';
-  if (score >= 7) return '#4ade80';
-  if (score >= 5) return '#fbbf24';
-  return '#f87171';
+  if (score == null) return 'var(--admin-text-3)';
+  if (score >= 7) return 'var(--admin-green-light)';
+  if (score >= 5) return 'var(--admin-yellow-light)';
+  return 'var(--admin-red-light)';
 }
 
 // ─── Fetch with Timeout ─────────────────────────────────────────────
