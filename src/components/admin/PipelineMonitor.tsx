@@ -838,6 +838,28 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
     finally { setKillingId(null); }
   };
 
+  const deletePublishedArticle = async (slug: string, title: string) => {
+    const ok = await ask({
+      title: 'Delete article',
+      message: `Permanently delete "${title}"? This removes the article from GitHub, the database, illustrations, narration, and pipeline logs.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
+    setKillingId(slug);
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/delete-article`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ slug }),
+      });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      flashFeedback(true, `Deleted "${title}"`);
+      setTimeout(fetchStatus, 1000);
+    } catch (err) { flashFeedback(false, `Delete failed: ${err instanceof Error ? err.message : 'unknown'}`); }
+    finally { setKillingId(null); }
+  };
+
   const clearAllBriefs = async () => {
     const briefCount = logs.filter(l => l.status === 'editor_approved').length;
     if (briefCount === 0) return;
@@ -1661,6 +1683,12 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
                     <div className="admin-flex admin-gap-sm admin-flex-shrink-0" onClick={e => e.stopPropagation()}>
                       <a href={`/admin/edit/${item.slug}`} className="pipeline-retry-btn admin-no-underline">Edit</a>
                       <a href={`/articles/${item.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn admin-no-underline">{'\u2192'} View</a>
+                      <button
+                        className="pipeline-dismiss-btn"
+                        title="Delete article"
+                        disabled={killingId === item.slug}
+                        onClick={() => deletePublishedArticle(item.slug, item.title)}
+                      >{killingId === item.slug ? '\u2026' : '\u00D7'}</button>
                     </div>
                   </div>
 
