@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [20.1.0] - 2026-04-03
+
+### Fixed — Paste-and-Publish Flow
+
+- **Markdown title extraction fixed** — `suggestTitle()` was running regex on whitespace-collapsed text, so `# Title\n\nStandfirst` became one long string. Now matches on raw text with newlines intact
+- **Auto-extract description from markdown** — `publish-direct` now pulls the standfirst paragraph (between `# Title` and `## First Section`) as the description when none provided. Also works for HTML input (extracts first `<p>` from introduction)
+- **Description truncation false positive fixed** — `stage-publish` flagged descriptions under 80 chars as "truncated" even when properly punctuated. Now only fires when description doesn't end with sentence-ending punctuation
+- **Narration regenerates on republish** — `stage-publish` now always regenerates narration for human-opus republishes, since the description may have changed
+- **sort_order integer overflow fixed** — column changed from `integer` to `bigint` (Date.now() returns ~1.77 trillion, exceeds integer max of 2.1 billion)
+- **Orphaned pipeline logs cleaned up** — `publish-direct` and `submit-new-article` now mark the log as `failed` if the articles table upsert fails, preventing stuck "copy_edited" entries in the dashboard
+
 ## [20.0.0] - 2026-04-03
 
 ### Fixed — Publishing System Hardening (Full Audit)
