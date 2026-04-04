@@ -33,6 +33,13 @@ The scout system was re-adding published, merged, and discarded stories because 
 
 - `Cannot access 'p' before initialization` — `startRapidPolling` referenced `fetchStatus` before it was declared. Moved `fetchStatus` above `startRapidPolling` to fix temporal dead zone
 
+### Fixed — Produced Articles Vanishing from Pipeline
+
+- After clicking Produce, articles disappeared for ~3 minutes because `fetchStatus` at +1s overwrote the optimistic log entry before the server confirmed it via pg_net
+- Optimistic logs now registered with 30s TTL protection — `fetchStatus` merges server logs with protected optimistic entries instead of replacing
+- Queue item removed from display immediately on produce (no more vanishing into nowhere)
+- Rapid polling (5s for 3 min) shows Research → Editor stage transitions in near-realtime
+
 ## [20.4.0] - 2026-04-04
 
 ### Security — Admin Hardening
