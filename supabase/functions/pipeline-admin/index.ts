@@ -1038,7 +1038,10 @@ Deno.serve(async (req: Request) => {
         pipeline_log_id: logId,
       }, { onConflict: "slug" });
 
-      if (upsertErr) return json({ error: `Failed to save article: ${upsertErr.message}` }, 500);
+      if (upsertErr) {
+        await db.from("daily_article_log").update({ status: "failed", error: `Article upsert failed: ${upsertErr.message}` }).eq("id", logId);
+        return json({ error: `Failed to save article: ${upsertErr.message}` }, 500);
+      }
 
       // 3. Chain-dispatch independence review immediately
       await dispatchStage("stage-independence", logId);
@@ -1155,7 +1158,11 @@ Deno.serve(async (req: Request) => {
         pipeline_log_id: logId,
       }, { onConflict: "slug" });
 
-      if (upsertErr) return json({ error: `Failed to save article: ${upsertErr.message}` }, 500);
+      if (upsertErr) {
+        // Clean up orphaned log entry so it doesn't appear as stuck in dashboard
+        await db.from("daily_article_log").update({ status: "failed", error: `Article upsert failed: ${upsertErr.message}` }).eq("id", logId);
+        return json({ error: `Failed to save article: ${upsertErr.message}` }, 500);
+      }
 
       // Dispatch directly to stage-publish (illustration + narration + GitHub commit)
       await dispatchStage("stage-publish", logId);
