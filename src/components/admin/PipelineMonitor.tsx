@@ -399,15 +399,15 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
 
   const suggestTitle = useCallback((text: string) => {
     if (uploadTitle.trim()) return; // don't overwrite manual title
+    // Try: markdown heading (must match on RAW text before newlines are stripped)
+    const md = text.match(/^#\s+(.+)$/m);
+    if (md) { setUploadTitle(md[1].trim().slice(0, 120)); return; }
     const plain = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    // Try: first heading
+    // Try: HTML heading
     const h1 = text.match(/<h1[^>]*>([^<]+)<\/h1>/i);
     if (h1) { setUploadTitle(h1[1].trim().slice(0, 120)); return; }
     const h2 = text.match(/<h2[^>]*>([^<]+)<\/h2>/i);
     if (h2) { setUploadTitle(h2[1].trim().slice(0, 120)); return; }
-    // Try: markdown heading
-    const md = plain.match(/^#+ (.+)/m);
-    if (md) { setUploadTitle(md[1].trim().slice(0, 120)); return; }
     // Fallback: first sentence
     const sentence = plain.match(/^[^.!?]{10,120}[.!?]/);
     if (sentence) { setUploadTitle(sentence[0].trim()); return; }
