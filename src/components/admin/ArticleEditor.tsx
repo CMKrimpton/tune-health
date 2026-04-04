@@ -502,7 +502,7 @@ export default function ArticleEditor({ apiBase }: { apiBase: string }) {
     if (!metadata.slug.trim()) errors.push('Slug is required');
     if (!/^[a-z0-9-]+$/.test(metadata.slug)) errors.push('Slug must be lowercase letters, numbers, and hyphens only');
     if (!metadata.description.trim()) errors.push('Description is required');
-    if (metadata.description.length > 200) errors.push('Description should be under 200 characters for SEO');
+    if (metadata.description.length > 500) errors.push('Description must be under 500 characters');
     if (!metadata.category) errors.push('Category is required');
     if (metadata.tags.length === 0) errors.push('At least one tag is required');
     if (metadata.readTime <= 0) errors.push('Read time must be positive');
@@ -1026,7 +1026,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
             {/* Publish Bar */}
             <div className="admin-publish-bar">
               <div className="admin-flex-center admin-gap-lg">
-                <div className="admin-status">
+                <div className="admin-status" title={validationErrors.length > 0 ? validationErrors.join('\n') : undefined} style={{ cursor: validationErrors.length > 0 ? 'help' : 'default' }}>
                   <span className={`admin-status-dot ${
                     state === 'done' ? 'admin-status-dot-ready' :
                     state === 'publishing' ? 'admin-status-dot-processing' :
@@ -1035,7 +1035,7 @@ ${metadata.heroImage ? `<div class="hero-img"><img src="${metadata.heroImage}" a
                   }`}/>
                   {state === 'done' ? (publishPath === 'direct' ? 'Published' : 'In Pipeline') :
                    state === 'publishing' ? (publishPath === 'direct' ? 'Publishing...' : 'Submitting...') :
-                   validationErrors.length > 0 ? `${validationErrors.length} issue${validationErrors.length > 1 ? 's' : ''}` :
+                   validationErrors.length > 0 ? validationErrors[0] :
                    'Ready'}
                 </div>
                 <button onClick={startOver} className="admin-start-over" title="Start over">
