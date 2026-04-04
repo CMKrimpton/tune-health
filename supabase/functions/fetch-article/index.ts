@@ -69,6 +69,18 @@ Deno.serve(async (req: Request) => {
     const tagMatches = [...astroContent.matchAll(/rounded-full text-sm">([^<]+)<\/span>/g)];
     const tags = tagMatches.map(m => m[1]);
 
+    // Also fetch the .json metadata (contains author, gradient, etc.)
+    let metadata: Record<string, unknown> | null = null;
+    try {
+      const jsonRes = await fetch(
+        `https://api.github.com/repos/${githubRepo}/contents/src/content/articles/${slug}.json`,
+        { headers }
+      );
+      if (jsonRes.ok) {
+        metadata = await jsonRes.json();
+      }
+    } catch {}
+
     return new Response(
       JSON.stringify({
         astroContent,
@@ -76,6 +88,7 @@ Deno.serve(async (req: Request) => {
         svg,
         toc,
         extractedTags: tags,
+        metadata,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

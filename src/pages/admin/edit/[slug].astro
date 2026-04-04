@@ -994,13 +994,27 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
         const astroContent = '---\nimport ArticleLayout from \'../../layouts/ArticleLayout.astro\';\n---\n\n<ArticleLayout\n  title="' + title + '"\n  description="' + desc + '"\n  category="' + db.category + '"\n  readTime="' + db.read_time + ' min read"\n  publishDate="' + publishDate + '"\n>\n' +
           '  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">\n    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>\n    <nav class="space-y-2">\n' + tocHtml + '\n    </nav>\n  </div>\n\n  <div class="article-content">\n' + articleHtml + '\n  </div>\n\n  <Fragment slot="tags">\n' + tagsHtml + '\n  </Fragment>\n</ArticleLayout>\n';
 
+        // Preserve existing author from GitHub JSON (don't overwrite pen name)
+        let existingAuthor = { name: 'alumi news Editorial', role: 'Medical Review Board' };
+        try {
+          const ghRes = await fetch(apiBase + '/fetch-article', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug }),
+          });
+          if (ghRes.ok) {
+            const ghData = await ghRes.json();
+            if (ghData.metadata?.author) existingAuthor = ghData.metadata.author;
+          }
+        } catch {}
+
         // Build metadata JSON — include ALL fields from DB
         const metadata = {
           title: db.title,
           description: db.description,
           category: db.category,
           publishDate: db.publish_date,
-          author: { name: 'alumi news Editorial', role: 'Medical Review Board' },
+          author: existingAuthor,
           readTime: db.read_time,
           featured: db.featured,
           draft: db.draft || false,
