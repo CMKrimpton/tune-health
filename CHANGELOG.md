@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [20.3.0] - 2026-04-04
+
+### Fixed — Article Ingestor (All Three Upload Paths)
+
+The "Article → Review → Publish" path (`submit-new-article`) was missing every fix previously applied to the other two upload modes. Raw markdown published to the live site, QC renamed the human's title, and garbage description was synthesized from markdown headers.
+
+- **Markdown → HTML conversion** added to `submit-new-article` — matches `submit-article` and `publish-direct`. Includes full HTML page wrapper stripping
+- **Description auto-extraction** from markdown standfirst (paragraph after `# Title`) and `## subtitle` pattern (heading right after title with no body between). Falls back to first `<p>` in introduction section for HTML input
+- **`_writtenBy` set to `"human-opus"`** in `submit-new-article` — enables title lock, prose protection, voice rewrite skip across all downstream stages
+- **Title lock in `stage-qc`** — human-written articles now keep their original title. QC can suggest a headline but `metadata.title` takes priority via `resolveTitle()`. Previously QC blindly overwrote the writer's title
+- **`## subtitle` deduplication** in `convertMarkdownToSiteHtml` — when the first `##` heading follows `# title` with no body paragraphs between, it's treated as a subtitle (description), not a section heading. Prevents the standfirst from appearing twice on the page
+- **`narrationUrl` preserved across republishes** in `stage-publish` — reads existing `narration_url` from `articles` table and includes it in the initial JSON commit. Previously lost on every republish due to fire-and-forget narration timing
+- **Frontend headline extraction** — `extractAndStripTitle()` replaces `suggestTitle()` in PipelineMonitor. Extracts `# heading` or `<h1>` into the title field AND strips it from the pasted content body. Works for paste, file upload, and URL fetch across all three upload modes
+
+### Republished
+
+- **"The Sorting Problem"** — corrected from raw markdown to proper HTML, title restored (was "Recycling Is Three Different Problems"), category fixed to "Environmental Health" (was "Clinical Evidence"), description and narration regenerated
+
 ## [20.2.0] - 2026-04-03
 
 ### Improved — Admin Design System Hardening
