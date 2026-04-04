@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { MODELS, NARRATION_SETTINGS, FLAT_PRICING } from "../_shared/constants.ts";
-import { addCostToLog } from "../_shared/db.ts";
+import { addCostToLog, addOverheadCost, supabase as createDb } from "../_shared/db.ts";
 import { readGitHubJson, updateGitHubJson } from "../_shared/github.ts";
 
 const corsHeaders = {
@@ -210,18 +210,23 @@ async function handleGenerate(body: Record<string, unknown>) {
   // Sync narrationUrl to GitHub JSON so the Astro site can render the audio player
   await updateGitHubJson(slug, { narrationUrl: publicUrl }, `feat: Update narration — '${slug}'`);
 
-  // Log cost to pipeline if called from stage-publish
-  if (logId && introText.length > 0) {
+  // Log cost — to pipeline log if logId provided, otherwise as system overhead
+  if (introText.length > 0) {
+    const narrationCost = {
+      model: MODELS.NARRATION_MODEL,
+      stage: "narration",
+      inputTokens: introText.length,
+      outputTokens: 0,
+      costUsd: Math.round(introText.length * FLAT_PRICING.NARRATION_PER_CHAR_USD * 10000) / 10000,
+    };
     try {
-      await addCostToLog(db, logId, {
-        model: MODELS.NARRATION_MODEL,
-        stage: "narration",
-        inputTokens: introText.length,
-        outputTokens: 0,
-        costUsd: Math.round(introText.length * FLAT_PRICING.NARRATION_PER_CHAR_USD * 10000) / 10000,
-      });
+      if (logId) {
+        await addCostToLog(db, logId, narrationCost);
+      } else {
+        await addOverheadCost(db, narrationCost);
+      }
     } catch (costErr) {
-      console.warn(`[Narration] Cost logging failed for ${logId}: ${costErr instanceof Error ? costErr.message : "unknown"}`);
+      console.warn(`[Narration] Cost logging failed: ${costErr instanceof Error ? costErr.message : "unknown"}`);
     }
   }
 

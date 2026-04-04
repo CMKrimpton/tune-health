@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { updateGitHubJson } from "../_shared/github.ts";
-import { addCostToLog } from "../_shared/db.ts";
+import { addCostToLog, addOverheadCost, supabase as createDb } from "../_shared/db.ts";
 import { MODELS, FLAT_PRICING } from "../_shared/constants.ts";
 
 const corsHeaders = {
@@ -303,20 +303,23 @@ async function handleGenerate(body: Record<string, unknown>) {
     await updateGitHubJson(slug, githubFields, `feat: Add hero image${lightUrl ? " pair" : ""} — '${slug}'`);
   }
 
-  // Log cost to pipeline if called from stage-publish
-  if (logId) {
-    const variantsGenerated = (variant === "both" ? 2 : 1);
-    try {
-      await addCostToLog(db, logId, {
-        model: MODELS.ILLUSTRATION,
-        stage: "illustration",
-        inputTokens: 0,
-        outputTokens: 0,
-        costUsd: FLAT_PRICING.ILLUSTRATION_USD * variantsGenerated,
-      });
-    } catch (costErr) {
-      console.warn(`[Illustration] Cost logging failed for ${logId}: ${costErr instanceof Error ? costErr.message : "unknown"}`);
+  // Log cost — to pipeline log if logId provided, otherwise as system overhead
+  const variantsGenerated = (variant === "both" ? 2 : 1);
+  const illustrationCost = {
+    model: MODELS.ILLUSTRATION,
+    stage: "illustration",
+    inputTokens: 0,
+    outputTokens: 0,
+    costUsd: FLAT_PRICING.ILLUSTRATION_USD * variantsGenerated,
+  };
+  try {
+    if (logId) {
+      await addCostToLog(db, logId, illustrationCost);
+    } else {
+      await addOverheadCost(db, illustrationCost);
     }
+  } catch (costErr) {
+    console.warn(`[Illustration] Cost logging failed: ${costErr instanceof Error ? costErr.message : "unknown"}`);
   }
 
   return json({
@@ -362,6 +365,7 @@ async function handleBatch(body: Record<string, unknown>) {
   }
 
   const results: Array<{ slug: string; status: string; imageUrl?: string; imageUrlLight?: string; error?: string }> = [];
+  let batchCostUsd = 0;
 
   for (const article of articles) {
     try {
@@ -396,6 +400,14 @@ async function handleBatch(body: Record<string, unknown>) {
         `feat: Add hero image pair — '${article.slug}'`
       );
 
+      // Count how many variants were actually generated (not reused)
+      const newDark = (!article.hero_image || force) ? 1 : 0;
+      const newLight = (!article.hero_image_light || force) ? 1 : 0;
+      const variantsGenerated = newDark + newLight;
+      if (variantsGenerated > 0) {
+        batchCostUsd += FLAT_PRICING.ILLUSTRATION_USD * variantsGenerated;
+      }
+
       results.push({
         slug: article.slug,
         status: "success",
@@ -413,14 +425,30 @@ async function handleBatch(body: Record<string, unknown>) {
     await new Promise((r) => setTimeout(r, 500));
   }
 
+  // Log total batch cost as system overhead
+  if (batchCostUsd > 0) {
+    try {
+      await addOverheadCost(db, {
+        model: MODELS.ILLUSTRATION,
+        stage: "illustration-batch",
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: batchCostUsd,
+      });
+    } catch (costErr) {
+      console.warn(`[Illustration] Batch cost logging failed: ${costErr instanceof Error ? costErr.message : "unknown"}`);
+    }
+  }
+
   const succeeded = results.filter((r) => r.status === "success").length;
   const failed = results.filter((r) => r.status === "error").length;
 
   return json({
     success: true,
-    message: `Generated ${succeeded} illustration pairs (${failed} failed)`,
+    message: `Generated ${succeeded} illustration pairs (${failed} failed) — $${batchCostUsd.toFixed(2)} total`,
     generated: succeeded,
     failed,
+    costUsd: batchCostUsd,
     results,
   });
 }
@@ -459,6 +487,7 @@ async function handleBatchLight(body: Record<string, unknown>) {
   }
 
   const results: Array<{ slug: string; status: string; imageUrlLight?: string; error?: string }> = [];
+  let batchCostUsd = 0;
 
   for (const article of articles) {
     try {
@@ -466,6 +495,8 @@ async function handleBatchLight(body: Record<string, unknown>) {
         openaiKey, db, article.slug, "light",
         article.title, article.description, article.category
       );
+
+      batchCostUsd += FLAT_PRICING.ILLUSTRATION_USD;
 
       // Update DB — only the light column
       await db
@@ -496,15 +527,31 @@ async function handleBatchLight(body: Record<string, unknown>) {
     await new Promise((r) => setTimeout(r, 500));
   }
 
+  // Log total batch cost as system overhead
+  if (batchCostUsd > 0) {
+    try {
+      await addOverheadCost(db, {
+        model: MODELS.ILLUSTRATION,
+        stage: "illustration-batch-light",
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: batchCostUsd,
+      });
+    } catch (costErr) {
+      console.warn(`[Illustration] Batch-light cost logging failed: ${costErr instanceof Error ? costErr.message : "unknown"}`);
+    }
+  }
+
   const succeeded = results.filter((r) => r.status === "success").length;
   const failed = results.filter((r) => r.status === "error").length;
 
   return json({
     success: true,
-    message: `Generated ${succeeded} light variants (${failed} failed) out of ${articles.length} articles`,
+    message: `Generated ${succeeded} light variants (${failed} failed) out of ${articles.length} articles — $${batchCostUsd.toFixed(2)} total`,
     generated: succeeded,
     failed,
     total: articles.length,
+    costUsd: batchCostUsd,
     results,
   });
 }

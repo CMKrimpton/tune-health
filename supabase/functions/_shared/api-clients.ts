@@ -252,6 +252,11 @@ export async function gemini(opts: { system: string; user: string; model?: strin
   let parts = data.candidates?.[0]?.content?.parts || [];
   let text = parts.map((p: { text?: string }) => p.text || "").join("");
 
+  // Track tokens from first attempt (even if empty — we still paid for the input)
+  const firstUm = data.usageMetadata || {};
+  let totalInputTokens = firstUm.promptTokenCount || 0;
+  let totalOutputTokens = firstUm.candidatesTokenCount || 0;
+
   // Retry once if empty (Gemini sometimes returns empty on first try with search grounding)
   if (!text.trim()) {
     console.log(`[Gemini] Empty response on first try for ${stage}, retrying...`);
@@ -269,16 +274,17 @@ export async function gemini(opts: { system: string; user: string; model?: strin
       data = await retry.json();
       parts = data.candidates?.[0]?.content?.parts || [];
       text = parts.map((p: { text?: string }) => p.text || "").join("");
+      // Accumulate retry tokens — both attempts cost money
+      const retryUm = data.usageMetadata || {};
+      totalInputTokens += retryUm.promptTokenCount || 0;
+      totalOutputTokens += retryUm.candidatesTokenCount || 0;
     }
   }
 
   if (!text.trim()) throw new Error("Empty Gemini response (after retry)");
-  const um = data.usageMetadata || {};
-  const inputTokens = um.promptTokenCount || 0;
-  const outputTokens = um.candidatesTokenCount || 0;
   return {
     text,
-    usage: { model, stage, inputTokens, outputTokens, costUsd: calcCost(model, inputTokens, outputTokens) },
+    usage: { model, stage, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, costUsd: calcCost(model, totalInputTokens, totalOutputTokens) },
   };
 }
 

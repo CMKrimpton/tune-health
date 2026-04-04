@@ -29,57 +29,74 @@ export async function addCostToLog(
   logId: string,
   usage: ApiUsage,
 ) {
-  const { data: current } = await db
-    .from("daily_article_log")
-    .select("cost_usd, token_usage")
-    .eq("id", logId)
-    .maybeSingle();
-  const currentCost = parseFloat(current?.cost_usd ?? "0") || 0;
-  const currentUsage = (current?.token_usage as ApiUsage[]) || [];
-  await db.from("daily_article_log").update({
-    cost_usd: Math.round((currentCost + usage.costUsd) * 10000) / 10000,
-    token_usage: [...currentUsage, usage],
-  }).eq("id", logId);
+  const roundedCost = Math.round(usage.costUsd * 10000) / 10000;
+  const { error } = await db.rpc("increment_article_cost", {
+    p_log_id: logId,
+    p_cost_delta: roundedCost,
+    p_usage_item: usage,
+  });
+  if (error) {
+    // Fallback to read-modify-write if RPC not yet deployed
+    console.warn(`[addCostToLog] RPC failed (${error.message}), using fallback`);
+    const { data: current } = await db
+      .from("daily_article_log")
+      .select("cost_usd, token_usage")
+      .eq("id", logId)
+      .maybeSingle();
+    const currentCost = parseFloat(current?.cost_usd ?? "0") || 0;
+    const currentUsage = (current?.token_usage as ApiUsage[]) || [];
+    await db.from("daily_article_log").update({
+      cost_usd: Math.round((currentCost + usage.costUsd) * 10000) / 10000,
+      token_usage: [...currentUsage, usage],
+    }).eq("id", logId);
+  }
 }
 
 /**
  * Log costs for non-article operations (scout, pinger, topic-merge, etc.)
  * Uses a daily system row in daily_article_log with slug "_system_overhead".
- * Creates the row if it doesn't exist for today, otherwise increments.
+ * Creates the row if it doesn't exist for today, otherwise atomically increments.
  */
 export async function addOverheadCost(
   db: ReturnType<typeof supabase>,
   usage: ApiUsage,
 ) {
-  const today = new Date().toISOString().slice(0, 10);
-  const systemTopic = `System overhead (${today})`;
+  const roundedCost = Math.round(usage.costUsd * 10000) / 10000;
+  const { error } = await db.rpc("increment_overhead_cost", {
+    p_cost_delta: roundedCost,
+    p_usage_item: usage,
+  });
+  if (error) {
+    // Fallback to read-modify-write if RPC not yet deployed
+    console.warn(`[addOverheadCost] RPC failed (${error.message}), using fallback`);
+    const today = new Date().toISOString().slice(0, 10);
+    const systemTopic = `System overhead (${today})`;
+    const { data: existing } = await db
+      .from("daily_article_log")
+      .select("id, cost_usd, token_usage")
+      .eq("slug", "_system_overhead")
+      .eq("run_date", today)
+      .maybeSingle();
 
-  // Find or create today's overhead row
-  const { data: existing } = await db
-    .from("daily_article_log")
-    .select("id, cost_usd, token_usage")
-    .eq("slug", "_system_overhead")
-    .eq("run_date", today)
-    .maybeSingle();
-
-  if (existing) {
-    const currentCost = parseFloat(existing.cost_usd ?? "0") || 0;
-    const currentUsage = (existing.token_usage as ApiUsage[]) || [];
-    await db.from("daily_article_log").update({
-      cost_usd: Math.round((currentCost + usage.costUsd) * 10000) / 10000,
-      token_usage: [...currentUsage, usage],
-    }).eq("id", existing.id);
-  } else {
-    await db.from("daily_article_log").insert({
-      run_date: today,
-      slug: "_system_overhead",
-      topic: systemTopic,
-      status: "system",
-      source: "system",
-      cost_usd: Math.round(usage.costUsd * 10000) / 10000,
-      token_usage: [usage],
-      stage_started_at: new Date().toISOString(),
-    });
+    if (existing) {
+      const currentCost = parseFloat(existing.cost_usd ?? "0") || 0;
+      const currentUsage = (existing.token_usage as ApiUsage[]) || [];
+      await db.from("daily_article_log").update({
+        cost_usd: Math.round((currentCost + usage.costUsd) * 10000) / 10000,
+        token_usage: [...currentUsage, usage],
+      }).eq("id", existing.id);
+    } else {
+      await db.from("daily_article_log").insert({
+        run_date: today,
+        slug: "_system_overhead",
+        topic: systemTopic,
+        status: "system",
+        source: "system",
+        cost_usd: roundedCost,
+        token_usage: [usage],
+        stage_started_at: new Date().toISOString(),
+      });
+    }
   }
 }
 

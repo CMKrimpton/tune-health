@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [19.6.0] - 2026-04-03
+
+### Fixed — Cost Tracking Pipeline Audit
+
+- **Illustration batch/batch-light costs now tracked** — previously `handleBatch()` and `handleBatchLight()` generated images ($0.08 each) with zero cost logging. Now logs cumulative batch cost as system overhead and returns `costUsd` in response
+- **Narration costs always tracked** — removed `if (logId)` guard that silently dropped costs when called from admin UI or batch dispatch. Now falls back to `addOverheadCost()` for non-pipeline invocations
+- **Standalone illustration costs tracked** — admin-triggered and editorial-qc-triggered illustration generation now logs as system overhead instead of silently eating costs
+- **Gemini retry double-billing fixed** — when Gemini returns empty and retries, both attempts' input/output tokens are now accumulated. Previously only the retry's tokens were counted, losing the first attempt's cost
+- **Race condition in `addCostToLog`/`addOverheadCost` fixed** — replaced read-modify-write pattern with atomic SQL functions (`increment_article_cost`, `increment_overhead_cost`). Prevents data loss when parallel API calls (e.g. stage-research's 3 models) update the same row simultaneously. Graceful fallback to old pattern if RPC unavailable
+
+### Technical
+
+- New migration: `20260406_atomic_cost_tracking.sql` — `increment_article_cost()` and `increment_overhead_cost()` PostgreSQL functions with `SECURITY DEFINER`
+- All 20 edge functions redeployed to pick up shared utility changes
+
 ## [19.5.0] - 2026-04-03
 
 ### Fixed — Full Article Deletion + Honest Published List
