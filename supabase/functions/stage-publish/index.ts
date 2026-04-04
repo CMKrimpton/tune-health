@@ -134,7 +134,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: existingArticle } = await db
       .from("articles")
-      .select("hero_image, hero_image_light, hero_image_alt")
+      .select("hero_image, hero_image_light, hero_image_alt, narration_url")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -185,6 +185,11 @@ Deno.serve(async (req: Request) => {
     }
     if (heroImageLight) {
       jsonMetadata.heroImageLight = heroImageLight;
+    }
+    // Preserve existing narration URL so it survives republishes
+    // (narration is fire-and-forget — may not finish before this commit)
+    if (existingArticle?.narration_url) {
+      jsonMetadata.narrationUrl = existingArticle.narration_url;
     }
 
     commitInfo = await publishToGitHub(slug, astroContent, jsonMetadata);
