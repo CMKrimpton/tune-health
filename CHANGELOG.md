@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [20.3.1] - 2026-04-04
+
+### Added — Delete from Recently Published
+
+- **Delete button** on each published article card in the Pipeline tab — calls `delete-article` for full cleanup (GitHub, DB, illustrations, narration, pipeline logs) with confirmation dialog
+
+### Fixed — Unified Delete Action
+
+- **ArticlesManager delete** was calling two endpoints (`articles-api` delete then `delete-article` best-effort) — fragile and could leave orphaned files. Now all three delete surfaces (PipelineMonitor, ArticlesManager, Edit page) call `delete-article` only
+
 ## [20.3.0] - 2026-04-04
 
 ### Fixed — Article Ingestor (All Three Upload Paths)
