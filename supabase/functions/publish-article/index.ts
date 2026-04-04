@@ -68,6 +68,11 @@ Deno.serve(async (req: Request) => {
     const commitData = await commitRes.json();
     const baseTreeSha = commitData.tree.sha;
 
+    // Ensure sortOrder is set (controls article recency in lists)
+    if (!metadata.sortOrder) {
+      metadata.sortOrder = Date.now();
+    }
+
     // 3. Create blobs for files that need updating
     const jsonContent = JSON.stringify(metadata, null, 2) + "\n";
     const jsonBlob = await createBlob(apiBase, headers, jsonContent);

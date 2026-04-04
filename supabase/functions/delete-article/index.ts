@@ -50,63 +50,65 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     };
 
-    // 1. Get current commit SHA
-    const refRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, { headers });
-    if (!refRes.ok) throw new Error(`Failed to get branch ref: ${refRes.status}`);
-    const refData = await refRes.json();
-    const currentCommitSha = refData.object.sha;
+    // Check which files actually exist on GitHub before trying to delete
+    const filesToDelete: Array<{ path: string; mode: string; type: string; sha: null }> = [];
+    const astroPath = `src/pages/articles/${slug}.astro`;
+    const jsonPath = `src/content/articles/${slug}.json`;
 
-    // 2. Get current tree
-    const commitRes = await fetch(`${apiBase}/git/commits/${currentCommitSha}`, { headers });
-    if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
-    const commitData = await commitRes.json();
-    const baseTreeSha = commitData.tree.sha;
+    for (const path of [astroPath, jsonPath]) {
+      const checkRes = await fetch(`${apiBase}/contents/${path}?ref=${branch}`, { headers });
+      if (checkRes.ok) {
+        filesToDelete.push({ path, mode: "100644", type: "blob", sha: null });
+      }
+    }
 
-    // 3. Create new tree WITHOUT the deleted files (sha: null deletes)
-    const treeRes = await fetch(`${apiBase}/git/trees`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        base_tree: baseTreeSha,
-        tree: [
-          {
-            path: `src/pages/articles/${slug}.astro`,
-            mode: "100644",
-            type: "blob",
-            sha: null, // Delete
-          },
-          {
-            path: `src/content/articles/${slug}.json`,
-            mode: "100644",
-            type: "blob",
-            sha: null, // Delete
-          },
-        ],
-      }),
-    });
-    if (!treeRes.ok) throw new Error(`Failed to create tree: ${treeRes.status}`);
-    const treeData = await treeRes.json();
+    let newCommitData: { sha: string } | null = null;
 
-    // 4. Create commit
-    const newCommitRes = await fetch(`${apiBase}/git/commits`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        message: `chore: Delete '${slug}' article`,
-        tree: treeData.sha,
-        parents: [currentCommitSha],
-      }),
-    });
-    if (!newCommitRes.ok) throw new Error(`Failed to create commit: ${newCommitRes.status}`);
-    const newCommitData = await newCommitRes.json();
+    if (filesToDelete.length > 0) {
+      // 1. Get current commit SHA
+      const refRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, { headers });
+      if (!refRes.ok) throw new Error(`Failed to get branch ref: ${refRes.status}`);
+      const refData = await refRes.json();
+      const currentCommitSha = refData.object.sha;
 
-    // 5. Update branch ref
-    const updateRefRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ sha: newCommitData.sha }),
-    });
-    if (!updateRefRes.ok) throw new Error(`Failed to update ref: ${updateRefRes.status}`);
+      // 2. Get current tree
+      const commitRes = await fetch(`${apiBase}/git/commits/${currentCommitSha}`, { headers });
+      if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
+      const commitData = await commitRes.json();
+      const baseTreeSha = commitData.tree.sha;
+
+      // 3. Create new tree WITHOUT the deleted files (sha: null deletes)
+      const treeRes = await fetch(`${apiBase}/git/trees`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ base_tree: baseTreeSha, tree: filesToDelete }),
+      });
+      if (!treeRes.ok) throw new Error(`Failed to create tree: ${treeRes.status}`);
+      const treeData = await treeRes.json();
+
+      // 4. Create commit
+      const newCommitRes = await fetch(`${apiBase}/git/commits`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          message: `chore: Delete '${slug}' article`,
+          tree: treeData.sha,
+          parents: [currentCommitSha],
+        }),
+      });
+      if (!newCommitRes.ok) throw new Error(`Failed to create commit: ${newCommitRes.status}`);
+      newCommitData = await newCommitRes.json();
+
+      // 5. Update branch ref
+      const updateRefRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ sha: newCommitData!.sha }),
+      });
+      if (!updateRefRes.ok) throw new Error(`Failed to update ref: ${updateRefRes.status}`);
+    } else {
+      console.log(`[delete-article] No GitHub files found for "${slug}" — skipping git ops, cleaning up DB/storage only`);
+    }
 
     // ─── Full cleanup: database + storage ───
     const db = createClient(
@@ -152,7 +154,7 @@ Deno.serve(async (req: Request) => {
     console.log(`[delete-article] "${slug}" fully cleaned up:`, cleanup.join(", "));
 
     return new Response(
-      JSON.stringify({ success: true, commitSha: newCommitData.sha, cleanup }),
+      JSON.stringify({ success: true, commitSha: newCommitData?.sha ?? "no-git-changes", cleanup }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {
