@@ -1,0 +1,20 @@
+{
+  "title": "Just Pull the Damn Lever",
+  "description": "In 2017, a man was left alone in a train switching station with a lever and a screen showing live footage of railroad tracks. He'd been told he was there for a focus group about high-speed rail.",
+  "category": "Clinical Evidence",
+  "publishDate": "2026-04-04",
+  "author": {
+    "name": "Marc London",
+    "role": "Editor-at-Large"
+  },
+  "readTime": 6,
+  "featured": false,
+  "draft": false,
+  "tags": [],
+  "gradient": {
+    "to": "orange-600",
+    "from": "amber-500"
+  },
+  "keywords": [],
+  "sortOrder": 1775264011996
+}
