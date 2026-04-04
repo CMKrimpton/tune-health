@@ -135,6 +135,7 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
   const [killingId, setKillingId] = useState<string | null>(null);
   // Replace article state
   const [replaceTarget, setReplaceTarget] = useState<{ slug: string; title: string } | null>(null);
+  const [replaceTitle, setReplaceTitle] = useState('');
   const [replaceHtml, setReplaceHtml] = useState('');
   const [replaceEntry, setReplaceEntry] = useState<'independence' | 'direct'>('independence');
   const [replaceSubmitting, setReplaceSubmitting] = useState(false);
@@ -953,7 +954,7 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
   };
 
   const submitReplaceArticle = async () => {
-    if (!replaceTarget || !replaceHtml.trim()) return;
+    if (!replaceTarget || !replaceHtml.trim() || !replaceTitle.trim()) return;
     setReplaceSubmitting(true);
     setReplaceResult(null);
     try {
@@ -964,7 +965,7 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
         body: JSON.stringify({
           action,
           articleHtml: replaceHtml.trim(),
-          title: replaceTarget.title,
+          title: replaceTitle.trim(),
           slug: replaceTarget.slug,
         }),
       });
@@ -1827,7 +1828,7 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
                         className="pipeline-retry-btn"
                         title="Replace article content"
                         aria-label={`Replace ${item.title}`}
-                        onClick={() => { setReplaceTarget({ slug: item.slug, title: item.title }); setReplaceHtml(''); setReplaceResult(null); setReplaceEntry('independence'); }}
+                        onClick={() => { setReplaceTarget({ slug: item.slug, title: item.title }); setReplaceTitle(item.title); setReplaceHtml(''); setReplaceResult(null); setReplaceEntry('independence'); }}
                       >Replace</button>
                       <a href={`/admin/edit/${item.slug}`} className="pipeline-retry-btn admin-no-underline">Edit</a>
                       <a href={`/articles/${item.slug}`} target="_blank" rel="noopener noreferrer" className="pipeline-retry-btn admin-no-underline">{'\u2192'} View</a>
@@ -2063,10 +2064,21 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
           <div className="admin-modal-backdrop" onClick={() => { if (!replaceSubmitting) { setReplaceTarget(null); setReplaceResult(null); } }} />
           <div className="admin-modal-card" style={{ maxWidth: '640px', width: '90vw' }}>
             <h3 className="admin-modal-title" id="replace-modal-title">Replace Article</h3>
-            <div className="admin-text-sm admin-color-secondary admin-mb-md">
-              <span className="admin-weight-600">{replaceTarget.title}</span>
-              <br />
-              <code className="admin-color-muted">{replaceTarget.slug}</code>
+            <div className="admin-mb-md">
+              <input
+                type="text"
+                value={replaceTitle}
+                onChange={e => setReplaceTitle(e.target.value)}
+                placeholder="Article title"
+                style={{
+                  width: '100%', fontSize: '0.9375rem', fontWeight: 600,
+                  background: 'var(--admin-surface-2)', color: 'var(--admin-text)',
+                  border: '1px solid var(--admin-border)', borderRadius: '6px',
+                  padding: '0.5rem 0.75rem', marginBottom: '0.375rem',
+                  fontFamily: 'inherit',
+                }}
+              />
+              <code className="admin-color-muted admin-text-xs">{replaceTarget.slug}</code>
             </div>
 
             {/* Entry toggle */}
@@ -2118,7 +2130,7 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
               <button
                 className="admin-action-btn admin-action-btn-primary"
                 onClick={submitReplaceArticle}
-                disabled={replaceSubmitting || !replaceHtml.trim()}
+                disabled={replaceSubmitting || !replaceHtml.trim() || !replaceTitle.trim()}
               >{replaceSubmitting ? 'Submitting…' : 'Replace Article'}</button>
             </div>
           </div>
