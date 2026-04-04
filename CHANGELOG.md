@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [20.5.0] - 2026-04-04
+
+### Fixed — Scout Dedup Overhaul
+
+The scout system was re-adding published, merged, and discarded stories because of 6 compounding dedup gaps. All fixed:
+
+- **Stop words gutted fingerprints** — Previous stop list removed health-domain words (`health`, `study`, `brain`, `treatment`, `diet`, `food`, `drugs`, `clinical`, `patients`, etc.). For a health publication, those ARE the distinguishing words. Now only true function words (articles, prepositions, conjunctions) are filtered
+- **Skipped topics invisible to dedup** — `buildFingerprints` excluded queue items with status "skipped". Now includes ALL queue statuses
+- **Failed/killed articles invisible to dedup** — Pipeline articles with status "failed" were not in the fingerprint set AND were never logged to `topic_dedup_log`. Now `kill-article` writes to the permanent dedup log, and `buildFingerprints` includes all pipeline articles regardless of status
+- **Weak word-overlap threshold** — Raised from 25%/3 words to 35% bidirectional + 50% small-set perspective. Added bigram matching for compound health terms (`sleep_apnea`, `back_pain`, `seed_oils`)
+
+### Added — AI Semantic Dedup (Scout)
+
+- After word-overlap filtering, a Flash call batch-compares surviving candidates against the 150 most recent article titles + queue topics. Catches "Tylenol for back pain" = "Acetaminophen efficacy for lumbar pain" — same story, different words. Fail-open: if Flash errors, all candidates pass through
+
+### Added — Differentiated Scout Prompts
+
+- **Gemini (6am)**: Trending Desk — must cite something from the last 7 days, searches Google Trends/news/journals
+- **Sonnet (2pm)**: Investigation Desk — follow-the-money, "wait really?" stories, evidence contradictions
+- **Grok (10pm)**: Contrarian Desk — what nobody else publishes, both-sides-dirty-hands stories
+- All three now have a mandatory recency gate: "If you can't cite a specific recent event, don't include the topic"
+- Recently rejected topics (killed/deleted in last 7 days) fed back into scout prompts as editorial signal
+
+### Fixed — PipelineMonitor Crash
+
+- `Cannot access 'p' before initialization` — `startRapidPolling` referenced `fetchStatus` before it was declared. Moved `fetchStatus` above `startRapidPolling` to fix temporal dead zone
+
 ## [20.4.0] - 2026-04-04
 
 ### Security — Admin Hardening

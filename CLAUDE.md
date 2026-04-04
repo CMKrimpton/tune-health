@@ -273,11 +273,11 @@ const articles = await getCollection('articles');
 
 AI handles discovery, research, editorial judgment, and quality control. Human writes with Opus via Max subscription. ~$0.13/article.
 
-**Job 1 — Scout** (3 crons/day → `pipeline-scout`, all Gemini + Google Search grounding):
-- `scout-gemini` 6am UTC: TikTok/Reddit/Google Trends health debates, viral studies, what 20-35 year olds are searching for
-- `scout-sonnet` 2pm UTC: "wait, really?" stories — belief-challenging science, supplement debunks, diet culture lies (uses Gemini, not Sonnet)
-- `scout-grok` 10pm UTC: contrarian — industry fraud, wellness influencer debunks, health Twitter debates, what young people are being lied to about
-Each finds 20 topics with "why now" + search demand + shareability filter ("would a 25-year-old text this to a friend?"). ~$0.12/day total.
+**Job 1 — Scout** (3 crons/day → `pipeline-scout`, differentiated editorial desks):
+- `scout-gemini` 6am UTC — **Trending Desk**: Google Search grounding for real-time trending. Must cite something from last 7 days. News-driven topics, Google Trends spikes, journal publications, FDA actions
+- `scout-sonnet` 2pm UTC — **Investigation Desk**: "wait, really?" stories. Evidence contradicting conventional wisdom, follow-the-money investigations, industry-funded consensus challenged by independent data
+- `scout-grok` 10pm UTC — **Contrarian Desk**: X/Twitter access. Stories mainstream outlets won't cover. Both-sides-dirty-hands investigations, regulatory capture, uncomfortable truths
+Each finds 20 topics with mandatory recency gate + editorial feedback loop. Three-layer dedup: (1) word overlap with bigrams, (2) AI semantic dedup via Flash, (3) recently rejected topics fed back as "don't re-suggest." ~$0.15/day total.
 
 **Job 2 — Pipeline Dispatch** (cron: `*/5 * * * *`, every 5 min → SQL function `dispatch_pipeline_stage()`):
 Safety-net cron only — recovers stuck articles and advances in-progress stages. **Does NOT auto-pick from queue.** Admin must click "Produce" on a topic to start any article. Chain-dispatch via `chain_dispatch()` SQL → `pg_net.http_post()` handles post-produce flow directly.
@@ -309,7 +309,7 @@ Each stage is its own edge function with shared utilities in `_shared/`. The SQL
 **Human-article protections**: `_writtenBy: "human-opus"` triggers multi-stage guards: (1) `stage-independence` — Grok reviews + scores but NO prose rewrites (Flash/Sonnet never touch human text), PubMed verifies but logs only; (2) `stage-qc` — skips voice rewrite, force-publishes on revise; (3) `stage-copy-edit` — code-level title lock (no model can change the headline), description changes blocked unless truncated/broken. Never degrades Opus prose.
 **Mechanical voice audit**: `auditVoiceQuality()` — 30+ banned phrases, "you" count (min 6), paragraph length (max 3 sentences).
 **Editorial independence**: Manually queued topics get "MANDATORY EDITORIAL DIRECTION".
-**Duplicate filter**: `isDuplicate()` — bidirectional 55% word overlap with 5+ matching subject words. Backed by `topic_dedup_log` table for permanent dedup memory (survives topic merges + queue deletes).
+**Three-layer dedup filter**: (1) `isDuplicate()` — bidirectional 35% word overlap + 50% small-set perspective + bigram matching for compound health terms. Stop words are ONLY function words — health-domain words preserved as semantic signal. `buildFingerprints()` includes ALL queue items (incl. skipped), ALL pipeline articles (incl. failed/killed), and `topic_dedup_log` entries. (2) AI semantic dedup — Flash batch-compares candidates against existing articles/queue, catches rephrased duplicates. (3) Editorial feedback — recently killed/deleted topics fed back into scout prompts. Backed by `topic_dedup_log` table for permanent dedup memory (survives topic merges + queue deletes + kills).
 **Cost tracking**: every API call logs tokens + USD to `daily_article_log.cost_usd` + `token_usage` (jsonb). ~$0.13/article with hybrid model.
 
 - **Smart featured rotation**: every 6h via independent `pg_cron` job (`featured-rotation`). Uses `updated_at` to track when article became featured (not publish date). Scores: editor quality (25%), recency (30%), independence score (15%), illustration (10%), read time (10%), category diversity (10%). Must have illustration and score >30 to qualify. Standalone `rotate-featured` action works even when pipeline crons are paused.
@@ -416,9 +416,9 @@ done
 - `social_templates` — learned + manual content templates
 
 **Cron schedule** (via `pg_cron` + `pg_net`):
-- `scout-gemini`: daily 6am UTC → `pipeline-scout` — Gemini + Google Search discovers 20 trending topics
-- `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Gemini + Google Search (editorial lens) discovers 20 topics
-- `scout-grok`: daily 10pm UTC → `pipeline-scout` — Grok discovers 20 contrarian topics
+- `scout-gemini`: daily 6am UTC → `pipeline-scout` — Trending Desk (Gemini + Google Search, news-driven, recency gate)
+- `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Investigation Desk (Gemini + Google Search, follow-the-money, evidence contradictions)
+- `scout-grok`: daily 10pm UTC → `pipeline-scout` — Contrarian Desk (Grok + X/Twitter, both-sides-dirty-hands)
 - `article-produce`: every 5 min (`*/5 * * * *`) → SQL function `dispatch_pipeline_stage()`. Safety net only — recovers stuck articles, advances in-progress stages. **Does NOT auto-pick from queue** (removed in v12.6). Admin must click "Produce"
 - `pinger`: every 30 min (`*/30 * * * *`) → `pipeline-pinger` — rotating breaking news detector (Gemini Flash/:00, PubMed RSS/:30)
 - `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation
