@@ -54,9 +54,10 @@ Deno.serve(async (req: Request) => {
     // parseClaudeJSON Step 3 silently repairs truncated JSON — which can produce
     // descriptions like "Thyroid hormones are the master regulators of your metabolism, but interpreting their"
     // (cut off mid-sentence). This check catches it at publish time.
+    // But short descriptions that end with proper punctuation are fine (human-written).
     const descTrimmed = (finalDescription || "").trim();
     const endsWithPunctuation = /[.!?]["')\u2019]?\s*$/.test(descTrimmed);
-    if (!endsWithPunctuation || descTrimmed.length < 80) {
+    if (!endsWithPunctuation && descTrimmed.length > 20) {
       console.warn(`[Publish] ⚠️ Description appears truncated: "${descTrimmed.slice(-60)}" (${descTrimmed.length} chars, endsPunct=${endsWithPunctuation})`);
       // Try each fallback source in order: QC → writer metadata → editor brief (from log's research_data)
       const { data: logForBrief } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
@@ -236,7 +237,10 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
 
       const isImproveRun = !!researchData._improves;
-      if (!narrationCheck?.narration_url || isImproveRun) {
+      const isRepublish = researchData._writtenBy === "human-opus" && !!narrationCheck?.narration_url;
+      // Always regenerate narration on improve runs or if missing.
+      // For republishes of human articles, regenerate too (description may have changed).
+      if (!narrationCheck?.narration_url || isImproveRun || isRepublish) {
         console.log(`[Publish] Dispatching narration for ${slug} — fire-and-forget.`);
         fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
           method: "POST",

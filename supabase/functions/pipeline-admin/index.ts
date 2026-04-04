@@ -1057,7 +1057,7 @@ Deno.serve(async (req: Request) => {
       let articleContent = body.articleHtml as string;
       const title = (body.title as string)?.trim();
       let slug = (body.slug as string)?.trim() || "";
-      const description = (body.description as string)?.trim() || "";
+      let description = (body.description as string)?.trim() || "";
       const category = (body.category as string)?.trim() || "Clinical Evidence";
       const tags = (body.tags as string[]) || [];
       const keywords = (body.keywords as string[]) || [];
@@ -1091,7 +1091,50 @@ Deno.serve(async (req: Request) => {
         (articleContent.includes("\n## ") || articleContent.includes("\n# ") || /^\s*#{1,3}\s/m.test(articleContent));
       if (looksLikeMarkdown) {
         console.log("[Admin] publish-direct: detected markdown — converting to site HTML");
+
+        // Auto-extract description from the first paragraph after # Title
+        // (the standfirst / lede paragraph that sits between the title and ## first section)
+        if (!description) {
+          const mdLines = articleContent.split("\n");
+          let foundTitle = false;
+          const descParagraphLines: string[] = [];
+          for (const line of mdLines) {
+            const t = line.trim();
+            if (!foundTitle && /^# /.test(t) && !/^##/.test(t)) {
+              foundTitle = true;
+              continue;
+            }
+            if (foundTitle) {
+              if (t === "") {
+                if (descParagraphLines.length > 0) break; // end of first paragraph
+                continue; // skip blank lines between title and first paragraph
+              }
+              if (/^##/.test(t)) break; // hit next section before finding a paragraph
+              descParagraphLines.push(t);
+            }
+          }
+          if (descParagraphLines.length > 0) {
+            description = descParagraphLines.join(" ")
+              .replace(/\*\*(.+?)\*\*/g, "$1") // strip bold
+              .replace(/\*(.+?)\*/g, "$1")      // strip italic
+              .replace(/`([^`]+)`/g, "$1")       // strip code
+              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // strip links
+              .trim();
+            console.log(`[Admin] publish-direct: extracted description from standfirst (${description.length} chars)`);
+          }
+        }
+
         articleContent = convertMarkdownToSiteHtml(articleContent);
+      }
+
+      // Auto-extract description from first <p> of introduction if still empty (HTML input)
+      if (!description) {
+        const introParaMatch = articleContent.match(/<section[^>]*id="introduction"[^>]*>\s*<p[^>]*>([\s\S]*?)<\/p>/i);
+        if (introParaMatch) {
+          description = introParaMatch[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+          if (description.length > 300) description = description.slice(0, 297) + "...";
+          console.log(`[Admin] publish-direct: extracted description from intro HTML (${description.length} chars)`);
+        }
       }
 
       // Parse TOC
