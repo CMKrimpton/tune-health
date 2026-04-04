@@ -1,23 +1,22 @@
 {
-  "title": "Recycling Is Three Different Problems",
-  "description": "# The Sorting Problem ## Most of what America calls \"recycling\" is a performance. But not all of it.",
-  "category": "Clinical Evidence",
+  "title": "The Sorting Problem",
+  "description": "category=\"Clinical Evidence\" readTime=\"6 min read\" publishDate=\"April 2026\" > In This Article Most of what America calls \"recycling\" is a performance. But not all of it.",
+  "category": "Environmental Health",
   "publishDate": "2026-04-04",
   "author": {
     "name": "Marc London",
-    "role": "Medical Review Board"
+    "role": "Editor-at-Large"
   },
   "readTime": 6,
   "featured": false,
   "draft": false,
   "tags": [],
   "gradient": {
-    "to": "orange-600",
-    "from": "amber-500"
+    "to": "green-600",
+    "from": "lime-500"
   },
   "keywords": [],
-  "sortOrder": 1775279394686,
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/the-sorting-problem.mp3?v=1775279397862",
+  "sortOrder": 1775280372808,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/the-sorting-problem.png",
   "heroImageAlt": "Editorial illustration for Recycling Is Three Different Problems",
   "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/the-sorting-problem-light.png"
