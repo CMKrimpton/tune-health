@@ -397,22 +397,31 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
       reader.readAsDataURL(file);
     });
 
-  const suggestTitle = useCallback((text: string) => {
-    if (uploadTitle.trim()) return; // don't overwrite manual title
-    // Try: markdown heading (must match on RAW text before newlines are stripped)
-    const md = text.match(/^#\s+(.+)$/m);
-    if (md) { setUploadTitle(md[1].trim().slice(0, 120)); return; }
+  // Extract headline from pasted content → title field, strip it from the body.
+  // Returns the cleaned text (with heading removed). Sets uploadTitle as side-effect.
+  const extractAndStripTitle = useCallback((text: string): string => {
+    if (uploadTitle.trim()) return text; // don't overwrite manual title
+
+    // Try: markdown H1 heading (must match on RAW text before newlines are stripped)
+    const md = text.match(/^(#\s+.+)$/m);
+    if (md) {
+      setUploadTitle(md[1].replace(/^#\s+/, '').trim().slice(0, 120));
+      // Strip the H1 line from the content (title belongs in the title field only)
+      return text.replace(/^#\s+.+\n*/m, '').replace(/^\n+/, '');
+    }
     const plain = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    // Try: HTML heading
+    // Try: HTML heading — extract and strip
     const h1 = text.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-    if (h1) { setUploadTitle(h1[1].trim().slice(0, 120)); return; }
-    const h2 = text.match(/<h2[^>]*>([^<]+)<\/h2>/i);
-    if (h2) { setUploadTitle(h2[1].trim().slice(0, 120)); return; }
-    // Fallback: first sentence
+    if (h1) {
+      setUploadTitle(h1[1].trim().slice(0, 120));
+      return text.replace(/<h1[^>]*>[^<]*<\/h1>\s*/i, '');
+    }
+    // Fallback: first sentence (don't strip — it's body content)
     const sentence = plain.match(/^[^.!?]{10,120}[.!?]/);
-    if (sentence) { setUploadTitle(sentence[0].trim()); return; }
+    if (sentence) { setUploadTitle(sentence[0].trim()); return text; }
     // Last resort: first 80 chars
     if (plain.length > 10) setUploadTitle(plain.slice(0, 80));
+    return text;
   }, [uploadTitle]);
 
   const handleUploadFile = async (file: File) => {
@@ -435,8 +444,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         flashFeedback(false, `Unsupported: .${ext}. Use .pdf, .md, .txt, .html, or .docx`);
         return;
       }
-      setUploadHtml(parsed);
-      suggestTitle(parsed);
+      const cleaned = extractAndStripTitle(parsed);
+      setUploadHtml(cleaned);
       flashFeedback(true, `Parsed ${file.name}`);
     } catch {
       flashFeedback(false, 'Failed to parse file');
@@ -460,8 +469,8 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
         flashFeedback(false, data.error || `Fetch failed: ${res.status}`);
       } else {
         const fetched = data.text || '';
-        setUploadHtml(fetched);
-        suggestTitle(fetched);
+        const cleaned = extractAndStripTitle(fetched);
+        setUploadHtml(cleaned);
         flashFeedback(true, `Fetched ${uploadUrl.trim().slice(0, 50)}`);
         setUploadUrl('');
       }
@@ -1174,7 +1183,7 @@ export default function PipelineMonitor({ initialLogs, initialArticleCount, apiB
               placeholder={uploadEntry === 'full' ? 'Paste or drop source material, notes, study text, or a draft (optional)' : uploadEntry === 'direct' ? 'Paste finished article (HTML or Markdown) — publishes with art + narration, no editorial review' : 'Paste or drop finished article HTML, or use the file button above'}
               value={uploadHtml}
               onChange={e => setUploadHtml(e.target.value)}
-              onPaste={e => { setTimeout(() => { const v = (e.target as HTMLTextAreaElement).value; if (v) suggestTitle(v); }, 0); }}
+              onPaste={e => { setTimeout(() => { const v = (e.target as HTMLTextAreaElement).value; if (v) { const cleaned = extractAndStripTitle(v); setUploadHtml(cleaned); } }, 0); }}
               onDragOver={e => { e.preventDefault(); setUploadDragOver(true); }}
               onDragLeave={() => setUploadDragOver(false)}
               onDrop={e => { e.preventDefault(); setUploadDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleUploadFile(f); }}

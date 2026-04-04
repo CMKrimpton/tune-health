@@ -963,10 +963,10 @@ Deno.serve(async (req: Request) => {
     // Used by /admin/new ArticleEditor when generating articles outside the pipeline.
     // Creates a fresh pipeline log entry and dispatches to independence review.
     if (action === "submit-new-article") {
-      const articleHtml = body.articleHtml as string;
+      let articleHtml = body.articleHtml as string;
       const title = (body.title as string)?.trim();
       const slug = (body.slug as string)?.trim();
-      const description = (body.description as string)?.trim() || "";
+      let description = (body.description as string)?.trim() || "";
       const category = (body.category as string)?.trim() || "Clinical Evidence";
       const tags = (body.tags as string[]) || [];
       const keywords = (body.keywords as string[]) || [];
@@ -975,7 +975,72 @@ Deno.serve(async (req: Request) => {
         return json({ error: "articleHtml, title, and slug are required" }, 400);
       }
 
-      // Parse TOC from the HTML
+      // Strip full HTML page wrapper if present (Opus sometimes returns full pages)
+      if (articleHtml.includes("<!DOCTYPE") || articleHtml.includes("<html")) {
+        const sectionStart = articleHtml.indexOf("<section");
+        if (sectionStart > 0) {
+          const bodyEnd = articleHtml.indexOf("</body>");
+          const contentEnd = bodyEnd > 0 ? bodyEnd : articleHtml.length;
+          let extracted = articleHtml.slice(sectionStart, contentEnd).trim();
+          extracted = extracted.replace(/\s*<\/div>\s*(<\/div>\s*)*$/g, "").trim();
+          if (extracted.length > 500) articleHtml = extracted;
+        }
+      }
+
+      // ── MARKDOWN DETECTION + CONVERSION ──────────────────────────────
+      // Writers may paste markdown instead of HTML. Detect and convert to
+      // the site's HTML format so downstream stages all work correctly.
+      const looksLikeMarkdown = !articleHtml.includes("<section") && !articleHtml.includes("<p>") &&
+        (articleHtml.includes("\n## ") || articleHtml.includes("\n# ") || /^\s*#{1,3}\s/m.test(articleHtml));
+
+      if (looksLikeMarkdown) {
+        console.log("[Admin] submit-new-article: detected markdown — converting to site HTML");
+
+        // Auto-extract description from the first paragraph after # Title
+        if (!description) {
+          const mdLines = articleHtml.split("\n");
+          let foundTitle = false;
+          const descParagraphLines: string[] = [];
+          for (const line of mdLines) {
+            const t = line.trim();
+            if (!foundTitle && /^# /.test(t) && !/^##/.test(t)) {
+              foundTitle = true;
+              continue;
+            }
+            if (foundTitle) {
+              if (t === "") {
+                if (descParagraphLines.length > 0) break;
+                continue;
+              }
+              if (/^##/.test(t)) break;
+              descParagraphLines.push(t);
+            }
+          }
+          if (descParagraphLines.length > 0) {
+            description = descParagraphLines.join(" ")
+              .replace(/\*\*(.+?)\*\*/g, "$1")
+              .replace(/\*(.+?)\*/g, "$1")
+              .replace(/`([^`]+)`/g, "$1")
+              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+              .trim();
+            console.log(`[Admin] submit-new-article: extracted description from standfirst (${description.length} chars)`);
+          }
+        }
+
+        articleHtml = convertMarkdownToSiteHtml(articleHtml);
+      }
+
+      // Auto-extract description from first <p> of introduction if still empty (HTML input)
+      if (!description) {
+        const introParaMatch = articleHtml.match(/<section[^>]*id="introduction"[^>]*>\s*<p[^>]*>([\s\S]*?)<\/p>/i);
+        if (introParaMatch) {
+          description = introParaMatch[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+          if (description.length > 300) description = description.slice(0, 297) + "...";
+          console.log(`[Admin] submit-new-article: extracted description from intro HTML (${description.length} chars)`);
+        }
+      }
+
+      // Parse TOC from the HTML (must happen AFTER markdown conversion)
       const tocMatches = [...articleHtml.matchAll(/<section[^>]*id="([^"]+)"[^>]*>[\s\S]*?<h2[^>]*>([^<]+)<\/h2>/gi)];
       const toc = tocMatches.map(m => ({ id: m[1], title: m[2].trim() }));
 
@@ -1001,7 +1066,7 @@ Deno.serve(async (req: Request) => {
           tags,
           keywords,
           _article: { metadata, html: articleHtml, toc, readTime },
-          _writtenBy: "admin-editor",
+          _writtenBy: "human-opus",
         },
         token_usage: [
           { model: "admin-editor", stage: "write", inputTokens: 0, outputTokens: 0, costUsd: 0 },
