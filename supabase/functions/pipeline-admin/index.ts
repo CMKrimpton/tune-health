@@ -89,8 +89,16 @@ function convertMarkdownToSiteHtml(md: string): string {
       continue;
     }
 
-    // H2 — new section
+    // H2 — new section (or subtitle if it's the first heading with no body yet)
     if (/^## /.test(trimmed)) {
+      // Subtitle pattern: first ## immediately after # title with no body paragraphs yet.
+      // This is a standfirst/subtitle, not a section heading — skip the H2 but keep
+      // subsequent paragraphs in the introduction section. The text becomes the description.
+      if (isFirstSection && currentSection.length === 0) {
+        // Don't emit an H2 — this subtitle text is the description shown in the standfirst.
+        // Paragraphs that follow will land in the introduction section naturally.
+        continue;
+      }
       flushSection();
       const headingText = trimmed.replace(/^## /, "").replace(/\*\*/g, "");
       currentSectionId = slugify(headingText);
@@ -996,7 +1004,8 @@ Deno.serve(async (req: Request) => {
       if (looksLikeMarkdown) {
         console.log("[Admin] submit-new-article: detected markdown — converting to site HTML");
 
-        // Auto-extract description from the first paragraph after # Title
+        // Auto-extract description: first paragraph after # Title, OR ## subtitle if it
+        // comes immediately after # Title with no paragraph between them.
         if (!description) {
           const mdLines = articleHtml.split("\n");
           let foundTitle = false;
@@ -1012,7 +1021,13 @@ Deno.serve(async (req: Request) => {
                 if (descParagraphLines.length > 0) break;
                 continue;
               }
-              if (/^##/.test(t)) break;
+              // ## subtitle right after # title (no paragraphs yet) → use as description
+              if (/^## /.test(t)) {
+                if (descParagraphLines.length === 0) {
+                  descParagraphLines.push(t.replace(/^## /, ""));
+                }
+                break;
+              }
               descParagraphLines.push(t);
             }
           }
@@ -1157,8 +1172,8 @@ Deno.serve(async (req: Request) => {
       if (looksLikeMarkdown) {
         console.log("[Admin] publish-direct: detected markdown — converting to site HTML");
 
-        // Auto-extract description from the first paragraph after # Title
-        // (the standfirst / lede paragraph that sits between the title and ## first section)
+        // Auto-extract description: first paragraph after # Title, OR ## subtitle if it
+        // comes immediately after # Title with no paragraph between them.
         if (!description) {
           const mdLines = articleContent.split("\n");
           let foundTitle = false;
@@ -1171,19 +1186,25 @@ Deno.serve(async (req: Request) => {
             }
             if (foundTitle) {
               if (t === "") {
-                if (descParagraphLines.length > 0) break; // end of first paragraph
-                continue; // skip blank lines between title and first paragraph
+                if (descParagraphLines.length > 0) break;
+                continue;
               }
-              if (/^##/.test(t)) break; // hit next section before finding a paragraph
+              // ## subtitle right after # title (no paragraphs yet) → use as description
+              if (/^## /.test(t)) {
+                if (descParagraphLines.length === 0) {
+                  descParagraphLines.push(t.replace(/^## /, ""));
+                }
+                break;
+              }
               descParagraphLines.push(t);
             }
           }
           if (descParagraphLines.length > 0) {
             description = descParagraphLines.join(" ")
-              .replace(/\*\*(.+?)\*\*/g, "$1") // strip bold
-              .replace(/\*(.+?)\*/g, "$1")      // strip italic
-              .replace(/`([^`]+)`/g, "$1")       // strip code
-              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // strip links
+              .replace(/\*\*(.+?)\*\*/g, "$1")
+              .replace(/\*(.+?)\*/g, "$1")
+              .replace(/`([^`]+)`/g, "$1")
+              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
               .trim();
             console.log(`[Admin] publish-direct: extracted description from standfirst (${description.length} chars)`);
           }
