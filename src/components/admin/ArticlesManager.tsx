@@ -559,11 +559,11 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
 
   // ─── Delete ───────────────────────────────────────────────────────
 
+  // Single source of truth: delete-article handles everything
+  // (GitHub files, DB row, illustrations, narration, pipeline logs)
   const confirmDelete = useCallback(async (slug: string) => {
     try {
-      await apiCall('articles-api', { action: 'delete', slug });
-      // Also remove from GitHub
-      try { await apiCall('delete-article', { slug }); } catch { /* GitHub delete is best-effort */ }
+      await apiCall('delete-article', { slug });
       setArticles(prev => prev.filter(a => a.slug !== slug));
       setSelected(prev => { const next = new Set(prev); next.delete(slug); return next; });
     } catch (err) {
@@ -575,10 +575,7 @@ export default function ArticlesManager({ initialArticles, apiBase }: Props) {
   const confirmBulkDelete = useCallback(async () => {
     const slugs = Array.from(selected);
     for (const slug of slugs) {
-      try {
-        await apiCall('articles-api', { action: 'delete', slug });
-        try { await apiCall('delete-article', { slug }); } catch { /* best-effort */ }
-      } catch { /* continue */ }
+      try { await apiCall('delete-article', { slug }); } catch { /* continue */ }
     }
     setArticles(prev => prev.filter(a => !selected.has(a.slug)));
     setSelected(new Set());
