@@ -160,6 +160,8 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rapidPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Optimistic logs are protected from being overwritten by fetchStatus for 30s
+  const optimisticLogsRef = useRef<Map<string, { log: PipelineLog; expiresAt: number }>>(new Map());
   const { ask, ConfirmDialog } = useConfirm();
 
   const flashFeedback = useCallback((ok: boolean, msg: string) => {
@@ -177,7 +179,25 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
       });
       if (!res.ok) return;
       const data = await res.json();
-      if (data.logs) setLogs(data.logs);
+      if (data.logs) {
+        // Merge server logs with optimistic logs that haven't expired yet
+        const now = Date.now();
+        const serverLogs = data.logs as PipelineLog[];
+        const serverIds = new Set(serverLogs.map((l: PipelineLog) => l.id));
+        const protectedLogs: PipelineLog[] = [];
+        for (const [id, entry] of optimisticLogsRef.current) {
+          if (now > entry.expiresAt) {
+            optimisticLogsRef.current.delete(id);
+          } else if (!serverIds.has(id)) {
+            // Server doesn't have this log yet — keep the optimistic version
+            protectedLogs.push(entry.log);
+          } else {
+            // Server has the log now — stop protecting it
+            optimisticLogsRef.current.delete(id);
+          }
+        }
+        setLogs([...protectedLogs, ...serverLogs]);
+      }
       if (typeof data.articleCount === 'number') setArticleCount(data.articleCount);
       if (data.queue) setQueue(data.queue);
       if (typeof data.totalCost === 'number') setTotalCost(data.totalCost);
@@ -204,6 +224,7 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
   }, [fetchStatus]);
 
   // ── Inject an optimistic log so the article appears instantly in the stage box ──
+  // Protected from fetchStatus overwriting it for 30s (server may not have the log yet)
   const injectOptimisticLog = useCallback((logId: string, topic: string, status: string) => {
     const optimistic: PipelineLog = {
       id: logId,
@@ -227,6 +248,8 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
       created_at: new Date().toISOString(),
       completed_at: null,
     };
+    // Register for protection — fetchStatus won't overwrite this for 30s
+    optimisticLogsRef.current.set(logId, { log: optimistic, expiresAt: Date.now() + 30_000 });
     setLogs(prev => [optimistic, ...prev.filter(l => l.id !== logId)]);
   }, []);
 
@@ -621,9 +644,12 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
       } else {
         setProduceResult(data.message || `Dispatched research for "${topic.replace(/\*\*/g, '').slice(0, 60)}"`);
         // Optimistic: inject a "started" log so it appears in Research immediately
+        const cleanTopic = topic.replace(/\*\*/g, '');
         if (data.logId) {
-          injectOptimisticLog(data.logId, topic.replace(/\*\*/g, ''), 'started');
+          injectOptimisticLog(data.logId, cleanTopic, 'started');
         }
+        // Optimistic: remove the queue item so it doesn't just vanish into nowhere
+        setQueue(prev => prev.filter(q => q.id !== queueId));
         // Rapid polling: 5s for 3 min to catch Research → Editor transitions
         startRapidPolling();
       }
