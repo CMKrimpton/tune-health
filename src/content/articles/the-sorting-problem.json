@@ -1,6 +1,6 @@
 {
   "title": "The Sorting Problem",
-  "description": "category=\"Clinical Evidence\" readTime=\"6 min read\" publishDate=\"April 2026\" > In This Article Most of what America calls \"recycling\" is a performance. But not all of it.",
+  "description": "",
   "category": "Environmental Health",
   "publishDate": "2026-04-04",
   "author": {
@@ -16,7 +16,7 @@
     "from": "lime-500"
   },
   "keywords": [],
-  "sortOrder": 1775280372808,
+  "sortOrder": 1775280454157,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/the-sorting-problem.png",
   "heroImageAlt": "Editorial illustration for Recycling Is Three Different Problems",
   "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/the-sorting-problem-light.png"
