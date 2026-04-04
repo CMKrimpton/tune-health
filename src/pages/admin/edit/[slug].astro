@@ -974,8 +974,25 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
         const title = db.title.replace(/"/g, '&quot;');
         const desc = db.description.replace(/"/g, '&quot;');
 
+        // Deduplicate: if the first <p> in <section id="introduction"> matches
+        // the description (rendered as standfirst by ArticleLayout), strip it
+        // so the reader doesn't see the same text twice.
+        let articleHtml = db.article_html || '';
+        const descPlain = (db.description || '').replace(/\s+/g, ' ').trim();
+        if (descPlain.length > 30) {
+          const introMatch = articleHtml.match(
+            /(<section[^>]*id="introduction"[^>]*>\s*)(<p[^>]*>)([\s\S]*?)(<\/p>)/i
+          );
+          if (introMatch) {
+            const firstParaText = introMatch[3].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+            if (descPlain.startsWith(firstParaText.slice(0, 80)) || firstParaText.startsWith(descPlain.slice(0, 80))) {
+              articleHtml = articleHtml.replace(introMatch[0], introMatch[1]);
+            }
+          }
+        }
+
         const astroContent = '---\nimport ArticleLayout from \'../../layouts/ArticleLayout.astro\';\n---\n\n<ArticleLayout\n  title="' + title + '"\n  description="' + desc + '"\n  category="' + db.category + '"\n  readTime="' + db.read_time + ' min read"\n  publishDate="' + publishDate + '"\n>\n' +
-          '  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">\n    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>\n    <nav class="space-y-2">\n' + tocHtml + '\n    </nav>\n  </div>\n\n  <div class="article-content">\n' + db.article_html + '\n  </div>\n\n  <Fragment slot="tags">\n' + tagsHtml + '\n  </Fragment>\n</ArticleLayout>\n';
+          '  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">\n    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>\n    <nav class="space-y-2">\n' + tocHtml + '\n    </nav>\n  </div>\n\n  <div class="article-content">\n' + articleHtml + '\n  </div>\n\n  <Fragment slot="tags">\n' + tagsHtml + '\n  </Fragment>\n</ArticleLayout>\n';
 
         // Build metadata JSON — include ALL fields from DB
         const metadata = {
