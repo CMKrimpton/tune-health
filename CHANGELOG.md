@@ -6,7 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [19.6.0] - 2026-04-03
+## [20.0.0] - 2026-04-03
+
+### Fixed — Publishing System Hardening (Full Audit)
+
+All publish paths now enforce the same invariants. No more ghost articles, orphan data, or silent drift between DB and GitHub.
+
+- **Ghost articles eliminated** — `publish-article` now upserts to DB (status, published_at, sort_order, all metadata). Previously only pushed to GitHub, creating articles visible on site but invisible in admin
+- **DB↔GitHub auto-sync** — `articles-api` save now auto-syncs published articles' metadata to GitHub. Admin edits to title/description/tags propagate to the live site immediately
+- **Article sort order fixed everywhere** — `publish-article`, `publish-direct`, `submit-new-article`, and `stage-publish` all set `sort_order` in the DB. Previously only `stage-publish` set it in the JSON, causing articles to sort to the bottom of category pages
+- **Intro paragraph deduplication** — `assembleAstroFile()` and the edit page now strip the first `<p>` from `<section id="introduction">` when it matches the description standfirst. Prevents readers seeing the same text twice
+- **Edit page preserves author on republish** — now fetches existing GitHub JSON to preserve pen name (Marc London / Paul Quilici). Previously overwrote with hardcoded "alumi news Editorial"
+- **Resilient article deletion** — `delete-article` checks if GitHub files exist before attempting deletion. No longer crashes on already-deleted articles; always cleans up DB and storage
+- **Publish buttons unblocked** — description validation limit raised from 200 to 500 chars. Status bar now shows the actual error message instead of just "1 issue"
+- **`fetch-article` returns JSON metadata** — edit page can now read existing author, gradient, and other fields from GitHub
 
 ### Fixed — Cost Tracking Pipeline Audit
 
