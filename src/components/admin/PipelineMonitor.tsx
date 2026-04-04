@@ -168,6 +168,26 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
     feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 4000);
   }, []);
 
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'status' }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.logs) setLogs(data.logs);
+      if (typeof data.articleCount === 'number') setArticleCount(data.articleCount);
+      if (data.queue) setQueue(data.queue);
+      if (typeof data.totalCost === 'number') setTotalCost(data.totalCost);
+      if (typeof data.overheadSpend === 'number') setOverheadSpend(data.overheadSpend);
+      if (typeof data.avgCostPerArticle === 'number') setAvgCostPerArticle(data.avgCostPerArticle);
+      if (data.recentArticles) setRecentArticles(data.recentArticles);
+      setLastPoll(new Date());
+    } catch { /* retry on next poll */ }
+  }, [apiBase]);
+
   // ── Rapid polling: 5s interval for 3 min after produce/dispatch actions ──
   // Ensures Research + Editor stage transitions are visible to the admin.
   const startRapidPolling = useCallback(() => {
@@ -209,26 +229,6 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
     };
     setLogs(prev => [optimistic, ...prev.filter(l => l.id !== logId)]);
   }, []);
-
-  const fetchStatus = useCallback(async () => {
-    try {
-      const res = await fetchWithTimeout(`${apiBase}/pipeline-admin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'status' }),
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.logs) setLogs(data.logs);
-      if (typeof data.articleCount === 'number') setArticleCount(data.articleCount);
-      if (data.queue) setQueue(data.queue);
-      if (typeof data.totalCost === 'number') setTotalCost(data.totalCost);
-      if (typeof data.overheadSpend === 'number') setOverheadSpend(data.overheadSpend);
-      if (typeof data.avgCostPerArticle === 'number') setAvgCostPerArticle(data.avgCostPerArticle);
-      if (data.recentArticles) setRecentArticles(data.recentArticles);
-      setLastPoll(new Date());
-    } catch { /* retry on next poll */ }
-  }, [apiBase]);
 
   // ── Realtime subscriptions (live updates) + fallback poll ──
   useEffect(() => {

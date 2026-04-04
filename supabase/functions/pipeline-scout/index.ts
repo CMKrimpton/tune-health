@@ -34,78 +34,124 @@ Deno.serve(async (req: Request) => {
       .in("status", ["queued", "assigned", "in_progress"]);
     const queueTitles = (queuedTopics || []).map((q: { topic: string }) => q.topic);
 
+    // Fetch recently rejected topics for editorial feedback loop
+    const rejectCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: rejectedTopics } = await db
+      .from("topic_dedup_log")
+      .select("topic_text, source")
+      .gte("created_at", rejectCutoff)
+      .in("source", ["deleted", "killed"])
+      .limit(20);
+    const rejectedList = (rejectedTopics || []).map((r: { topic_text: string; source: string }) =>
+      `- ${r.topic_text} (${r.source})`
+    );
+
     const underserved = Object.entries(categoryCounts).filter(([, c]) => (c as number) / (titles.length || 1) < 0.10).map(([cat]) => cat);
     const missing = VALID_CATEGORIES.filter(c => !categoryCounts[c]);
     const priorityCats = [...new Set([...underserved, ...missing])];
 
-    const scoutPrompt = `Find 20 health stories that will get SHARED by 20-35 year olds. Our readers are smart, health-curious, skeptical of institutions, and live on social media. They're NOT medical professionals. They want to understand their own bodies, optimize their health, and call out industry BS.
+    // ── Shared prompt sections (used by all three scouts) ──
 
-## WHAT MAKES A TOPIC WORTH WRITING (ranked)
-1. **"Wait, really?"** — challenges something readers believed was true. NOT "debunking internet trends" — challenging ESTABLISHMENT consensus that turns out to be industry-funded
-2. **Follow-the-money exposé** — pharma pricing, seed oil industry capture, supplement fraud, food industry manipulation, insurance denials, industry-funded "scientific consensus." Young people are angry about being lied to by institutions.
-3. **Everyday health people actually search for** — common cold, flu, allergies, back pain, headaches, bloating, acid reflux, UTIs, sinus infections, sore throat, ear infections, blood pressure, cholesterol, acne, eczema, eye strain, dental health, period problems, injury recovery. These are the #1 search volume topics. Frame them with our editorial voice — not WebMD recitations but "here's what actually works vs what's industry marketing."
-4. **Personally relevant RIGHT NOW** — affects what they eat today, how they sleep tonight, what supplements they take, their workout routine, their prescriptions
-5. **Culturally trending** — debated on TikTok, Reddit, Twitter. Ozempic culture, gut health, longevity biohacking, psychedelics, seed oil truth, ultra-processed food exposure
-6. **New science that changes behavior** — not just "interesting mechanism" but "this changes what you should DO"
+    const sharedFraming = `## TOPIC FRAMING (CRITICAL)
+Frame topics as INVESTIGATIONS that follow money and evidence on ALL sides. The story is never "industry bad" or "institution right" — it's WHERE THE EVIDENCE LEADS when you trace funding on every side.
+BAD: "Why Experts Say Seed Oils Are Safe" / "Seed Oils Are Killing You" / "Big Pharma Is Hiding the Cure" (uncritical deference to ANY authority)
+GOOD: "Who Funds the Seed Oil Studies? A Funding Map of Both Sides" / "Statin Trials: Who Funded Them and What Independent Data Shows"`;
 
-## TOPIC MIX (MANDATORY)
-Of your 20 topics, deliver this mix:
-- **At least 5 everyday health topics** — conditions millions deal with weekly (colds, allergies, back pain, headaches, digestion, skin, heart basics, women's/men's health). Frame with our voice: what actually works, what's marketing, what your doctor won't tell you
-- **At least 5 investigation/exposé topics** — follow the money, industry capture, pharma/food/supplement fraud
-- **Up to 10 trending/contrarian/deep topics** — the "holy shit" stories
-Do NOT fill all 20 slots with niche deep-dives. A publication needs breadth to serve real readers.
-
-## TOPIC FRAMING (CRITICAL — read every time)
-How you frame a topic determines the entire downstream article. BAD framing accepts any authority uncritically. GOOD framing investigates from primary evidence and discloses conflicts on all sides.
-
-**BAD (accepts authority without scrutiny — from ANY direction):**
-- "Why Experts Say Seed Oils Are Safe" (uncritical institutional deference)
-- "Seed Oils Are Killing You: What Big Food Doesn't Want You to Know" (uncritical contrarian deference — assumes the counter-narrative is true)
-- "The Science Behind Statin Benefits" (pharma press release framing)
-- "Debunking Supplement Myths" (treats industry consensus as truth)
-- "Big Pharma Is Hiding the Cure" (conspiracy framing without evidence)
-
-**GOOD (investigates from primary evidence, follows the money on ALL sides):**
-- "Who Funds the Seed Oil Studies? A Funding Map of Both Sides" (traces money everywhere)
-- "The AHA Gets Millions From the Food Industry. Do Their Critics Have Cleaner Hands?" (symmetrical investigation)
-- "Statin Trials: Who Funded Them, Who Profits, and What the Independent Data Shows" (follows evidence)
-- "Your Supplement Labels Are Legal Fiction. Neither the FDA Nor the Supplement Industry Is Honest About Why." (investigates both regulators and industry)
-
-Frame topics as INVESTIGATIONS that follow money and evidence on ALL sides. The story is never "industry bad" or "institution right" — the story is WHERE THE EVIDENCE LEADS when you trace funding on every side.
-
-## TOPICS YOUNG READERS ACTUALLY CARE ABOUT (use as inspiration, not limits)
-- **Everyday body stuff**: common cold (what actually works), allergies (why they're getting worse), back pain (why it's epidemic in 20s-30s), headaches vs migraines, bloating & IBS, acid reflux, UTIs, sinus infections, sore throats, ear infections, eye strain from screens, dental health & heart disease link
-- **Heart & metabolic basics**: blood pressure at 30, cholesterol myths, resting heart rate, when to worry about chest pain, pre-diabetes signs
-- **Women's health**: periods & pain, PCOS, birth control side effects, UTIs, endometriosis, iron deficiency
-- **Men's health**: testosterone truth, prostate basics, hair loss science, fertility
-- **Skin**: acne & diet, eczema triggers, retinoids, sunscreen chemicals, gut-skin connection
-- Their medications: Ozempic/GLP-1 culture, SSRIs, birth control, Adderall, antibiotics overuse
-- Their diet: seed oils, ultra-processed food, protein amounts, artificial sweeteners, alcohol truth, fasting, gut microbiome
-- Their fitness: creatine for brain health, VO2 max, overtraining, zone 2 cardio, injury recovery (sprains, tendinitis)
-- Their mental health: psychedelics vs SSRIs, social media and anxiety, burnout biology, ADHD meds
-- Their sleep: blue light truth, melatonin evidence, caffeine half-life, sleep trackers accuracy
-- Things they're being lied to about: supplement industry, wellness influencers, "clean eating" pseudoscience
-- Longevity biohacking: rapamycin, NMN/NAD+, cold plunges (evidence vs hype), metformin
-
-## THE SHAREABILITY TEST
-For EACH topic, ask: would a 25-year-old text this to a friend OR search for it when they're feeling sick? Both count. "Holy shit, did you know this?" is great for investigations. "Wait, Tylenol doesn't actually work for back pain?" is great for everyday topics. Everyday health topics don't need to be shocking — they need to be USEFUL and framed with our editorial voice (not WebMD recitations).
-
-## FORMAT FOR EACH TOPIC
-- **Topic**: specific angle a 25-year-old would click on, not a journal article title
-- **Why now**: what happened recently that makes this timely?
+    const sharedFormat = `## FORMAT (for each topic)
+- **Topic**: specific angle a 25-year-old would click on
+- **Why now**: what happened in the LAST 7 DAYS that makes this timely? Cite a date, event, publication, or trend spike. If you cannot cite a specific recent event, DO NOT include this topic.
 - **Search demand**: high/medium/low
-- **Our angle**: what would make this go viral? What's the "holy shit" moment?
-- **Category**: one of ${VALID_CATEGORIES.join(", ")}
+- **Our angle**: what's the "holy shit" moment?
+- **Category**: one of ${VALID_CATEGORIES.join(", ")}`;
 
-## COVERAGE GAPS
-${priorityCats.length > 0 ? `Underserved: ${priorityCats.join(", ")}` : "Categories are balanced."}
-Frame these for younger readers: cardiology = "your heart at 30", diabetes = "insulin resistance from your diet", liver = "what alcohol/processed food is doing to your liver", addiction = "why you can't stop scrolling/drinking/vaping".
-
-## ALREADY COVERED (${titles.length} articles — DO NOT suggest these or similar angles):
-${titles.map(t => `- ${t.split(" (")[0]}`).join("\n")}
-${queueTitles.length > 0 ? `\n## ALREADY IN QUEUE (${queueTitles.length} topics — DO NOT duplicate these either):\n${queueTitles.map(t => `- ${t}`).join("\n")}` : ""}
+    const sharedExclusions = `## ALREADY COVERED (${titles.length} articles — DO NOT suggest these or SIMILAR angles, even reworded):
+${titles.slice(0, 80).map(t => `- ${t.split(" (")[0]}`).join("\n")}${titles.length > 80 ? `\n... and ${titles.length - 80} more articles.` : ""}
+${queueTitles.length > 0 ? `\n## ALREADY IN QUEUE (${queueTitles.length} topics):\n${queueTitles.map(t => `- ${t}`).join("\n")}` : ""}
+${rejectedList.length > 0 ? `\n## RECENTLY REJECTED BY EDITORS (do NOT re-suggest these angles):\n${rejectedList.join("\n")}` : ""}
 
 Number them 1-20. Plain text, no JSON.`;
+
+    const coverageGaps = priorityCats.length > 0
+      ? `\n## COVERAGE GAPS\nUnderserved: ${priorityCats.join(", ")}. Frame for younger readers.`
+      : "";
+
+    // ── Scout-specific prompts — each has a distinct editorial mandate ──
+
+    const scoutPrompts: Record<string, string> = {
+      // GEMINI (6am UTC): Trending search + news — what people are actively searching for
+      gemini: `You are the TRENDING DESK. Your job: find health stories people are ACTIVELY SEARCHING FOR or that just broke in the news. Use Google Search to find what's trending RIGHT NOW.
+
+## YOUR MANDATE: What's happening THIS WEEK
+Find 20 health topics where something SPECIFIC happened in the last 7 days:
+- Study published in a major journal (NEJM, Lancet, JAMA, Nature, BMJ, Cell, Science, PNAS)
+- FDA/EMA action (approval, warning, recall, advisory)
+- Health story going viral on social media or mainstream news
+- Google Trends spike for a health topic
+- Policy change, outbreak, or health crisis update
+
+## TOPIC MIX
+- **At least 8 news-driven topics** — something happened this week that makes this timely
+- **At least 5 high-search-volume everyday topics** — conditions millions search for (colds, allergies, back pain, headaches, bloating, UTIs, blood pressure, acne, period problems). Frame with our voice: what actually works vs what's marketing
+- **Up to 7 trending cultural topics** — TikTok health debates, viral studies, Ozempic culture, supplement trends
+
+## RECENCY TEST (MANDATORY)
+For EVERY topic, you MUST be able to cite a specific event from the last 7 days. "This has always been interesting" is NOT a valid reason. If nothing newsworthy happened this week about a topic, do not include it.
+
+${sharedFraming}
+${sharedFormat}
+${coverageGaps}
+${sharedExclusions}`,
+
+      // SONNET (2pm UTC): "Wait, really?" — belief-challenging stories from the evidence
+      sonnet: `You are the INVESTIGATION DESK. Your job: find health stories where the primary evidence CONTRADICTS what people have been told — by institutions, influencers, supplement sellers, or wellness gurus. Use Google Search to find the latest.
+
+## YOUR MANDATE: "Wait, really?" stories
+Find 20 topics where recent evidence challenges conventional wisdom:
+- Industry-funded studies that shaped guidelines but have been contradicted by independent research
+- Supplement claims that got debunked (or validated) by new data
+- Medical practices that continued for decades without good evidence
+- Wellness trends where the science doesn't support the hype (OR where skeptics were wrong)
+- Follow-the-money investigations: who profits from the current consensus?
+
+## TOPIC MIX
+- **At least 8 investigation/exposé topics** — pharma, food industry, supplement industry, insurance, medical device, wellness influencer funding trails
+- **At least 5 "the evidence changed" topics** — where a recent study (last 30 days) contradicts what was previously believed
+- **Up to 7 everyday health topics** — common conditions where standard advice is wrong or outdated (back pain, antibiotics, cold medicine, cholesterol thresholds, etc.)
+
+## INVESTIGATION QUALITY TEST
+Every investigation topic must answer: WHO PROFITS from the current consensus? If you can't name a specific financial incentive on at least one side, the topic isn't ready.
+
+${sharedFraming}
+${sharedFormat}
+${coverageGaps}
+${sharedExclusions}`,
+
+      // GROK (10pm UTC): Contrarian — what's being debated, what's being hidden
+      grok: `You are the CONTRARIAN DESK. Your job: find health stories that mainstream outlets WON'T cover — industry fraud, regulatory capture, uncomfortable truths, and debates where both sides have dirty hands. Use your X/Twitter access.
+
+## YOUR MANDATE: What nobody else is publishing
+Find 20 topics that challenge BOTH establishment AND alternative health narratives:
+- Health controversies trending on X/Twitter with real scientific substance (not conspiracy noise)
+- Industry fraud, regulatory capture, revolving door stories
+- Cases where BOTH the mainstream AND contrarian positions are financially compromised
+- Things young people are being lied to about by EVERYONE — institutions AND influencers
+- Health debates where the real story is more nuanced than either side admits
+
+## TOPIC MIX
+- **At least 8 "both sides have dirty hands" topics** — trace funding on establishment AND alternative/contrarian side
+- **At least 5 social media debate topics** — health arguments currently happening on X/Twitter/Reddit with substance behind the noise
+- **Up to 7 uncomfortable truth topics** — things the health industry (broad: pharma, supplements, wellness, insurance, FDA) doesn't want examined
+
+## CONTRARIAN QUALITY TEST
+Every topic must challenge at least TWO authorities (not just "pharma bad"). If your topic only has one villain, dig deeper — the contrarian side usually has its own financial angle too.
+
+${sharedFraming}
+${sharedFormat}
+${coverageGaps}
+${sharedExclusions}`,
+    };
+
+    const scoutPrompt = scoutPrompts[scoutModel] || scoutPrompts.gemini;
 
     let rawFindings: string;
     let scoutCost: ApiUsage;
@@ -172,11 +218,71 @@ Number them 1-20. Plain text, no JSON.`;
     if (current && current.topic) topics.push(current);
     console.log(`[Scout] Parsed ${topics.length} topics from ${lines.length} lines`);
 
+    // ── Phase 1: Word-overlap dedup ──
+    const wordDedupPassed: typeof topics = [];
+    let wordDupes = 0;
+    for (const t of topics) {
+      if (isDuplicate(t.topic, fingerprints)) { wordDupes++; continue; }
+      wordDedupPassed.push(t);
+    }
+    console.log(`[Scout] Word dedup: ${wordDupes} filtered, ${wordDedupPassed.length} passed`);
+
+    // ── Phase 2: AI semantic dedup (Flash — cheap batch comparison) ──
+    // Catches "same story, different words" that word overlap misses.
+    let semanticFiltered = 0;
+    let semanticPassed = wordDedupPassed;
+    if (wordDedupPassed.length > 0) {
+      try {
+        // Build comparison list: recent articles + queue (compact format to stay cheap)
+        const existingCompact = titles.slice(0, 100).map(t => t.split(" (")[0]); // article titles
+        const queueCompact = queueTitles.slice(0, 50); // queue topics
+        const compareList = [...existingCompact, ...queueCompact];
+
+        const candidateList = wordDedupPassed.map((t, i) => `${i + 1}. ${t.topic}`).join("\n");
+        const { text: dedupResult, usage: dedupUsage } = await gemini({
+          system: `You are a semantic dedup filter for a health editorial queue. Given a list of EXISTING articles/topics and a list of CANDIDATE topics, identify which candidates cover substantially the same story as an existing item — even if worded differently. "Tylenol for back pain" = "Acetaminophen efficacy for lumbar pain". "Seed oil debate" = "Are vegetable oils bad". Be aggressive about filtering — if in doubt, mark as duplicate.`,
+          user: `EXISTING (${compareList.length} items):\n${compareList.map((t, i) => `${i + 1}. ${t}`).join("\n")}\n\nCANDIDATES:\n${candidateList}\n\nReturn ONLY a JSON array of candidate numbers that are NOVEL (not duplicates of any existing item). Example: [1, 3, 7]\nIf all are duplicates: []\nNo explanation, just the array.`,
+          model: MODELS.DEFAULT_GEMINI, // Flash — cheapest
+          maxTokens: 200,
+          temperature: 0.1,
+          webSearch: false,
+        }, "scout-semantic-dedup");
+
+        // Parse the novel indices
+        const novelIndices = new Set<number>();
+        try {
+          const parsed = JSON.parse(dedupResult.replace(/^```json?\n?/, "").replace(/\n?```$/, "").trim());
+          if (Array.isArray(parsed)) {
+            for (const idx of parsed) {
+              if (typeof idx === "number" && idx >= 1 && idx <= wordDedupPassed.length) {
+                novelIndices.add(idx);
+              }
+            }
+          }
+        } catch {
+          // If parsing fails, let all candidates through (fail-open)
+          console.log(`[Scout] Semantic dedup parse failed, passing all candidates`);
+          for (let i = 1; i <= wordDedupPassed.length; i++) novelIndices.add(i);
+        }
+
+        semanticPassed = wordDedupPassed.filter((_, i) => novelIndices.has(i + 1));
+        semanticFiltered = wordDedupPassed.length - semanticPassed.length;
+        console.log(`[Scout] Semantic dedup: ${semanticFiltered} filtered, ${semanticPassed.length} novel`);
+
+        // Add semantic dedup cost to scout cost
+        scoutCost.costUsd += dedupUsage.costUsd;
+        scoutCost.inputTokens += dedupUsage.inputTokens;
+        scoutCost.outputTokens += dedupUsage.outputTokens;
+      } catch (err) {
+        // Fail open — if semantic dedup crashes, proceed with word-dedup results
+        console.error(`[Scout] Semantic dedup failed: ${err instanceof Error ? err.message : "unknown"}`);
+      }
+    }
+
     // Dedup and insert into queue
     let added = 0;
-    let dupes = 0;
-    for (const t of topics) {
-      if (isDuplicate(t.topic, fingerprints)) { dupes++; continue; }
+    const dupes = wordDupes + semanticFiltered;
+    for (const t of semanticPassed) {
       // Classify category: explicit label → keyword classifier → null
       const cat = t.category
         || classifyCategory(t.topic + " " + (t.why || ""))

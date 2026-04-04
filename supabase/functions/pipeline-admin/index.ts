@@ -741,13 +741,19 @@ Deno.serve(async (req: Request) => {
     if (action === "kill-article") {
       const logId = body.logId as string | undefined;
       if (!logId) return json({ error: "logId is required" }, 400);
+      // Fetch topic text before killing so we can log it for dedup
+      const { data: logEntry } = await db.from("daily_article_log").select("topic, slug, title").eq("id", logId).maybeSingle();
       await db.from("daily_article_log").update({
         status: "failed",
         error: "Admin killed: " + ((body.reason as string) || "Manually stopped by admin"),
         completed_at: new Date().toISOString(),
       }).eq("id", logId);
+      // Log to dedup so scouts don't re-suggest this topic
+      const dedupText = logEntry?.topic || logEntry?.title;
+      if (dedupText) {
+        await db.from("topic_dedup_log").insert({ topic_text: dedupText, source: "killed" });
+      }
       // Also archive the article if it exists
-      const { data: logEntry } = await db.from("daily_article_log").select("slug").eq("id", logId).maybeSingle();
       if (logEntry?.slug) {
         await db.from("articles").update({ status: "archived", draft: true }).eq("slug", logEntry.slug);
       }
