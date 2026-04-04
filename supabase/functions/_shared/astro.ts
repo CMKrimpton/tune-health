@@ -24,9 +24,30 @@ export function assembleAstroFile(
     readTime: number;
     tags: string[];
   },
-  html: string,
+  rawHtml: string,
   toc: { id: string; title: string }[],
 ): string {
+  // Deduplicate: if the first <p> in the introduction section matches the
+  // description (which ArticleLayout renders as a standfirst), strip it so
+  // the reader doesn't see the same text twice.
+  let html = rawHtml;
+  const descPlain = metadata.description.replace(/\s+/g, " ").trim();
+  if (descPlain.length > 30) {
+    // Match the first <p>...</p> inside <section id="introduction">
+    const introMatch = html.match(
+      /(<section[^>]*id="introduction"[^>]*>\s*)(<p[^>]*>)([\s\S]*?)(<\/p>)/i
+    );
+    if (introMatch) {
+      const firstParaText = introMatch[3].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      // Check if the description starts with or matches the first paragraph
+      if (descPlain.startsWith(firstParaText.slice(0, 80)) || firstParaText.startsWith(descPlain.slice(0, 80))) {
+        html = html.replace(
+          introMatch[0],
+          introMatch[1] // keep the <section> tag, drop the first <p>
+        );
+      }
+    }
+  }
   const tocHtml = toc
     .map(
       (t) =>
