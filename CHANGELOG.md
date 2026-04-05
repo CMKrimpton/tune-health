@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [20.5.3] - 2026-04-05
+
+### Improved — Admin UI Polish
+
+- **Consolidated badge styles** — 5 duplicated badge classes now share a single `.admin-badge` base with compact variants
+- **Stronger focus rings** — `--admin-accent-dim` opacity increased and `box-shadow` spread widened from 3px to 4px across all input focus states for keyboard accessibility
+- **Better toast/error visibility** — All toasts and error banners now have a 3px left accent border (green/red/blue) and stronger background opacity
+- **Improved disabled button contrast** — All disabled states bumped from `opacity: 0.4` to `0.5` for better readability
+- **Stats strip visual hierarchy** — Secondary stats (Illustrated, Narrated, Avg Read) visually demoted; stat cards get proper `min-width`, border separators when wrapping, and font scaling on mobile
+- **Semantic color aliases** — Added `--admin-status-success/warning/error/info/pending/active/idle` CSS variables
+- **Tab panel breathing room** — Added `padding-bottom: 2rem` to prevent content crowding
+- **Better scrollbar visibility** — Pipeline stage and social tab scrollbar opacity increased
+- **Modal safe areas** — Modals now respect `env(safe-area-inset-*)` on mobile
+- **Logout button cleanup** — Removed inline styles, replaced with `.admin-nav-btn` CSS class on both dashboard and edit pages
+
 ## [20.5.2] - 2026-04-05
 
 ### Fixed — Article Replace Bugs

@@ -89,7 +89,7 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
         <a href="/admin/new" class="admin-nav-link">New Article</a>
         <a href="/admin/social-preview" class="admin-nav-link">Social Preview</a>
         <a href="/" class="admin-nav-link" target="_blank">View Site &rarr;</a>
-        <button id="logoutBtn" class="admin-nav-link" style="border:none;background:none;cursor:pointer;font-family:inherit;font-size:inherit;color:inherit">Logout</button>
+        <button id="logoutBtn" class="admin-nav-link admin-nav-btn">Logout</button>
       </nav>
     </div>
   </header>
@@ -119,15 +119,15 @@ const uniqueCategories = new Set(articles.map(a => a.category).filter(Boolean));
         <span class="admin-stat-number" style="color: var(--admin-accent)">{featuredCount}</span>
         <span class="admin-stat-label">Featured</span>
       </div>
-      <div class="admin-stat-card" title={`${withIllustration.length} of ${articles.length} illustrated`}>
+      <div class="admin-stat-card secondary" title={`${withIllustration.length} of ${articles.length} illustrated`}>
         <span class="admin-stat-number" style={withIllustration.length < articles.length ? "color: var(--admin-yellow)" : "color: var(--admin-green)"}>{withIllustration.length}</span>
         <span class="admin-stat-label">Illustrated{withIllustration.length < articles.length ? ' \u26a0' : ' \u2713'}</span>
       </div>
-      <div class="admin-stat-card" title={`${withNarration.length} of ${articles.length} narrated`}>
+      <div class="admin-stat-card secondary" title={`${withNarration.length} of ${articles.length} narrated`}>
         <span class="admin-stat-number" style={withNarration.length < articles.length ? "color: var(--admin-yellow)" : "color: var(--admin-green)"}>{withNarration.length}</span>
         <span class="admin-stat-label">Narrated{withNarration.length < articles.length ? ' \u26a0' : ' \u2713'}</span>
       </div>
-      <div class="admin-stat-card">
+      <div class="admin-stat-card secondary">
         <span class="admin-stat-number">{avgReadTime}m</span>
         <span class="admin-stat-label">Avg Read</span>
       </div>
