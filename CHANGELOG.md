@@ -11,10 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added — Replace Article Button
 
 - **Replace button on published articles** — each published article card in the Pipeline tab now has a "Replace" button alongside Edit/View/Delete
-- Opens a modal with the article title and slug (read-only, guarantees correct slug), a textarea for new HTML/Markdown, and a two-way toggle:
+- Opens a modal with editable title (pre-filled), locked slug, a textarea for new HTML/Markdown, and a two-way toggle:
   - **Review → Publish**: routes through Grok independence review → QC → copy edit → publish
   - **Direct Publish**: skips editorial stages, goes straight to art + narration + deploy
 - Uses `submit-new-article` or `publish-direct` with the exact slug from the existing article — no more guessing slug from title
+- Title field is editable so new headlines propagate correctly through the pipeline
 
 ## [20.5.0] - 2026-04-04
 
