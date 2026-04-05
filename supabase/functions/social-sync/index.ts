@@ -125,6 +125,50 @@ Deno.serve(async (req: Request) => {
           }
         }
 
+        // ── Template extraction: learn from high-performing posts ──
+        // If this post scored 2x+ the platform average, save it as a template
+        if (avgScore > 0 && score >= avgScore * 2) {
+          try {
+            const { data: fullPost } = await db
+              .from("social_posts")
+              .select("content_text, platform, persona, content_format")
+              .eq("id", post.id)
+              .maybeSingle();
+
+            if (fullPost?.content_text && fullPost.content_text.length > 20) {
+              // Anonymize: replace article-specific references with placeholders
+              const templateText = fullPost.content_text
+                .replace(/https?:\/\/[^\s)]+/g, "[ARTICLE_URL]")
+                .replace(/"[^"]{20,}"/g, "[ARTICLE_TITLE]");
+
+              // Dedup: skip if we already have a template for this platform+persona+format
+              const { count: existingCount } = await db
+                .from("social_templates")
+                .select("*", { count: "exact", head: true })
+                .eq("platform", fullPost.platform)
+                .eq("persona", fullPost.persona)
+                .eq("content_format", fullPost.content_format)
+                .eq("source", "learned");
+
+              // Keep max 5 learned templates per platform+persona+format combo
+              if ((existingCount || 0) < 5) {
+                await db.from("social_templates").insert({
+                  platform: fullPost.platform,
+                  persona: fullPost.persona,
+                  content_format: fullPost.content_format,
+                  template_text: templateText,
+                  avg_engagement: score,
+                  source: "learned",
+                });
+                console.log(`[Social Sync] Learned template from post ${post.id} (score ${score}, ${fullPost.platform}/${fullPost.persona})`);
+              }
+            }
+          } catch (tplErr) {
+            // Non-fatal — template extraction is bonus, not critical
+            console.warn(`[Social Sync] Template extraction failed: ${tplErr instanceof Error ? tplErr.message : "unknown"}`);
+          }
+        }
+
         synced++;
       } catch (err) {
         console.warn(`[Social Sync] Failed to sync post ${post.id}: ${err instanceof Error ? err.message : "unknown"}`);

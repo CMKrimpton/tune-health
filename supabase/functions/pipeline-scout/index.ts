@@ -4,6 +4,7 @@ import { supabase, getExistingArticles, addOverheadCost } from "../_shared/db.ts
 import { VALID_CATEGORIES, classifyCategory, MODELS } from "../_shared/constants.ts";
 import { gemini, grok } from "../_shared/api-clients.ts";
 import { extractFingerprint, isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
+import { getScoutContext } from "../_shared/analytics.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
 Deno.serve(async (req: Request) => {
@@ -75,6 +76,9 @@ Number them 1-20. Plain text, no JSON.`;
       ? `\n## COVERAGE GAPS\nUnderserved: ${priorityCats.join(", ")}. Frame for younger readers.`
       : "";
 
+    // Performance feedback from editorial analytics (SQL-driven, zero AI cost)
+    const performanceContext = await getScoutContext(db);
+
     // ── Scout-specific prompts — each has a distinct editorial mandate ──
 
     const scoutPrompts: Record<string, string> = {
@@ -100,6 +104,7 @@ For EVERY topic, you MUST be able to cite a specific event from the last 7 days.
 ${sharedFraming}
 ${sharedFormat}
 ${coverageGaps}
+${performanceContext}
 ${sharedExclusions}`,
 
       // SONNET (2pm UTC): "Wait, really?" — belief-challenging stories from the evidence
@@ -124,6 +129,7 @@ Every investigation topic must answer: WHO PROFITS from the current consensus? I
 ${sharedFraming}
 ${sharedFormat}
 ${coverageGaps}
+${performanceContext}
 ${sharedExclusions}`,
 
       // GROK (10pm UTC): Contrarian — what's being debated, what's being hidden
@@ -148,6 +154,7 @@ Every topic must challenge at least TWO authorities (not just "pharma bad"). If 
 ${sharedFraming}
 ${sharedFormat}
 ${coverageGaps}
+${performanceContext}
 ${sharedExclusions}`,
     };
 

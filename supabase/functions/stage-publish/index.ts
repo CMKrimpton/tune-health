@@ -281,8 +281,11 @@ Deno.serve(async (req: Request) => {
     const { data: logRow } = await db.from("daily_article_log").select("queue_id").eq("id", logId).maybeSingle();
     const queueId = logRow?.queue_id || researchData?._queueId as string | undefined;
     if (queueId) {
-      await db.from("topic_queue").update({ status: "completed" }).eq("id", queueId);
-      console.log(`[Publish] Queue item ${queueId} marked completed`);
+      await db.from("topic_queue").update({
+        status: "completed",
+        editor_score: logScores?.editor_score || null,
+      }).eq("id", queueId);
+      console.log(`[Publish] Queue item ${queueId} marked completed (editor_score: ${logScores?.editor_score ?? "null"})`);
     }
 
     return json({

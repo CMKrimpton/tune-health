@@ -3,6 +3,7 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addCostToLog, parseScore, dispatchStage } from "../_shared/db.ts";
 import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { auditVoiceQuality } from "../_shared/voice-audit.ts";
+import { getQCContext } from "../_shared/analytics.ts";
 import { QC_CHAIN } from "../_shared/constants.ts";
 
 // ---------------------------------------------------------------------------
@@ -181,6 +182,9 @@ Metrics:
 ${!voiceAudit.passed ? "This article has mechanical failures that must factor into your decision." : ""}
 NOTE: Passing all mechanical checks does NOT mean the article is good enough to publish. A flat, monotonous article with no banned phrases still fails the craft test.\n`;
 
+    // Fetch historical quality context for calibration (SQL-driven, zero AI cost)
+    const historicalContext = await getQCContext(db, (metadata.category as string) || "");
+
     // Senior Editor QC pass
     const qcPrompt = `Review this article before publication.
 
@@ -195,7 +199,7 @@ ${(articleData.html as string) || ""}
 
 ## TABLE OF CONTENTS
 ${((articleData.toc as Array<{ title: string }>) || []).map((t) => `- ${t.title}`).join("\n")}
-${independenceSection}
+${independenceSection}${historicalContext}
 Make your final call. Publish, request revisions, or kill. Remember: voice failures from the mechanical audit are auto-revise triggers.`;
 
     // QC uses a DIFFERENT model from independence review (Grok).

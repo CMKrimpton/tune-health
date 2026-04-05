@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [21.0.0] - 2026-04-05
+
+### Added — Self-Learning Editorial Pipeline
+
+The pipeline now learns from its own editorial decisions. Every stage receives performance context from a SQL-driven analytics system (zero AI cost, < $0.01/day).
+
+- **SQL analytics foundation** — 3 materialized views (`mv_category_performance`, `mv_scout_performance`, `mv_social_performance`) refreshed daily at 4am UTC by `analytics-refresh` cron job. `get_editorial_digest()` SQL function returns a single JSONB blob with all performance data in one round-trip
+- **Scouts learn what works** — top-performing articles injected as "MORE LIKE THIS", per-desk publish rates shown (Gemini 86.8%, Grok 63.1%), underperforming categories flagged. Scouts can now see which topics actually survive the pipeline
+- **QC calibrates against baselines** — Senior Editor QC now sees category-level avg editor scores, kill rates, voice rewrite rates, and common voice failures. "A 7 in Pharmacology means average for that category" — no more scoring in isolation
+- **Grok sees its own bias patterns** — Independence review receives category-specific avg grok_score and flag frequency. Below-average categories get extra scrutiny flagged. Instruction to watch for NEW patterns, not rehash old ones
+- **Social engine gets engagement intelligence** — top platform/persona combos, best hook types, high-engagement templates from `social_templates` (now populated). Low-engagement combos flagged for avoidance
+- **Social writer gets proven templates** — platform+persona-specific templates from past high-performing posts injected as structural inspiration
+- **`social_templates` table wired** — `social-sync` now populates this previously dead table: posts scoring 2x+ platform average get anonymized and stored as learned templates (max 5 per platform/persona/format combo)
+- **Pinger learns source accuracy** — Gemini, Grok, and PubMed signal-to-published conversion rates shown in system prompts. Each source can see its own hit rate
+- **`topic_queue.editor_score` wired** — `stage-publish` now writes editor_score back to the queue item, enabling scout performance tracking by desk
+- **Shared analytics utility** — `_shared/analytics.ts` with 6 exported formatters: `getScoutContext`, `getQCContext`, `getIndependenceContext`, `getSocialContext`, `getWriterTemplates`, `getPingerContext`. Single `get_editorial_digest()` RPC call, in-memory cached per invocation
+- **Constraint fixes** — `topic_dedup_log.source` now allows 'killed', `topic_queue.source` now allows 'breaking', 'queue', 'merged'
+
+### Files Changed
+- **Created**: `supabase/migrations/20260408_editorial_analytics.sql`, `supabase/functions/_shared/analytics.ts`
+- **Modified**: `pipeline-scout`, `stage-qc`, `stage-independence`, `social-engine`, `social-writer`, `social-sync`, `pipeline-pinger`, `stage-publish`
+
 ## [20.5.3] - 2026-04-05
 
 ### Improved — Admin UI Polish

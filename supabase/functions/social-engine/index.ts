@@ -3,6 +3,7 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addOverheadCost } from "../_shared/db.ts";
 import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { MODELS, SOCIAL_CHAINS, VALID_CATEGORIES } from "../_shared/constants.ts";
+import { getSocialContext } from "../_shared/analytics.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Social Engine — The Strategic Brain
@@ -145,6 +146,9 @@ Deno.serve(async (req: Request) => {
       ? `Current weekly arc: "${currentArc.theme}" — ${currentArc.description || "no description"}. Category focus: ${currentArc.category_focus || "none"}.`
       : "No active weekly arc.";
 
+    // Engagement intelligence from editorial analytics (SQL-driven, zero AI cost)
+    const engagementIntel = await getSocialContext(db);
+
     const siteUrl = "https://tune-health.vercel.app";
 
     // Generate Content Brief via AI
@@ -193,6 +197,7 @@ ACTIVE PERSONAS:
 ${activePersonas}
 
 ${arcContext}
+${engagementIntel}
 
 MODE: ${mode === "catalog" ? "Catalog reshare — find a fresh angle on an older article" : "New article promotion — this just published"}
 

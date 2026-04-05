@@ -4,6 +4,7 @@ import { supabase, addOverheadCost } from "../_shared/db.ts";
 import { gemini, grok } from "../_shared/api-clients.ts";
 import { classifyCategory, MODELS } from "../_shared/constants.ts";
 import { extractFingerprint, isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
+import { getPingerContext } from "../_shared/analytics.ts";
 
 // ---------------------------------------------------------------------------
 // Pinger — 4x/hour breaking health news detector
@@ -29,9 +30,9 @@ async function hashSignal(text: string): Promise<string> {
 // ---------------------------------------------------------------------------
 // Signal Source: Gemini Flash + Google Search (trending health searches)
 // ---------------------------------------------------------------------------
-async function checkGeminiSearch(): Promise<{ signals: Signal[]; cost: number }> {
+async function checkGeminiSearch(accuracyContext: string = ""): Promise<{ signals: Signal[]; cost: number }> {
   const { text, usage } = await gemini({
-    system: `Health news detector for a 20-35 reader health magazine. Find health stories that are trending or newsworthy in the last 24 hours. Not evergreen topics — something must have HAPPENED.`,
+    system: `Health news detector for a 20-35 reader health magazine. Find health stories that are trending or newsworthy in the last 24 hours. Not evergreen topics — something must have HAPPENED.${accuracyContext}`,
     user: `Search for noteworthy health news from the last 24 hours. Report if ANY of these apply:
 1. Study published in a major journal (NEJM, Lancet, JAMA, Nature Medicine, BMJ, Cell, Science, PNAS, Nature) in the last 48h
 2. FDA/EMA drug approval, warning, or recall
@@ -67,9 +68,9 @@ Max 3 signals. Focus on stories a 25-year-old would text to a friend.`,
 // ---------------------------------------------------------------------------
 // Signal Source: Grok (real-time X/Twitter trending)
 // ---------------------------------------------------------------------------
-async function checkGrokSocial(): Promise<{ signals: Signal[]; cost: number }> {
+async function checkGrokSocial(accuracyContext: string = ""): Promise<{ signals: Signal[]; cost: number }> {
   const { text, usage } = await grok({
-    system: `Health news detector with X/Twitter access. Report health topics getting notable social media attention.`,
+    system: `Health news detector with X/Twitter access. Report health topics getting notable social media attention.${accuracyContext}`,
     user: `What health or medical topics are getting attention on X/Twitter right now? Report if:
 1. Notable discussion volume (hundreds+ posts, not single tweets)
 2. About health, medicine, drugs, supplements, diet trends, fitness claims, disease, or public health
@@ -197,15 +198,18 @@ Deno.serve(async (req: Request) => {
     // Housekeeping: clean up expired signals
     await db.from("pinger_signals").delete().lt("expires_at", new Date().toISOString());
 
+    // Source accuracy context (SQL-driven, zero AI cost)
+    const accuracyContext = await getPingerContext(db);
+
     // Execute the appropriate signal source
     let signals: Signal[] = [];
     let sourceCost = 0;
     try {
       if (tickSource === "gemini_search") {
-        const result = await checkGeminiSearch();
+        const result = await checkGeminiSearch(accuracyContext);
         signals = result.signals; sourceCost = result.cost;
       } else if (tickSource === "grok_social") {
-        const result = await checkGrokSocial();
+        const result = await checkGrokSocial(accuracyContext);
         signals = result.signals; sourceCost = result.cost;
       } else {
         const result = await checkPubMedRSS(db);

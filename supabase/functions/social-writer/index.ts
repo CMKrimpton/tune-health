@@ -3,6 +3,7 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, addOverheadCost } from "../_shared/db.ts";
 import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { SOCIAL_CHAINS } from "../_shared/constants.ts";
+import { getWriterTemplates } from "../_shared/analytics.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Social Writer — The Content Factory
@@ -140,6 +141,9 @@ Deno.serve(async (req: Request) => {
         const personaVoice = PERSONA_VOICES[row.persona] || PERSONA_VOICES.brand;
         const chain = SOCIAL_CHAINS[row.persona] || SOCIAL_CHAINS.brand;
 
+        // Proven templates for this platform/persona combo (SQL-driven, zero AI cost)
+        const templateContext = await getWriterTemplates(db, row.platform, row.persona);
+
         const platformConfig = platformConfigMap.get(row.platform);
         const isManual = !platformConfig?.api_configured;
 
@@ -155,6 +159,7 @@ ${personaVoice}
 
 PLATFORM RULES:
 ${platformRule.rules}
+${templateContext}
 
 OUTPUT FORMAT:
 Return a JSON object:

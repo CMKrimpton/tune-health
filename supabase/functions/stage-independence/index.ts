@@ -4,6 +4,7 @@ import { supabase, addCostToLog, safeStage, dispatchStage } from "../_shared/db.
 import { grok, generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts";
 import { REVISION_CHAIN } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
+import { getIndependenceContext } from "../_shared/analytics.ts";
 
 // ---------------------------------------------------------------------------
 // Independence Review (Grok) — checks for institutional deference
@@ -131,6 +132,9 @@ Deno.serve(async (req: Request) => {
 
       const focus = categoryFocus[metadata.category as string] || "Apply standard independence checks.";
 
+      // Historical bias patterns for this category (SQL-driven, zero AI cost)
+      const biasPatterns = await getIndependenceContext(db, (metadata.category as string) || "");
+
       try {
         const { text: reviewRaw, usage: grokUsage } = await grok({
           system: INDEPENDENCE_REVIEW_PROMPT,
@@ -140,7 +144,7 @@ Category: ${metadata.category}
 Word count: ~${wordCount}
 
 ## CATEGORY-SPECIFIC FOCUS
-${focus}
+${focus}${biasPatterns}
 
 ## FULL ARTICLE TEXT:
 ${plainText}
