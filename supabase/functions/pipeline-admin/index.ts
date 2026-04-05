@@ -892,7 +892,7 @@ Deno.serve(async (req: Request) => {
       if (!slug) return json({ error: "No slug found in log entry" }, 400);
 
       // Parse TOC from the HTML (extract h2 sections)
-      const tocMatches = [...articleHtml.matchAll(/<section[^>]*id="([^"]+)"[^>]*>[\s\S]*?<h2[^>]*>([^<]+)<\/h2>/gi)];
+      const tocMatches = [...articleHtml.matchAll(/<section[^>]*id="([^"]+)"[^>]*>(?:(?!<\/section>|<section[\s>])[\s\S])*?<h2[^>]*>([^<]+)<\/h2>/gi)];
       const toc = tocMatches.map(m => ({ id: m[1], title: m[2].trim() }));
 
       // Estimate read time from word count
@@ -1062,7 +1062,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // Parse TOC from the HTML (must happen AFTER markdown conversion)
-      const tocMatches = [...articleHtml.matchAll(/<section[^>]*id="([^"]+)"[^>]*>[\s\S]*?<h2[^>]*>([^<]+)<\/h2>/gi)];
+      const tocMatches = [...articleHtml.matchAll(/<section[^>]*id="([^"]+)"[^>]*>(?:(?!<\/section>|<section[\s>])[\s\S])*?<h2[^>]*>([^<]+)<\/h2>/gi)];
       const toc = tocMatches.map(m => ({ id: m[1], title: m[2].trim() }));
 
       const plainText = articleHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
@@ -1230,7 +1230,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // Parse TOC
-      const tocMatches = [...articleContent.matchAll(/<section[^>]*id="([^"]+)"[^>]*>[\s\S]*?<h2[^>]*>([^<]+)<\/h2>/gi)];
+      const tocMatches = [...articleContent.matchAll(/<section[^>]*id="([^"]+)"[^>]*>(?:(?!<\/section>|<section[\s>])[\s\S])*?<h2[^>]*>([^<]+)<\/h2>/gi)];
       const toc = tocMatches.map(m => ({ id: m[1], title: m[2].trim() }));
 
       const plainText = articleContent.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();

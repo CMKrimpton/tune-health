@@ -16,6 +16,16 @@ export function escapeAttr(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/** Slugify a heading string into a valid HTML id. */
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[''\u2019]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
 export function assembleAstroFile(
   metadata: {
     title: string;
@@ -54,7 +64,39 @@ export function assembleAstroFile(
       }
     }
   }
-  const tocHtml = toc
+  // ── Re-derive section IDs and TOC from the actual HTML ───────────
+  // Don't trust the incoming `toc` — it may have stale IDs from before
+  // headers were rewritten. Parse <section id="X"><h2>Y</h2> pairs
+  // directly from the HTML, slugify each <h2> into a fresh ID, and
+  // update both the HTML and the TOC links.
+  // Match sections that contain an <h2> WITHOUT crossing into the next section.
+  // Use a negative lookahead to stop before any </section> or <section boundary.
+  const sectionMatches = [
+    ...html.matchAll(/<section[^>]*\sid="([^"]+)"[^>]*>(?:(?!<\/section>|<section[\s>])[\s\S])*?<h2[^>]*>([^<]+)<\/h2>/gi),
+  ];
+  const usedIds = new Set<string>();
+  const reconciledToc: { id: string; title: string }[] = [];
+  for (const m of sectionMatches) {
+    const oldId = m[1];
+    const h2Text = m[2].trim();
+    const newId = slugify(h2Text) || oldId;
+    let finalId = newId;
+    let suffix = 2;
+    while (usedIds.has(finalId)) {
+      finalId = `${newId}-${suffix++}`;
+    }
+    usedIds.add(finalId);
+    if (finalId !== oldId) {
+      const sectionRe = new RegExp(
+        `(<section[^>]*\\s)id="${oldId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`,
+        "i",
+      );
+      html = html.replace(sectionRe, `$1id="${finalId}"`);
+    }
+    reconciledToc.push({ id: finalId, title: h2Text });
+  }
+
+  const tocHtml = reconciledToc
     .map(
       (t) =>
         `      <a href="#${t.id}" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">${t.title}</a>`,
