@@ -1,13 +1,13 @@
 {
   "title": "GLP-1 Drugs Work. Who's Watching for What Doesn't?",
-  "description": "GLP-1 drugs are among the fastest-growing drug classes in history, with tens of millions of prescriptions and expanding use in new populations. The cardiovascular benefits are real. But the pivotal trials were short, narrow, and almost entirely funded by the manufacturers — and the independent signals now emerging from pharmacovigilance data on muscle loss, thyroid cancer, ileus, and suicidal ideation were never what those trials were designed to find. This piece investigates the structural gap between what industry-funded trials can tell us and what post-market surveillance is beginning to reveal — and who, exactly, is responsible for closing it.",
-  "category": "Pharmacology",
+  "description": "In September 2023, the FDA updated the prescribing label for Ozempic. The change added a single word to the list of post-marketing adverse reactions: ileus.",
+  "category": "Clinical Evidence",
   "publishDate": "2026-04-05",
   "author": {
     "name": "Marc London",
-    "role": "Editor-at-Large"
+    "role": "Medical Review Board"
   },
-  "readTime": 11,
+  "readTime": 9,
   "featured": false,
   "draft": false,
   "tags": [],
@@ -16,9 +16,9 @@
     "from": "amber-500"
   },
   "keywords": [],
-  "sortOrder": 1775379098226,
-  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/glp1-safety-data-gaps-pharma-funding.mp3?v=1775379107084",
+  "sortOrder": 1775380297724,
   "heroImage": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/glp1-safety-data-gaps-pharma-funding.png",
   "heroImageAlt": "Editorial illustration for GLP-1 Drugs Work. Who's Watching for What Doesn't?",
-  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/glp1-safety-data-gaps-pharma-funding-light.png"
+  "heroImageLight": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-illustrations/illustrations/glp1-safety-data-gaps-pharma-funding-light.png",
+  "narrationUrl": "https://mvkiornsximonxxitiwr.supabase.co/storage/v1/object/public/article-narrations/narrations/glp1-safety-data-gaps-pharma-funding.mp3?v=1775379107084"
 }
