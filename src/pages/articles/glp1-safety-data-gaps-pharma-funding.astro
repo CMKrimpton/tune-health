@@ -1,0 +1,123 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+---
+
+<ArticleLayout
+  title="GLP-1 Drugs Work. Who's Watching for What Doesn't?"
+  description="GLP-1 drugs are among the fastest-growing drug classes in history, with tens of millions of prescriptions and expanding use in new populations. The cardiovascular benefits are real. But the pivotal trials were short, narrow, and almost entirely funded by the manufacturers — and the independent signals now emerging from pharmacovigilance data on muscle loss, thyroid cancer, ileus, and suicidal ideation were never what those trials were designed to find. This piece investigates the structural gap between what industry-funded trials can tell us and what post-market surveillance is beginning to reveal — and who, exactly, is responsible for closing it."
+  category="Pharmacology"
+  readTime="11 min read"
+  publishDate="April 2026"
+>
+  <!-- Table of Contents -->
+  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+    <nav class="space-y-2">
+      <a href="#the-trials-found-what-they-looked-for" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Trials Found What They Looked For</a>
+      <a href="#real-world-patients-found-what-trials-missed" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Real-World Patients Found What Trials Missed</a>
+      <a href="#the-endorsers-cash-the-same-checks" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Endorsers Cash the Same Checks</a>
+      <a href="#the-critics-have-their-own-revenue-streams" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Critics Have Their Own Revenue Streams</a>
+      <a href="#faers-runs-on-volunteerism-and-hope" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">FAERS Runs on Volunteerism and Hope</a>
+      <a href="#the-data-gap-nobody-is-assigned-to-close" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">The Data Gap Nobody Is Assigned to Close</a>
+      <a href="#three-fixes-that-dont-exist-yet" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Three Fixes That Don't Exist Yet</a>
+      <a href="#sources" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">Sources</a>
+    </nav>
+  </div>
+
+  <!-- Article Content -->
+  <div class="article-content">
+    <section id="introduction" class="reveal">
+  <p>In September 2023, the FDA updated the prescribing label for Ozempic. The change added a single word to the list of post-marketing adverse reactions: ileus. Intestinal blockage. The kind that can kill you. The agency had received reports from patients whose intestines had stopped moving, and it determined a new warning was warranted. The clinical trials that got semaglutide approved had enrolled thousands of patients over years of study. None of them had flagged this.</p>
+  <p>That gap between the trial and the label update is the story of GLP-1 drug safety in miniature. Not a story about fraud. Not a dangerous drug foisted on an unsuspecting public. The cardiovascular benefits are real, the weight loss is real, and the evidence for both comes from large randomized trials. The story is about the architecture of evidence itself: who builds it, what questions it's designed to answer, and what happens when a drug tested on a few thousand people reaches more than 30 million.</p>
+</section>
+
+<aside class="pull-quote reveal"><p>"The trials ran. The drug was approved. The label was updated anyway — because the trials weren't looking for this."</p></aside>
+
+<section id="the-trials-found-what-they-looked-for" class="reveal">
+  <h2>The Trials Found What They Looked For</h2>
+  <p>The pivotal weight-loss trial for semaglutide, STEP 1, enrolled 1,961 participants over 68 weeks. They lost a mean of 14.9% of their body weight. Impressive. But the trial was designed, monitored, and analyzed by Novo Nordisk. The company oversaw site selection, data collation, and statistical analysis. It was powered to detect weight loss. It was not powered to detect a 1-in-500 adverse event that takes two years to manifest.</p>
+  <p>This is how drug development works. Pre-approval trials test a hypothesis: does this drug do what we say it does, within acceptable safety margins? The answer for semaglutide was yes. Nobody asks at that stage whether 68 weeks and 1,961 people are enough to spot the thing you haven't thought to look for.</p>
+  <p>The SELECT trial was larger and longer. It enrolled 17,604 patients with pre-existing cardiovascular disease and followed them for a mean of 39.8 months. It found a 20% reduction in major adverse cardiovascular events: heart attacks, strokes, cardiovascular death. Hazard ratio 0.80, confidence interval 0.72 to 0.90, p less than 0.001. Dismissing that because Novo Nordisk funded the trial would be intellectually dishonest.</p>
+  <p>But SELECT was designed to find cardiovascular benefit. It enrolled patients who already had heart disease. It ran until enough cardiac events accumulated to reach statistical significance. It was not designed to detect thyroid malignancies, muscle wasting, or gastrointestinal complications beyond those already on the label. Adverse events leading to permanent discontinuation were twice as common in the semaglutide group: 16.6% versus 8.2%.</p>
+  <p>That discontinuation gap got one sentence in the published paper.</p>
+</section>
+
+<section id="real-world-patients-found-what-trials-missed" class="reveal">
+  <h2>Real-World Patients Found What Trials Missed</h2>
+  <p>Dr. Caroline Apovian, co-director of the Center for Weight Management at Brigham and Women's Hospital, told Healthline that her team noticed ileus in semaglutide patients well before the FDA's label change. The number of cases was small. It was enough to grab her attention. By mid-2023, the FDA's adverse event reporting system had logged 20 cases of intestinal blockage with semaglutide, including two deaths. A 2023 study in <em>Gastroenterology</em> identified a 25% higher ileus risk in real-world data compared to trial populations. That study was funded by Eli Lilly, which manufactures semaglutide's direct competitor. Worth noting. Also worth noting: the signal was real regardless of who paid to find it.</p>
+  <p>Muscle loss told a stranger story. The signal was never buried. It was sitting in STEP 1's own body-composition substudy: roughly 39% of the weight patients lost came from lean mass, not fat. A 2025 presentation at the Endocrine Society's annual meeting found that older adults and women lost the most muscle, and that excessive lean mass loss actually blunted semaglutide's benefits for blood sugar control. A network meta-analysis of 22 randomized trials confirmed that semaglutide 2.4 mg is among the least effective GLP-1 agents at preserving lean mass. Whether this pattern is proportional to weight loss (and therefore unremarkable) or accelerates sarcopenia in vulnerable patients remains contested. It also remains unstudied at the scale it deserves.</p>
+  <p>The suicidal ideation signal showed the surveillance system doing what it's supposed to do. In July 2023, the European Medicines Agency opened a formal review after Iceland reported cases of suicidal thoughts in patients on semaglutide and liraglutide. Nine months and multiple regulatory bodies later, the EMA's Pharmacovigilance Risk Assessment Committee concluded that available evidence did not support a causal link. A <em>Nature Medicine</em> study of 240,000 patients found no association. The answer, for now, is reassuring. The timeline is not: nine months is a long time when a drug class is adding millions of users per quarter.</p>
+  <p>Two other signals warrant mention. SUSTAIN-6, a cardiovascular trial for semaglutide in diabetic patients, found retinopathy complications in 3.0% of the semaglutide group versus 1.8% on placebo. Among patients with existing retinopathy, the gap widened to 8.2% versus 5.2%. This appeared in the drug label. It did not appear in most media coverage of semaglutide's cardiovascular benefits. Meanwhile, a large population-based cohort study from Taiwan, published in <em>Diabetes Care</em> in 2024, found no statistically significant increase in thyroid cancer risk over a median four-year follow-up, despite semaglutide carrying the FDA's most serious warning (a boxed warning) for thyroid C-cell tumors based on rodent data. The Taiwan study was funded by government grants. Its authors declared no conflicts. It remains the cleanest data point on this question, and it cuts against the alarming narrative.</p>
+</section>
+
+<div class="data-callout reveal">
+  <p><strong>The Math of Rare Events at Scale</strong></p>
+  <p>A 1-in-1,000 adverse event is nearly impossible to detect in a trial of 2,000 patients. At 10 million prescriptions, that same rate produces 10,000 cases. Pre-approval trials are designed to detect common effects. Rare but serious harms become visible only at population scale, through a surveillance system that captures as little as 1–10% of actual events.</p>
+</div>
+
+<section id="the-endorsers-cash-the-same-checks" class="reveal">
+  <h2>The Endorsers Cash the Same Checks</h2>
+  <p>The American Diabetes Association's highest corporate recognition, "Banting Circle Elite," goes to supporters contributing at least $1 million annually. Novo Nordisk holds that designation. The company sponsors the ADA's Scientific Sessions, co-funded the Know Diabetes by Heart initiative with the American Heart Association, and in 2025 became the inaugural supporter of the ADA's new Obesity Association division with a multi-year funding commitment of undisclosed size.</p>
+  <p>The ADA's guidelines recommend GLP-1 drugs as first-line agents for obesity and type 2 diabetes. The organization issuing those guidelines is financially dependent on the company whose products they endorse.</p>
+  <p>The Endocrine Society's clinical practice guidelines for obesity pharmacotherapy are written by panels whose members routinely disclose consulting relationships with Novo Nordisk and Eli Lilly. A 2022 supplement reviewing current obesity treatment guidelines in the <em>American Journal of Managed Care</em> carried a clean disclosure: "This peer-reviewed supplement was funded by Novo Nordisk Inc."</p>
+  <p>Funding conflicts do not automatically invalidate guidance. The cardiovascular data from SELECT would stand up in front of any independent panel. But there is a difference between a recommendation supported by independent evidence and a recommendation issued by an institution collecting seven-figure checks from the manufacturer. That difference matters most when the claim is about long-term safety and the long-term data comes almost entirely from the manufacturer's own trials.</p>
+</section>
+
+<section id="the-critics-have-their-own-revenue-streams" class="reveal">
+  <h2>The Critics Have Their Own Revenue Streams</h2>
+  <p>If the instinct is to trust dissenting voices by default, follow their money too. Robert Lustig, the endocrinologist who has been loudest about GLP-1 muscle-wasting risks, maintains consulting relationships with supplement companies and derives substantial income from books arguing that processed food is the root of metabolic disease. His incentives run directly against pharmaceutical solutions to obesity. That doesn't make him wrong. It makes him interested.</p>
+  <p>Peter Attia's podcast and coaching programs frequently question pharmaceutical approaches to metabolic health. He operates a business model that competes with the very drugs he critiques. The 2023 <em>Gastroenterology</em> study identifying higher ileus risk was funded by Eli Lilly. The network meta-analysis confirming lean mass loss across GLP-1 agents included authors with competing pharma affiliations.</p>
+  <p>The institutional voices endorsing GLP-1 safety are funded by the manufacturers. The contrarian voices questioning it are funded by competitors, supplement companies, or direct-to-consumer health businesses. The cleanest data comes from places like the Taiwan cohort: publicly funded, no declared conflicts, adequate sample size. Almost nobody is funding more studies like it.</p>
+</section>
+
+<section id="faers-runs-on-volunteerism-and-hope" class="reveal">
+  <h2>FAERS Runs on Volunteerism and Hope</h2>
+  <p>The FDA's Adverse Event Reporting System is the primary post-market surveillance tool for drug safety in the United States. It is passive. It is voluntary. Doctors, patients, and manufacturers can report adverse events, but only manufacturers are required to, and only for events they learn about. The FDA estimates that FAERS captures somewhere between 1% and 10% of actual adverse events for most drug classes.</p>
+  <p>When the FDA updated the semaglutide label for ileus, the agency noted that because reports are voluntary, "it is not always possible to reliably estimate their frequency or establish a causal relationship to drug exposure." The regulator, in official language, acknowledging that its own surveillance system cannot tell it how common a serious adverse event actually is.</p>
+  <p>An October 2025 Gallup poll found that 12.4% of American adults were taking a GLP-1 drug for weight loss. That is more than 30 million people. Projections put the number at 25 to 30 million by 2030 on branded products alone, with oral formulations accelerating adoption further. If the true FAERS reporting rate for ileus is 5% of actual cases, the 20 reports in the database represent 400 real events. If it's 1%, the number is 2,000. Nobody knows which denominator is correct, because the system was never designed to find out.</p>
+</section>
+
+<section id="the-data-gap-nobody-is-assigned-to-close" class="reveal">
+  <h2>The Data Gap Nobody Is Assigned to Close</h2>
+  <p>The pre-approval trials were too short and too narrow to detect rare long-term harms. They were designed by the manufacturer to answer the manufacturer's questions. The post-market surveillance system is passive, voluntary, and captures a fraction of actual events. The professional organizations endorsing these drugs are funded by the companies selling them. The independent researchers questioning them have their own entanglements.</p>
+  <p>Who, then, is responsible for the long-term safety data that does not yet exist?</p>
+  <p>Not Novo Nordisk. Their legal obligation ends at conducting the trials the FDA requires and reporting adverse events they learn about. Not the FDA, which lacks the funding and statutory authority to mandate large-scale independent post-market studies for every drug class. Not the ADA or the Endocrine Society, which are advocacy organizations, not research institutions. Not academic researchers, who depend on grants that increasingly come from the same pharmaceutical companies whose products they study.</p>
+  <p>Nobody is required to conduct independent, long-term, adequately powered safety studies after a drug reaches the market. The manufacturer has no incentive to look for problems. The regulator has limited authority and budget to demand it. The professional organizations have financial relationships that compromise their independence. And the patients are the ones generating the data, one voluntary adverse event report at a time, into a system that captures almost none of it.</p>
+</section>
+
+<section id="three-fixes-that-dont-exist-yet" class="reveal">
+  <h2>Three Fixes That Don't Exist Yet</h2>
+  <p>Mandatory independent long-term registries for drug classes that reach population-scale prescribing. When a drug goes from clinical trial to 10 million users, the evidence requirements should escalate proportionally. These registries would be publicly funded, independently administered, and designed to detect the adverse events that pre-approval trials were not powered to find. None currently exist for GLP-1 agonists.</p>
+  <p>Pre-specified post-market study requirements with public funding and independent oversight. The FDA can request post-market studies. It cannot easily compel them, fund them, or ensure they are designed to answer questions the manufacturer would prefer not to ask. A mandatory program for drugs reaching a threshold of, say, 5 million prescriptions would close the gap between what trials show and what the real world reveals. No such threshold exists.</p>
+  <p>Conflict-of-interest firewalls in guideline committees. If your organization receives more than $1 million annually from a drug manufacturer, your endorsement of that manufacturer's products should come with the same disclosure requirements as a financial analyst recommending a stock they hold. The ADA's Banting Circle Elite status is public information. Its influence on clinical guidelines is not routinely disclosed to patients or prescribers at the point of care.</p>
+  <p>These reforms are not radical. All have been proposed by regulatory scholars and public health researchers. None are in place at the scale this drug class demands. The evidence infrastructure was built for a world where drugs reached thousands of patients, not tens of millions. The drugs have outgrown the system designed to watch them. And nobody with the authority to fix that system has been assigned the job.</p>
+</section>
+
+<section id="sources" class="reveal">
+  <h2>Sources</h2>
+  <p>Wilding JPH et al. "Once-Weekly Semaglutide in Adults with Overweight or Obesity" (STEP 1). <em>New England Journal of Medicine</em>, 2021. Funded by Novo Nordisk.</p>
+  <p>Lincoff AM et al. "Semaglutide and Cardiovascular Outcomes in Obesity without Diabetes" (SELECT). <em>New England Journal of Medicine</em>, 2023. Funded by Novo Nordisk.</p>
+  <p>Marso SP et al. "Semaglutide and Cardiovascular Outcomes in Patients with Type 2 Diabetes" (SUSTAIN-6). <em>New England Journal of Medicine</em>, 2016. Funded by Novo Nordisk.</p>
+  <p>FDA Drug Safety Communication: "FDA updates labels of GLP-1 receptor agonists to include risk of intestinal blockage," September 2023.</p>
+  <p>EMA Pharmacovigilance Risk Assessment Committee (PRAC). "GLP-1 receptor agonists: available evidence not supporting link with suicidal and self-injurious thoughts and actions," April 2024.</p>
+  <p>Wang W et al. "Association of semaglutide with risk of suicidal ideation in a real-world cohort." <em>Nature Medicine</em>, 2024.</p>
+  <p>Population-based cohort study: "Risk of Thyroid Cancer and Serious Acute Pancreatitis in Type 2 Diabetes Patients Treated With Glucagon-Like Peptide-1 Receptor Agonists." <em>Diabetes Care</em>, 2024. Funded by Ministry of Science and Technology, Taiwan.</p>
+  <p>"Gastrointestinal Risks in GLP-1 Therapy: Beyond Clinical Trials." <em>Gastroenterology</em>, 2023.</p>
+  <p>Network meta-analysis: "Effect of glucagon-like peptide-1 receptor agonists and co-agonists on body composition." <em>Pharmacological Research</em>, 2024.</p>
+  <p>Haines M et al. Lean mass loss with semaglutide. Presented at ENDO 2025, Endocrine Society Annual Meeting.</p>
+  <p>Apovian C. Interview with Healthline, October 2023.</p>
+  <p>American Diabetes Association. "Supporting Partners: Banting Circle Elite" and "The Obesity Association and Novo Nordisk Inc. are Changing the Conversation on Obesity," 2025.</p>
+  <p>KFF Health Tracking Poll, November 2025. Gallup Poll, October 2025.</p>
+  <p>JP Morgan Research: "How Supply and Demand for Weight Loss Drugs is Playing Out in 2026," February 2026.</p>
+</section>
+
+<div class="data-callout reveal">
+  <p><strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute medical advice.</p>
+</div>
+  </div>
+
+  <!-- Tags -->
+  <Fragment slot="tags">
+
+  </Fragment>
+</ArticleLayout>
