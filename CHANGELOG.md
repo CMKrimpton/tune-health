@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [20.5.2] - 2026-04-05
+
+### Fixed — Article Replace Bugs
+
+- **Narration not regenerating on replace** — `stage-publish` dispatched narration for republishes but didn't pass `force: true`, so `generate-narration` skipped it. Now forces regeneration on all republishes
+- **First paragraph stripped on replace** — `assembleAstroFile` dedup logic stripped long intro paragraphs when a short auto-extracted description matched the opening words. Added length ratio check (must be within 20%) to prevent false matches
+
 ## [20.5.1] - 2026-04-04
 
 ### Added — Replace Article Button

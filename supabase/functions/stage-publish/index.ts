@@ -242,18 +242,17 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
 
       const isImproveRun = !!researchData._improves;
-      const isRepublish = researchData._writtenBy === "human-opus" && !!narrationCheck?.narration_url;
-      // Always regenerate narration on improve runs or if missing.
-      // For republishes of human articles, regenerate too (description may have changed).
+      const isRepublish = !!narrationCheck?.narration_url;
+      // Always regenerate narration on improve runs, republishes (description may have changed), or if missing.
       if (!narrationCheck?.narration_url || isImproveRun || isRepublish) {
-        console.log(`[Publish] Dispatching narration for ${slug} — fire-and-forget.`);
+        console.log(`[Publish] Dispatching narration for ${slug} — fire-and-forget${isRepublish ? ' (force — republish)' : ''}.`);
         fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
           },
-          body: JSON.stringify({ action: "generate", slug, logId, force: isImproveRun }),
+          body: JSON.stringify({ action: "generate", slug, logId, force: isImproveRun || isRepublish }),
         }).catch(err =>
           console.warn(`[Publish] Narration dispatch failed for ${slug}: ${err instanceof Error ? err.message : "unknown"}`)
         );

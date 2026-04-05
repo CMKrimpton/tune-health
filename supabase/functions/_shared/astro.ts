@@ -27,9 +27,12 @@ export function assembleAstroFile(
   rawHtml: string,
   toc: { id: string; title: string }[],
 ): string {
-  // Deduplicate: if the first <p> in the introduction section matches the
-  // description (which ArticleLayout renders as a standfirst), strip it so
-  // the reader doesn't see the same text twice.
+  // Deduplicate: if the first <p> in the introduction section is essentially
+  // the same text as the description (which ArticleLayout renders as a
+  // standfirst), strip it so the reader doesn't see the same text twice.
+  // Only strip if the paragraph and description are truly the same content
+  // (within 20% length), not when the description is a short excerpt of a
+  // much longer paragraph.
   let html = rawHtml;
   const descPlain = metadata.description.replace(/\s+/g, " ").trim();
   if (descPlain.length > 30) {
@@ -39,8 +42,11 @@ export function assembleAstroFile(
     );
     if (introMatch) {
       const firstParaText = introMatch[3].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-      // Check if the description starts with or matches the first paragraph
-      if (descPlain.startsWith(firstParaText.slice(0, 80)) || firstParaText.startsWith(descPlain.slice(0, 80))) {
+      // Only strip if lengths are within 20% — prevents stripping a long
+      // paragraph just because a short auto-extracted description matches
+      // its opening words.
+      const lengthRatio = Math.min(descPlain.length, firstParaText.length) / Math.max(descPlain.length, firstParaText.length);
+      if (lengthRatio > 0.8 && (descPlain.startsWith(firstParaText.slice(0, 80)) || firstParaText.startsWith(descPlain.slice(0, 80)))) {
         html = html.replace(
           introMatch[0],
           introMatch[1] // keep the <section> tag, drop the first <p>
