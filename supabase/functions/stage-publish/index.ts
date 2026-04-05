@@ -234,29 +234,20 @@ Deno.serve(async (req: Request) => {
 
     // ---- POST-PUBLISH NARRATION (fire-and-forget) ----
     // generate-narration handles DB update, GitHub JSON sync, AND cost logging internally.
+    // Always force regeneration — if we're publishing, the narration must match the
+    // current description. No conditional checks, no skip paths.
     if (supabaseUrl) {
-      const { data: narrationCheck } = await db
-        .from("articles")
-        .select("narration_url")
-        .eq("slug", slug)
-        .maybeSingle();
-
-      const isImproveRun = !!researchData._improves;
-      const isRepublish = !!narrationCheck?.narration_url;
-      // Always regenerate narration on improve runs, republishes (description may have changed), or if missing.
-      if (!narrationCheck?.narration_url || isImproveRun || isRepublish) {
-        console.log(`[Publish] Dispatching narration for ${slug} — fire-and-forget${isRepublish ? ' (force — republish)' : ''}.`);
-        fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          },
-          body: JSON.stringify({ action: "generate", slug, logId, force: isImproveRun || isRepublish }),
-        }).catch(err =>
-          console.warn(`[Publish] Narration dispatch failed for ${slug}: ${err instanceof Error ? err.message : "unknown"}`)
-        );
-      }
+      console.log(`[Publish] Dispatching narration for ${slug} — fire-and-forget (force=true).`);
+      fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ action: "generate", slug, logId, force: true }),
+      }).catch(err =>
+        console.warn(`[Publish] Narration dispatch failed for ${slug}: ${err instanceof Error ? err.message : "unknown"}`)
+      );
     }
 
     // Smart featured rotation
