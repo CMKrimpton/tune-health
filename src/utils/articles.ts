@@ -1,9 +1,27 @@
 /**
  * Article utilities — queries Supabase for all article data.
- * Replaces the previous file-based content collection approach.
+ * Uses a per-request cache so getArticles() only hits the DB once
+ * even when called by 10+ components on the same page render.
  */
 
 import { supabase } from '../lib/supabase';
+
+// Per-request cache: lives for one SSR render cycle (~ms), then GC'd.
+// Prevents 10-15 duplicate Supabase queries per page load.
+let _cachedArticles: Article[] | null = null;
+let _cachedComingSoon: Article[] | null = null;
+let _cacheTimestamp = 0;
+const CACHE_TTL = 5_000; // 5 seconds — covers a single SSR render
+
+function isCacheValid(): boolean {
+  return Date.now() - _cacheTimestamp < CACHE_TTL;
+}
+
+function setCacheArticles(articles: Article[], comingSoon?: Article[]) {
+  _cachedArticles = articles;
+  if (comingSoon !== undefined) _cachedComingSoon = comingSoon;
+  _cacheTimestamp = Date.now();
+}
 
 export interface Article {
   slug: string;
@@ -63,9 +81,12 @@ function mapRow(row: Record<string, unknown>): Article {
 }
 
 /**
- * Get all published articles sorted by date
+ * Get all published articles sorted by date.
+ * Cached per SSR render — safe to call from every component.
  */
 export async function getArticles(): Promise<Article[]> {
+  if (_cachedArticles && isCacheValid()) return _cachedArticles;
+
   const { data, error } = await supabase
     .from('articles')
     .select('*')
@@ -79,7 +100,9 @@ export async function getArticles(): Promise<Article[]> {
     return [];
   }
 
-  return (data || []).map(mapRow);
+  const articles = (data || []).map(mapRow);
+  setCacheArticles(articles);
+  return articles;
 }
 
 /**
@@ -110,9 +133,12 @@ export async function getFeaturedArticles(): Promise<Article[]> {
 }
 
 /**
- * Get coming soon articles
+ * Get coming soon articles.
+ * Cached per SSR render.
  */
 export async function getComingSoonArticles(): Promise<Article[]> {
+  if (_cachedComingSoon && isCacheValid()) return _cachedComingSoon;
+
   const { data, error } = await supabase
     .from('articles')
     .select('*')
@@ -124,7 +150,10 @@ export async function getComingSoonArticles(): Promise<Article[]> {
     return [];
   }
 
-  return (data || []).map(mapRow);
+  const articles = (data || []).map(mapRow);
+  _cachedComingSoon = articles;
+  _cacheTimestamp = Date.now();
+  return articles;
 }
 
 /**
