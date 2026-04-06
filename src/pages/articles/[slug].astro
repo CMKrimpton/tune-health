@@ -1,0 +1,48 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { getArticleBySlug } from '../../utils/articles';
+
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect('/404');
+
+const article = await getArticleBySlug(slug);
+if (!article) return Astro.redirect('/404');
+
+// Build TOC HTML from stored toc jsonb
+const tocHtml = article.toc.length > 0
+  ? article.toc.map(
+      (t) => `<a href="#${t.id}" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">${t.title}</a>`
+    ).join('\n')
+  : '';
+
+// Build tags HTML
+const tagsHtml = article.tags
+  .map(
+    (tag) => `<span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">${tag}</span>`
+  )
+  .join('\n');
+
+// Cache article pages at the CDN for 5 minutes, serve stale for 1 hour
+Astro.response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=3600');
+---
+
+<ArticleLayout
+  title={article.title}
+  description={article.description}
+  category={article.category}
+  readTime={`${article.readTime} min read`}
+  publishDate={article.publishDate}
+  tags={article.tags}
+  slug={article.slug}
+>
+  {tocHtml && (
+    <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">
+      <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>
+      <nav class="space-y-2" set:html={tocHtml} />
+    </div>
+  )}
+
+  <div class="article-content" set:html={article.articleHtml} />
+
+  <Fragment slot="tags" set:html={tagsHtml} />
+</ArticleLayout>

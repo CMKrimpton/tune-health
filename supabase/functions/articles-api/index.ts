@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { updateGitHubJson } from "../_shared/github.ts";
+// GitHub sync removed — site now serves from Supabase directly (SSR)
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,26 +96,6 @@ Deno.serve(async (req: Request) => {
           .single();
         if (error) throw error;
         result = data;
-      }
-
-      // Auto-sync published articles to GitHub so the live site stays in sync.
-      // Only syncs fields that affect the rendered page (not DB-only fields like status).
-      if (result.status === "published") {
-        const syncFields: Record<string, unknown> = {};
-        const fieldMap: Record<string, string> = {
-          title: "title", description: "description", category: "category",
-          tags: "tags", keywords: "keywords", read_time: "readTime",
-          publish_date: "publishDate", featured: "featured", draft: "draft",
-          hero_image: "heroImage", hero_image_alt: "heroImageAlt",
-          hero_image_light: "heroImageLight", narration_url: "narrationUrl",
-        };
-        for (const [dbKey, jsonKey] of Object.entries(fieldMap)) {
-          if (dbKey in updates) syncFields[jsonKey] = updates[dbKey];
-        }
-        if (Object.keys(syncFields).length > 0) {
-          updateGitHubJson(article.slug, syncFields, `chore: Sync metadata — '${article.slug}'`)
-            .catch((err: unknown) => console.warn(`[articles-api] GitHub sync failed for "${article.slug}":`, err));
-        }
       }
 
       return json(result);

@@ -1,8 +1,9 @@
 /**
- * Article utilities for content collection integration
+ * Article utilities — queries Supabase for all article data.
+ * Replaces the previous file-based content collection approach.
  */
 
-import { getCollection, type CollectionEntry } from 'astro:content';
+import { supabase } from '../lib/supabase';
 
 export interface Article {
   slug: string;
@@ -28,29 +29,36 @@ export interface Article {
   author: { name: string; role: string };
 }
 
-function mapArticle(article: CollectionEntry<'articles'>): Article {
+/** DB row shape (snake_case) → Article (camelCase) */
+function mapRow(row: Record<string, unknown>): Article {
   return {
-    slug: article.id.replace('.json', ''),
-    title: article.data.title,
-    description: article.data.description,
-    category: article.data.category,
-    publishDate: article.data.publishDate,
-    updatedDate: article.data.updatedDate,
-    readTime: article.data.readTime,
-    tags: article.data.tags,
-    keywords: article.data.keywords ?? [],
-    gradient: article.data.gradient,
-    featured: article.data.featured,
-    heroImage: article.data.heroImage,
-    heroImageLight: article.data.heroImageLight,
-    heroImageAlt: article.data.heroImageAlt,
-    narrationUrl: article.data.narrationUrl,
-    comingSoon: article.data.comingSoon ?? false,
-    sortOrder: article.data.sortOrder,
-    href: `/articles/${article.id.replace('.json', '')}`,
-    series: article.data.series,
-    seriesOrder: article.data.seriesOrder,
-    author: article.data.author,
+    slug: row.slug as string,
+    title: row.title as string,
+    description: row.description as string,
+    category: row.category as string,
+    publishDate: row.publish_date as string,
+    updatedDate: row.updated_at ? (row.updated_at as string) : undefined,
+    readTime: row.read_time as number,
+    tags: (row.tags as string[]) || [],
+    keywords: (row.keywords as string[]) || [],
+    gradient: {
+      from: (row.gradient_from as string) || 'rose-600',
+      to: (row.gradient_to as string) || 'red-700',
+    },
+    featured: row.featured as boolean,
+    heroImage: row.hero_image as string | undefined,
+    heroImageLight: row.hero_image_light as string | undefined,
+    heroImageAlt: row.hero_image_alt as string | undefined,
+    narrationUrl: row.narration_url as string | undefined,
+    comingSoon: row.coming_soon as boolean,
+    sortOrder: row.sort_order as number | undefined,
+    href: `/articles/${row.slug}`,
+    series: row.series as string | undefined,
+    seriesOrder: row.series_order as number | undefined,
+    author: {
+      name: (row.author_name as string) || 'alumi news Editorial',
+      role: (row.author_role as string) || 'Medical Review Board',
+    },
   };
 }
 
@@ -58,18 +66,39 @@ function mapArticle(article: CollectionEntry<'articles'>): Article {
  * Get all published articles sorted by date
  */
 export async function getArticles(): Promise<Article[]> {
-  const articles = await getCollection('articles');
+  const { data, error } = await supabase
+    .from('articles')
+    .select('*')
+    .eq('draft', false)
+    .eq('coming_soon', false)
+    .order('sort_order', { ascending: false, nullsFirst: false })
+    .order('publish_date', { ascending: false });
 
-  return articles
-    .filter((article) => !article.data.draft && !article.data.comingSoon)
-    .map(mapArticle)
-    .sort((a, b) => {
-      // Sort by sortOrder first (epoch ms — precise), then publishDate (day-level fallback)
-      const aOrder = (a as Article & { sortOrder?: number }).sortOrder || 0;
-      const bOrder = (b as Article & { sortOrder?: number }).sortOrder || 0;
-      if (bOrder !== aOrder) return bOrder - aOrder;
-      return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
-    });
+  if (error) {
+    console.error('Failed to fetch articles:', error.message);
+    return [];
+  }
+
+  return (data || []).map(mapRow);
+}
+
+/**
+ * Get a single article by slug (includes draft/unpublished for preview)
+ */
+export async function getArticleBySlug(slug: string): Promise<(Article & { articleHtml: string; toc: { id: string; title: string }[] }) | null> {
+  const { data, error } = await supabase
+    .from('articles')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    ...mapRow(data),
+    articleHtml: (data.article_html as string) || '',
+    toc: (data.toc as { id: string; title: string }[]) || [],
+  };
 }
 
 /**
@@ -84,12 +113,18 @@ export async function getFeaturedArticles(): Promise<Article[]> {
  * Get coming soon articles
  */
 export async function getComingSoonArticles(): Promise<Article[]> {
-  const articles = await getCollection('articles');
+  const { data, error } = await supabase
+    .from('articles')
+    .select('*')
+    .eq('coming_soon', true)
+    .order('sort_order', { ascending: true, nullsFirst: false });
 
-  return articles
-    .filter((article) => article.data.comingSoon)
-    .sort((a, b) => (a.data.sortOrder ?? 99) - (b.data.sortOrder ?? 99))
-    .map(mapArticle);
+  if (error) {
+    console.error('Failed to fetch coming soon articles:', error.message);
+    return [];
+  }
+
+  return (data || []).map(mapRow);
 }
 
 /**

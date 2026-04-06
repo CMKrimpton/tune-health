@@ -1,8 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { supabase, parseScore, dispatchStage } from "../_shared/db.ts";
-import { publishToGitHub } from "../_shared/github.ts";
-import { assembleAstroFile, todayISO } from "../_shared/astro.ts";
+import { supabase, parseScore } from "../_shared/db.ts";
+
 import { getByline, MODELS } from "../_shared/constants.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
 
@@ -14,7 +13,6 @@ Deno.serve(async (req: Request) => {
     if (!logId) return json({ error: "logId is required" }, 400);
 
     const db = supabase();
-    const today = todayISO();
 
     // Atomic CAS: claim this article. Three valid input statuses — try each.
     let claimed = (await db.from("daily_article_log")
@@ -108,12 +106,10 @@ Deno.serve(async (req: Request) => {
         independence_score: logScores?.grok_score || null,
         editor_score: logScores?.editor_score || null,
         pipeline_log_id: logId,
+        author_name: getByline(logScores?.model_used || MODELS.DEFAULT_CLAUDE).name,
+        author_role: getByline(logScores?.model_used || MODELS.DEFAULT_CLAUDE).role,
       })
       .eq("slug", slug);
-
-    // Update metadata for GitHub publish
-    metadata.title = finalTitle;
-    metadata.description = finalDescription;
 
     // CAS already set status to "publishing" — just update title and editor_score
     await db
@@ -124,84 +120,25 @@ Deno.serve(async (req: Request) => {
       })
       .eq("id", logId);
 
-    const readTime = (articleData.readTime as number) || 12;
-
     // Check if illustration pair already exists (handles retry after timeout)
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     let heroImage: string | undefined;
     let heroImageLight: string | undefined;
-    let heroImageAlt: string | undefined;
 
     const { data: existingArticle } = await db
       .from("articles")
-      .select("hero_image, hero_image_light, hero_image_alt, narration_url")
+      .select("hero_image, hero_image_light, narration_url")
       .eq("slug", slug)
       .maybeSingle();
 
     if (existingArticle?.hero_image) {
       heroImage = existingArticle.hero_image;
       heroImageLight = existingArticle.hero_image_light || undefined;
-      heroImageAlt = existingArticle.hero_image_alt || `Editorial illustration for ${finalTitle}`;
       if (heroImageLight) {
         console.log(`[Publish] Hero image pair already exists for ${slug} — skipping illustration generation.`);
       } else {
         console.log(`[Publish] Dark hero image exists for ${slug} — light variant still needed.`);
       }
-    }
-
-    // Publish to GitHub
-    let commitInfo: { commitSha: string; commitUrl: string } | null = null;
-
-    const astroContent = assembleAstroFile(
-      {
-        title: finalTitle,
-        description: finalDescription,
-        category: metadata.category as string,
-        readTime,
-        tags: (metadata.tags as string[]) || [],
-      },
-      articleData.html as string,
-      (articleData.toc as { id: string; title: string }[]) || [],
-    );
-
-    const jsonMetadata: Record<string, unknown> = {
-      title: finalTitle,
-      description: finalDescription,
-      category: metadata.category,
-      publishDate: today,
-      author: getByline(logScores?.model_used || MODELS.DEFAULT_CLAUDE),
-      readTime,
-      featured: false,
-      draft: false,
-      tags: metadata.tags,
-      gradient: metadata.gradient,
-      keywords: metadata.keywords,
-      sortOrder: Date.now(),
-    };
-
-    if (heroImage) {
-      jsonMetadata.heroImage = heroImage;
-      jsonMetadata.heroImageAlt = heroImageAlt;
-    }
-    if (heroImageLight) {
-      jsonMetadata.heroImageLight = heroImageLight;
-    }
-    // Preserve existing narration URL so it survives republishes
-    // (narration is fire-and-forget — may not finish before this commit)
-    if (existingArticle?.narration_url) {
-      jsonMetadata.narrationUrl = existingArticle.narration_url;
-    }
-
-    commitInfo = await publishToGitHub(slug, astroContent, jsonMetadata);
-
-    // Trigger Vercel rebuild — GitHub API commits don't always fire the push webhook
-    const deployHook = Deno.env.get("VERCEL_DEPLOY_HOOK");
-    if (deployHook) {
-      fetch(deployHook, { method: "POST" }).catch(err =>
-        console.warn(`[Vercel] Deploy hook failed: ${err instanceof Error ? err.message : "unknown"}`)
-      );
-    } else {
-      console.warn("[Vercel] VERCEL_DEPLOY_HOOK not set — Vercel won't auto-rebuild from pipeline commits");
     }
 
     // If this article replaces an older one, archive the old one
@@ -213,7 +150,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // ---- POST-PUBLISH ILLUSTRATION (fire-and-forget) ----
-    // generate-illustration handles DB update, GitHub JSON sync, AND cost logging internally.
+    // generate-illustration handles DB update and cost logging internally.
     // No need to block stage-publish waiting for image generation (~60-120s).
     const needsDark = !heroImage;
     const needsLight = !heroImageLight;
@@ -233,7 +170,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // ---- POST-PUBLISH NARRATION (fire-and-forget) ----
-    // generate-narration handles DB update, GitHub JSON sync, AND cost logging internally.
+    // generate-narration handles DB update and cost logging internally.
     // Always force regeneration — if we're publishing, the narration must match the
     // current description. No conditional checks, no skip paths.
     if (supabaseUrl) {
@@ -291,8 +228,7 @@ Deno.serve(async (req: Request) => {
     return json({
       success: true,
       logId,
-      commitSha: commitInfo?.commitSha,
-      commitUrl: commitInfo?.commitUrl,
+      slug,
       newFeatured,
     });
   } catch (err: unknown) {

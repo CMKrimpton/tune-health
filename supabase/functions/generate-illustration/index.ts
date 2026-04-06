@@ -1,6 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { updateGitHubJson } from "../_shared/github.ts";
 import { addCostToLog, addOverheadCost, supabase as createDb } from "../_shared/db.ts";
 import { MODELS, FLAT_PRICING } from "../_shared/constants.ts";
 
@@ -289,20 +288,6 @@ async function handleGenerate(body: Record<string, unknown>) {
     }
   }
 
-  // Sync to GitHub JSON so the Astro site renders the hero images
-  const githubFields: Record<string, unknown> = {};
-  if (darkUrl) {
-    githubFields.heroImage = darkUrl;
-    githubFields.heroImageAlt = heroImageAlt;
-  }
-  if (lightUrl) {
-    githubFields.heroImageLight = lightUrl;
-  }
-
-  if (Object.keys(githubFields).length > 0) {
-    await updateGitHubJson(slug, githubFields, `feat: Add hero image${lightUrl ? " pair" : ""} — '${slug}'`);
-  }
-
   // Log cost — to pipeline log if logId provided, otherwise as system overhead
   const variantsGenerated = (variant === "both" ? 2 : 1);
   const illustrationCost = {
@@ -392,13 +377,6 @@ async function handleBatch(body: Record<string, unknown>) {
           hero_image_light: lightUrl,
         })
         .eq("slug", article.slug);
-
-      // Sync to GitHub JSON
-      await updateGitHubJson(
-        article.slug,
-        { heroImage: darkUrl, heroImageAlt, heroImageLight: lightUrl },
-        `feat: Add hero image pair — '${article.slug}'`
-      );
 
       // Count how many variants were actually generated (not reused)
       const newDark = (!article.hero_image || force) ? 1 : 0;
@@ -503,13 +481,6 @@ async function handleBatchLight(body: Record<string, unknown>) {
         .from("articles")
         .update({ hero_image_light: lightUrl })
         .eq("slug", article.slug);
-
-      // Sync to GitHub JSON
-      await updateGitHubJson(
-        article.slug,
-        { heroImageLight: lightUrl },
-        `feat: Add light hero image — '${article.slug}'`
-      );
 
       results.push({
         slug: article.slug,

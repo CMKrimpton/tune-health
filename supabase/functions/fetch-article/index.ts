@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,74 +22,48 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const githubToken = Deno.env.get("GITHUB_TOKEN");
-    const githubRepo = Deno.env.get("GITHUB_REPO");
-
-    if (!githubToken || !githubRepo) {
-      return new Response(
-        JSON.stringify({ error: "GitHub not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const headers = {
-      "Authorization": `Bearer ${githubToken}`,
-      "Accept": "application/vnd.github.v3.raw",
-    };
-
-    // Fetch the .astro file
-    const astroRes = await fetch(
-      `https://api.github.com/repos/${githubRepo}/contents/src/pages/articles/${slug}.astro`,
-      { headers }
+    const db = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    if (!astroRes.ok) {
+    const { data: article, error } = await db
+      .from("articles")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (error || !article) {
       return new Response(
-        JSON.stringify({ error: `Article not found (${astroRes.status})` }),
+        JSON.stringify({ error: "Article not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const astroContent = await astroRes.text();
-
-    // Extract article HTML from between <div class="article-content"> and its closing </div>
-    const contentMatch = astroContent.match(/<div class="article-content">([\s\S]*?)<\/div>\s*\n\s*<!-- Tags/);
-    const articleHtml = contentMatch ? contentMatch[1].trim() : '';
-
-    // Extract SVG
-    const svgMatch = astroContent.match(/<svg slot="feature-image"[^>]*>([\s\S]*?)<\/svg>/);
-    const svg = svgMatch ? svgMatch[1].trim() : '';
-
-    // Extract TOC
-    const tocMatches = [...astroContent.matchAll(/<a href="#([^"]+)"[^>]*>([^<]+)<\/a>/g)];
-    const toc = tocMatches
-      .filter(m => !m[0].includes('side-nav')) // exclude nav links
-      .map(m => ({ id: m[1], title: m[2] }));
-
-    // Extract tags
-    const tagMatches = [...astroContent.matchAll(/rounded-full text-sm">([^<]+)<\/span>/g)];
-    const tags = tagMatches.map(m => m[1]);
-
-    // Also fetch the .json metadata (contains author, gradient, etc.)
-    let metadata: Record<string, unknown> | null = null;
-    try {
-      const jsonRes = await fetch(
-        `https://api.github.com/repos/${githubRepo}/contents/src/content/articles/${slug}.json`,
-        { headers }
-      );
-      if (jsonRes.ok) {
-        metadata = await jsonRes.json();
-      }
-    } catch {}
-
     return new Response(
       JSON.stringify({
-        astroContent,
-        articleHtml,
-        svg,
-        toc,
-        extractedTags: tags,
-        metadata,
+        articleHtml: article.article_html || "",
+        toc: article.toc || [],
+        metadata: {
+          title: article.title,
+          description: article.description,
+          category: article.category,
+          tags: article.tags,
+          keywords: article.keywords,
+          readTime: article.read_time,
+          publishDate: article.publish_date,
+          featured: article.featured,
+          draft: article.draft,
+          gradient: { from: article.gradient_from, to: article.gradient_to },
+          heroImage: article.hero_image,
+          heroImageAlt: article.hero_image_alt,
+          heroImageLight: article.hero_image_light,
+          narrationUrl: article.narration_url,
+          author: { name: article.author_name, role: article.author_role },
+          sortOrder: article.sort_order,
+          series: article.series,
+          seriesOrder: article.series_order,
+        },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

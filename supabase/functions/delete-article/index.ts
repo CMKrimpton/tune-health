@@ -32,85 +32,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const githubToken = Deno.env.get("GITHUB_TOKEN");
-    const githubRepo = Deno.env.get("GITHUB_REPO");
-
-    if (!githubToken || !githubRepo) {
-      return new Response(
-        JSON.stringify({ error: "GITHUB_TOKEN and GITHUB_REPO must be configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const branch = "main";
-    const apiBase = `https://api.github.com/repos/${githubRepo}`;
-    const headers = {
-      "Authorization": `Bearer ${githubToken}`,
-      "Accept": "application/vnd.github.v3+json",
-      "Content-Type": "application/json",
-    };
-
-    // Check which files actually exist on GitHub before trying to delete
-    const filesToDelete: Array<{ path: string; mode: string; type: string; sha: null }> = [];
-    const astroPath = `src/pages/articles/${slug}.astro`;
-    const jsonPath = `src/content/articles/${slug}.json`;
-
-    for (const path of [astroPath, jsonPath]) {
-      const checkRes = await fetch(`${apiBase}/contents/${path}?ref=${branch}`, { headers });
-      if (checkRes.ok) {
-        filesToDelete.push({ path, mode: "100644", type: "blob", sha: null });
-      }
-    }
-
-    let newCommitData: { sha: string } | null = null;
-
-    if (filesToDelete.length > 0) {
-      // 1. Get current commit SHA
-      const refRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, { headers });
-      if (!refRes.ok) throw new Error(`Failed to get branch ref: ${refRes.status}`);
-      const refData = await refRes.json();
-      const currentCommitSha = refData.object.sha;
-
-      // 2. Get current tree
-      const commitRes = await fetch(`${apiBase}/git/commits/${currentCommitSha}`, { headers });
-      if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
-      const commitData = await commitRes.json();
-      const baseTreeSha = commitData.tree.sha;
-
-      // 3. Create new tree WITHOUT the deleted files (sha: null deletes)
-      const treeRes = await fetch(`${apiBase}/git/trees`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ base_tree: baseTreeSha, tree: filesToDelete }),
-      });
-      if (!treeRes.ok) throw new Error(`Failed to create tree: ${treeRes.status}`);
-      const treeData = await treeRes.json();
-
-      // 4. Create commit
-      const newCommitRes = await fetch(`${apiBase}/git/commits`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          message: `chore: Delete '${slug}' article`,
-          tree: treeData.sha,
-          parents: [currentCommitSha],
-        }),
-      });
-      if (!newCommitRes.ok) throw new Error(`Failed to create commit: ${newCommitRes.status}`);
-      newCommitData = await newCommitRes.json();
-
-      // 5. Update branch ref
-      const updateRefRes = await fetch(`${apiBase}/git/refs/heads/${branch}`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ sha: newCommitData!.sha }),
-      });
-      if (!updateRefRes.ok) throw new Error(`Failed to update ref: ${updateRefRes.status}`);
-    } else {
-      console.log(`[delete-article] No GitHub files found for "${slug}" — skipping git ops, cleaning up DB/storage only`);
-    }
-
-    // ─── Full cleanup: database + storage ───
     const db = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -118,7 +39,7 @@ Deno.serve(async (req: Request) => {
 
     const cleanup: string[] = [];
 
-    // 6. Delete from articles table
+    // 1. Delete from articles table
     const { error: dbErr } = await db.from("articles").delete().eq("slug", slug);
     if (dbErr) {
       console.error(`[delete-article] DB delete failed for "${slug}":`, dbErr.message);
@@ -127,7 +48,7 @@ Deno.serve(async (req: Request) => {
       cleanup.push("articles row deleted");
     }
 
-    // 7. Clean up pipeline logs (mark as deleted, preserve for audit)
+    // 2. Clean up pipeline logs (mark as deleted, preserve for audit)
     const { error: logErr } = await db
       .from("daily_article_log")
       .update({ status: "failed", error: `Deleted via admin editor` })
@@ -135,7 +56,7 @@ Deno.serve(async (req: Request) => {
       .neq("status", "failed");
     if (!logErr) cleanup.push("pipeline logs marked deleted");
 
-    // 8. Delete illustrations from storage
+    // 3. Delete illustrations from storage
     const illustrationFiles = [
       `illustrations/${slug}.png`,
       `illustrations/${slug}-light.png`,
@@ -145,7 +66,7 @@ Deno.serve(async (req: Request) => {
       .remove(illustrationFiles);
     if (!illErr) cleanup.push("illustrations deleted");
 
-    // 9. Delete narration from storage
+    // 4. Delete narration from storage
     const { error: narErr } = await db.storage
       .from("article-narrations")
       .remove([`narrations/${slug}.mp3`]);
@@ -154,7 +75,7 @@ Deno.serve(async (req: Request) => {
     console.log(`[delete-article] "${slug}" fully cleaned up:`, cleanup.join(", "));
 
     return new Response(
-      JSON.stringify({ success: true, commitSha: newCommitData?.sha ?? "no-git-changes", cleanup }),
+      JSON.stringify({ success: true, cleanup }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {

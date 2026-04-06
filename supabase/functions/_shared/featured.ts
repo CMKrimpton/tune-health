@@ -1,75 +1,5 @@
 import { supabase } from "./db.ts";
 
-/** UTF-8-safe base64 encoding. The standard btoa(unescape(encodeURIComponent()))
- *  pattern double-encodes non-ASCII chars in Deno, producing mojibake. */
-function utf8ToBase64(str: string): string {
-  const bytes = new TextEncoder().encode(str);
-  let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary);
-}
-
-/**
- * Update the `featured` flag in a GitHub JSON file for an article.
- * Returns true on success, false on failure (non-fatal — DB is source of truth).
- */
-async function updateGitHubFeatured(slug: string, featured: boolean): Promise<boolean> {
-  const githubToken = (Deno.env.get("GITHUB_TOKEN") || "").trim();
-  const githubRepo = (Deno.env.get("GITHUB_REPO") || "").trim();
-  if (!githubToken || !githubRepo) {
-    console.warn("[Featured] GITHUB_TOKEN or GITHUB_REPO not set — skipping GitHub update");
-    return false;
-  }
-
-  const jsonPath = `src/content/articles/${slug}.json`;
-  const apiBase = `https://api.github.com/repos/${githubRepo}`;
-  const headers = {
-    Authorization: `Bearer ${githubToken}`,
-    Accept: "application/vnd.github.v3+json",
-    "Content-Type": "application/json",
-  };
-
-  try {
-    const fileRes = await fetch(`${apiBase}/contents/${jsonPath}?ref=main`, { headers });
-    if (!fileRes.ok) {
-      console.warn(`[Featured] GitHub file not found for ${slug}: ${fileRes.status}`);
-      return false;
-    }
-    const fileData = await fileRes.json();
-    // atob() decodes Base64 to a binary string where each char = one byte.
-    // For multi-byte UTF-8 chars (em dashes, smart quotes), atob() produces
-    // garbled chars. Must convert through Uint8Array + TextDecoder to get
-    // proper UTF-8 text. The old atob() → JSON.parse() path was the root
-    // cause of recurring mojibake — every 6h rotation cycle re-corrupted.
-    const raw = atob(fileData.content.replace(/\n/g, ""));
-    const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
-    const existingContent = JSON.parse(new TextDecoder().decode(bytes));
-    existingContent.featured = featured;
-    const updatedContent = utf8ToBase64(JSON.stringify(existingContent, null, 2) + "\n");
-
-    const updateRes = await fetch(`${apiBase}/contents/${jsonPath}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({
-        message: `chore: ${featured ? "Feature" : "Unfeature"} article — '${slug}'`,
-        content: updatedContent,
-        sha: fileData.sha,
-        branch: "main",
-      }),
-    });
-
-    if (updateRes.ok) {
-      console.log(`[Featured] GitHub: set featured=${featured} for ${slug}`);
-      return true;
-    }
-    console.warn(`[Featured] GitHub update failed for ${slug}: ${updateRes.status}`);
-    return false;
-  } catch (err) {
-    console.warn(`[Featured] GitHub update error for ${slug}: ${err instanceof Error ? err.message : "unknown"}`);
-    return false;
-  }
-}
-
 export async function rotateFeatured(db: ReturnType<typeof supabase>): Promise<string | null> {
   // Freshness guard: prevent rapid re-rotation (e.g. manual triggers in quick succession).
   // Uses 5h window — shorter than the 6h cron interval so every scheduled run can rotate.
@@ -153,37 +83,6 @@ export async function rotateFeatured(db: ReturnType<typeof supabase>): Promise<s
   await db.from("articles").update({ featured: false }).eq("featured", true);
   await db.from("articles").update({ featured: true }).eq("slug", winner.slug);
   console.log(`[Featured] DB: Rotated to ${winner.slug} (score: ${Math.round(winner.score)})`);
-
-  // Update GitHub JSON files so Astro build reflects the rotation.
-  // Unfeature ALL currently-featured articles in GitHub (there may be stale ones),
-  // then feature the winner.
-  const allFeaturedSlugs = articles
-    .filter((a: Record<string, unknown>) => a.featured && a.slug !== winner.slug)
-    .map((a: Record<string, unknown>) => a.slug as string);
-
-  // Also unfeature the specific current featured from DB (may not be in the `articles` list if it was already unfeatured)
-  if (currentFeatured && !allFeaturedSlugs.includes(currentFeatured.slug as string)) {
-    allFeaturedSlugs.push(currentFeatured.slug as string);
-  }
-
-  // Unfeature old articles on GitHub (sequentially to avoid ref conflicts)
-  for (const oldSlug of allFeaturedSlugs) {
-    await updateGitHubFeatured(oldSlug, false);
-  }
-
-  // Feature the winner on GitHub
-  const githubUpdated = await updateGitHubFeatured(winner.slug as string, true);
-
-  // Trigger Vercel rebuild if any GitHub update succeeded
-  if (githubUpdated) {
-    const deployHook = Deno.env.get("VERCEL_DEPLOY_HOOK");
-    if (deployHook) {
-      fetch(deployHook, { method: "POST" }).catch(err =>
-        console.warn(`[Featured] Vercel deploy hook failed: ${err instanceof Error ? err.message : "unknown"}`)
-      );
-      console.log("[Featured] Vercel rebuild triggered");
-    }
-  }
 
   return winner.slug;
 }

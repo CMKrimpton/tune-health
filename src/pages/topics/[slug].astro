@@ -11,18 +11,9 @@ import { getArticlesForCategory, getArticleGradientStyle, formatPublishDateShort
 import { CATEGORY_DOMAINS, CATEGORY_META, getCategorySlug, getCategoryFromSlug, getDomainForCategory } from '../../utils/category-domains';
 import SEO from '../../components/SEO.astro';
 
-export async function getStaticPaths() {
-  const { getArticles } = await import('../../utils/articles');
-  const articles = await getArticles();
-  const categories = [...new Set(articles.map(a => a.category))];
-
-  return categories.map(category => ({
-    params: { slug: getCategorySlug(category) },
-    props: { category },
-  }));
-}
-
-const { category } = Astro.props;
+const { slug } = Astro.params;
+const category = getCategoryFromSlug(slug || '');
+if (!category) return Astro.redirect('/404');
 const articles = await getArticlesForCategory(category);
 const meta = CATEGORY_META[category];
 const domain = getDomainForCategory(category);

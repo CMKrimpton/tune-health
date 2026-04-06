@@ -7,18 +7,12 @@ import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro'
 import SideNav from '../../components/SideNav.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import ShareButtons from '../../components/ShareButtons.astro';
-import { getAllCollections, type CuratedCollection } from '../../utils/collections';
+import { getAllCollections, getCollectionBySlug, type CuratedCollection } from '../../utils/collections';
 import { getArticles, getArticleGradientStyle, formatPublishDateShort } from '../../utils/articles';
 
-export async function getStaticPaths() {
-  const collections = getAllCollections();
-  return collections.map(c => ({
-    params: { slug: c.slug },
-    props: { collection: c },
-  }));
-}
-
-const { collection } = Astro.props as { collection: CuratedCollection };
+const { slug } = Astro.params;
+const collection = getCollectionBySlug(slug || '');
+if (!collection) return Astro.redirect('/404');
 const allArticles = await getArticles();
 const articleMap = new Map(allArticles.map(a => [a.slug, a]));
 
