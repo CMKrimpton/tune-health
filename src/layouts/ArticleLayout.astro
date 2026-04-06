@@ -116,7 +116,7 @@ const nextArticle = await getNextInCategory(slug);
             {category}
           </span>
           <span class="text-stone-300 dark:text-stone-700">/</span>
-          <span class="text-xs text-stone-500 uppercase tracking-wide">{publishDate}</span>
+          <span class="text-xs text-stone-500 uppercase tracking-wide">{formatPublishDateShort(publishDate)}</span>
           {hasBeenUpdated && (
             <>
               <span class="text-stone-300 dark:text-stone-700">/</span>

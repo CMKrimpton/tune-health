@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.0.0] - 2026-04-06
+
+### Changed — SSR Migration (Supabase-Driven)
+
+Migrated from static Astro Content Collections to fully server-rendered pages backed by the Supabase `articles` table. Article publishing is now instant — no git commits, no Vercel rebuilds.
+
+- **Astro output mode → `server`** — all pages server-rendered via Vercel serverless functions
+- **Single dynamic `[slug].astro` route** replaces 172 static article pages — articles fetched from Supabase at request time
+- **Articles served from Supabase `articles` table** instead of JSON/Astro files on disk
+- **Custom `sitemap.xml` SSR endpoint** replaces `@astrojs/sitemap` integration
+- **All edge functions write to DB only** — `stage-publish`, featured rotation, illustrations, and narrations no longer commit to GitHub
+- **Per-request article cache** prevents duplicate DB queries across layout/components sharing the same request
+- **CDN cache headers via middleware** — 5 min TTL for article pages, 1 min for listing pages
+- **Deleted 343 static content files** — 171 `.json` + 171 `.astro` + `config.ts` removed from `src/content/`
+- **New migration** — added `author_name`, `author_role`, `series`, `series_order` columns to `articles` table
+- **Removed dead code** — `_shared/github.ts` (publish-to-GitHub module) deleted
+
+### Impact
+
+Development git history is now purely code changes. Article publishing is instant (no rebuild latency). Featured rotation and metadata updates are instant.
+
 ## [21.0.0] - 2026-04-05
 
 ### Added — Self-Learning Editorial Pipeline

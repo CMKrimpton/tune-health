@@ -64,5 +64,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  return next();
+  const response = await next();
+
+  // ─── CDN cache headers for public pages (SSR) ───
+  // Vercel CDN caches at the edge when s-maxage is set.
+  // Admin and API routes are never cached.
+  if (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api/')) {
+    const isArticle = url.pathname.startsWith('/articles/') && url.pathname !== '/articles/';
+    const ttl = isArticle ? 300 : 60; // articles: 5 min, listings: 1 min
+    response.headers.set('Cache-Control', `s-maxage=${ttl}, stale-while-revalidate=3600`);
+  }
+
+  return response;
 });

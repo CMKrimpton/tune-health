@@ -6,12 +6,15 @@
 
 import { supabase } from '../lib/supabase';
 
-// Per-request cache: lives for one SSR render cycle (~ms), then GC'd.
-// Prevents 10-15 duplicate Supabase queries per page load.
+// Render-scoped cache: collapses 10-15 duplicate getArticles() calls into one
+// DB query per SSR render. The 2s TTL is intentionally short — it only needs to
+// survive a single render (~100-500ms). In warm Vercel functions, module vars
+// persist across requests, so 2s ensures we never serve cross-request stale data
+// for more than a blink. The CDN s-maxage header handles real caching.
 let _cachedArticles: Article[] | null = null;
 let _cachedComingSoon: Article[] | null = null;
 let _cacheTimestamp = 0;
-const CACHE_TTL = 5_000; // 5 seconds — covers a single SSR render
+const CACHE_TTL = 2_000; // 2 seconds — one SSR render, never cross-request
 
 function isCacheValid(): boolean {
   return Date.now() - _cacheTimestamp < CACHE_TTL;

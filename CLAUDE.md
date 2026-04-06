@@ -32,30 +32,29 @@ npm run preview  # Preview production build
 ## Architecture
 
 ### Build System
-- **Astro v5** with SSR support via `@astrojs/vercel` adapter
+- **Astro v5** with `output: 'server'` (full SSR via `@astrojs/vercel` serverless adapter)
 - **React** for interactive components (Command Palette, Admin Editor)
 - **Tailwind CSS** with PostCSS for styling
 - **View Transitions API** for smooth page navigation
-- **Content Collections** for type-safe article management
-- **Supabase Edge Functions** for AI article processing and GitHub publishing
+- **Supabase PostgreSQL** for article storage, queried at request time via SSR
+- **Supabase Edge Functions** for AI article processing and DB publishing
+- **Sitemap**: custom SSR endpoint (not `@astrojs/sitemap` integration)
 - Node version specified in `.nvmrc`
 
 ### Core Libraries
-- **Astro**: Static site generation with View Transitions and Content Collections
+- **Astro**: SSR site with View Transitions, Supabase data layer
 - **React + cmdk**: Command palette (⌘K) for site-wide navigation
 - **React**: Admin publishing portal (ArticleEditor island)
 - **IntersectionObserver**: CSS-triggered reveal animations and scroll spy
 - **@astrojs/rss**: RSS feed generation
-- **@astrojs/sitemap**: Automatic sitemap generation
-- **Zod**: Schema validation for content collections
+- **Zod**: Schema validation
 - **mammoth**: DOCX file parsing in admin portal
 
 ### File Structure
 ```
 src/
-├── content/
-│   ├── config.ts             # Content collection schema (Zod)
-│   └── articles/             # Article metadata (JSON) - ~190 published articles
+├── lib/
+│   └── supabase.ts           # Server-side Supabase client (used by all SSR pages)
 ├── layouts/
 │   ├── BaseLayout.astro      # Main layout with View Transitions
 │   └── ArticleLayout.astro   # Reusable article template (auto-fetches related articles)
@@ -115,11 +114,11 @@ src/
 │   │   ├── index.astro       # Collections index page
 │   │   └── [slug].astro      # Curated reading lists (5 collections with share buttons)
 │   └── articles/
-│       ├── index.astro       # Articles index page (collection-driven)
-│       └── *.astro           # Individual article pages
+│       ├── index.astro       # Articles index page (Supabase query)
+│       └── [slug].astro      # Dynamic article route (SSR — fetches from Supabase at request time)
 ├── middleware.ts              # Auth gate for /admin routes
 ├── utils/
-│   ├── articles.ts           # Article collection helpers
+│   ├── articles.ts           # Article query helpers (Supabase), gradient styles, category utils
 │   ├── collections.ts        # Curated collection definitions
 │   ├── funnel.ts             # Category-to-feature mapping, UTM link builder
 │   └── reading-time.ts       # Reading time calculation
@@ -131,13 +130,13 @@ supabase/
 └── functions/
     ├── _shared/                          # Shared utilities (NOT a deployed function)
     │   ├── api-clients.ts                # claude(), gemini(), grok(), openai() + generateWithFallback()
-    │   ├── astro.ts                      # assembleAstroFile(), todayISO(), escapeAttr()
+    │   ├── astro.ts                      # todayISO(), escapeAttr() (assembleAstroFile deprecated — SSR reads from DB)
     │   ├── constants.ts                  # PRICING, MODEL_PROVIDERS, MODEL_BYLINES, chains
     │   ├── cors.ts                       # CORS headers, json() helper
     │   ├── db.ts                         # supabase(), addCostToLog(), safeStage(), parseScore()
     │   ├── dedup.ts                      # extractFingerprint(), isDuplicate(), buildFingerprints() + topic_dedup_log
     │   ├── featured.ts                   # rotateFeatured()
-    │   ├── github.ts                     # publishToGitHub() with retry
+    │   ├── github.ts                     # GitHub utilities (legacy — article publishing now uses DB directly)
     │   ├── pubmed.ts                     # verifyPubMedCitations()
     │   ├── types.ts                      # ApiResult, ApiUsage, VoiceAudit interfaces
     │   ├── voice-audit.ts               # auditVoiceQuality()
@@ -150,7 +149,7 @@ supabase/
     ├── stage-qc/                         # Stage 5: Flash → Sonnet. QC — publish/rewrite_voice/revise/kill
     ├── stage-voice-rewrite/              # Stage 6: Sonnet → Gemini → GPT-5.4 (skipped for human-written articles)
     ├── stage-copy-edit/                  # Stage 7: Sonnet → Gemini Pro. Conservative headline + header polish (confidence ≥8 only)
-    ├── stage-publish/                    # Stage 8: GitHub commit + Vercel hook + GPT Image illustration + ElevenLabs narration
+    ├── stage-publish/                    # Stage 8: DB publish + GPT Image illustration + ElevenLabs narration + featured rotation
     ├── pipeline-scout/                   # Scout — 3x/day topic discovery (all Gemini + Google Search)
     ├── pipeline-pinger/                  # Pinger — 2x/hour breaking news detector (Gemini Flash/Grok/PubMed RSS)
     ├── pipeline-admin/                   # Admin: status, queue CRUD, retry, kill, get-brief, submit-article, improve-article, merge
@@ -160,9 +159,9 @@ supabase/
     ├── articles-api/                     # CRUD for articles table
     ├── process-article/                  # Manual article generation
     ├── refine-article/                   # Chat-based article refinement
-    ├── publish-article/                  # Manual GitHub publish
-    ├── delete-article/                   # GitHub deletion
-    ├── fetch-article/                    # GitHub fetch
+    ├── publish-article/                  # DB upsert — publish article to database
+    ├── delete-article/                   # Remove article from database
+    ├── fetch-article/                    # Fetch article content from database
     ├── generate-illustration/            # AI illustration (GPT Image 1)
     ├── generate-narration/               # ElevenLabs TTS narration of article description
     ├── editorial-qc/                     # Collection-wide QC
@@ -175,33 +174,17 @@ supabase/
     └── social-admin/                     # Social dashboard API (status, posts, plan, platforms, setup, triggers)
 ```
 
-### Content Collections
+### Article Data
 
-Articles use Astro's Content Collections for type-safe data management:
+Articles are stored in the Supabase `articles` table and queried at request time via SSR. No file-based content collections — the database is the single source of truth for both the admin CMS and the public site.
 
 ```typescript
-// src/content/config.ts
-const articles = defineCollection({
-  type: 'data',
-  schema: z.object({
-    title: z.string(),
-    description: z.string(),
-    category: z.string(),
-    publishDate: z.string(),
-    readTime: z.number(),
-    tags: z.array(z.string()),
-    series: z.string().optional(),
-    seriesOrder: z.number().optional(),
-    // ... more fields
-  }),
-});
+// src/utils/articles.ts — helper functions for querying articles
+import { supabase } from '../lib/supabase';
+const { data } = await supabase.from('articles').select('*').eq('status', 'published');
 ```
 
-Query articles with full TypeScript support:
-```typescript
-import { getCollection } from 'astro:content';
-const articles = await getCollection('articles');
-```
+All navigation components (homepage, articles index, SideNav, CommandPalette, related articles) query Supabase directly. New articles appear on the live site immediately after being published to the database — no git commit or rebuild needed.
 
 ### Styling Approach
 - Tailwind utility classes with custom component layer in `src/styles/global.css`
@@ -254,7 +237,7 @@ const articles = await getCollection('articles');
 - Protected by `ADMIN_TOKEN` cookie (middleware auth gate, server-side only — no `PUBLIC_` prefix). Wrong token redirects to `/admin/login?error=1` with inline error display.
 - **Dashboard**: 4-column stat grid (Total, Published, Drafts, Featured, Illustrated, Avg Read, Pipeline Spend, $/Article), 4 tab panels with fade-in animation (Pipeline, Articles, AI Agents, Social). Max-width 1400px. Multi-column layouts: Pipeline tab has 2-col grid (queue + published side-by-side), AI Agents tab has 2-col grid (6 sections split). Articles tab is single-column (rows need full width for inline editing). Social tab has Bloomberg-inspired data-dense layout with platform activity matrix, post feed, content plan, platform health cards, Setup tab with credential guide + architecture diagram
 - **Pipeline tab** (React island: `PipelineMonitor`):
-  - 8-stage visual pipeline: Research (Gemini 2.5 Pro + Search) → Editor (Sonnet → Gemini) → **PAUSE for Opus writing** → Independence (Grok 4) → QC (Flash → Sonnet) → Voice Polish (Sonnet → Gemini, skipped for human articles) → Copy Edit (Sonnet → Gemini Pro, conservative headline/header polish) → Publish (GitHub + GPT Image)
+  - 8-stage visual pipeline: Research (Gemini 2.5 Pro + Search) → Editor (Sonnet → Gemini) → **PAUSE for Opus writing** → Independence (Grok 4) → QC (Flash → Sonnet) → Voice Polish (Sonnet → Gemini, skipped for human articles) → Copy Edit (Sonnet → Gemini Pro, conservative headline/header polish) → Publish (DB + GPT Image)
   - **Hybrid workflow UI**: editor_approved articles show purple highlight, "Copy Brief for Claude" button (client-side clipboard), "Submit Written Article" textarea + submit button
   - **"Clear All Briefs" button**: one-click kills all stale editor_approved articles
   - **× dismiss button**: on every pipeline card, visible without expanding, hover turns red
@@ -267,7 +250,7 @@ const articles = await getCollection('articles');
 - **Articles tab** (React island: `ArticlesManager`): search, filter (status/category), sort (newest/oldest/A-Z/read time/independence score), inline editing, bulk actions, featured toggle, **Improve button** (sends article back through full pipeline, same slug), Refresh button, independence & editor score display per row
 - **AI Agents tab** (React island: `AgentsPanel`): Reader Questions (mines alumi Health chat data), **Breaking News Pinger** (recent signals with source color coding, PROMOTED badges, refresh button), Cron Schedule (6 active jobs), editorial QC, illustration agent, Database & Maintenance, editor decision log
 - **New Article Editor** (`/admin/new`): drag-and-drop upload, AI generation, chat refinement, live preview, one-click publish
-- **Edit page** (`/admin/edit/[slug]`): metadata/content/AI refine tabs, autosave with 2s debounce + indicator, Cmd+S keyboard shortcut, score badges (independence/editor), live preview auto-refresh, Publish + Delete from GitHub buttons, XSS-safe chat rendering
+- **Edit page** (`/admin/edit/[slug]`): metadata/content/AI refine tabs, autosave with 2s debounce + indicator, Cmd+S keyboard shortcut, score badges (independence/editor), live preview auto-refresh, Publish + Delete buttons, XSS-safe chat rendering
 
 #### Hybrid AI Newsroom (v17 — Human + AI)
 
@@ -293,7 +276,7 @@ Safety-net cron only — recovers stuck articles and advances in-progress stages
   6. **QC** (~30s): Flash → Sonnet fallback. Publish/rewrite_voice/revise/kill. Mechanical voice audit.
   7. **Voice Rewrite** (if QC triggers): Sonnet → Gemini → GPT-5.4 → Grok. Voice-only prose rewrite.
   8. **Copy Edit** (~15-30s): Sonnet → Gemini Pro. Conservative headline + section header polish. Confidence threshold ≥8. Failures skip gracefully to publish.
-  9. **Publish** (~30s): GitHub commit (.astro + .json) with 422 retry loop. Vercel deploy hook. GPT Image illustration. Featured rotation.
+  9. **Publish** (~30s): Database publish (article_html + metadata to Supabase articles table). GPT Image illustration. ElevenLabs narration. Featured rotation. Articles appear instantly on the SSR site — no git commit or rebuild needed.
 
 **Architecture (split pipeline, SQL dispatch)**:
 Each stage is its own edge function with shared utilities in `_shared/`. The SQL function `dispatch_pipeline_stage()` (called by pg_cron) recovers stuck articles and advances in-progress stages via `pg_net.http_post()` (fire-and-forget). **It never auto-picks from the queue** — admin must click "Produce" to start any article. `editor_approved` is EXCLUDED from auto-dispatch — articles pause there for human writing. Dead code deleted: `daily-article-agent/` (old monolith) and `pipeline-orchestrator/` (replaced by SQL dispatch).
@@ -318,17 +301,17 @@ Each stage is its own edge function with shared utilities in `_shared/`. The SQL
 - **Illustration generation**: `generate-illustration` creates editorial art per article with house style prompt + category color palettes → stored in Supabase Storage
 - **All secrets** stored in Supabase secrets only — never in code
 
-#### Collection-Driven Navigation
-- All navigation components pull from `getCollection('articles')` — no hardcoded article references
+#### Database-Driven Navigation
+- All navigation components query Supabase `articles` table — no hardcoded article references
 - Homepage, articles index, SideNav, CommandPalette, and related articles are all dynamic
-- New articles auto-appear everywhere when their .json is added to `src/content/articles/`
+- New articles auto-appear everywhere immediately after DB publish (SSR — no rebuild needed)
 - Homepage limited to 9 grid articles + "Browse all" CTA
 - Category filtering is functional on homepage and articles index
 - Articles index has real-time search by title, tags, and category
 
 ### Database (Supabase PostgreSQL)
 
-The admin CMS uses a Supabase PostgreSQL database as the source of truth for editing. The static site still builds from files on GitHub.
+Supabase PostgreSQL is the single source of truth for all article content. The SSR site queries the database at request time — no file-based content layer.
 
 **`articles` table schema:**
 - `slug` (unique), `title`, `description`, `category`, `tags[]`, `keywords[]`
@@ -342,7 +325,7 @@ The admin CMS uses a Supabase PostgreSQL database as the source of truth for edi
 **Data flow:**
 1. New article: Claude generates → saved to database as draft
 2. Edits: metadata/content/AI refine → saved to database instantly
-3. Publish: assembles .astro + .json from database → commits to GitHub → Vercel rebuilds
+3. Publish: updates article in database → SSR site serves latest data immediately (no git commit or rebuild needed)
 
 ### Edge Functions (Supabase)
 
@@ -357,16 +340,16 @@ All deployed to the TUNE project (`mvkiornsximonxxitiwr`):
 | `stage-qc` | Stage 5: Flash → Sonnet. QC — publish/rewrite_voice/revise/kill. Skips voice rewrite for human-written articles | None (called by SQL dispatch) |
 | `stage-voice-rewrite` | Stage 6: Sonnet → Gemini → GPT-5.4 → Grok. Voice-only prose rewrite (skipped for Opus/human articles) | None (called by SQL dispatch) |
 | `stage-copy-edit` | Stage 7: Sonnet → Gemini Pro. Conservative headline + section header polish (confidence ≥8 threshold). Failures skip gracefully to publish | None (called by SQL dispatch) |
-| `stage-publish` | Stage 8: GitHub commit + Vercel deploy hook + GPT Image illustration + featured rotation | None (called by SQL dispatch) |
+| `stage-publish` | Stage 8: DB publish + illustration/narration dispatch + featured rotation | None (called by SQL dispatch) |
 | `pipeline-scout` | 3x/day topic discovery — all Gemini + Google Search grounding. Trending signals, search demand, "why now" | None (called by pg_cron) |
 | `pipeline-pinger` | 2x/hour breaking news detector — rotates Gemini Flash/Grok/PubMed RSS. Corroboration gate | None (called by pg_cron) |
 | `pipeline-admin` | Admin API: `status`, `get-brief`, `submit-article` (markdown auto-converted to site HTML), `publish-direct` (skip editorial pipeline → art + narration + publish), `improve-article` (full pipeline re-run, same slug), `produce-topic` (bypasses cap), `produce`, `scout`, `pinger-status`, `retry`, `kill-article`, `queue-topic`, `list-queue`, `update-queue`, `delete-queue`, `backfill-costs`, `rotate-featured`, `merge-analyze`, `merge-execute` | None (rate-limited internally) |
 | `articles-api` | CRUD for articles table (list, get, save, delete, seed) | Write ops require ADMIN_TOKEN (Bearer) |
 | `process-article` | Claude Sonnet article generation with editorial system prompt | None (rate-limited by Anthropic) |
 | `refine-article` | Chat-based article refinement | None |
-| `publish-article` | Commits .astro + .json to GitHub via REST API | ADMIN_TOKEN (Bearer) |
-| `delete-article` | Removes article files from GitHub | ADMIN_TOKEN (Bearer) |
-| `fetch-article` | Fetches .astro file content from GitHub | None |
+| `publish-article` | DB upsert — publishes article to Supabase articles table | ADMIN_TOKEN (Bearer) |
+| `delete-article` | Removes article from database | ADMIN_TOKEN (Bearer) |
+| `fetch-article` | Fetches article content from database | None |
 | `generate-narration` | ElevenLabs TTS narration of article description → Supabase Storage | None |
 | `generate-illustration` | AI illustration generation (OpenAI GPT Image 1.5) → Supabase Storage | None (rate-limited by OpenAI) |
 | `editorial-qc` | Autonomous editorial quality control (Claude audits collection holistically, auto-fixes via other functions) | None |
@@ -389,7 +372,8 @@ done
 ```
 
 **Required secrets** (set via `supabase secrets set`):
-- `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `ADMIN_TOKEN`
+- `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `ADMIN_TOKEN`
+- `GITHUB_TOKEN`, `GITHUB_REPO` (code deploys only — article publishing uses DB directly, not GitHub commits)
 - `ELEVENLABS_API_KEY` (ElevenLabs TTS for article narrations — voice `GK8yfgyvbDZaYf0rm78A`, model `eleven_multilingual_v2`)
 - `XAI_API_KEY` (Grok 4 for independence review + pinger social trending), `GOOGLE_API_KEY` (Gemini for research, scouts, pinger)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-set by Supabase)
@@ -420,7 +404,7 @@ done
 - `scout-gemini`: daily 6am UTC → `pipeline-scout` — Trending Desk (Gemini + Google Search, news-driven, recency gate)
 - `scout-sonnet`: daily 2pm UTC → `pipeline-scout` — Investigation Desk (Gemini + Google Search, follow-the-money, evidence contradictions)
 - `scout-grok`: daily 10pm UTC → `pipeline-scout` — Contrarian Desk (Grok + X/Twitter, both-sides-dirty-hands)
-- `article-produce`: every 5 min (`*/5 * * * *`) → SQL function `dispatch_pipeline_stage()`. Safety net only — recovers stuck articles, advances in-progress stages. **Does NOT auto-pick from queue** (removed in v12.6). Admin must click "Produce"
+- `article-produce`: every 5 min (`*/5 * * * *`) → SQL function `dispatch_pipeline_stage()`. Safety net only — recovers stuck articles, advances in-progress stages. Publishing writes to DB only (no git commits). **Does NOT auto-pick from queue** (removed in v12.6). Admin must click "Produce"
 - `pinger`: every 30 min (`*/30 * * * *`) → `pipeline-pinger` — rotating breaking news detector (Gemini Flash/:00, PubMed RSS/:30)
 - `featured-rotation`: every 6 hours (`0 */6 * * *`) → `pipeline-admin` — independent featured article rotation
 - `analytics-refresh`: daily 4am UTC (`0 4 * * *`) → refreshes `mv_category_performance`, `mv_scout_performance`, `mv_social_performance` materialized views for self-learning feedback
@@ -462,7 +446,7 @@ The magazine funnels readers to the **alumi Health** app (`https://tune-sigma.ve
 #### Series Navigation
 - Articles with `series` field get automatic prev/next navigation (`SeriesNav.astro`)
 - Progress dots showing position in series, "Part X of Y" counter
-- Deep Dives page (`/deep-dives`) dynamically renders published series from content collection
+- Deep Dives page (`/deep-dives`) dynamically renders published series from Supabase
 
 #### Social Sharing & Interaction
 - `ShareButtons.astro`: 8-platform sharing (X, LinkedIn, Facebook, Reddit, Bluesky, WhatsApp, Email, copy link) with `variant` prop (`"inline"` | `"vertical"`) and native Web Share API on mobile. Uses `Astro.site` for correct URL resolution. Each platform icon has brand-color hover state
@@ -479,7 +463,7 @@ The magazine funnels readers to the **alumi Health** app (`https://tune-sigma.ve
 - Canonical URLs
 - RSS feed at `/rss.xml` via `@astrojs/rss`
 - RSS autodiscovery `<link rel="alternate">` in BaseLayout `<head>`
-- Sitemap via `@astrojs/sitemap`
+- Sitemap via custom SSR endpoint (queries Supabase for all published articles)
 - Breadcrumbs on article pages (Home > Articles > Category)
 - Custom 404 page with article recommendations
 
@@ -518,7 +502,7 @@ When writing CSS in this project, follow these rules to avoid build errors:
 ### Performance considerations
 - Astro outputs zero JS by default for static content
 - React islands only hydrate interactive components (`client:load`)
-- Content Collections provide type safety without runtime overhead
+- SSR pages query Supabase at request time — use appropriate caching headers where possible
 - Prefer CSS hover effects over JS for simple transforms
 - Limit `backdrop-blur` usage - use `backdrop-blur-sm` or `backdrop-blur-md` max
 - Use higher opacity backgrounds instead of heavy blur effects
