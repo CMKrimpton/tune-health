@@ -115,6 +115,49 @@ const SAMPLE = {
       transition: background 0.2s;
     }
     .typo-active-banner button:hover { background: rgba(239, 68, 68, 0.25); }
+    .typo-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+    .typo-view-site {
+      background: #ef4444;
+      border: 1px solid #ef4444;
+      color: white;
+      padding: 0.4rem 0.95rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+    .typo-view-site:hover { background: #dc2626; }
+    .typo-view-site:active { transform: translateY(1px); }
+    /* Toast for instant feedback after Apply */
+    .typo-toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(2rem);
+      background: rgba(34, 197, 94, 0.95);
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 1000;
+    }
+    .typo-toast.is-visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
 
     .typo-grid {
       display: grid;
@@ -302,12 +345,15 @@ const SAMPLE = {
     <div class="typo-intro">
       <h1>Typography Presets</h1>
       <p>
-        Each preset is a complete editorial type system: display, body, and UI sans. Click <strong>Apply</strong> to swap the live site
-        instantly (per-browser cookie, takes effect on next page load). Open the public site in a new tab to compare in context.
+        Each preset is a complete editorial type system: display, body, and UI sans. Click <strong>Apply</strong> to set the live site
+        preset (per-browser cookie). All preset fonts are already loaded on this page so apply is instant — open <a href="/" target="_blank" rel="noopener" style="color:#ef4444;text-decoration:underline;">the site in a new tab</a> to see it in context.
       </p>
       <div class="typo-active-banner">
         <span>Active preset: <strong id="active-name">{activePreset.name}</strong></span>
-        <button id="reset-btn" type="button">Reset to Playfair Classic</button>
+        <span class="typo-banner-actions">
+          <a href="/" target="_blank" rel="noopener" class="typo-view-site">View site →</a>
+          <button id="reset-btn" type="button">Reset to Playfair Classic</button>
+        </span>
       </div>
     </div>
 
@@ -348,6 +394,7 @@ const SAMPLE = {
                 type="button"
                 class:list={['typo-apply', { 'is-active': isActive }]}
                 data-preset={preset.id}
+                data-name={preset.name}
               >
                 {isActive ? 'Active' : 'Apply'}
               </button>
@@ -366,34 +413,83 @@ const SAMPLE = {
     </div>
   </main>
 
+  <div id="typo-toast" class="typo-toast" role="status" aria-live="polite"></div>
+
   <script is:inline>
     document.addEventListener('DOMContentLoaded', function () {
       var buttons = document.querySelectorAll('[data-preset]');
       var resetBtn = document.getElementById('reset-btn');
+      var activeName = document.getElementById('active-name');
+      var toast = document.getElementById('typo-toast');
+      var toastTimer = null;
 
-      function setPreset(presetId) {
-        return fetch('/api/typography', {
+      function showToast(message) {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toast.classList.remove('is-visible'); }, 2200);
+      }
+
+      function updateActiveCard(presetId, presetName) {
+        // Strip is-active from all cards + buttons, set on the new one
+        document.querySelectorAll('.typo-card.is-active').forEach(function (el) {
+          el.classList.remove('is-active');
+        });
+        document.querySelectorAll('.typo-apply.is-active').forEach(function (btn) {
+          btn.classList.remove('is-active');
+          btn.textContent = 'Apply';
+        });
+        if (presetId) {
+          var btn = document.querySelector('[data-preset="' + presetId + '"]');
+          if (btn) {
+            btn.classList.add('is-active');
+            btn.textContent = 'Active';
+            var card = btn.closest('.typo-card');
+            if (card) card.classList.add('is-active');
+          }
+        } else {
+          // Reset → mark "classic" card active
+          var classicBtn = document.querySelector('[data-preset="classic"]');
+          if (classicBtn) {
+            classicBtn.classList.add('is-active');
+            classicBtn.textContent = 'Active';
+            var classicCard = classicBtn.closest('.typo-card');
+            if (classicCard) classicCard.classList.add('is-active');
+          }
+        }
+        if (activeName) activeName.textContent = presetName || 'Playfair Classic';
+      }
+
+      function setPreset(presetId, presetName) {
+        // Optimistic update — instant feedback, no reload.
+        // The gallery cards each render in their own font already, so the
+        // "active" state is purely a visual indicator. The cookie POST runs
+        // in the background; the public site picks it up on next navigation.
+        updateActiveCard(presetId, presetName);
+        showToast('Applied: ' + (presetName || 'Playfair Classic') + '. Open the site to see it.');
+
+        fetch('/api/typography', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ presetId: presetId || '' }),
-        }).then(function (res) {
-          if (!res.ok) {
-            alert('Failed to set preset: ' + res.status);
-            return;
-          }
-          window.location.reload();
+        }).catch(function () {
+          showToast('Network error — preset not saved');
         });
       }
 
       buttons.forEach(function (btn) {
         btn.addEventListener('click', function () {
           if (btn.classList.contains('is-active')) return;
-          var id = btn.getAttribute('data-preset') || null;
-          setPreset(id);
+          var id = btn.getAttribute('data-preset');
+          var name = btn.getAttribute('data-name');
+          setPreset(id, name);
         });
       });
 
-      if (resetBtn) resetBtn.addEventListener('click', function () { setPreset(null); });
+      if (resetBtn) {
+        resetBtn.addEventListener('click', function () { setPreset(null, 'Playfair Classic'); });
+      }
     });
   </script>
 </body>
