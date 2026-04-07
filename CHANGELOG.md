@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.2.3] - 2026-04-07
+
+### Fixed — Typography Apply Is Now Instant (No Reload)
+
+Previous flow forced `window.location.reload()` after applying a preset, which meant a multi-second wait + visible page flash for what should be a one-click change. The reload was wasted: the gallery page already has every preset's fonts loaded via the combined Google Fonts URL, so the "active" state on cards is purely a visual indicator with nothing to fetch.
+
+- **Optimistic UI** — clicking Apply instantly toggles the active card highlight, swaps the button text to "Active", and shows a green toast. Cookie POST runs in the background (no await, no reload)
+- **"View site →" CTA** added next to the active banner — opens the public site in a new tab where the preset actually takes effect. Since the gallery already cached every preset's woff2 binaries, the public site picks them up fast on first navigation
+- Reset button uses the same instant flow
+
 ## [22.2.2] - 2026-04-07
 
 ### Fixed — Apple News Preset Now Matches Real Apple News
