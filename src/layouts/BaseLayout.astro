@@ -4,19 +4,13 @@ import MobileNav from '../components/MobileNav.astro';
 import TopicNav from '../components/TopicNav.astro';
 import '../styles/global.css';
 import { FALLBACK_URL, SITE_NAME, SOCIAL } from '../config/site';
-import { getActivePreset, buildGoogleFontsHref, buildRootCss, DEFAULT_PRESET_ID } from '../utils/typography';
+import { getActivePreset, buildGoogleFontsHref, buildRootCss } from '../utils/typography';
 
 const typographyPreset = getActivePreset(Astro.cookies);
 const fontsHref = buildGoogleFontsHref(typographyPreset);
 const presetRootCss = buildRootCss(typographyPreset);
-const isCustomPreset = typographyPreset.id !== DEFAULT_PRESET_ID;
-
-// When previewing a non-default preset, prevent CDN caching so the user's
-// browser-scoped cookie actually drives the response. Default preset is safe
-// to cache normally (it matches the static :root defaults in global.css).
-if (isCustomPreset) {
-  Astro.response.headers.set('Cache-Control', 'private, no-store');
-}
+// Note: cache-bypass for cookie-bearing requests is handled in middleware.ts
+// so it covers every public route uniformly, not just BaseLayout-rendered pages.
 
 interface Props {
   title: string;

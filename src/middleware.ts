@@ -70,9 +70,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Vercel CDN caches at the edge when s-maxage is set.
   // Admin and API routes are never cached.
   if (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api/')) {
-    const isArticle = url.pathname.startsWith('/articles/') && url.pathname !== '/articles/';
-    const ttl = isArticle ? 300 : 60; // articles: 5 min, listings: 1 min
-    response.headers.set('Cache-Control', `s-maxage=${ttl}, stale-while-revalidate=3600`);
+    // EXCEPTION: when a typography_preset cookie is present, bypass the CDN
+    // entirely. Vercel's edge cache does not vary on cookies — without this
+    // bypass, the first uncookied visit caches the default-preset version and
+    // every subsequent cookie-bearing visitor would get that stale render.
+    const hasTypographyCookie = !!context.cookies.get('typography_preset')?.value;
+    if (hasTypographyCookie) {
+      response.headers.set('Cache-Control', 'private, no-store');
+    } else {
+      const isArticle = url.pathname.startsWith('/articles/') && url.pathname !== '/articles/';
+      const ttl = isArticle ? 300 : 60; // articles: 5 min, listings: 1 min
+      response.headers.set('Cache-Control', `s-maxage=${ttl}, stale-while-revalidate=3600`);
+    }
   }
 
   return response;
