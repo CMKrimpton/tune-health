@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.2.1] - 2026-04-06
+
+### Fixed — Typography Gallery Loading Past Card 5
+
+Loading 36 separate `<link rel="stylesheet">` requests in parallel hit browser parallel-CSS download throttling — only the first ~5 cards (Playfair through Bloomberg) rendered correctly, the rest fell back to Georgia. The "more robust" per-link approach from 22.2.0 was speculative; the original combined-URL approach was actually working.
+
+- **Reverted to a single combined Google Fonts URL** with two improvements over the original implementation:
+  1. **Dedupe families across presets** — Inter appears in 12+ presets, Source Serif 4 in 3, etc. The deduped URL is 2772 chars (vs 4231 chars before dedupe), well under any browser limit
+  2. **Pick the longest clause when the same family appears with different axis specs** — so no preset loses weights it needs
+- **Audited**: deduped URL returns 200 with 1049 @font-face rules, all 50 unique families present, all weights served
+
 ## [22.2.0] - 2026-04-06
 
 ### Added — 27 More Typography Presets (37 total) + Apple News + New Yorker Tribute
