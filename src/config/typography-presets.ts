@@ -529,17 +529,25 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'apple-news',
     name: 'Apple News',
-    vibe: 'Apple\'s system stack — New York serif + SF Pro sans. Renders authentically on Mac/iOS via the OS, falls back gracefully elsewhere. Zero font download. The cleanest possible editorial system on Apple devices.',
-    display: "ui-serif, 'New York', -apple-system, Georgia, serif",
-    body: "ui-serif, 'New York', -apple-system, Georgia, serif",
-    sans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif",
-    // No Google Fonts query — entirely system fonts. Empty string means
-    // BaseLayout will still build a valid (empty) URL; we strip that case below.
+    vibe: 'Mirrors Apple News\'s actual structure: bold SF Pro Display headlines (sans, not serif) over a New York serif body. SF Pro for meta. Renders authentically on macOS/iOS — Safari resolves the system stack, Chrome falls back to its closest match. Zero font download.',
+    // Display: SF Pro Display (Apple News uses big bold sans, not serif, for headlines)
+    display: "'SF Pro Display', -apple-system, BlinkMacSystemFont, ui-sans-serif, 'Segoe UI', sans-serif",
+    // Body: New York (Apple's literary serif). 'New York' is the explicit
+    // family name on macOS/iOS; ui-serif is the generic fallback that resolves
+    // to NY on Apple platforms in Safari but Times in Chrome — listing both
+    // covers both browsers.
+    body: "'New York', ui-serif, 'Iowan Old Style', 'Charter', Georgia, serif",
+    sans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro', ui-sans-serif, 'Segoe UI', sans-serif",
+    // No Google Fonts query — entirely system fonts. BaseLayout skips the
+    // Google Fonts <link> when this is empty.
     googleFontsQuery: '',
-    displayLetterSpacing: '-0.018em',
-    // New York x-height ~0.51 — Apple-tuned for screens
+    displayLetterSpacing: '-0.025em',
+    displayWeight: '700',
+    // New York x-height ~0.50 — Apple-tuned for screens
     bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.51,
+    // SF Pro Display has a tall x-height (~0.52) — keep heading proportions
+    // similar to body for the Apple News compact-headline feel
+    displaySizeAdjust: 0.514,
   },
   {
     id: 'new-yorker',
