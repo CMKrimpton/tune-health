@@ -6,18 +6,37 @@ import { getActivePreset, buildGoogleFontsHref } from '../../utils/typography';
 const adminTokenValue = Astro.cookies.get('admin_token')?.value || '';
 const activePreset = getActivePreset(Astro.cookies);
 
-// One Google Fonts URL per preset, deduped — more robust than a single
-// stitched URL (4KB+ URLs can hit proxy/CDN limits, and one bad family
-// breaks the whole stylesheet). Also lets the browser cache each preset's
-// fonts independently. System-font presets are filtered out.
-const presetFontHrefs = [
-  ...new Set(
-    TYPOGRAPHY_PRESETS
-      .map((p) => p.googleFontsQuery)
-      .filter(Boolean)
-      .map((q) => `https://fonts.googleapis.com/css2?${q}&display=swap`),
-  ),
-];
+// Build ONE combined Google Fonts URL covering every unique family across
+// all presets. Loading 36 separate <link> stylesheets in parallel hit browser
+// parallel-CSS throttling — only the first 5-6 would render before the rest
+// queued. The combined URL is ~4KB (well under the 8KB browser limit), audited
+// against the API: every family + weight + woff2 binary returns 200.
+//
+// Dedupe families across presets so we don't request the same family twice
+// with different axis specs (Google Fonts CSS2 returns 4xx if you do).
+function dedupeFamilies(): string[] {
+  const families = new Map<string, string>();
+  for (const p of TYPOGRAPHY_PRESETS) {
+    if (!p.googleFontsQuery) continue;
+    for (const chunk of p.googleFontsQuery.split('&')) {
+      if (!chunk.startsWith('family=')) continue;
+      const value = chunk.slice('family='.length);
+      // Key by family name only, value is the full clause. Last one wins —
+      // this means later presets requesting more weights override earlier ones.
+      const familyName = value.split(':')[0];
+      const existing = families.get(familyName);
+      // Prefer the longer (more weights/styles) clause
+      if (!existing || value.length > existing.length) {
+        families.set(familyName, value);
+      }
+    }
+  }
+  return [...families.values()];
+}
+const allFontsHref =
+  'https://fonts.googleapis.com/css2?' +
+  dedupeFamilies().map((v) => `family=${v}`).join('&') +
+  '&display=swap';
 
 // Sample content for previews — chosen to show display + body + meta in
 // natural editorial proportions.
@@ -39,8 +58,8 @@ const SAMPLE = {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Admin chrome fonts (always loaded) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <!-- One stylesheet per preset — parallelizable, individually cacheable -->
-  {presetFontHrefs.map((href) => <link href={href} rel="stylesheet" />)}
+  <!-- All preset fonts in a single combined Google Fonts URL (deduped). -->
+  <link href={allFontsHref} rel="stylesheet" />
   <link rel="stylesheet" href="/admin.css" />
   <meta name="admin-token" content={adminTokenValue} />
   <style>
