@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.2.0] - 2026-04-06
+
+### Added — 27 More Typography Presets (37 total) + Apple News + New Yorker Tribute
+
+The typography gallery grew from 10 to 37 presets across 6 sweeps, covering every major editorial category.
+
+- **Round 2 (10 → 20)**: Caslon Letterpress, Baskerville Penguin, Roboto Editorial, Merriweather Journal, Literata Library, Alegreya Argentina, PT Editorial, Vollkorn Bookish, Big Shoulders, Faustina Magazine
+- **Round 3 (20 → 35)**: Slab category filled in (Roboto Slab, Arvo, Zilla Slab), single-family systems extended (Source Pro, Noto, DM Complete), modern editorial serifs (Frank Ruhl Libre, Domine, Crimson Text), sans-display + serif body variants (Outfit, Archivo, Bricolage Grotesque), classical/scholarly (Cardo, Gentium Book Plus, Tinos)
+- **Round 4 (35 → 37)**: **Apple News** — uses Apple's `ui-serif` (New York) + `-apple-system` (SF Pro) system stack. Renders authentically on Mac/iOS via the OS, zero font download. New `googleFontsQuery: ''` pattern handled in BaseLayout (skips the Google Fonts `<link>` entirely) and in the admin gallery (filtered out of preset font URL list). **New Yorker (tribute)** — honest approximation since real Irvin + Adobe Caslon are proprietary; uses Bodoni Moda + Libre Caslon Text + Inter
+
+### Fixed — Typography Cross-Preset Visual Balance
+
+- **`font-size-adjust: ex-height`** — different typefaces have wildly different x-heights at the same point size. Cormorant (~0.41) and EB Garamond (~0.41) read as visibly smaller than Inter (~0.518) at the same `font-size`. Use CSS `font-size-adjust: ex-height <ratio>` to normalize apparent size across presets
+- **Two separate targets** — `--font-body-adjust` (default 0.514) inherits to all body text via `body`; `--font-display-adjust` (default 0.49) applies to headings, slightly smaller so didone display fonts (Bodoni, Playfair) keep their elegant proportions
+- **Per-preset overrides** — Cormorant Refined gets `bodySizeAdjust: 0.52` (most aggressive scale-up), Vogue Couture gets `displaySizeAdjust: 0.485` (Bodoni Moda kept elegant), naturally well-calibrated faces (Plex, Newsreader, Lora) keep defaults
+- **Admin gallery preview cards** consume the same per-preset adjust values via inline CSS variables, so side-by-side comparison is now visually fair
+
+### Fixed — Typography Preset Loading Robustness
+
+- **One stylesheet per preset** instead of one stitched 4.2KB combined Google Fonts URL. Stitched URL was fragile (proxy/CDN URL length limits, one bad family clause breaking the entire stylesheet). Per-preset links parallelize, cache independently, and isolate failures
+- **Audited all 37 presets** against Google Fonts API: every CSS endpoint returns 200 with @font-face rules, every declared family name matches its `googleFontsQuery`, every requested weight is served, every actual `.woff2` binary is reachable
+
+### Fixed — CDN Cache Bypass When Typography Preset Active
+
+The typography preset system was working correctly server-side but Vercel's edge cache was serving stale default-preset renders to cookie-bearing visitors. Two-part bug:
+
+1. Middleware unconditionally set `Cache-Control: s-maxage=60` on every public page render, overriding the per-render header BaseLayout was trying to set
+2. Even if BaseLayout's header had survived, **Vercel CDN does not vary on cookies** — the first uncookied visit cached the default-preset version and every subsequent cookie-bearing visitor got that cached render regardless of their preset
+
+**Fix**: middleware now reads the `typography_preset` cookie BEFORE setting cache headers. If present → `Cache-Control: private, no-store` (bypass CDN entirely). Otherwise → normal `s-maxage` CDN caching for anonymous visitors. Removed BaseLayout's now-redundant header set. Public anonymous visitors still get full CDN caching — only cookie-bearing previewers bypass.
+
 ## [22.1.0] - 2026-04-06
 
 ### Added — Typography Preset System
