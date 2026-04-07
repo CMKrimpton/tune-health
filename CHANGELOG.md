@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.3.0] - 2026-04-07
+
+### Changed — Typography Gallery Reordered by Recommendation Quality
+
+The 37 typography presets are now sorted by editorial quality, screen readability, distinctiveness, and track record at premium publications — not by the chronological order they were added. The admin gallery now leads with the best picks for long-form health journalism.
+
+- **New top 5**: Medium (Newsreader), Editorial Modern (Fraunces + Source Serif), Substack Studio (Newsreader + Lora + Manrope), Literata Library, Spectral Atlantic
+- **Playfair Classic demoted to #26** per the typography audit's "most overused free display serif on the web... signals free template" critique
+- **Tinos Broadsheet moved to #37** as the most generic Times metric clone
+- **`getPresetById` hardened** to fall back via `DEFAULT_PRESET_ID` lookup instead of `TYPOGRAPHY_PRESETS[0]` — gallery order is now purely a UI ranking, and `classic` remains the actual default for users with no cookie regardless of array position
+- Header comment added explaining the ordering convention
+
 ## [22.2.3] - 2026-04-07
 
 ### Fixed — Typography Apply Is Now Instant (No Reload)

@@ -7,6 +7,12 @@
  *
  * To add a preset: add an entry below. The Google Fonts query string must
  * include every weight + style actually used by the override CSS.
+ *
+ * Order matters: this array drives the admin gallery numbering (01–37).
+ * Presets are ranked by editorial quality, screen readability, distinctiveness,
+ * and track record at premium publications. The actual default preset (used
+ * when no cookie is set) is controlled by DEFAULT_PRESET_ID below, NOT by
+ * array position — getPresetById falls back via ID lookup, not index.
  */
 
 export type TypographyPreset = {
@@ -42,18 +48,18 @@ export type TypographyPreset = {
 
 export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
-    id: 'classic',
-    name: 'Playfair Classic',
-    vibe: 'The current stack. High-contrast didone display with literary body. Refined, traditional editorial.',
-    display: "'Playfair Display', Georgia, 'Times New Roman', serif",
-    body: "'Crimson Pro', Georgia, serif",
-    sans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    id: 'medium',
+    name: 'Medium',
+    vibe: 'Newsreader is Production Type\'s editorial workhorse — the closest free match to Medium\'s Charter+Noe pairing. Single-family system for cohesion.',
+    display: "'Newsreader', Georgia, serif",
+    body: "'Newsreader', Georgia, serif",
+    sans: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     googleFontsQuery:
-      'family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700',
-    // Crimson Pro x-height ~0.448 — scale up to match Inter reference
+      'family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Newsreader x-height ~0.51 — naturally well-balanced, light tuning
     bodySizeAdjust: 0.514,
-    // Playfair Display x-height ~0.46 — keep didone elegance, slight bump
-    displaySizeAdjust: 0.49,
+    displaySizeAdjust: 0.51,
   },
   {
     id: 'editorial-modern',
@@ -70,62 +76,110 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     displaySizeAdjust: 0.50,
   },
   {
-    id: 'medium',
-    name: 'Medium',
-    vibe: 'Newsreader is Production Type\'s editorial workhorse — the closest free match to Medium\'s Charter+Noe pairing. Single-family system for cohesion.',
+    id: 'substack',
+    name: 'Substack Studio',
+    vibe: 'Newsreader display + Lora body + Manrope UI. Modern editorial DNA — what Substack would pick if it had taste.',
     display: "'Newsreader', Georgia, serif",
-    body: "'Newsreader', Georgia, serif",
-    sans: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    body: "'Lora', Georgia, serif",
+    sans: "'Manrope', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Inter:wght@400;500;600;700',
+      'family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Manrope:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
-    // Newsreader x-height ~0.51 — naturally well-balanced, light tuning
+    // Lora x-height ~0.51, Newsreader ~0.51 — both well-calibrated
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.51,
   },
   {
-    id: 'vogue',
-    name: 'Vogue Couture',
-    vibe: 'Bodoni Moda — fashion magazine didone with hairline serifs and dramatic contrast. Lora softens the body. Pure Vogue/Bazaar energy.',
-    display: "'Bodoni Moda', 'Didot', Georgia, serif",
-    body: "'Lora', Georgia, serif",
-    sans: "'Work Sans', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Work+Sans:wght@400;500;600;700',
-    displayLetterSpacing: '-0.02em',
-    // Lora x-height ~0.51 — already comfortable. Bodoni Moda ~0.46, kept
-    // small to preserve fashion-magazine elegance.
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.485,
-  },
-  {
-    id: 'bloomberg',
-    name: 'Bloomberg',
-    vibe: 'DM Serif Display is a bold high-contrast didone. IBM Plex Serif body + Plex Sans UI. Data-dense, authoritative, finance-grade.',
-    display: "'DM Serif Display', Georgia, serif",
-    body: "'IBM Plex Serif', Georgia, serif",
-    sans: "'IBM Plex Sans', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700',
-    displayLetterSpacing: '-0.01em',
-    // IBM Plex Serif x-height ~0.516 — naturally well-calibrated.
-    // DM Serif Display ~0.49 — modern didone, slight bump.
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.495,
-  },
-  {
-    id: 'cormorant',
-    name: 'Cormorant Refined',
-    vibe: 'Cormorant Garamond — Renaissance old-style elegance. EB Garamond body. Scholarly, refined, restrained.',
-    display: "'Cormorant Garamond', Georgia, serif",
-    body: "'EB Garamond', Georgia, serif",
+    id: 'literata',
+    name: 'Literata Library',
+    vibe: 'Google Books\' purpose-built literary serif. Variable, designed for long-form reading on screens. Bookish without being precious.',
+    display: "'Literata', Georgia, serif",
+    body: "'Literata', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700',
-    displayWeight: '600',
-    // EB Garamond x-height ~0.41, Cormorant ~0.41 — both VERY small.
-    // These need aggressive scale-up or they'll look like 12pt at 18pt size.
-    bodySizeAdjust: 0.52,
+      'family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Literata x-height ~0.50
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'spectral',
+    name: 'Spectral Atlantic',
+    vibe: 'Spectral by Production Type — screen-optimized serif with warm literary feel. Pairs with itself. The Atlantic\'s vibe.',
+    display: "'Spectral', Georgia, serif",
+    body: "'Spectral', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Spectral x-height ~0.50 — close to ideal
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'source',
+    name: 'Source Pro System',
+    vibe: 'Adobe\'s open Source family — Source Serif 4 paired with Source Sans 3. Single coherent design language across serif and sans. Quietly excellent.',
+    display: "'Source Serif 4', Georgia, serif",
+    body: "'Source Serif 4', Georgia, serif",
+    sans: "'Source Sans 3', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400',
+    displayLetterSpacing: '-0.015em',
+    // Source Serif 4 x-height ~0.484
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'merriweather',
+    name: 'Merriweather Journal',
+    vibe: 'Eben Sopwith\'s screen-optimized serif. Warm, broad, very readable. The chosen face of ProPublica and The Conversation.',
+    display: "'Merriweather', Georgia, serif",
+    body: "'Merriweather', Georgia, serif",
+    sans: "'Source Sans 3', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Merriweather is famously high x-height (~0.52) — designed for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'apple-news',
+    name: 'Apple News',
+    vibe: 'Mirrors Apple News\'s actual structure: bold SF Pro Display headlines (sans, not serif) over a New York serif body. SF Pro for meta. Renders authentically on macOS/iOS — Safari resolves the system stack, Chrome falls back to its closest match. Zero font download.',
+    // Display: SF Pro Display (Apple News uses big bold sans, not serif, for headlines)
+    display: "'SF Pro Display', -apple-system, BlinkMacSystemFont, ui-sans-serif, 'Segoe UI', sans-serif",
+    // Body: New York (Apple's literary serif). 'New York' is the explicit
+    // family name on macOS/iOS; ui-serif is the generic fallback that resolves
+    // to NY on Apple platforms in Safari but Times in Chrome — listing both
+    // covers both browsers.
+    body: "'New York', ui-serif, 'Iowan Old Style', 'Charter', Georgia, serif",
+    sans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro', ui-sans-serif, 'Segoe UI', sans-serif",
+    // No Google Fonts query — entirely system fonts. BaseLayout skips the
+    // Google Fonts <link> when this is empty.
+    googleFontsQuery: '',
+    displayLetterSpacing: '-0.025em',
+    displayWeight: '700',
+    // New York x-height ~0.50 — Apple-tuned for screens
+    bodySizeAdjust: 0.514,
+    // SF Pro Display has a tall x-height (~0.52) — keep heading proportions
+    // similar to body for the Apple News compact-headline feel
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'frank-ruhl',
+    name: 'Frank Ruhl Libre',
+    vibe: 'Israeli-designed contemporary editorial serif. Tall, refined, slightly modular. The free analog to Recoleta — modern editorial without nostalgia.',
+    display: "'Frank Ruhl Libre', Georgia, serif",
+    body: "'Frank Ruhl Libre', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Frank+Ruhl+Libre:wght@400;500;600;700;900&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.02em',
+    // Frank Ruhl Libre x-height ~0.50
+    bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.50,
   },
   {
@@ -144,145 +198,19 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     displaySizeAdjust: 0.514,
   },
   {
-    id: 'spectral',
-    name: 'Spectral Atlantic',
-    vibe: 'Spectral by Production Type — screen-optimized serif with warm literary feel. Pairs with itself. The Atlantic\'s vibe.',
-    display: "'Spectral', Georgia, serif",
-    body: "'Spectral', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
+    id: 'bloomberg',
+    name: 'Bloomberg',
+    vibe: 'DM Serif Display is a bold high-contrast didone. IBM Plex Serif body + Plex Sans UI. Data-dense, authoritative, finance-grade.',
+    display: "'DM Serif Display', Georgia, serif",
+    body: "'IBM Plex Serif', Georgia, serif",
+    sans: "'IBM Plex Sans', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Spectral x-height ~0.50 — close to ideal
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.50,
-  },
-  {
-    id: 'wired',
-    name: 'Wired Modern',
-    vibe: 'Space Grotesk sans display — Wired/Rest of World energy. Source Serif body grounds it. Geometric, contemporary, confident.',
-    display: "'Space Grotesk', -apple-system, sans-serif",
-    body: "'Source Serif 4', Georgia, serif",
-    sans: "'Space Grotesk', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400',
-    displayLetterSpacing: '-0.03em',
-    displayWeight: '600',
-    // Source Serif 4 x-height ~0.484, Space Grotesk ~0.52
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.514,
-  },
-  {
-    id: 'substack',
-    name: 'Substack Studio',
-    vibe: 'Newsreader display + Lora body + Manrope UI. Modern editorial DNA — what Substack would pick if it had taste.',
-    display: "'Newsreader', Georgia, serif",
-    body: "'Lora', Georgia, serif",
-    sans: "'Manrope', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Manrope:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Lora x-height ~0.51, Newsreader ~0.51 — both well-calibrated
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.51,
-  },
-  {
-    id: 'caslon',
-    name: 'Caslon Letterpress',
-    vibe: 'Libre Caslon — the original "if in doubt, use Caslon" face. American letterpress tradition. Pairs with Libre Franklin for a 1900s newspaper feel.',
-    display: "'Libre Caslon Display', Georgia, serif",
-    body: "'Libre Caslon Text', Georgia, serif",
-    sans: "'Libre Franklin', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Libre+Caslon+Display&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700',
+      'family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700',
     displayLetterSpacing: '-0.01em',
-    // Caslon x-heights ~0.43 — needs scale-up
-    bodySizeAdjust: 0.52,
-    displaySizeAdjust: 0.50,
-  },
-  {
-    id: 'baskerville',
-    name: 'Baskerville Penguin',
-    vibe: 'Libre Baskerville — the canonical Penguin Books transitional serif. Bookish, refined, warm. The face you grew up reading.',
-    display: "'Libre Baskerville', Georgia, serif",
-    body: "'Libre Baskerville', Georgia, serif",
-    sans: "'Libre Franklin', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Libre Baskerville has a tall x-height (~0.53) for a Baskerville
+    // IBM Plex Serif x-height ~0.516 — naturally well-calibrated.
+    // DM Serif Display ~0.49 — modern didone, slight bump.
     bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.514,
-  },
-  {
-    id: 'roboto-editorial',
-    name: 'Roboto Editorial',
-    vibe: 'Google\'s full Roboto family — Roboto Serif (variable, screen-tuned) paired with Roboto Sans. Engineering aesthetic. Single coherent voice.',
-    display: "'Roboto Serif', Georgia, serif",
-    body: "'Roboto Serif', Georgia, serif",
-    sans: "'Roboto', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Roboto+Serif:ital,opsz,wght@0,8..144,400;0,8..144,500;0,8..144,600;0,8..144,700;1,8..144,400&family=Roboto:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Roboto Serif x-height ~0.51 — well-calibrated for screens
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.51,
-  },
-  {
-    id: 'merriweather',
-    name: 'Merriweather Journal',
-    vibe: 'Eben Sopwith\'s screen-optimized serif. Warm, broad, very readable. The chosen face of ProPublica and The Conversation.',
-    display: "'Merriweather', Georgia, serif",
-    body: "'Merriweather', Georgia, serif",
-    sans: "'Source Sans 3', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Merriweather is famously high x-height (~0.52) — designed for screens
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.514,
-  },
-  {
-    id: 'literata',
-    name: 'Literata Library',
-    vibe: 'Google Books\' purpose-built literary serif. Variable, designed for long-form reading on screens. Bookish without being precious.',
-    display: "'Literata', Georgia, serif",
-    body: "'Literata', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Literata x-height ~0.50
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.50,
-  },
-  {
-    id: 'alegreya',
-    name: 'Alegreya Argentina',
-    vibe: 'Juan Pablo del Peral\'s award-winning calligraphic serif. Distinctive, characterful, plays beautifully with its own sans companion.',
-    display: "'Alegreya', Georgia, serif",
-    body: "'Alegreya', Georgia, serif",
-    sans: "'Alegreya Sans', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Alegreya:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Alegreya+Sans:wght@400;500;700',
-    displayLetterSpacing: '-0.015em',
-    // Alegreya x-height ~0.49
-    bodySizeAdjust: 0.518,
-    displaySizeAdjust: 0.50,
-  },
-  {
-    id: 'pt',
-    name: 'PT Editorial',
-    vibe: 'ParaType\'s ground-up Cyrillic+Latin family. Contemporary Russian editorial workhorse. Used across European magazines.',
-    display: "'PT Serif', Georgia, serif",
-    body: "'PT Serif', Georgia, serif",
-    sans: "'PT Sans', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=PT+Sans:ital,wght@0,400;0,700;1,400',
-    displayLetterSpacing: '-0.015em',
-    // PT Serif x-height ~0.49
-    bodySizeAdjust: 0.518,
-    displaySizeAdjust: 0.50,
+    displaySizeAdjust: 0.495,
   },
   {
     id: 'vollkorn',
@@ -295,133 +223,6 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
       'family=Vollkorn:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
     // Vollkorn x-height ~0.50
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.50,
-  },
-  {
-    id: 'big-shoulders',
-    name: 'Big Shoulders',
-    vibe: 'Patric King\'s condensed brutalist display. Variable, wide-range. Pair with Source Serif body for tension between editorial classicism and contemporary punk.',
-    display: "'Big Shoulders Display', -apple-system, sans-serif",
-    body: "'Source Serif 4', Georgia, serif",
-    sans: "'Source Sans 3', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Big+Shoulders+Display:wght@400;600;700;800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@400;500;600;700',
-    displayLetterSpacing: '-0.025em',
-    displayWeight: '700',
-    // Source Serif 4 ~0.484, Big Shoulders is condensed display (cap-driven)
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.52,
-  },
-  {
-    id: 'faustina',
-    name: 'Faustina Magazine',
-    vibe: 'Omnibus-Type\'s narrow editorial body, designed for newspaper columns. Tight, efficient, modern. Used by El País.',
-    display: "'Faustina', Georgia, serif",
-    body: "'Faustina', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Faustina:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.018em',
-    // Faustina x-height ~0.51 — designed for screens
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.51,
-  },
-  {
-    id: 'roboto-slab',
-    name: 'Roboto Slab',
-    vibe: 'Google\'s slab variant of Roboto. Screen-tuned, geometric, mechanical without being cold. The slab category, done right.',
-    display: "'Roboto Slab', Georgia, serif",
-    body: "'Roboto Slab', Georgia, serif",
-    sans: "'Roboto', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Roboto Slab x-height ~0.52 — designed for screens
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.514,
-  },
-  {
-    id: 'arvo',
-    name: 'Arvo Geometric',
-    vibe: 'Anton Koovit\'s geometric slab. Clean, contemporary, no decoration. Pairs with Inter for a modern editorial-engineering tone.',
-    display: "'Arvo', Georgia, serif",
-    body: "'Arvo', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Arvo:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Arvo x-height ~0.50
-    bodySizeAdjust: 0.518,
-    displaySizeAdjust: 0.51,
-  },
-  {
-    id: 'zilla',
-    name: 'Zilla Slab',
-    vibe: 'Mozilla\'s house slab. Designed by Typotheque for the Firefox brand. Confident, contemporary, slightly angular.',
-    display: "'Zilla Slab', Georgia, serif",
-    body: "'Zilla Slab', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Zilla+Slab:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Zilla Slab x-height ~0.51
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.51,
-  },
-  {
-    id: 'source',
-    name: 'Source Pro System',
-    vibe: 'Adobe\'s open Source family — Source Serif 4 paired with Source Sans 3. Single coherent design language across serif and sans. Quietly excellent.',
-    display: "'Source Serif 4', Georgia, serif",
-    body: "'Source Serif 4', Georgia, serif",
-    sans: "'Source Sans 3', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400',
-    displayLetterSpacing: '-0.015em',
-    // Source Serif 4 x-height ~0.484
-    bodySizeAdjust: 0.518,
-    displaySizeAdjust: 0.50,
-  },
-  {
-    id: 'noto',
-    name: 'Noto System',
-    vibe: 'Google\'s pan-script Noto family — Noto Serif + Noto Sans. Hyper-rigorous, every script supported, the universal-coverage option. Quiet authority.',
-    display: "'Noto Serif', Georgia, serif",
-    body: "'Noto Serif', Georgia, serif",
-    sans: "'Noto Sans', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400',
-    displayLetterSpacing: '-0.015em',
-    // Noto Serif x-height ~0.49
-    bodySizeAdjust: 0.514,
-    displaySizeAdjust: 0.50,
-  },
-  {
-    id: 'dm-complete',
-    name: 'DM Complete',
-    vibe: 'The full DM family — DM Serif Display headlines, DM Serif Text body, DM Sans UI. Colophon Foundry\'s open family. Coherent across all three roles.',
-    display: "'DM Serif Display', Georgia, serif",
-    body: "'DM Serif Text', Georgia, serif",
-    sans: "'DM Sans', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=DM+Serif+Display:ital@0;1&family=DM+Serif+Text:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400',
-    displayLetterSpacing: '-0.01em',
-    // DM Serif Text x-height ~0.50, Display ~0.49
-    bodySizeAdjust: 0.518,
-    displaySizeAdjust: 0.495,
-  },
-  {
-    id: 'frank-ruhl',
-    name: 'Frank Ruhl Libre',
-    vibe: 'Israeli-designed contemporary editorial serif. Tall, refined, slightly modular. The free analog to Recoleta — modern editorial without nostalgia.',
-    display: "'Frank Ruhl Libre', Georgia, serif",
-    body: "'Frank Ruhl Libre', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
-    googleFontsQuery:
-      'family=Frank+Ruhl+Libre:wght@400;500;600;700;900&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.02em',
-    // Frank Ruhl Libre x-height ~0.50
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.50,
   },
@@ -440,18 +241,133 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     displaySizeAdjust: 0.514,
   },
   {
-    id: 'crimson-text',
-    name: 'Crimson Text',
-    vibe: 'Sebastian Kosch\'s Italian Renaissance revival. Classical proportions, scholarly authority. The body text version of Crimson Pro, with tighter metrics.',
-    display: "'Crimson Text', Georgia, serif",
-    body: "'Crimson Text', Georgia, serif",
+    id: 'roboto-editorial',
+    name: 'Roboto Editorial',
+    vibe: 'Google\'s full Roboto family — Roboto Serif (variable, screen-tuned) paired with Roboto Sans. Engineering aesthetic. Single coherent voice.',
+    display: "'Roboto Serif', Georgia, serif",
+    body: "'Roboto Serif', Georgia, serif",
+    sans: "'Roboto', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Roboto+Serif:ital,opsz,wght@0,8..144,400;0,8..144,500;0,8..144,600;0,8..144,700;1,8..144,400&family=Roboto:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Roboto Serif x-height ~0.51 — well-calibrated for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
+  },
+  {
+    id: 'dm-complete',
+    name: 'DM Complete',
+    vibe: 'The full DM family — DM Serif Display headlines, DM Serif Text body, DM Sans UI. Colophon Foundry\'s open family. Coherent across all three roles.',
+    display: "'DM Serif Display', Georgia, serif",
+    body: "'DM Serif Text', Georgia, serif",
+    sans: "'DM Sans', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=DM+Serif+Display:ital@0;1&family=DM+Serif+Text:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400',
+    displayLetterSpacing: '-0.01em',
+    // DM Serif Text x-height ~0.50, Display ~0.49
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.495,
+  },
+  {
+    id: 'baskerville',
+    name: 'Baskerville Penguin',
+    vibe: 'Libre Baskerville — the canonical Penguin Books transitional serif. Bookish, refined, warm. The face you grew up reading.',
+    display: "'Libre Baskerville', Georgia, serif",
+    body: "'Libre Baskerville', Georgia, serif",
+    sans: "'Libre Franklin', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Libre Baskerville has a tall x-height (~0.53) for a Baskerville
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'alegreya',
+    name: 'Alegreya Argentina',
+    vibe: 'Juan Pablo del Peral\'s award-winning calligraphic serif. Distinctive, characterful, plays beautifully with its own sans companion.',
+    display: "'Alegreya', Georgia, serif",
+    body: "'Alegreya', Georgia, serif",
+    sans: "'Alegreya Sans', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Alegreya:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Alegreya+Sans:wght@400;500;700',
+    displayLetterSpacing: '-0.015em',
+    // Alegreya x-height ~0.49
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'faustina',
+    name: 'Faustina Magazine',
+    vibe: 'Omnibus-Type\'s narrow editorial body, designed for newspaper columns. Tight, efficient, modern. Used by El País.',
+    display: "'Faustina', Georgia, serif",
+    body: "'Faustina', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Crimson Text x-height ~0.45 — small, needs scale-up
+      'family=Faustina:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.018em',
+    // Faustina x-height ~0.51 — designed for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
+  },
+  {
+    id: 'wired',
+    name: 'Wired Modern',
+    vibe: 'Space Grotesk sans display — Wired/Rest of World energy. Source Serif body grounds it. Geometric, contemporary, confident.',
+    display: "'Space Grotesk', -apple-system, sans-serif",
+    body: "'Source Serif 4', Georgia, serif",
+    sans: "'Space Grotesk', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400',
+    displayLetterSpacing: '-0.03em',
+    displayWeight: '600',
+    // Source Serif 4 x-height ~0.484, Space Grotesk ~0.52
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'vogue',
+    name: 'Vogue Couture',
+    vibe: 'Bodoni Moda — fashion magazine didone with hairline serifs and dramatic contrast. Lora softens the body. Pure Vogue/Bazaar energy.',
+    display: "'Bodoni Moda', 'Didot', Georgia, serif",
+    body: "'Lora', Georgia, serif",
+    sans: "'Work Sans', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Work+Sans:wght@400;500;600;700',
+    displayLetterSpacing: '-0.02em',
+    // Lora x-height ~0.51 — already comfortable. Bodoni Moda ~0.46, kept
+    // small to preserve fashion-magazine elegance.
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.485,
+  },
+  {
+    id: 'bricolage',
+    name: 'Bricolage Grotesque',
+    vibe: 'Mathieu Triay\'s variable contemporary grotesk. Subtle ink traps, modern proportions. Pair with Spectral for a contemporary literary feel.',
+    display: "'Bricolage Grotesque', -apple-system, sans-serif",
+    body: "'Spectral', Georgia, serif",
+    sans: "'Bricolage Grotesque', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Spectral:ital,wght@0,400;0,500;0,600;1,400',
+    displayLetterSpacing: '-0.025em',
+    displayWeight: '700',
+    // Spectral ~0.50, Bricolage ~0.51
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
+  },
+  {
+    id: 'new-yorker',
+    name: 'New Yorker (tribute)',
+    vibe: 'A tribute, not the real thing. The New Yorker uses Irvin (custom, 1925) + Adobe Caslon — both proprietary. Closest free approximation: Bodoni Moda caps for that didone headline feel, Libre Caslon Text body, Inter for meta.',
+    display: "'Bodoni Moda', 'Didot', Georgia, serif",
+    body: "'Libre Caslon Text', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.02em',
+    // Libre Caslon Text x-height ~0.43, Bodoni Moda ~0.46
     bodySizeAdjust: 0.52,
-    displaySizeAdjust: 0.50,
+    displaySizeAdjust: 0.485,
   },
   {
     id: 'outfit',
@@ -484,33 +400,117 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     displaySizeAdjust: 0.514,
   },
   {
-    id: 'bricolage',
-    name: 'Bricolage Grotesque',
-    vibe: 'Mathieu Triay\'s variable contemporary grotesk. Subtle ink traps, modern proportions. Pair with Spectral for a contemporary literary feel.',
-    display: "'Bricolage Grotesque', -apple-system, sans-serif",
-    body: "'Spectral', Georgia, serif",
-    sans: "'Bricolage Grotesque', -apple-system, sans-serif",
+    id: 'pt',
+    name: 'PT Editorial',
+    vibe: 'ParaType\'s ground-up Cyrillic+Latin family. Contemporary Russian editorial workhorse. Used across European magazines.',
+    display: "'PT Serif', Georgia, serif",
+    body: "'PT Serif', Georgia, serif",
+    sans: "'PT Sans', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Spectral:ital,wght@0,400;0,500;0,600;1,400',
-    displayLetterSpacing: '-0.025em',
-    displayWeight: '700',
-    // Spectral ~0.50, Bricolage ~0.51
+      'family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=PT+Sans:ital,wght@0,400;0,700;1,400',
+    displayLetterSpacing: '-0.015em',
+    // PT Serif x-height ~0.49
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'classic',
+    name: 'Playfair Classic',
+    vibe: 'The current stack. High-contrast didone display with literary body. Refined, traditional editorial.',
+    display: "'Playfair Display', Georgia, 'Times New Roman', serif",
+    body: "'Crimson Pro', Georgia, serif",
+    sans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    googleFontsQuery:
+      'family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700',
+    // Crimson Pro x-height ~0.448 — scale up to match Inter reference
     bodySizeAdjust: 0.514,
+    // Playfair Display x-height ~0.46 — keep didone elegance, slight bump
+    displaySizeAdjust: 0.49,
+  },
+  {
+    id: 'caslon',
+    name: 'Caslon Letterpress',
+    vibe: 'Libre Caslon — the original "if in doubt, use Caslon" face. American letterpress tradition. Pairs with Libre Franklin for a 1900s newspaper feel.',
+    display: "'Libre Caslon Display', Georgia, serif",
+    body: "'Libre Caslon Text', Georgia, serif",
+    sans: "'Libre Franklin', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Libre+Caslon+Display&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700',
+    displayLetterSpacing: '-0.01em',
+    // Caslon x-heights ~0.43 — needs scale-up
+    bodySizeAdjust: 0.52,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'noto',
+    name: 'Noto System',
+    vibe: 'Google\'s pan-script Noto family — Noto Serif + Noto Sans. Hyper-rigorous, every script supported, the universal-coverage option. Quiet authority.',
+    display: "'Noto Serif', Georgia, serif",
+    body: "'Noto Serif', Georgia, serif",
+    sans: "'Noto Sans', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400',
+    displayLetterSpacing: '-0.015em',
+    // Noto Serif x-height ~0.49
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'roboto-slab',
+    name: 'Roboto Slab',
+    vibe: 'Google\'s slab variant of Roboto. Screen-tuned, geometric, mechanical without being cold. The slab category, done right.',
+    display: "'Roboto Slab', Georgia, serif",
+    body: "'Roboto Slab', Georgia, serif",
+    sans: "'Roboto', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Roboto Slab x-height ~0.52 — designed for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'cormorant',
+    name: 'Cormorant Refined',
+    vibe: 'Cormorant Garamond — Renaissance old-style elegance. EB Garamond body. Scholarly, refined, restrained.',
+    display: "'Cormorant Garamond', Georgia, serif",
+    body: "'EB Garamond', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700',
+    displayWeight: '600',
+    // EB Garamond x-height ~0.41, Cormorant ~0.41 — both VERY small.
+    // These need aggressive scale-up or they'll look like 12pt at 18pt size.
+    bodySizeAdjust: 0.52,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'arvo',
+    name: 'Arvo Geometric',
+    vibe: 'Anton Koovit\'s geometric slab. Clean, contemporary, no decoration. Pairs with Inter for a modern editorial-engineering tone.',
+    display: "'Arvo', Georgia, serif",
+    body: "'Arvo', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Arvo:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Arvo x-height ~0.50
+    bodySizeAdjust: 0.518,
     displaySizeAdjust: 0.51,
   },
   {
-    id: 'cardo',
-    name: 'Cardo Scholarly',
-    vibe: 'David Perry\'s Renaissance Italian humanist, designed for classics scholarship. Generous proportions, scholarly authority, deep glyph coverage.',
-    display: "'Cardo', Georgia, serif",
-    body: "'Cardo', Georgia, serif",
+    id: 'zilla',
+    name: 'Zilla Slab',
+    vibe: 'Mozilla\'s house slab. Designed by Typotheque for the Firefox brand. Confident, contemporary, slightly angular.',
+    display: "'Zilla Slab', Georgia, serif",
+    body: "'Zilla Slab', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Cardo:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700',
+      'family=Zilla+Slab:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
-    // Cardo x-height ~0.45 — small Renaissance proportions
-    bodySizeAdjust: 0.52,
-    displaySizeAdjust: 0.50,
+    // Zilla Slab x-height ~0.51
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
   },
   {
     id: 'gentium',
@@ -527,41 +527,47 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     displaySizeAdjust: 0.50,
   },
   {
-    id: 'apple-news',
-    name: 'Apple News',
-    vibe: 'Mirrors Apple News\'s actual structure: bold SF Pro Display headlines (sans, not serif) over a New York serif body. SF Pro for meta. Renders authentically on macOS/iOS — Safari resolves the system stack, Chrome falls back to its closest match. Zero font download.',
-    // Display: SF Pro Display (Apple News uses big bold sans, not serif, for headlines)
-    display: "'SF Pro Display', -apple-system, BlinkMacSystemFont, ui-sans-serif, 'Segoe UI', sans-serif",
-    // Body: New York (Apple's literary serif). 'New York' is the explicit
-    // family name on macOS/iOS; ui-serif is the generic fallback that resolves
-    // to NY on Apple platforms in Safari but Times in Chrome — listing both
-    // covers both browsers.
-    body: "'New York', ui-serif, 'Iowan Old Style', 'Charter', Georgia, serif",
-    sans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro', ui-sans-serif, 'Segoe UI', sans-serif",
-    // No Google Fonts query — entirely system fonts. BaseLayout skips the
-    // Google Fonts <link> when this is empty.
-    googleFontsQuery: '',
-    displayLetterSpacing: '-0.025em',
-    displayWeight: '700',
-    // New York x-height ~0.50 — Apple-tuned for screens
-    bodySizeAdjust: 0.514,
-    // SF Pro Display has a tall x-height (~0.52) — keep heading proportions
-    // similar to body for the Apple News compact-headline feel
-    displaySizeAdjust: 0.514,
-  },
-  {
-    id: 'new-yorker',
-    name: 'New Yorker (tribute)',
-    vibe: 'A tribute, not the real thing. The New Yorker uses Irvin (custom, 1925) + Adobe Caslon — both proprietary. Closest free approximation: Bodoni Moda caps for that didone headline feel, Libre Caslon Text body, Inter for meta.',
-    display: "'Bodoni Moda', 'Didot', Georgia, serif",
-    body: "'Libre Caslon Text', Georgia, serif",
+    id: 'cardo',
+    name: 'Cardo Scholarly',
+    vibe: 'David Perry\'s Renaissance Italian humanist, designed for classics scholarship. Generous proportions, scholarly authority, deep glyph coverage.',
+    display: "'Cardo', Georgia, serif",
+    body: "'Cardo', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.02em',
-    // Libre Caslon Text x-height ~0.43, Bodoni Moda ~0.46
+      'family=Cardo:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Cardo x-height ~0.45 — small Renaissance proportions
     bodySizeAdjust: 0.52,
-    displaySizeAdjust: 0.485,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'crimson-text',
+    name: 'Crimson Text',
+    vibe: 'Sebastian Kosch\'s Italian Renaissance revival. Classical proportions, scholarly authority. The body text version of Crimson Pro, with tighter metrics.',
+    display: "'Crimson Text', Georgia, serif",
+    body: "'Crimson Text', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Crimson Text x-height ~0.45 — small, needs scale-up
+    bodySizeAdjust: 0.52,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'big-shoulders',
+    name: 'Big Shoulders',
+    vibe: 'Patric King\'s condensed brutalist display. Variable, wide-range. Pair with Source Serif body for tension between editorial classicism and contemporary punk.',
+    display: "'Big Shoulders Display', -apple-system, sans-serif",
+    body: "'Source Serif 4', Georgia, serif",
+    sans: "'Source Sans 3', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Big+Shoulders+Display:wght@400;600;700;800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@400;500;600;700',
+    displayLetterSpacing: '-0.025em',
+    displayWeight: '700',
+    // Source Serif 4 ~0.484, Big Shoulders is condensed display (cap-driven)
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.52,
   },
   {
     id: 'tinos',
@@ -582,6 +588,10 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
 export const DEFAULT_PRESET_ID = 'classic';
 
 export function getPresetById(id: string | undefined | null): TypographyPreset {
-  if (!id) return TYPOGRAPHY_PRESETS[0];
-  return TYPOGRAPHY_PRESETS.find((p) => p.id === id) || TYPOGRAPHY_PRESETS[0];
+  // Default fallback resolves by ID, not array index, so reordering the gallery
+  // never silently changes which preset is the default.
+  const fallback =
+    TYPOGRAPHY_PRESETS.find((p) => p.id === DEFAULT_PRESET_ID) || TYPOGRAPHY_PRESETS[0];
+  if (!id) return fallback;
+  return TYPOGRAPHY_PRESETS.find((p) => p.id === id) || fallback;
 }
