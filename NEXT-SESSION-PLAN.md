@@ -1,92 +1,175 @@
 # Next Session Plan
 
-> **Status**: v18.7.0 live. ~192 published articles across 9 categories. Social Media System producing quality output with sharp, confrontational voice: follow-the-money framing, named institutions/dollar amounts, forensic skepticism. Dashboard UI polished with readable font sizes.
+> **Status**: v22.3.0 live. ~192 published articles. Site is fully SSR-driven from Supabase (no git commits for content). Self-learning editorial pipeline shipped. Typography preset system shipped (37 presets, admin gallery sorted by recommendation quality, instant apply with optimistic UI).
+
+> **Last updated**: 2026-04-07 (audit pass — supersedes the stale v18.7 plan)
 
 ---
 
-## What Was Done This Session (v18.7.0 — Social Simulator + Voice Overhaul)
+## What Shipped Since v18.7 (3 weeks of work)
 
-### Dashboard UI Polish
-- **Systematic font-size bump** — every tier bumped one step up across the board (panel titles, body text, rows, mono, buttons, pills, micro labels, stat values)
-- **Increased spacing** — row height 32→36px, panel padding, pill padding, button touch targets
-- **Expanded post preview** — larger font, more max-height for reading content
+### v22.x — Typography Preset System
+- **37 editorial type presets** (Newsreader, Fraunces, Source Serif, Bodoni Moda, Spectral, Plex, Apple News, New Yorker tribute, Playfair, etc.) loaded via per-preset `<link>` tags with deduped families
+- **`/admin/typography` gallery** — 2-column preview cards with full editorial sample, sorted by recommendation quality (Medium/Newsreader leads, Playfair demoted to #26, Tinos to #37)
+- **Instant apply** — optimistic UI, no page reload, cookie POST in background
+- **`font-size-adjust: ex-height`** normalization so different x-height fonts read at the same apparent size; per-preset overrides for Cormorant, Bodoni, etc.
+- **CDN cache bypass** — middleware reads `typography_preset` cookie and switches to `private, no-store` for cookie-bearing visitors; anonymous visitors still get full edge caching
+- **Default preset** is still `classic` (Playfair) — see "Open decisions" below
 
-### Social Voice Overhaul — "Receipts, Not Vibes"
-- **All 4 persona voices rewritten** — sharper, younger, more Bill Maher energy
-- **Brand**: second-person address, gut-punch stats, "You've been told X. The data says Y."
-- **Reporter**: "I read the actual paper, not the press release" — names sample sizes, funding sources
-- **Skeptic**: forensic follow-the-money — John Oliver compressed to 280 chars
-- **Curator**: surprise pattern-finder connecting disparate studies
-- **Engine prompts updated** — requires dollar amounts, institution names, at least one funny line
-- **Choreography templates rewritten** for the new voice direction
+### v22.0 — SSR Migration
+- Astro switched to `output: 'server'` on Vercel serverless adapter
+- Single dynamic `[slug].astro` route replaced 172 static article pages
+- Articles served from Supabase `articles` table at request time
+- Custom `sitemap.xml` SSR endpoint replaced `@astrojs/sitemap`
+- All edge functions write to DB only — no GitHub commits for article publishing
+- Per-request article cache + middleware CDN cache headers (5 min for articles, 1 min for listings)
+- Deleted 343 static content files (`src/content/`); deleted dead `_shared/github.ts`
 
-### Research & Strategy
-- Analyzed Health Ranger rhetorical patterns (hooks, follow-the-money, direct address)
-- Adapted structure for evidence-based journalism: same engagement, verifiable citations
-- Key insight: the gap in the market is forensic institutional skepticism with receipts
+### v21.0 — Self-Learning Editorial Pipeline
+- 3 materialized views (`mv_category_performance`, `mv_scout_performance`, `mv_social_performance`) refreshed daily at 4am UTC
+- `get_editorial_digest()` SQL function returns single JSONB blob; pipeline stages inject analytics context into prompts
+- Scouts see top performers + per-desk publish rates; QC sees category baselines; Grok sees its own bias patterns; social engine/writer get engagement intelligence + learned templates; pinger sees per-source accuracy
+- `social_templates` auto-populated from posts scoring 2x+ platform average
 
-### Social Media Simulator (`/admin/social-preview`)
-- New admin page with iPhone mockup — posts render in each platform's native UI
-- 6 platforms: X (threads), Bluesky, Reddit (vote arrows, subreddit headers), Threads, LinkedIn, Mastodon
-- Character count warnings per platform, copy button, error handling, responsive scaling
-- Desktop browser frame alongside phone for Reddit/LinkedIn
+### v20.x — Publishing & Cost Hardening
+- **Atomic cost tracking** (`increment_article_cost`/`increment_overhead_cost` SQL functions) — fixes race condition + double-billing on retries across parallel API calls
+- **All publish paths unified** — `publish-direct`, `submit-new-article`, edit page, and `stage-publish` all set `sort_order`, `narration_url`, `hero_image_light`; ghost articles eliminated
+- **Three-way upload toggle**: Topic → Full Chain / Article → Review → Publish / Ready → Art + Publish
+- **Replace Article button** on every published card (review-or-direct toggle, slug-locked, title editable)
+- **Auto-reconcile section IDs** from h2 text at publish; intro paragraph dedup; markdown standfirst → description auto-extraction
+- **Force narration regen** on every publish (~$0.001, not worth conditional skip complexity)
+- **Cost optimization**: removed auto-pick from queue (admin must click Produce), pinger `*/15`→`*/30`, social-poster `*/5`→`*/15`, fire-and-forget illustration + narration. Article cost trended from ~$0.94 → ~$0.39
+- **Admin hardening**: HttpOnly auth cookies, server-side logout, sandboxed preview iframe, beforeunload warning on unsaved edits
+- **ErrorBoundary** wrapping all 6 React islands
+- **Self-learning scout dedup overhaul** (v20.5.0): preserved health-domain words, included skipped/failed/killed in fingerprints, raised threshold to 35% bidirectional + bigrams, AI semantic dedup pass via Flash, differentiated Trending/Investigation/Contrarian desks
 
-### Tested & Deployed
-- Generated social content for seed-oils-aha-funding-cardiovascular-evidence with new voice
-- Quotable output: "The AHA didn't follow the science. It followed the $1.7 million."
-- 2 functions deployed: social-engine, social-writer
+### v19.x — Theme-aware illustration pairs (dark + light variants), 502 error fix on pipeline-admin, human-Opus prose protection (code-level title lock, prose rewrite guard), markdown auto-conversion in submit-article, direct publish path
 
-## Current Architecture (v18.4.0)
+### v18.8 — Article typography uplift (body 20px / 1.8 line-height), unified 3:2 image aspect ratios, two-author byline split (Marc London / Paul Quilici)
 
-- **Navigation**: domain-grouped dropdown (Mind/Body/Medicine/Environment), TopicNav with per-category hover dropdowns, SideNav grouped by domain, MobileNav with improved scroll sensitivity, QuickNav floating pill
-- **Pipeline**: 8-stage hybrid model (human writes with Opus). ~$0.13/article. Chain-dispatch via pg_net with error logging
-- **Admin**: Pipeline/Articles/Agents/Social tabs. Supabase Realtime live updates. Batch API for Social tab
-- **Social Media System**: 8 tables, 4 AI personas, 14 platform configs, 6 edge functions (engine + writer + poster + planner + sync + admin), 3 cron jobs, Bloomberg-inspired dashboard with setup guide. Input validation on all endpoints. Stuck recovery on writer. Draft auto-move on poster
+---
+
+## Current Architecture
+
+- **Frontend**: Astro v5 SSR, React islands for admin + interactive components, Tailwind 4, View Transitions API
+- **Data**: Supabase Postgres is the single source of truth. No file-based content. Articles, pipeline logs, queue, social tables, dedup log, materialized views
+- **Pipeline**: 8 stages, hybrid (Opus writes via Max subscription), chain-dispatch via `pg_net`, safety-net cron every 5 min. ~$0.13–0.39/article depending on stages used
+- **Social system**: 8 tables, 4 personas, 14 platform configs, 6 edge functions, 3 cron jobs, Bloomberg-inspired dashboard
+- **Cron schedule** (9 jobs): 3 scouts (6am/2pm/10pm UTC), pinger `*/30`, featured-rotation `0 */6`, article-produce `*/5` (safety net only), social-poster `*/15`, social-planner `0 5`, social-sync `0 */6`, analytics-refresh `0 4`
+
+---
 
 ## Priority for Next Session
 
-### 1. Platform Account Setup (CRITICAL — system needs credentials to actually post)
-- **Bluesky**: Create account on bsky.app → Settings → App Passwords → Add
-  - `supabase secrets set BLUESKY_HANDLE=alumihealth.bsky.social BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx`
-  - `UPDATE social_platform_config SET api_configured = true WHERE platform = 'bluesky';`
-- **Reddit**: Create app at reddit.com/prefs/apps → Script type
-  - `supabase secrets set REDDIT_CLIENT_ID=xxx REDDIT_CLIENT_SECRET=xxx REDDIT_USERNAME=xxx REDDIT_PASSWORD=xxx`
-  - `UPDATE social_platform_config SET api_configured = true WHERE platform = 'reddit';`
-- **Mastodon**: Create app at mastodon.social → Preferences → Development
-  - `supabase secrets set MASTODON_ACCESS_TOKEN=xxx MASTODON_INSTANCE=mastodon.social`
-  - `UPDATE social_platform_config SET api_configured = true WHERE platform = 'mastodon';`
+### 1. Typography decision — pick a default and ship it (HIGH)
 
-### 2. End-to-End Verification
-- Click "Planner" in admin dashboard → verify articles selected + briefs generated
-- Click "Writer" → verify posts created in social_posts table
-- Click "Poster" → verify posts dispatched to platforms (after credentials are set)
-- Click "Sync" → verify engagement metrics pulled back
-- Verify the full chain works on next article publish
+**Context**: `TYPOGRAPHY-AUDIT.md` (untracked at root) flagged Playfair as "the most overused free display serif on the web — signals free template to typographically literate readers". The v22 preset system shipped 37 alternatives but **`classic` (Playfair) is still the actual default for every uncookied visitor**. The preset gallery is a power-user surface. The brand identity hasn't moved.
 
-### 3. Audit Findings — Medium Priority (from this session's audits)
-- **social-engine mode validation** — validate `mode` parameter is "new_article" or "catalog"
-- **social-writer choreography references** — wire up `brief.references` to actual persona chaining
-- **social-sync velocity averaging** — compute baseline BEFORE syncing new scores
-- **Independence review skip monitoring** — alert when Grok is unavailable and review skipped
-- **Cost dedup on retries** — track retry count per article, only log cost once per stage
+**Action**:
+- Pick one of the audit's recommended defaults: **Newsreader** (Production Type, "closest to Medium's editorial feel"), **Fraunces** (variable wonky axis, distinctive), or **Editorial Modern** (Fraunces + Source Serif, currently #2 in the ranked gallery)
+- Change `DEFAULT_PRESET_ID` in `src/config/typography-presets.ts`
+- Commit `TYPOGRAPHY-AUDIT.md` and the new "alumi news — Style Guide.pdf" to the repo (both currently untracked)
+- Visually verify on homepage hero, article pages, card titles, mobile
 
-### 4. Social Media — Phase 2 (Intelligence Layer)
-- Template learning: analyze top-performing posts → extract patterns → `social_templates`
-- Velocity amplification: when post goes viral, auto-generate amplification on other platforms
-- Pinger integration: connect breaking news signals to emergency social dispatch
-- Additional desk functions for visual (Pinterest, Instagram) and broadcast (Telegram, newsletter)
+**Trace before changing**: `getPresetById` was hardened in v22.3 to fall back via `DEFAULT_PRESET_ID` lookup, not array index, so the gallery order stays a UI ranking independent of the actual default. Safe to change.
 
-### 5. Additional Platform APIs (Phase 2+)
-- LinkedIn API (requires company page + OAuth2 app)
+---
+
+### 2. Social-engine validation gaps (MEDIUM)
+
+**Confirmed open after audit:**
+
+**a) `mode` parameter is unvalidated** — `supabase/functions/social-engine/index.ts:56` extracts `mode` from the request body with only a comment ("new_article" or "catalog") and never checks it. Invalid values silently fall through.
+- Fix: add `if (!["new_article", "catalog"].includes(mode)) return json({ error: "Invalid mode" }, 400);` after the destructure
+
+**b) `brief.references` is read but never populated** — `social-writer/index.ts:200` reads `brief.references` to chain personas ("This is a REPLY/REACTION to the X persona's post"), but `social-engine` never sets it. The field is plumbed in the type but dead in practice.
+- Fix: in social-engine, before generating each persona's brief in a multi-persona arc, query `social_posts` for prior posts on the same `article_slug` + `arc_id` and populate `references` with the prior persona name. This unlocks actual conversational chaining instead of independent posts.
+
+---
+
+### 3. Independence review skip monitoring (MEDIUM)
+
+`stage-independence` already logs `skipReason` to `research_data._independenceReview.reason` when Grok is unavailable. There is no surface for "Grok has been failing repeatedly" — the pipeline silently degrades.
+
+**Action**:
+- Add a count of `independence_skipped_24h` to `pipeline-admin` status response
+- Surface in PipelineMonitor as a warning pill when ≥3 in 24h
+- Optional: log a row to a new `pipeline_alerts` table for permanent tracking
+
+---
+
+### 4. Social platform credentials — still the blocker for the social system to actually post (HIGH if you want social to ship)
+
+The full social pipeline (engine → writer → poster → sync) is built and tested end-to-end against the database. **Nothing has ever been posted because no platform credentials are set.** `social_platform_config.api_configured = false` for all 14 platforms.
+
+Setup commands (unchanged from old plan, still valid):
+```bash
+# Bluesky (easiest, no review)
+supabase secrets set BLUESKY_HANDLE=alumihealth.bsky.social BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
+# Then: UPDATE social_platform_config SET api_configured = true WHERE platform = 'bluesky';
+
+# Reddit (requires script-type app at reddit.com/prefs/apps)
+supabase secrets set REDDIT_CLIENT_ID=xxx REDDIT_CLIENT_SECRET=xxx REDDIT_USERNAME=xxx REDDIT_PASSWORD=xxx
+# Then: UPDATE social_platform_config SET api_configured = true WHERE platform = 'reddit';
+
+# Mastodon (mastodon.social → Preferences → Development)
+supabase secrets set MASTODON_ACCESS_TOKEN=xxx MASTODON_INSTANCE=mastodon.social
+# Then: UPDATE social_platform_config SET api_configured = true WHERE platform = 'mastodon';
+```
+
+After credentials are set, end-to-end verification:
+- Click "Planner" in admin dashboard → verify catalog mining + briefs generated in `social_content_plan`
+- Click "Writer" → verify posts created in `social_posts`
+- Click "Poster" → verify dispatch to platform APIs (check returned `platform_post_id`)
+- Click "Sync" → verify engagement metrics return after 24h
+
+---
+
+### 5. Confirmed FIXED since v18.7 (no action needed)
+
+These were on the old plan and are now resolved:
+- **`social-sync` velocity averaging order** — baseline is correctly computed BEFORE syncing new scores (`social-sync/index.ts:52-62`)
+- **Cost dedup on retries** — atomic SQL increment functions in `20260406_atomic_cost_tracking.sql` eliminate the race that caused double-billing
+- **Ghost articles** (DB↔GitHub drift) — fully eliminated in v20.0
+- **Pipeline 502 cold starts** — fixed in v19.0.1 (1.7MB → 328KB status payload)
+
+---
+
+### 6. Deferred / low priority (still open, no recent activity)
+
+- **Beehiiv newsletter activation** — code is conditional on `BEEHIIV_API_KEY` + `BEEHIIV_PUBLICATION_ID` env vars in `src/pages/api/subscribe.ts`. Falls back gracefully if absent. Activation requires Beehiiv account
+- **Lighthouse audit** — never run since the SSR migration. Worth a baseline now that we're on per-request rendering
+- **HighlightShare race condition** — `src/components/HighlightShare.astro`, untouched since v18, still low priority
+- **FloatingTOC tablet height constraint** — fixed `max-height: 60vh` with no tablet media query, untouched since v18, still low priority
+- **Narration voice tuning** — current voice `GK8yfgyvbDZaYf0rm78A` on `eleven_multilingual_v2`, no recent feedback
+- **Visual verification & device testing pass** — never done systematically
+
+---
+
+### 7. Phase 2 Social (when phase 1 is actually posting)
+
+- LinkedIn API (company page + OAuth2 app — requires Meta-style review)
 - Threads API (Meta developer account)
-- Telegram Bot API (create bot via BotFather)
+- Telegram Bot API (BotFather, lowest friction)
 - Medium API (integration tokens)
+- Pinger → social emergency dispatch wiring
+- Velocity amplification — when one platform's post hits 3x avg, auto-dispatch to others
 
-### 6. Deferred Items
-- Beehiiv account activation + newsletter integration
-- Content production to fill category gaps
-- Visual verification & device testing
-- Narration voice tuning
-- Lighthouse audit
-- HighlightShare selection race condition (low priority)
-- FloatingTOC tablet height constraint (low priority)
+---
+
+## Untracked Files Awaiting Decision
+
+```
+TYPOGRAPHY-AUDIT.md            ← commit alongside the typography default change
+alumi news — Style Guide.pdf   ← commit as supporting brand reference
+```
+
+---
+
+## Codebase Health
+
+- **Zero `TODO` / `FIXME` / `XXX` / `HACK` comments** anywhere in `src/` or `supabase/functions/`
+- **TypeScript strict** clean
+- **No raw `console.*` in production paths** (verified)
+- **All 9 cron jobs healthy and documented**
+- **Pipeline cost tracking** atomic and complete across all 20 edge functions
