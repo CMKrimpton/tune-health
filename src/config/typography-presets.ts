@@ -327,6 +327,219 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.51,
   },
+  {
+    id: 'roboto-slab',
+    name: 'Roboto Slab',
+    vibe: 'Google\'s slab variant of Roboto. Screen-tuned, geometric, mechanical without being cold. The slab category, done right.',
+    display: "'Roboto Slab', Georgia, serif",
+    body: "'Roboto Slab', Georgia, serif",
+    sans: "'Roboto', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Roboto Slab x-height ~0.52 — designed for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'arvo',
+    name: 'Arvo Geometric',
+    vibe: 'Anton Koovit\'s geometric slab. Clean, contemporary, no decoration. Pairs with Inter for a modern editorial-engineering tone.',
+    display: "'Arvo', Georgia, serif",
+    body: "'Arvo', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Arvo:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Arvo x-height ~0.50
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.51,
+  },
+  {
+    id: 'zilla',
+    name: 'Zilla Slab',
+    vibe: 'Mozilla\'s house slab. Designed by Typotheque for the Firefox brand. Confident, contemporary, slightly angular.',
+    display: "'Zilla Slab', Georgia, serif",
+    body: "'Zilla Slab', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Zilla+Slab:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Zilla Slab x-height ~0.51
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
+  },
+  {
+    id: 'source',
+    name: 'Source Pro System',
+    vibe: 'Adobe\'s open Source family — Source Serif 4 paired with Source Sans 3. Single coherent design language across serif and sans. Quietly excellent.',
+    display: "'Source Serif 4', Georgia, serif",
+    body: "'Source Serif 4', Georgia, serif",
+    sans: "'Source Sans 3', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400',
+    displayLetterSpacing: '-0.015em',
+    // Source Serif 4 x-height ~0.484
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'noto',
+    name: 'Noto System',
+    vibe: 'Google\'s pan-script Noto family — Noto Serif + Noto Sans. Hyper-rigorous, every script supported, the universal-coverage option. Quiet authority.',
+    display: "'Noto Serif', Georgia, serif",
+    body: "'Noto Serif', Georgia, serif",
+    sans: "'Noto Sans', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400',
+    displayLetterSpacing: '-0.015em',
+    // Noto Serif x-height ~0.49
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'dm-complete',
+    name: 'DM Complete',
+    vibe: 'The full DM family — DM Serif Display headlines, DM Serif Text body, DM Sans UI. Colophon Foundry\'s open family. Coherent across all three roles.',
+    display: "'DM Serif Display', Georgia, serif",
+    body: "'DM Serif Text', Georgia, serif",
+    sans: "'DM Sans', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=DM+Serif+Display:ital@0;1&family=DM+Serif+Text:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400',
+    displayLetterSpacing: '-0.01em',
+    // DM Serif Text x-height ~0.50, Display ~0.49
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.495,
+  },
+  {
+    id: 'frank-ruhl',
+    name: 'Frank Ruhl Libre',
+    vibe: 'Israeli-designed contemporary editorial serif. Tall, refined, slightly modular. The free analog to Recoleta — modern editorial without nostalgia.',
+    display: "'Frank Ruhl Libre', Georgia, serif",
+    body: "'Frank Ruhl Libre', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Frank+Ruhl+Libre:wght@400;500;600;700;900&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.02em',
+    // Frank Ruhl Libre x-height ~0.50
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'domine',
+    name: 'Domine',
+    vibe: 'Pablo Impallari\'s screen-optimized serif. Designed specifically for body text on the web. Penguin-bookish quality with Merriweather-grade legibility.',
+    display: "'Domine', Georgia, serif",
+    body: "'Domine', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Domine:wght@400;500;600;700&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Domine x-height ~0.51 — designed for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'crimson-text',
+    name: 'Crimson Text',
+    vibe: 'Sebastian Kosch\'s Italian Renaissance revival. Classical proportions, scholarly authority. The body text version of Crimson Pro, with tighter metrics.',
+    display: "'Crimson Text', Georgia, serif",
+    body: "'Crimson Text', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Crimson Text x-height ~0.45 — small, needs scale-up
+    bodySizeAdjust: 0.52,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'outfit',
+    name: 'Outfit + Source Serif',
+    vibe: 'Outfit — Indian Type Foundry\'s geometric humanist sans, variable. Display headlines pair with Source Serif body for modern editorial-tech tension.',
+    display: "'Outfit', -apple-system, sans-serif",
+    body: "'Source Serif 4', Georgia, serif",
+    sans: "'Outfit', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400',
+    displayLetterSpacing: '-0.025em',
+    displayWeight: '700',
+    // Source Serif 4 ~0.484, Outfit ~0.52
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'archivo',
+    name: 'Archivo + Lora',
+    vibe: 'Omnibus-Type\'s contemporary grotesk, slightly condensed. Strong horizontal rhythm. Lora body grounds it in editorial tradition.',
+    display: "'Archivo', -apple-system, sans-serif",
+    body: "'Lora', Georgia, serif",
+    sans: "'Archivo', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Archivo:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;1,400',
+    displayLetterSpacing: '-0.025em',
+    displayWeight: '700',
+    // Lora ~0.51, Archivo ~0.52
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'bricolage',
+    name: 'Bricolage Grotesque',
+    vibe: 'Mathieu Triay\'s variable contemporary grotesk. Subtle ink traps, modern proportions. Pair with Spectral for a contemporary literary feel.',
+    display: "'Bricolage Grotesque', -apple-system, sans-serif",
+    body: "'Spectral', Georgia, serif",
+    sans: "'Bricolage Grotesque', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Spectral:ital,wght@0,400;0,500;0,600;1,400',
+    displayLetterSpacing: '-0.025em',
+    displayWeight: '700',
+    // Spectral ~0.50, Bricolage ~0.51
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
+  },
+  {
+    id: 'cardo',
+    name: 'Cardo Scholarly',
+    vibe: 'David Perry\'s Renaissance Italian humanist, designed for classics scholarship. Generous proportions, scholarly authority, deep glyph coverage.',
+    display: "'Cardo', Georgia, serif",
+    body: "'Cardo', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Cardo:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Cardo x-height ~0.45 — small Renaissance proportions
+    bodySizeAdjust: 0.52,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'gentium',
+    name: 'Gentium Book Plus',
+    vibe: 'SIL\'s award-winning literary face. Designed for the world\'s minority languages. Quiet, generous, deeply considered — the typographer\'s conscience pick.',
+    display: "'Gentium Book Plus', Georgia, serif",
+    body: "'Gentium Book Plus', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Gentium x-height ~0.47
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'tinos',
+    name: 'Tinos Broadsheet',
+    vibe: 'Steve Matteson\'s metric-compatible Times analog (the Liberation/Croscore family). Neutral broadsheet authority. Pairs with Arimo for a complete free Helvetica/Arial replacement.',
+    display: "'Tinos', Georgia, serif",
+    body: "'Tinos', Georgia, serif",
+    sans: "'Arimo', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Tinos:ital,wght@0,400;0,700;1,400;1,700&family=Arimo:ital,wght@0,400;0,500;0,600;0,700;1,400',
+    displayLetterSpacing: '-0.015em',
+    // Tinos matches Times metrics — x-height ~0.45
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.50,
+  },
 ];
 
 export const DEFAULT_PRESET_ID = 'classic';
