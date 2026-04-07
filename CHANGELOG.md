@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.2.2] - 2026-04-07
+
+### Fixed — Apple News Preset Now Matches Real Apple News
+
+Previous Apple News preset used New York serif for both display and body, which looked nothing like the real Apple News (and also fell back to Times in Chrome since `ui-serif` only resolves to New York in Safari).
+
+- **Headlines now use SF Pro Display** (bold sans) instead of New York serif — matches the actual Apple News structure of big bold sans headlines over a serif body
+- **Explicit `'New York'` family name** listed before `ui-serif` in the body stack so Chrome on macOS resolves it correctly (Chrome's `ui-serif` falls back to Times; only Safari maps it to New York)
+- Display tracking tightened to `-0.025em` and weight forced to `700` for the punchy Apple-style headline feel
+
 ## [22.2.1] - 2026-04-06
 
 ### Fixed — Typography Gallery Loading Past Card 5
