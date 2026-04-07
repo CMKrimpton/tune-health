@@ -186,6 +186,147 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.51,
   },
+  {
+    id: 'caslon',
+    name: 'Caslon Letterpress',
+    vibe: 'Libre Caslon — the original "if in doubt, use Caslon" face. American letterpress tradition. Pairs with Libre Franklin for a 1900s newspaper feel.',
+    display: "'Libre Caslon Display', Georgia, serif",
+    body: "'Libre Caslon Text', Georgia, serif",
+    sans: "'Libre Franklin', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Libre+Caslon+Display&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700',
+    displayLetterSpacing: '-0.01em',
+    // Caslon x-heights ~0.43 — needs scale-up
+    bodySizeAdjust: 0.52,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'baskerville',
+    name: 'Baskerville Penguin',
+    vibe: 'Libre Baskerville — the canonical Penguin Books transitional serif. Bookish, refined, warm. The face you grew up reading.',
+    display: "'Libre Baskerville', Georgia, serif",
+    body: "'Libre Baskerville', Georgia, serif",
+    sans: "'Libre Franklin', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Libre Baskerville has a tall x-height (~0.53) for a Baskerville
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'roboto-editorial',
+    name: 'Roboto Editorial',
+    vibe: 'Google\'s full Roboto family — Roboto Serif (variable, screen-tuned) paired with Roboto Sans. Engineering aesthetic. Single coherent voice.',
+    display: "'Roboto Serif', Georgia, serif",
+    body: "'Roboto Serif', Georgia, serif",
+    sans: "'Roboto', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Roboto+Serif:ital,opsz,wght@0,8..144,400;0,8..144,500;0,8..144,600;0,8..144,700;1,8..144,400&family=Roboto:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Roboto Serif x-height ~0.51 — well-calibrated for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
+  },
+  {
+    id: 'merriweather',
+    name: 'Merriweather Journal',
+    vibe: 'Eben Sopwith\'s screen-optimized serif. Warm, broad, very readable. The chosen face of ProPublica and The Conversation.',
+    display: "'Merriweather', Georgia, serif",
+    body: "'Merriweather', Georgia, serif",
+    sans: "'Source Sans 3', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Merriweather is famously high x-height (~0.52) — designed for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.514,
+  },
+  {
+    id: 'literata',
+    name: 'Literata Library',
+    vibe: 'Google Books\' purpose-built literary serif. Variable, designed for long-form reading on screens. Bookish without being precious.',
+    display: "'Literata', Georgia, serif",
+    body: "'Literata', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Literata x-height ~0.50
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'alegreya',
+    name: 'Alegreya Argentina',
+    vibe: 'Juan Pablo del Peral\'s award-winning calligraphic serif. Distinctive, characterful, plays beautifully with its own sans companion.',
+    display: "'Alegreya', Georgia, serif",
+    body: "'Alegreya', Georgia, serif",
+    sans: "'Alegreya Sans', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Alegreya:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Alegreya+Sans:wght@400;500;700',
+    displayLetterSpacing: '-0.015em',
+    // Alegreya x-height ~0.49
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'pt',
+    name: 'PT Editorial',
+    vibe: 'ParaType\'s ground-up Cyrillic+Latin family. Contemporary Russian editorial workhorse. Used across European magazines.',
+    display: "'PT Serif', Georgia, serif",
+    body: "'PT Serif', Georgia, serif",
+    sans: "'PT Sans', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=PT+Sans:ital,wght@0,400;0,700;1,400',
+    displayLetterSpacing: '-0.015em',
+    // PT Serif x-height ~0.49
+    bodySizeAdjust: 0.518,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'vollkorn',
+    name: 'Vollkorn Bookish',
+    vibe: 'Friedrich Althausen\'s "whole grain" — a free book face designed from the ground up for long reading. Generous, calm, no bullshit.',
+    display: "'Vollkorn', Georgia, serif",
+    body: "'Vollkorn', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Vollkorn:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.015em',
+    // Vollkorn x-height ~0.50
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'big-shoulders',
+    name: 'Big Shoulders',
+    vibe: 'Patric King\'s condensed brutalist display. Variable, wide-range. Pair with Source Serif body for tension between editorial classicism and contemporary punk.',
+    display: "'Big Shoulders Display', -apple-system, sans-serif",
+    body: "'Source Serif 4', Georgia, serif",
+    sans: "'Source Sans 3', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Big+Shoulders+Display:wght@400;600;700;800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@400;500;600;700',
+    displayLetterSpacing: '-0.025em',
+    displayWeight: '700',
+    // Source Serif 4 ~0.484, Big Shoulders is condensed display (cap-driven)
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.52,
+  },
+  {
+    id: 'faustina',
+    name: 'Faustina Magazine',
+    vibe: 'Omnibus-Type\'s narrow editorial body, designed for newspaper columns. Tight, efficient, modern. Used by El País.',
+    display: "'Faustina', Georgia, serif",
+    body: "'Faustina', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Faustina:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.018em',
+    // Faustina x-height ~0.51 — designed for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
+  },
 ];
 
 export const DEFAULT_PRESET_ID = 'classic';
