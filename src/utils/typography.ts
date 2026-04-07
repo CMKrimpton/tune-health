@@ -36,6 +36,8 @@ export function buildRootCss(preset: TypographyPreset): string {
     `--font-body: ${preset.body};`,
     `--font-sans: ${preset.sans};`,
   ];
+  if (preset.bodySizeAdjust !== undefined) lines.push(`--font-body-adjust: ${preset.bodySizeAdjust};`);
+  if (preset.displaySizeAdjust !== undefined) lines.push(`--font-display-adjust: ${preset.displaySizeAdjust};`);
   if (preset.displayLetterSpacing) lines.push(`--font-display-tracking: ${preset.displayLetterSpacing};`);
   if (preset.displayWeight) lines.push(`--font-display-weight: ${preset.displayWeight};`);
   return `:root { ${lines.join(' ')} }`;

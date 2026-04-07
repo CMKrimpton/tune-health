@@ -194,11 +194,18 @@ const SAMPLE = {
       cursor: default;
     }
 
-    /* Preview area renders SAMPLE in the preset's actual fonts */
+    /* Preview area renders SAMPLE in the preset's actual fonts.
+       Each card sets --preview-body-adjust / --preview-display-adjust inline so
+       cross-preset comparison is visually fair (without this, fonts with small
+       x-heights like Cormorant or Bodoni look smaller at the same point size). */
     .typo-preview {
       padding: 1.75rem 1.5rem 2rem;
       background: #faf9f6;
       color: #1b1a18;
+      font-size-adjust: ex-height var(--preview-body-adjust, 0.514);
+    }
+    .typo-preview .headline {
+      font-size-adjust: ex-height var(--preview-display-adjust, 0.49);
     }
     .typo-preview .kicker {
       font-size: 0.7rem;
@@ -287,7 +294,9 @@ const SAMPLE = {
         const displayName = preset.display.split(',')[0].replace(/['"]/g, '').trim();
         const bodyName = preset.body.split(',')[0].replace(/['"]/g, '').trim();
         const sansName = preset.sans.split(',')[0].replace(/['"]/g, '').trim();
-        const previewStyle = `font-family: ${preset.body};`;
+        const bodyAdjust = preset.bodySizeAdjust ?? 0.514;
+        const displayAdjust = preset.displaySizeAdjust ?? 0.49;
+        const previewStyle = `font-family: ${preset.body}; --preview-body-adjust: ${bodyAdjust}; --preview-display-adjust: ${displayAdjust};`;
         const kickerStyle = `font-family: ${preset.sans};`;
         const bylineStyle = `font-family: ${preset.sans};`;
         const dekStyle = `font-family: ${preset.body};`;
