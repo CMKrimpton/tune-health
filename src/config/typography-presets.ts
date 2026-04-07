@@ -527,6 +527,35 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     displaySizeAdjust: 0.50,
   },
   {
+    id: 'apple-news',
+    name: 'Apple News',
+    vibe: 'Apple\'s system stack — New York serif + SF Pro sans. Renders authentically on Mac/iOS via the OS, falls back gracefully elsewhere. Zero font download. The cleanest possible editorial system on Apple devices.',
+    display: "ui-serif, 'New York', -apple-system, Georgia, serif",
+    body: "ui-serif, 'New York', -apple-system, Georgia, serif",
+    sans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif",
+    // No Google Fonts query — entirely system fonts. Empty string means
+    // BaseLayout will still build a valid (empty) URL; we strip that case below.
+    googleFontsQuery: '',
+    displayLetterSpacing: '-0.018em',
+    // New York x-height ~0.51 — Apple-tuned for screens
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.51,
+  },
+  {
+    id: 'new-yorker',
+    name: 'New Yorker (tribute)',
+    vibe: 'A tribute, not the real thing. The New Yorker uses Irvin (custom, 1925) + Adobe Caslon — both proprietary. Closest free approximation: Bodoni Moda caps for that didone headline feel, Libre Caslon Text body, Inter for meta.',
+    display: "'Bodoni Moda', 'Didot', Georgia, serif",
+    body: "'Libre Caslon Text', Georgia, serif",
+    sans: "'Inter', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.02em',
+    // Libre Caslon Text x-height ~0.43, Bodoni Moda ~0.46
+    bodySizeAdjust: 0.52,
+    displaySizeAdjust: 0.485,
+  },
+  {
     id: 'tinos',
     name: 'Tinos Broadsheet',
     vibe: 'Steve Matteson\'s metric-compatible Times analog (the Liberation/Croscore family). Neutral broadsheet authority. Pairs with Arimo for a complete free Helvetica/Arial replacement.',

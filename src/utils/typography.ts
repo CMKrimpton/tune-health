@@ -18,7 +18,10 @@ export function getActivePreset(cookies: AstroCookies): TypographyPreset {
   return getPresetById(id);
 }
 
-export function buildGoogleFontsHref(preset: TypographyPreset): string {
+export function buildGoogleFontsHref(preset: TypographyPreset): string | null {
+  // System-font presets (e.g. Apple News using ui-serif / -apple-system) have
+  // no Google Fonts dependency. BaseLayout skips the <link> entirely in that case.
+  if (!preset.googleFontsQuery) return null;
   return `https://fonts.googleapis.com/css2?${preset.googleFontsQuery}&display=swap`;
 }
 

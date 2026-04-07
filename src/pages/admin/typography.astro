@@ -8,10 +8,11 @@ const activePreset = getActivePreset(Astro.cookies);
 
 // Build a single Google Fonts <link> that loads ALL preset families at once,
 // so the side-by-side preview cards each render in their own typeface without
-// needing 10 separate stylesheets.
+// needing 35+ separate stylesheets. System-font presets (empty googleFontsQuery)
+// are filtered out — they render via the OS, no download needed.
 const allFontsHref =
   'https://fonts.googleapis.com/css2?' +
-  TYPOGRAPHY_PRESETS.map((p) => p.googleFontsQuery).join('&') +
+  TYPOGRAPHY_PRESETS.map((p) => p.googleFontsQuery).filter(Boolean).join('&') +
   '&display=swap';
 
 // Sample content for previews — chosen to show display + body + meta in

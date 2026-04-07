@@ -80,9 +80,10 @@ const resolvedOgImageAlt = ogImageAlt || description;
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!-- Typography — driven by active preset (cookie-controlled, see /admin/typography). -->
-  <link rel="preload" href={fontsHref} as="style" />
-  <link href={fontsHref} rel="stylesheet">
+  <!-- Typography — driven by active preset (cookie-controlled, see /admin/typography).
+       fontsHref is null for system-font presets (Apple News) — skip the link entirely. -->
+  {fontsHref && <link rel="preload" href={fontsHref} as="style" />}
+  {fontsHref && <link href={fontsHref} rel="stylesheet" />}
   <style set:html={presetRootCss}></style>
 
   <!-- Favicon -->
