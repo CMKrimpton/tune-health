@@ -6,14 +6,18 @@ import { getActivePreset, buildGoogleFontsHref } from '../../utils/typography';
 const adminTokenValue = Astro.cookies.get('admin_token')?.value || '';
 const activePreset = getActivePreset(Astro.cookies);
 
-// Build a single Google Fonts <link> that loads ALL preset families at once,
-// so the side-by-side preview cards each render in their own typeface without
-// needing 35+ separate stylesheets. System-font presets (empty googleFontsQuery)
-// are filtered out — they render via the OS, no download needed.
-const allFontsHref =
-  'https://fonts.googleapis.com/css2?' +
-  TYPOGRAPHY_PRESETS.map((p) => p.googleFontsQuery).filter(Boolean).join('&') +
-  '&display=swap';
+// One Google Fonts URL per preset, deduped — more robust than a single
+// stitched URL (4KB+ URLs can hit proxy/CDN limits, and one bad family
+// breaks the whole stylesheet). Also lets the browser cache each preset's
+// fonts independently. System-font presets are filtered out.
+const presetFontHrefs = [
+  ...new Set(
+    TYPOGRAPHY_PRESETS
+      .map((p) => p.googleFontsQuery)
+      .filter(Boolean)
+      .map((q) => `https://fonts.googleapis.com/css2?${q}&display=swap`),
+  ),
+];
 
 // Sample content for previews — chosen to show display + body + meta in
 // natural editorial proportions.
@@ -35,8 +39,8 @@ const SAMPLE = {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Admin chrome fonts (always loaded) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <!-- All preset fonts loaded at once for side-by-side preview -->
-  <link href={allFontsHref} rel="stylesheet" />
+  <!-- One stylesheet per preset — parallelizable, individually cacheable -->
+  {presetFontHrefs.map((href) => <link href={href} rel="stylesheet" />)}
   <link rel="stylesheet" href="/admin.css" />
   <meta name="admin-token" content={adminTokenValue} />
   <style>
