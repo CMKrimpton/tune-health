@@ -3,6 +3,18 @@
 @tailwind utilities;
 
 /* =========================================
+   Typography variables — default preset (Playfair Classic).
+   BaseLayout overrides these on :root when a typography_preset cookie is set,
+   then swaps the Google Fonts <link> to load the alternate families.
+   See src/config/typography-presets.ts and src/utils/typography.ts.
+   ========================================= */
+:root {
+  --font-display: 'Playfair Display';
+  --font-body: 'Crimson Pro';
+  --font-sans: 'Inter';
+}
+
+/* =========================================
    TUNE HEALTH - Premium Editorial Design
    ========================================= */
 
@@ -374,7 +386,7 @@
    Float fallback for browsers without initial-letter support. */
 .article-content > section:first-child > p:first-of-type::first-letter {
   float: left;
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display), Georgia, 'Times New Roman', serif;
   font-weight: bold;
   color: theme('colors.primary.600');
   font-size: 6.1rem;

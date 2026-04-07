@@ -1,0 +1,367 @@
+---
+export const prerender = false;
+import { TYPOGRAPHY_PRESETS } from '../../config/typography-presets';
+import { getActivePreset, buildGoogleFontsHref } from '../../utils/typography';
+
+const adminTokenValue = Astro.cookies.get('admin_token')?.value || '';
+const activePreset = getActivePreset(Astro.cookies);
+
+// Build a single Google Fonts <link> that loads ALL preset families at once,
+// so the side-by-side preview cards each render in their own typeface without
+// needing 10 separate stylesheets.
+const allFontsHref =
+  'https://fonts.googleapis.com/css2?' +
+  TYPOGRAPHY_PRESETS.map((p) => p.googleFontsQuery).join('&') +
+  '&display=swap';
+
+// Sample content for previews — chosen to show display + body + meta in
+// natural editorial proportions.
+const SAMPLE = {
+  kicker: 'Investigation',
+  headline: 'How the Sugar Industry Captured Your Doctor',
+  dek: 'A 1967 internal memo. Three Harvard nutritionists. $48,000 in today\u2019s dollars. The result: 50 years of dietary guidelines that quietly blamed the wrong macronutrient.',
+  byline: 'By alumi news \u00B7 12 min read',
+  body: 'The documents arrived in a dusty box in the Harvard Medical Library, indexed under a name no one had thought to search. Inside: a 1967 letter from a sugar industry executive to a Harvard researcher, agreeing to pay him the modern equivalent of $48,000 to publish a literature review absolving sugar of any role in heart disease. The review ran in the New England Journal of Medicine. It did not disclose the funding. It blamed saturated fat instead. And for the next half-century, every dietary guideline in the Western world followed its lead.',
+};
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Typography | alumi admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Admin chrome fonts (always loaded) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- All preset fonts loaded at once for side-by-side preview -->
+  <link href={allFontsHref} rel="stylesheet" />
+  <link rel="stylesheet" href="/admin.css" />
+  <meta name="admin-token" content={adminTokenValue} />
+  <style>
+    .typo-page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+    .typo-intro {
+      margin-bottom: 2rem;
+    }
+    .typo-intro h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--admin-text);
+      margin: 0 0 0.5rem 0;
+    }
+    .typo-intro p {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      color: var(--admin-text-muted);
+      margin: 0;
+      max-width: 720px;
+      line-height: 1.6;
+    }
+    .typo-active-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.875rem 1.125rem;
+      margin-top: 1rem;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8125rem;
+      color: var(--admin-text);
+    }
+    .typo-active-banner strong { color: #ef4444; font-weight: 600; }
+    .typo-active-banner button {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #ef4444;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .typo-active-banner button:hover { background: rgba(239, 68, 68, 0.25); }
+
+    .typo-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media (min-width: 1100px) {
+      .typo-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .typo-card {
+      background: var(--admin-surface);
+      border: 1px solid var(--admin-border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--admin-shadow-sm);
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .typo-card.is-active {
+      border-color: rgba(239, 68, 68, 0.55);
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35), var(--admin-shadow-md);
+    }
+    .typo-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--admin-border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .typo-card-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .typo-card-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--admin-text);
+      margin: 0 0 0.25rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .typo-card-title-num {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--admin-text-muted);
+      font-variant-numeric: tabular-nums;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+    .typo-card-vibe {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      color: var(--admin-text-muted);
+      margin: 0;
+    }
+    .typo-card-fonts {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--admin-text-muted);
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+    .typo-card-fonts span strong {
+      color: var(--admin-text);
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      font-size: 0.7rem;
+    }
+    .typo-apply {
+      flex-shrink: 0;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #ef4444;
+      padding: 0.5rem 0.95rem;
+      border-radius: 7px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+    .typo-apply:hover { background: rgba(239, 68, 68, 0.22); }
+    .typo-apply:active { transform: translateY(1px); }
+    .typo-apply.is-active {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: rgba(34, 197, 94, 0.4);
+      color: #22c55e;
+      cursor: default;
+    }
+
+    /* Preview area renders SAMPLE in the preset's actual fonts */
+    .typo-preview {
+      padding: 1.75rem 1.5rem 2rem;
+      background: #faf9f6;
+      color: #1b1a18;
+    }
+    .typo-preview .kicker {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #dc2626;
+      margin: 0 0 0.875rem 0;
+    }
+    .typo-preview .headline {
+      font-size: 1.875rem;
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: -0.018em;
+      margin: 0 0 0.875rem 0;
+      color: #1b1a18;
+      text-wrap: balance;
+    }
+    .typo-preview .dek {
+      font-size: 1.0625rem;
+      line-height: 1.55;
+      font-weight: 400;
+      color: #44403c;
+      margin: 0 0 1rem 0;
+      max-width: 56ch;
+    }
+    .typo-preview .byline {
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #78716c;
+      margin: 0 0 1.25rem 0;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .typo-preview .body {
+      font-size: 1.0625rem;
+      line-height: 1.7;
+      color: #1c1917;
+      margin: 0;
+    }
+    .typo-preview .body::first-letter {
+      float: left;
+      font-weight: 700;
+      color: #dc2626;
+      font-size: 4.25rem;
+      line-height: 0.9;
+      margin: 0.1rem 0.5rem 0 0;
+    }
+  </style>
+</head>
+<body class="admin-body">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-logo">
+        <span class="admin-logo-accent">a</span>lumi
+        <span class="admin-logo-badge">typography</span>
+      </div>
+      <nav class="admin-nav">
+        <a href="/admin" class="admin-nav-link">Dashboard</a>
+        <a href="/admin/new" class="admin-nav-link">New Article</a>
+        <a href="/admin/social-preview" class="admin-nav-link">Social Preview</a>
+        <a href="/admin/typography" class="admin-nav-link active">Typography</a>
+        <a href="/" class="admin-nav-link" target="_blank">View Site &rarr;</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="typo-page">
+    <div class="typo-intro">
+      <h1>Typography Presets</h1>
+      <p>
+        Each preset is a complete editorial type system: display, body, and UI sans. Click <strong>Apply</strong> to swap the live site
+        instantly (per-browser cookie, takes effect on next page load). Open the public site in a new tab to compare in context.
+      </p>
+      <div class="typo-active-banner">
+        <span>Active preset: <strong id="active-name">{activePreset.name}</strong></span>
+        <button id="reset-btn" type="button">Reset to Playfair Classic</button>
+      </div>
+    </div>
+
+    <div class="typo-grid">
+      {TYPOGRAPHY_PRESETS.map((preset, idx) => {
+        const isActive = preset.id === activePreset.id;
+        const num = String(idx + 1).padStart(2, '0');
+        const displayName = preset.display.split(',')[0].replace(/['"]/g, '').trim();
+        const bodyName = preset.body.split(',')[0].replace(/['"]/g, '').trim();
+        const sansName = preset.sans.split(',')[0].replace(/['"]/g, '').trim();
+        const previewStyle = `font-family: ${preset.body};`;
+        const kickerStyle = `font-family: ${preset.sans};`;
+        const bylineStyle = `font-family: ${preset.sans};`;
+        const dekStyle = `font-family: ${preset.body};`;
+        const bodyStyle = `font-family: ${preset.body};`;
+        let headlineStyle = `font-family: ${preset.display};`;
+        if (preset.displayLetterSpacing) headlineStyle += ` letter-spacing: ${preset.displayLetterSpacing};`;
+        if (preset.displayWeight) headlineStyle += ` font-weight: ${preset.displayWeight};`;
+
+        return (
+          <article class:list={['typo-card', { 'is-active': isActive }]}>
+            <div class="typo-card-header">
+              <div class="typo-card-meta">
+                <h3 class="typo-card-title">
+                  <span class="typo-card-title-num">{num}</span>
+                  {preset.name}
+                </h3>
+                <p class="typo-card-vibe">{preset.vibe}</p>
+                <div class="typo-card-fonts">
+                  <span>Display: <strong>{displayName}</strong></span>
+                  <span>Body: <strong>{bodyName}</strong></span>
+                  <span>UI: <strong>{sansName}</strong></span>
+                </div>
+              </div>
+              <button
+                type="button"
+                class:list={['typo-apply', { 'is-active': isActive }]}
+                data-preset={preset.id}
+              >
+                {isActive ? 'Active' : 'Apply'}
+              </button>
+            </div>
+
+            <div class="typo-preview" style={previewStyle}>
+              <p class="kicker" style={kickerStyle}>{SAMPLE.kicker}</p>
+              <h2 class="headline" style={headlineStyle}>{SAMPLE.headline}</h2>
+              <p class="dek" style={dekStyle}>{SAMPLE.dek}</p>
+              <p class="byline" style={bylineStyle}>{SAMPLE.byline}</p>
+              <p class="body" style={bodyStyle}>{SAMPLE.body}</p>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  </main>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function () {
+      var buttons = document.querySelectorAll('[data-preset]');
+      var resetBtn = document.getElementById('reset-btn');
+
+      function setPreset(presetId) {
+        return fetch('/api/typography', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ presetId: presetId || '' }),
+        }).then(function (res) {
+          if (!res.ok) {
+            alert('Failed to set preset: ' + res.status);
+            return;
+          }
+          window.location.reload();
+        });
+      }
+
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (btn.classList.contains('is-active')) return;
+          var id = btn.getAttribute('data-preset') || null;
+          setPreset(id);
+        });
+      });
+
+      if (resetBtn) resetBtn.addEventListener('click', function () { setPreset(null); });
+    });
+  </script>
+</body>
+</html>

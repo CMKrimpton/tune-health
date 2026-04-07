@@ -37,9 +37,12 @@ export default {
         }
       },
       fontFamily: {
-        'serif': ['Playfair Display', 'Georgia', 'Times New Roman', 'serif'],
-        'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        'body': ['Crimson Pro', 'Georgia', 'serif'],
+        // Resolved at runtime via CSS variables set in BaseLayout. Default
+        // values live in global.css :root so static contexts (storybook, etc.)
+        // still render. To swap presets, update the cookie via /admin/typography.
+        'serif': ['var(--font-display)', 'Georgia', 'Times New Roman', 'serif'],
+        'sans': ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        'body': ['var(--font-body)', 'Georgia', 'serif'],
       },
       fontSize: {
         'display-1': ['clamp(2.5rem, 1.75rem + 4vw, 4.5rem)', { lineHeight: '1.05', letterSpacing: '-0.025em' }],
@@ -146,20 +149,20 @@ export default {
             fontSize: '1.25rem',
             lineHeight: '1.8',
             h1: {
-              fontFamily: 'Playfair Display, Georgia, serif',
+              fontFamily: 'var(--font-display), Georgia, serif',
               fontWeight: '600',
             },
             h2: {
-              fontFamily: 'Playfair Display, Georgia, serif',
+              fontFamily: 'var(--font-display), Georgia, serif',
               fontWeight: '600',
               marginTop: '2.5em',
             },
             h3: {
-              fontFamily: 'Playfair Display, Georgia, serif',
+              fontFamily: 'var(--font-display), Georgia, serif',
               fontWeight: '600',
             },
             p: {
-              fontFamily: 'Crimson Pro, Georgia, serif',
+              fontFamily: 'var(--font-body), Georgia, serif',
             },
             a: {
               fontWeight: '500',
@@ -172,7 +175,7 @@ export default {
             },
             blockquote: {
               fontStyle: 'italic',
-              fontFamily: 'Playfair Display, Georgia, serif',
+              fontFamily: 'var(--font-display), Georgia, serif',
               borderLeftWidth: '3px',
             },
             'code::before': {

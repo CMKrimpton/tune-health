@@ -4,6 +4,19 @@ import MobileNav from '../components/MobileNav.astro';
 import TopicNav from '../components/TopicNav.astro';
 import '../styles/global.css';
 import { FALLBACK_URL, SITE_NAME, SOCIAL } from '../config/site';
+import { getActivePreset, buildGoogleFontsHref, buildRootCss, DEFAULT_PRESET_ID } from '../utils/typography';
+
+const typographyPreset = getActivePreset(Astro.cookies);
+const fontsHref = buildGoogleFontsHref(typographyPreset);
+const presetRootCss = buildRootCss(typographyPreset);
+const isCustomPreset = typographyPreset.id !== DEFAULT_PRESET_ID;
+
+// When previewing a non-default preset, prevent CDN caching so the user's
+// browser-scoped cookie actually drives the response. Default preset is safe
+// to cache normally (it matches the static :root defaults in global.css).
+if (isCustomPreset) {
+  Astro.response.headers.set('Cache-Control', 'private, no-store');
+}
 
 interface Props {
   title: string;
@@ -67,9 +80,10 @@ const resolvedOgImageAlt = ogImageAlt || description;
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!-- Typography — preload critical fonts, defer rest -->
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <!-- Typography — driven by active preset (cookie-controlled, see /admin/typography). -->
+  <link rel="preload" href={fontsHref} as="style" />
+  <link href={fontsHref} rel="stylesheet">
+  <style set:html={presetRootCss}></style>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">

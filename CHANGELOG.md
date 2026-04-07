@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.1.0] - 2026-04-06
+
+### Added — Typography Preset System
+
+Site-wide typography is now driven by CSS variables (`--font-display`, `--font-body`, `--font-sans`) instead of hardcoded font families. An admin gallery at `/admin/typography` lets you preview 10 cohesive editorial type systems side-by-side and apply any of them via a per-browser cookie — no code change, no rebuild.
+
+- **`/admin/typography`** — 2-column gallery with full editorial sample (kicker, headline, dek, byline, body with drop cap) rendered in each preset's actual fonts. Click **Apply** → cookie set → page reloads with new typography. Active preset is highlighted; **Reset** reverts to the default
+- **10 presets** in `src/config/typography-presets.ts`:
+  1. **Playfair Classic** (default — current Didone stack)
+  2. **Editorial Modern** — Fraunces (variable wonky axis) + Source Serif 4
+  3. **Medium** — Newsreader (closest free analog to Charter+Noe)
+  4. **Vogue Couture** — Bodoni Moda + Lora + Work Sans
+  5. **Bloomberg** — DM Serif Display + IBM Plex Serif/Sans
+  6. **Cormorant Refined** — Cormorant Garamond + EB Garamond
+  7. **Plex System** — IBM Plex single-family system
+  8. **Spectral Atlantic** — Spectral pairs with itself
+  9. **Wired Modern** — Space Grotesk display + Source Serif body
+  10. **Substack Studio** — Newsreader + Lora + Manrope
+- **No `!important` overrides** — Tailwind utilities (`font-serif`/`font-sans`/`font-body`) and the `@tailwindcss/typography` plugin both reference the CSS variables natively. To swap presets, BaseLayout sets the `:root` variables based on the cookie; everything inherits automatically
+- **`/api/typography`** — admin-gated endpoint that sets/clears the `typography_preset` cookie (1-year max-age)
+- **Cache safety** — when a non-default preset is active, BaseLayout emits `Cache-Control: private, no-store` so the CDN doesn't serve mismatched fonts to other visitors. Default preset stays normally cacheable
+- **Admin nav link** — Typography link added to `/admin`, `/admin/new`, `/admin/edit/[slug]`, and `/admin/social-preview`
+
 ## [22.0.0] - 2026-04-06
 
 ### Changed — SSR Migration (Supabase-Driven)
