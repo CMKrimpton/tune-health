@@ -22,8 +22,11 @@ const tagsHtml = article.tags
   )
   .join('\n');
 
-// Cache article pages at the CDN for 5 minutes, serve stale for 1 hour
-Astro.response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=3600');
+// Aggressive stale-while-revalidate: serve cached HTML instantly but
+// revalidate every 15s in the background. Admin edits propagate to readers
+// within ~15-30s without needing per-page cache purging.
+// Previously s-maxage=300 (5 min) — caused edits to stay invisible too long.
+Astro.response.headers.set('Cache-Control', 's-maxage=15, stale-while-revalidate=86400');
 ---
 
 <ArticleLayout

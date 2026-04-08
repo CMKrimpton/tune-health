@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.3] - 2026-04-08
+
+### Fixed — Article Edits Took Up to 5 Minutes to Propagate + "Publish to GitHub" Stale Copy
+
+User reported: edits to an article in the admin editor weren't visible on the live site, and the publish button still said "Publish to GitHub" — an outdated label from before v22.0 dropped the GitHub publish path.
+
+**Root cause: aggressive CDN caching**. Article pages were sending `Cache-Control: s-maxage=300` (5 minutes). When the user edited and saved an article, the database updated instantly but Vercel's edge cache kept serving the old HTML for up to 5 minutes. There was no purge mechanism. The user couldn't tell whether their edit had taken effect.
+
+**Fixes:**
+
+1. **Dropped CDN cache TTL from 5min → 15s** in [`src/middleware.ts`](src/middleware.ts) and [`src/pages/articles/[slug].astro`](src/pages/articles/[slug].astro). Combined with `stale-while-revalidate=86400`, the edge serves cached HTML instantly but revalidates every 15s in the background. Edits propagate to readers within ~15-30 seconds without needing per-page cache purging infrastructure (Vercel's path-level purge requires either a Pro plan with cache-tags or per-deployment API tokens — overkill for an editorial site at this scale).
+
+2. **Renamed the publish button** in [`src/pages/admin/edit/[slug].astro`](src/pages/admin/edit/[slug].astro):
+   - Section title: `Deploy to Live Site` → `Publish`
+   - Section description: `Push the current database version to GitHub, triggering a Vercel rebuild.` → `Save the current version and publish it to the live site. Edits are visible to readers within ~15 seconds. Autosave keeps the draft in sync as you type — this button just flips status to published.`
+   - Button label: `Publish to GitHub` → `Publish to Live Site`
+   - Button id: `publishGitHubBtn` → `publishLiveBtn`
+   - Delete button id: `deleteGitHubBtn` → `deleteArticleBtn`
+   - Delete confirmation: removed "GitHub" reference, now reads "removes it from the database and cleans up the illustration and narration files"
+   - Delete success message: `Article fully deleted (GitHub + database + storage). Vercel will rebuild shortly.` → `Article deleted (database + storage). The article will disappear from the live site within ~15 seconds.`
+
+The edit page's autosave already calls `articles-api save` (which triggers dedup + narration regen). The publish button just flips status to published — no .astro file generation, no GitHub commits, no Vercel rebuild. The legacy GitHub-publish path was dead code from v22.0.
+
 ## [22.7.2] - 2026-04-08
 
 ### Fixed — 5 Standfirsts Still Duplicated (Three-Tier Dedup Strategy)

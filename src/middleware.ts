@@ -78,9 +78,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (hasTypographyCookie) {
       response.headers.set('Cache-Control', 'private, no-store');
     } else {
+      // Aggressive stale-while-revalidate: edge serves cached version
+      // immediately but revalidates every 15s in the background. Edits made
+      // in the admin propagate to readers within ~15-30s without per-page
+      // cache purging infrastructure.
+      // Previously was s-maxage=300 (5 minutes) for articles which meant
+      // edits stayed invisible for up to 5 minutes — confusing for the
+      // editor and hard to verify.
       const isArticle = url.pathname.startsWith('/articles/') && url.pathname !== '/articles/';
-      const ttl = isArticle ? 300 : 60; // articles: 5 min, listings: 1 min
-      response.headers.set('Cache-Control', `s-maxage=${ttl}, stale-while-revalidate=3600`);
+      const ttl = isArticle ? 15 : 15;
+      response.headers.set('Cache-Control', `s-maxage=${ttl}, stale-while-revalidate=86400`);
     }
   }
 

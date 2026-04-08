@@ -454,22 +454,22 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
             </div>
           </form>
 
-          <!-- Deploy / Delete / Dashboard -->
+          <!-- Publish / Delete / Dashboard -->
           <div class="edit-section">
-            <div class="edit-section-title">Deploy to Live Site</div>
-            <p style="font-size:0.8125rem;color:var(--admin-text-3);margin-bottom:1rem;line-height:1.5">Push the current database version to GitHub, triggering a Vercel rebuild.</p>
+            <div class="edit-section-title">Publish</div>
+            <p style="font-size:0.8125rem;color:var(--admin-text-3);margin-bottom:1rem;line-height:1.5">Save the current version and publish it to the live site. Edits are visible to readers within ~15 seconds. Autosave keeps the draft in sync as you type — this button just flips status to <code>published</code>.</p>
             <div id="publishStatus" style="display:none" class="admin-edit-status"></div>
             <div id="publishError" style="display:none" class="admin-error"></div>
             <div class="deploy-actions">
-              <button id="publishGitHubBtn" class="admin-publish-btn" style="background:var(--admin-accent);justify-content:center">
+              <button id="publishLiveBtn" class="admin-publish-btn" style="background:var(--admin-accent);justify-content:center">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 19V5M5 12l7-7 7 7"/>
                 </svg>
-                Publish to GitHub
+                Publish to Live Site
               </button>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.75rem">
-              <button id="deleteGitHubBtn" class="admin-danger-btn">
+              <button id="deleteArticleBtn" class="admin-danger-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                 </svg>
@@ -950,9 +950,9 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
     // .astro file generation. Publishing just means: save current edits +
     // flip status to "published". articles-api save handles dedup +
     // narration regen automatically.
-    document.getElementById('publishGitHubBtn')?.addEventListener('click', async () => {
+    document.getElementById('publishLiveBtn')?.addEventListener('click', async () => {
       if (!await styledConfirm('Publish article', 'Publish this article to the live site?', 'Publish')) return;
-      const btn = document.getElementById('publishGitHubBtn');
+      const btn = document.getElementById('publishLiveBtn');
       const status = document.getElementById('publishStatus');
       const error = document.getElementById('publishError');
       btn.textContent = 'Saving...'; btn.disabled = true;
@@ -998,10 +998,10 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
       }
     });
 
-    // ─── Delete from GitHub ───
-    document.getElementById('deleteGitHubBtn')?.addEventListener('click', async () => {
-      if (!await styledConfirm('Delete article', 'Permanently delete this article? This removes it from GitHub, the database, and cleans up illustrations and narration files.', 'Delete', true)) return;
-      const btn = document.getElementById('deleteGitHubBtn');
+    // ─── Delete article ───
+    document.getElementById('deleteArticleBtn')?.addEventListener('click', async () => {
+      if (!await styledConfirm('Delete article', 'Permanently delete this article? This removes it from the database and cleans up the illustration and narration files.', 'Delete', true)) return;
+      const btn = document.getElementById('deleteArticleBtn');
       const status = document.getElementById('deleteStatus');
       const error = document.getElementById('deleteError');
       btn.textContent = 'Deleting...'; btn.disabled = true;
@@ -1017,7 +1017,7 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || 'Delete failed');
         }
-        status.textContent = 'Article fully deleted (GitHub + database + storage). Vercel will rebuild shortly.';
+        status.textContent = 'Article deleted (database + storage). The article will disappear from the live site within ~15 seconds.';
         status.style.display = 'block';
         btn.textContent = 'Deleted';
       } catch (err) {
