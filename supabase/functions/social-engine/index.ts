@@ -56,6 +56,10 @@ Deno.serve(async (req: Request) => {
     const { logId, slug, mode } = body;
     // mode: "new_article" (from stage-publish) or "catalog" (from planner)
 
+    if (!mode || !["new_article", "catalog"].includes(mode)) {
+      return json({ error: "Invalid mode — must be 'new_article' or 'catalog'" }, 400);
+    }
+
     const db = supabase();
 
     // Fetch article data
@@ -116,6 +120,34 @@ Deno.serve(async (req: Request) => {
       .limit(20);
 
     const anglesUsed = (existingAngles || []).map(a => `- ${a.angle_used} (${a.hook_type}, score: ${a.engagement_score})`).join("\n");
+
+    // Fetch prior posted social posts for this article (cross-brief chaining context).
+    // Used so the AI can reference prior takes AND so we can populate `brief.references`
+    // post-hoc on new plan rows that lack an explicit AI-supplied reference.
+    const { data: priorPosts } = await db
+      .from("social_posts")
+      .select("persona, platform, content_text, posted_at, status")
+      .eq("article_slug", articleSlug)
+      .in("status", ["posted", "scheduled"])
+      .order("posted_at", { ascending: false, nullsFirst: false })
+      .limit(10);
+
+    const priorPostsByPlatform = new Map<string, string>();
+    const priorPersonas: string[] = [];
+    for (const pp of priorPosts || []) {
+      if (pp.persona && !priorPersonas.includes(pp.persona)) priorPersonas.push(pp.persona);
+      if (pp.platform && !priorPostsByPlatform.has(pp.platform)) {
+        priorPostsByPlatform.set(pp.platform, pp.persona);
+      }
+    }
+    const priorPostsContext = (priorPosts && priorPosts.length > 0)
+      ? `\nPRIOR POSTS ON THIS ARTICLE (build on / reference these — don't repeat angles):\n${
+          (priorPosts || [])
+            .slice(0, 5)
+            .map(p => `- ${p.persona} on ${p.platform}: "${(p.content_text || "").slice(0, 140)}"`)
+            .join("\n")
+        }\n`
+      : "";
 
     // Fetch active platforms + desks
     const { data: platforms } = await db
@@ -189,6 +221,7 @@ ARTICLE:
 - URL: ${siteUrl}/articles/${articleSlug}
 
 ${anglesUsed ? `ANGLES ALREADY USED (must find a NEW angle):\n${anglesUsed}` : "No previous angles — this is the first social push for this article."}
+${priorPostsContext}
 
 ACTIVE PLATFORMS:
 ${activePlatforms}
@@ -271,8 +304,28 @@ RULES FOR CHOREOGRAPHY:
     const now = new Date();
     const baseTime = new Date(now.getTime());
 
+    // Track personas already scheduled in THIS brief so later items can chain to earlier ones
+    // even when the AI doesn't supply an explicit `references` value.
+    const scheduledPersonasInThisBrief: string[] = [];
     for (const item of assignments.choreography?.sequence || []) {
       const desk = (platforms || []).find(p => p.platform === item.platform)?.desk || "microblog";
+
+      // Resolve references with cascading fallback:
+      //   1. AI-supplied (intra-brief AI choreography)
+      //   2. Prior persona who already posted to this platform on this article (catalog reshare)
+      //   3. Earlier persona in this same brief on a different platform (so the 2nd/3rd post chains to the 1st)
+      let resolvedRefs: string | null = item.references || null;
+      if (!resolvedRefs) {
+        const priorOnPlatform = priorPostsByPlatform.get(item.platform);
+        if (priorOnPlatform && priorOnPlatform !== item.persona) {
+          resolvedRefs = priorOnPlatform;
+        } else if (scheduledPersonasInThisBrief.length > 0) {
+          const earlierDifferent = scheduledPersonasInThisBrief.find(p => p !== item.persona);
+          if (earlierDifferent) resolvedRefs = earlierDifferent;
+        }
+      }
+      scheduledPersonasInThisBrief.push(item.persona);
+
       planRows.push({
         plan_date: today,
         platform: item.platform,
@@ -284,7 +337,7 @@ RULES FOR CHOREOGRAPHY:
         brief: {
           ...brief.strategy,
           article: brief.article,
-          references: item.references || null,
+          references: resolvedRefs,
           hook: (item as Record<string, unknown>).hook || null,
         },
         arc_id: currentArc?.id || null,

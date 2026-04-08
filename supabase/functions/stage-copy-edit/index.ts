@@ -57,7 +57,8 @@ SECTION HEADERS (H2/H3):
 - Read all headers in sequence: they should trace the article's argument, not list its subjects. If someone read only the headings, they should grasp the article's trajectory
 - Match the article's mode: provocation pieces use compressed verdicts and numbers; narrative pieces use past-tense, agent-driven framing; explainers use direct claims
 - **Banned**: colon constructions ("Zinc: the honest version"), list headings ("Salt water, fluids, time"), meta-commentary ("One distinction that actually matters", "What the research actually shows")
-- **4–8 words, hard range. Count every heading. A 9-word heading is a failure — shorten it.** Vary structure — mix of questions, imperatives, noun phrases, and provocative statements
+- **4–8 words is a soft target, not a hard rule.** A 9- or 10-word header that carries a specific argument is BETTER than a 5-word header that flattens the argument into a generic hook. Length is taste; specificity is editing. Only shorten a long header if shortening it preserves (or improves) the argument. If shortening forces you to drop the verb, the agent, or the specific claim, leave it alone
+- Vary structure — mix of questions, imperatives, noun phrases, and provocative statements
 
 FOR HUMAN-WRITTEN ARTICLES (writtenBy = "human-opus"):
 - Only fix clear errors: truncation, grammar, >10 word titles
@@ -229,11 +230,38 @@ Review each element. Return null for proposed on anything that doesn't need chan
     const toc = (articleData.toc as Array<{ id: string; title: string }>) || [];
     const headerResults = (result.headers as Array<Record<string, unknown>>) || [];
 
+    // A header is "clearly broken" only when it's structurally damaged, NOT when
+    // it's merely long. Word count is taste, not damage. We block model rewrites
+    // of human-written headers unless one of these structural failures applies:
+    //   - Empty / whitespace
+    //   - Ends mid-thought (trailing comma, dash, ellipsis, semicolon, "and"/"or"/"the")
+    //   - Contains a stray HTML tag fragment (open angle bracket)
+    const isStructurallyBroken = (text: string): boolean => {
+      const t = (text || "").trim();
+      if (!t) return true;
+      if (/[,;\-\u2013\u2014]$/.test(t)) return true;
+      if (/\.\.\.$/.test(t)) return true;
+      if (/\b(and|or|the|a|an|of|to|with|for|by|in|on)$/i.test(t)) return true;
+      if (/[<>]/.test(t)) return true;
+      return false;
+    };
+
     for (const h of headerResults) {
       if (!h.proposed || (h.confidence as number) < CONFIDENCE_THRESHOLD) continue;
 
       const original = h.original as string;
       const proposed = h.proposed as string;
+
+      // Human-written articles: header rewrites are BLOCKED at code level
+      // unless the original is structurally broken. Mirrors the title lock.
+      // The model's prompt asks it to be conservative, but it has historically
+      // ignored that and shortened "long" headers (e.g. OCD article 2026-04-08
+      // changed "Finding the Right Help Requires Asking the Right Question" →
+      // "Ask Providers This One Question" — flattening editorial voice).
+      if (isHumanWritten && !isStructurallyBroken(original)) {
+        console.log(`[CopyEdit] Human-written article — header change BLOCKED: "${original}" → "${proposed}" (would have been confidence ${h.confidence})`);
+        continue;
+      }
 
       // Find and replace in HTML — match the header text within its tag
       // Use a regex that matches the exact text inside any h2/h3 tag

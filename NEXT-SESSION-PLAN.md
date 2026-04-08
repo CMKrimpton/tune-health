@@ -1,8 +1,8 @@
 # Next Session Plan
 
-> **Status**: v22.3.0 live. ~192 published articles. Site is fully SSR-driven from Supabase (no git commits for content). Self-learning editorial pipeline shipped. Typography preset system shipped (37 presets, admin gallery sorted by recommendation quality, instant apply with optimistic UI).
+> **Status**: v22.4.0 live. ~192 published articles. Site is fully SSR-driven from Supabase. Default typography is now Newsreader. Copy-edit stage no longer flattens human-written headers. Social-engine validates `mode` and chains briefs cross-persona. Independence skip monitoring surfaces in dashboard.
 
-> **Last updated**: 2026-04-07 (audit pass — supersedes the stale v18.7 plan)
+> **Last updated**: 2026-04-08
 
 ---
 
@@ -59,46 +59,19 @@
 
 ---
 
+## What Shipped in v22.4.0 (this session)
+
+- **Typography default → Newsreader** (`medium` preset). `DEFAULT_PRESET_ID` flipped; admin reset button reads default name from data attributes
+- **Copy-edit header lock for human-Opus articles** — code-level guard mirrors title lock. Headers BLOCKED unless structurally broken (empty / dangling punctuation / dangling preposition / stray HTML). Length is no longer brokenness. Triggered by OCD article 2026-04-08 regression where a 9-word editorial header was flattened to a 4-word listicle hook. Prompt's hard "4–8 words = failure" rule also softened to a guideline
+- **Social-engine `mode` validation** + cross-brief `references` chaining (3-tier cascade: AI value → prior persona on same platform → earlier persona in same brief)
+- **Independence skip monitoring** — `pipeline-admin` returns `independenceSkipped24h`; `PipelineMonitor` renders red warning pill when ≥3 in 24h
+- `TYPOGRAPHY-AUDIT.md` + `alumi news — Style Guide.pdf` committed
+
+---
+
 ## Priority for Next Session
 
-### 1. Typography decision — pick a default and ship it (HIGH)
-
-**Context**: `TYPOGRAPHY-AUDIT.md` (untracked at root) flagged Playfair as "the most overused free display serif on the web — signals free template to typographically literate readers". The v22 preset system shipped 37 alternatives but **`classic` (Playfair) is still the actual default for every uncookied visitor**. The preset gallery is a power-user surface. The brand identity hasn't moved.
-
-**Action**:
-- Pick one of the audit's recommended defaults: **Newsreader** (Production Type, "closest to Medium's editorial feel"), **Fraunces** (variable wonky axis, distinctive), or **Editorial Modern** (Fraunces + Source Serif, currently #2 in the ranked gallery)
-- Change `DEFAULT_PRESET_ID` in `src/config/typography-presets.ts`
-- Commit `TYPOGRAPHY-AUDIT.md` and the new "alumi news — Style Guide.pdf" to the repo (both currently untracked)
-- Visually verify on homepage hero, article pages, card titles, mobile
-
-**Trace before changing**: `getPresetById` was hardened in v22.3 to fall back via `DEFAULT_PRESET_ID` lookup, not array index, so the gallery order stays a UI ranking independent of the actual default. Safe to change.
-
----
-
-### 2. Social-engine validation gaps (MEDIUM)
-
-**Confirmed open after audit:**
-
-**a) `mode` parameter is unvalidated** — `supabase/functions/social-engine/index.ts:56` extracts `mode` from the request body with only a comment ("new_article" or "catalog") and never checks it. Invalid values silently fall through.
-- Fix: add `if (!["new_article", "catalog"].includes(mode)) return json({ error: "Invalid mode" }, 400);` after the destructure
-
-**b) `brief.references` is read but never populated** — `social-writer/index.ts:200` reads `brief.references` to chain personas ("This is a REPLY/REACTION to the X persona's post"), but `social-engine` never sets it. The field is plumbed in the type but dead in practice.
-- Fix: in social-engine, before generating each persona's brief in a multi-persona arc, query `social_posts` for prior posts on the same `article_slug` + `arc_id` and populate `references` with the prior persona name. This unlocks actual conversational chaining instead of independent posts.
-
----
-
-### 3. Independence review skip monitoring (MEDIUM)
-
-`stage-independence` already logs `skipReason` to `research_data._independenceReview.reason` when Grok is unavailable. There is no surface for "Grok has been failing repeatedly" — the pipeline silently degrades.
-
-**Action**:
-- Add a count of `independence_skipped_24h` to `pipeline-admin` status response
-- Surface in PipelineMonitor as a warning pill when ≥3 in 24h
-- Optional: log a row to a new `pipeline_alerts` table for permanent tracking
-
----
-
-### 4. Social platform credentials — still the blocker for the social system to actually post (HIGH if you want social to ship)
+### 1. Social platform credentials — still the blocker for the social system to actually post (HIGH if you want social to ship)
 
 The full social pipeline (engine → writer → poster → sync) is built and tested end-to-end against the database. **Nothing has ever been posted because no platform credentials are set.** `social_platform_config.api_configured = false` for all 14 platforms.
 
@@ -125,17 +98,7 @@ After credentials are set, end-to-end verification:
 
 ---
 
-### 5. Confirmed FIXED since v18.7 (no action needed)
-
-These were on the old plan and are now resolved:
-- **`social-sync` velocity averaging order** — baseline is correctly computed BEFORE syncing new scores (`social-sync/index.ts:52-62`)
-- **Cost dedup on retries** — atomic SQL increment functions in `20260406_atomic_cost_tracking.sql` eliminate the race that caused double-billing
-- **Ghost articles** (DB↔GitHub drift) — fully eliminated in v20.0
-- **Pipeline 502 cold starts** — fixed in v19.0.1 (1.7MB → 328KB status payload)
-
----
-
-### 6. Deferred / low priority (still open, no recent activity)
+### 2. Deferred / low priority (still open, no recent activity)
 
 - **Beehiiv newsletter activation** — code is conditional on `BEEHIIV_API_KEY` + `BEEHIIV_PUBLICATION_ID` env vars in `src/pages/api/subscribe.ts`. Falls back gracefully if absent. Activation requires Beehiiv account
 - **Lighthouse audit** — never run since the SSR migration. Worth a baseline now that we're on per-request rendering
@@ -146,7 +109,7 @@ These were on the old plan and are now resolved:
 
 ---
 
-### 7. Phase 2 Social (when phase 1 is actually posting)
+### 3. Phase 2 Social (when phase 1 is actually posting)
 
 - LinkedIn API (company page + OAuth2 app — requires Meta-style review)
 - Threads API (Meta developer account)
@@ -154,15 +117,6 @@ These were on the old plan and are now resolved:
 - Medium API (integration tokens)
 - Pinger → social emergency dispatch wiring
 - Velocity amplification — when one platform's post hits 3x avg, auto-dispatch to others
-
----
-
-## Untracked Files Awaiting Decision
-
-```
-TYPOGRAPHY-AUDIT.md            ← commit alongside the typography default change
-alumi news — Style Guide.pdf   ← commit as supporting brand reference
-```
 
 ---
 

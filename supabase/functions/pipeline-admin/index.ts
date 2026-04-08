@@ -352,7 +352,27 @@ Deno.serve(async (req: Request) => {
         .order("published_at", { ascending: false, nullsFirst: false })
         .limit(20);
 
-      return json({ logs: data, articleCount, queue: queue || [], totalCost, overheadSpend: Math.round(overheadSpend * 100) / 100, avgCostPerArticle, recentArticles: recentArticles || [] });
+      // Independence review degradation monitoring — count Grok skips in the last 24h.
+      // When _independenceReview.skipped === true the adversarial review didn't run
+      // (Grok unavailable / error). Surface as a warning when ≥3 in 24h so we know
+      // the pipeline is silently degrading.
+      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count: independenceSkipped24h } = await db
+        .from("daily_article_log")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", dayAgo)
+        .filter("research_data->_independenceReview->>skipped", "eq", "true");
+
+      return json({
+        logs: data,
+        articleCount,
+        queue: queue || [],
+        totalCost,
+        overheadSpend: Math.round(overheadSpend * 100) / 100,
+        avgCostPerArticle,
+        recentArticles: recentArticles || [],
+        independenceSkipped24h: independenceSkipped24h || 0,
+      });
     }
 
     // ------ READER QUESTIONS — mine user chat data for article ideas ------

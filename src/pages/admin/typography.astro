@@ -1,10 +1,11 @@
 ---
 export const prerender = false;
-import { TYPOGRAPHY_PRESETS } from '../../config/typography-presets';
+import { TYPOGRAPHY_PRESETS, DEFAULT_PRESET_ID, getPresetById } from '../../config/typography-presets';
 import { getActivePreset, buildGoogleFontsHref } from '../../utils/typography';
 
 const adminTokenValue = Astro.cookies.get('admin_token')?.value || '';
 const activePreset = getActivePreset(Astro.cookies);
+const defaultPreset = getPresetById(DEFAULT_PRESET_ID);
 
 // Build ONE combined Google Fonts URL covering every unique family across
 // all presets. Loading 36 separate <link> stylesheets in parallel hit browser
@@ -352,7 +353,12 @@ const SAMPLE = {
         <span>Active preset: <strong id="active-name">{activePreset.name}</strong></span>
         <span class="typo-banner-actions">
           <a href="/" target="_blank" rel="noopener" class="typo-view-site">View site →</a>
-          <button id="reset-btn" type="button">Reset to Playfair Classic</button>
+          <button
+            id="reset-btn"
+            type="button"
+            data-default-id={defaultPreset.id}
+            data-default-name={defaultPreset.name}
+          >Reset to {defaultPreset.name}</button>
         </span>
       </div>
     </div>
@@ -422,6 +428,8 @@ const SAMPLE = {
       var activeName = document.getElementById('active-name');
       var toast = document.getElementById('typo-toast');
       var toastTimer = null;
+      var DEFAULT_ID = (resetBtn && resetBtn.getAttribute('data-default-id')) || '';
+      var DEFAULT_NAME = (resetBtn && resetBtn.getAttribute('data-default-name')) || '';
 
       function showToast(message) {
         if (!toast) return;
@@ -448,17 +456,17 @@ const SAMPLE = {
             var card = btn.closest('.typo-card');
             if (card) card.classList.add('is-active');
           }
-        } else {
-          // Reset → mark "classic" card active
-          var classicBtn = document.querySelector('[data-preset="classic"]');
-          if (classicBtn) {
-            classicBtn.classList.add('is-active');
-            classicBtn.textContent = 'Active';
-            var classicCard = classicBtn.closest('.typo-card');
-            if (classicCard) classicCard.classList.add('is-active');
+        } else if (DEFAULT_ID) {
+          // Reset → mark the default preset card active
+          var defaultBtn = document.querySelector('[data-preset="' + DEFAULT_ID + '"]');
+          if (defaultBtn) {
+            defaultBtn.classList.add('is-active');
+            defaultBtn.textContent = 'Active';
+            var defaultCard = defaultBtn.closest('.typo-card');
+            if (defaultCard) defaultCard.classList.add('is-active');
           }
         }
-        if (activeName) activeName.textContent = presetName || 'Playfair Classic';
+        if (activeName) activeName.textContent = presetName || DEFAULT_NAME;
       }
 
       function setPreset(presetId, presetName) {
@@ -467,7 +475,7 @@ const SAMPLE = {
         // "active" state is purely a visual indicator. The cookie POST runs
         // in the background; the public site picks it up on next navigation.
         updateActiveCard(presetId, presetName);
-        showToast('Applied: ' + (presetName || 'Playfair Classic') + '. Open the site to see it.');
+        showToast('Applied: ' + (presetName || DEFAULT_NAME) + '. Open the site to see it.');
 
         fetch('/api/typography', {
           method: 'POST',
@@ -488,7 +496,7 @@ const SAMPLE = {
       });
 
       if (resetBtn) {
-        resetBtn.addEventListener('click', function () { setPreset(null, 'Playfair Classic'); });
+        resetBtn.addEventListener('click', function () { setPreset(null, DEFAULT_NAME); });
       }
     });
   </script>

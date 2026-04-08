@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.4.0] - 2026-04-08
+
+### Changed — Typography Default Is Now Newsreader
+
+The site default preset (for visitors with no `typography_preset` cookie) flipped from `classic` (Playfair Display) to `medium` (Newsreader). This is the change the typography audit flagged in v22.3 as "the audit's primary recommendation, deferred for one cycle to validate the preset gallery first." Anonymous visitors and new readers now see the Production Type editorial workhorse — closest free match to Medium's Charter+Noe DNA — instead of the most overused free display serif on the web.
+
+- `DEFAULT_PRESET_ID` flipped from `'classic'` → `'medium'` in [`src/config/typography-presets.ts`](src/config/typography-presets.ts)
+- Admin typography gallery's reset button now reads the default name from `defaultPreset` data attributes instead of hardcoding "Playfair Classic" — label updates automatically if the default changes again
+- Cookied power users keep their chosen preset; only uncookied visitors see the new default
+- `TYPOGRAPHY-AUDIT.md` and `alumi news — Style Guide.pdf` committed to the repo as supporting brand reference
+
+### Fixed — Copy Edit No Longer Flattens Human-Written Headers
+
+The OCD article published on 2026-04-08 surfaced a regression: `stage-copy-edit` rewrote a 9-word section header ("Finding the Right Help Requires Asking the Right Question") down to "Ask Providers This One Question" — flattening editorial voice into BuzzFeed listicle voice. Two compounding bugs:
+
+1. **The human-Opus title lock didn't extend to section headers.** Title is code-locked, headers were only protected by a prompt instruction.
+2. **The system prompt's "4–8 words, hard range, a 9-word heading is a failure" rule** directly fought the human-Opus exception. The model obeyed the louder rule.
+
+Both fixed in [`supabase/functions/stage-copy-edit/index.ts`](supabase/functions/stage-copy-edit/index.ts):
+
+- **Code-level header lock for human-Opus / admin-editor articles** — mirrors the title lock pattern. Header rewrites BLOCKED at code level unless `isStructurallyBroken()` returns true. A header is structurally broken only when empty, ends with `,;-–—...`, has a dangling preposition/article, or contains stray HTML. Length is taste, not damage
+- **Softened the prompt's hard 4–8 word rule** to: "A 9- or 10-word header that carries a specific argument is BETTER than a 5-word header that flattens the argument. If shortening forces you to drop the verb, the agent, or the specific claim, leave it alone"
+- Blocked changes are now logged so silent degradations are visible
+
+### Fixed — Social Engine Validation Gaps
+
+- **`mode` parameter validated** at request entry — invalid/missing values now return 400 instead of falling through to the AI prompt with `mode: undefined`
+- **Cross-brief chaining now works** — `social-engine` queries `social_posts` for prior posted/scheduled posts on the same `article_slug`, injects them as context into the AI prompt, and post-hoc populates `brief.references` for new plan rows that lack an AI-supplied reference. Three-tier cascade: AI value → prior persona on same platform → earlier persona in same brief. Previously `brief.references` was read by `social-writer` for "REPLY/REACTION to the X persona" framing but `social-engine` never populated it — the chaining was dead in practice
+
+### Added — Independence Review Skip Monitoring
+
+`stage-independence` already logs `_independenceReview.skipped: true` to `research_data` when Grok is unavailable, but there was no surface for "Grok has been failing repeatedly" — the pipeline silently degraded.
+
+- `pipeline-admin` `status` action now returns `independenceSkipped24h` (jsonb path filter on `research_data->_independenceReview->>skipped`)
+- `PipelineMonitor` renders a red warning pill when ≥3 skips in 24h, with tooltip explaining the degradation
+- Smoke-tested live: currently 0 skipped, pipeline healthy
+
 ## [22.3.0] - 2026-04-07
 
 ### Changed — Typography Gallery Reordered by Recommendation Quality

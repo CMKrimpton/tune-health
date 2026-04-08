@@ -29,7 +29,7 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 
   const presetId = (body.presetId || '').trim();
 
-  // Empty / "classic" / unknown → clear the cookie (revert to default)
+  // Empty / unknown → clear the cookie (revert to DEFAULT_PRESET_ID)
   if (!presetId || !TYPOGRAPHY_PRESETS.find((p) => p.id === presetId)) {
     cookies.delete(TYPOGRAPHY_COOKIE, { path: '/' });
     return json({ ok: true, presetId: null });

@@ -143,6 +143,7 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
   const [totalCost, setTotalCost] = useState<number>(initialTotalCost || 0);
   const [overheadSpend, setOverheadSpend] = useState<number>(0);
   const [avgCostPerArticle, setAvgCostPerArticle] = useState<number>(0);
+  const [independenceSkipped24h, setIndependenceSkipped24h] = useState<number>(0);
   const [scouting, setScouting] = useState<string | null>(null);
   const [scoutResult, setScoutResult] = useState<string | null>(null);
   // Merge state
@@ -210,6 +211,7 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
       if (typeof data.totalCost === 'number') setTotalCost(data.totalCost);
       if (typeof data.overheadSpend === 'number') setOverheadSpend(data.overheadSpend);
       if (typeof data.avgCostPerArticle === 'number') setAvgCostPerArticle(data.avgCostPerArticle);
+      if (typeof data.independenceSkipped24h === 'number') setIndependenceSkipped24h(data.independenceSkipped24h);
       if (data.recentArticles) setRecentArticles(data.recentArticles);
       setLastPoll(new Date());
     } catch { /* retry on next poll */ }
@@ -1091,6 +1093,25 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
               {avgCostPerArticle > 0 && overheadSpend > 0 && ' · '}
               {overheadSpend > 0 && `$${overheadSpend.toFixed(2)} overhead`}
             </span>
+          </div>
+        )}
+
+        {independenceSkipped24h >= 3 && (
+          <div
+            className="admin-text-sm admin-weight-600"
+            title="Grok independence reviews have been skipped repeatedly in the last 24 hours. The pipeline is degraded — articles are publishing without adversarial review."
+            style={{
+              padding: '8px 12px',
+              borderRadius: 8,
+              background: 'rgba(239,68,68,0.10)',
+              border: '1px solid rgba(239,68,68,0.35)',
+              color: 'var(--admin-red-light)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            ⚠ Independence review degraded — {independenceSkipped24h} skipped in 24h
           </div>
         )}
 

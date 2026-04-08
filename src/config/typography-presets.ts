@@ -585,7 +585,7 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   },
 ];
 
-export const DEFAULT_PRESET_ID = 'classic';
+export const DEFAULT_PRESET_ID = 'medium';
 
 export function getPresetById(id: string | undefined | null): TypographyPreset {
   // Default fallback resolves by ID, not array index, so reordering the gallery
