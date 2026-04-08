@@ -62,6 +62,112 @@ function stripTags(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+// Slice HTML at a visible-character offset while preserving tag balance.
+// Walks the HTML token by token: tags pass through (don't count toward
+// visible chars), text contributes to the visible character count, and
+// once we reach `targetChars`, return the remainder.
+//
+// Used by stripDuplicateStandfirst to surgically excise the prefix of a
+// body paragraph that duplicates the description, while preserving the
+// rest of the paragraph (which may contain additional sentences and
+// inline tags like <em>, <strong>, <a>).
+//
+// IMPORTANT: this works on a SINGLE paragraph's inner HTML. It assumes no
+// nested block-level elements. Inline tags are fine.
+function sliceHtmlAtVisibleChars(
+  html: string,
+  targetChars: number,
+): { prefix: string; remainder: string } | null {
+  if (!html || targetChars <= 0) return null;
+
+  let i = 0;
+  let visibleCount = 0;
+  const prefixParts: string[] = [];
+  // Stack tracks any inline tags that were opened in the prefix but not
+  // yet closed. We need to leave the remainder properly nested.
+  const openTagStack: string[] = [];
+
+  while (i < html.length) {
+    if (visibleCount >= targetChars) break;
+    const ch = html[i];
+
+    if (ch === "<") {
+      // It's a tag — find its end
+      const tagEnd = html.indexOf(">", i);
+      if (tagEnd === -1) {
+        // Malformed HTML — just consume rest as text
+        break;
+      }
+      const fullTag = html.slice(i, tagEnd + 1);
+      prefixParts.push(fullTag);
+
+      // Track open/close tags so we can close any still-open ones at the cut
+      const tagInner = fullTag.slice(1, -1).trim();
+      const isClosing = tagInner.startsWith("/");
+      const isSelfClosing = tagInner.endsWith("/") || /^(br|hr|img|input)\b/i.test(tagInner);
+      if (!isClosing && !isSelfClosing) {
+        const tagName = tagInner.split(/[\s/>]/)[0];
+        if (tagName) openTagStack.push(tagName);
+      } else if (isClosing) {
+        const tagName = tagInner.slice(1).split(/[\s/>]/)[0];
+        // Pop the matching opener
+        for (let j = openTagStack.length - 1; j >= 0; j--) {
+          if (openTagStack[j] === tagName) {
+            openTagStack.splice(j, 1);
+            break;
+          }
+        }
+      }
+      i = tagEnd + 1;
+      continue;
+    }
+
+    if (ch === "&") {
+      // HTML entity — counts as ONE visible char
+      const semi = html.indexOf(";", i);
+      if (semi !== -1 && semi - i < 10) {
+        prefixParts.push(html.slice(i, semi + 1));
+        visibleCount++;
+        i = semi + 1;
+        continue;
+      }
+    }
+
+    // Plain character
+    prefixParts.push(ch);
+    // Whitespace runs collapse to one for counting purposes (matches stripTags)
+    if (/\s/.test(ch)) {
+      // Only count if previous wasn't whitespace
+      if (visibleCount > 0 && prefixParts[prefixParts.length - 2] && !/\s/.test(prefixParts[prefixParts.length - 2])) {
+        visibleCount++;
+      }
+    } else {
+      visibleCount++;
+    }
+    i++;
+  }
+
+  // Walk forward to a word boundary so we don't cut mid-word
+  while (i < html.length && /\S/.test(html[i]) && html[i] !== "<") {
+    prefixParts.push(html[i]);
+    i++;
+  }
+
+  // Close any still-open tags in the prefix (so it's well-formed)
+  for (let j = openTagStack.length - 1; j >= 0; j--) {
+    prefixParts.push(`</${openTagStack[j]}>`);
+  }
+
+  // Re-open them at the start of the remainder (so it's also well-formed)
+  const remainderOpens = openTagStack.map(t => `<${t}>`).join("");
+  const remainder = remainderOpens + html.slice(i);
+
+  return {
+    prefix: prefixParts.join(""),
+    remainder,
+  };
+}
+
 // Extract all <p>…</p> blocks inside the first <section> of the article.
 // Prefers <section id="introduction"> when present, but falls back to the
 // FIRST <section> regardless of id (some articles use #executive-summary,
@@ -295,15 +401,84 @@ export function stripDuplicateStandfirst(
     return articleHtml.replace(introMatch[0], introMatch[1]);
   }
 
-  // Special case: description is a sentence-truncated prefix of the paragraph.
-  // (Our extractor truncates at sentence boundary up to 280 chars, then the
-  // body paragraph continues for more sentences. The description should still
-  // be a leading slice.)
-  if (paraText.length > desc.length && np.startsWith(nd.slice(0, Math.min(120, nd.length)))) {
-    // Only strip if description is at least 60% of paragraph (so we don't
-    // strip a 1000-char paragraph because of a 60-char description)
-    if (desc.length / paraText.length > 0.4) {
+  // ── Tier A: literal prefix slice ────────────────────────────────────
+  // Description is the opening sentences of a much longer paragraph.
+  // Surgically slice the duplicated prefix off, leaving the rest of the
+  // paragraph intact.
+  if (paraText.length > desc.length + 20 && np.startsWith(nd)) {
+    const trimmedInner = innerHtml.trim();
+    const sliced = sliceHtmlAtVisibleChars(trimmedInner, desc.length);
+    if (sliced && sliced.remainder.trim().length > 30) {
+      const cleanedRemainder = sliced.remainder
+        .replace(/^[\s.!?,;:—–\-]+/, "")
+        .trim();
+      if (cleanedRemainder.length > 30) {
+        const pTagMatch = introMatch[2].match(/^<p[^>]*>/);
+        const pOpenTag = pTagMatch ? pTagMatch[0] : "<p>";
+        const newPBlock = `${pOpenTag}${cleanedRemainder}</p>`;
+        return articleHtml.replace(introMatch[0], introMatch[1] + newPBlock);
+      }
+    }
+  }
+
+  // ── Tier B: fuzzy paraphrase strip ──────────────────────────────────
+  // Body paragraph paraphrases the description with mid-sentence inserts
+  // (em-dash asides, parentheticals). If after normalizing both texts the
+  // body's word set has ≥80% overlap with the description's word set AND
+  // the lengths are within 60% of each other, the body p1 IS the
+  // description in different words. Strip the whole paragraph.
+  const tokenize = (s: string): string[] =>
+    s.toLowerCase()
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201c\u201d]/g, '"')
+      .replace(/[^a-z0-9' ]+/g, " ")
+      .split(/\s+/)
+      .filter(w => w.length >= 3); // skip short stop words
+
+  const descWords = new Set(tokenize(desc));
+  const paraWords = new Set(tokenize(paraText));
+  if (descWords.size >= 8) {
+    let intersection = 0;
+    for (const w of descWords) if (paraWords.has(w)) intersection++;
+    const overlap = intersection / descWords.size;
+    const lengthRatio = Math.min(paraText.length, desc.length) / Math.max(paraText.length, desc.length);
+    if (overlap >= 0.8 && lengthRatio >= 0.6) {
+      // Strip the whole first <p> — it's a paraphrase of the standfirst
       return articleHtml.replace(introMatch[0], introMatch[1]);
+    }
+  }
+
+  // ── Tier C: first-sentence-only dedup ───────────────────────────────
+  // Description and body p1 share only the first sentence, then diverge
+  // into different content. Slice that first sentence off the body so
+  // the reader doesn't see it twice.
+  const descFirstSentMatch = desc.match(/^[^.!?]+[.!?]/);
+  const paraFirstSentMatch = paraText.match(/^[^.!?]+[.!?]/);
+  if (descFirstSentMatch && paraFirstSentMatch) {
+    const descFirst = descFirstSentMatch[0].trim();
+    const paraFirst = paraFirstSentMatch[0].trim();
+    // First sentences must be substantial AND essentially identical
+    if (descFirst.length >= 20 && paraFirst.length >= 20) {
+      const normalize2 = (s: string) =>
+        s.toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, " ").trim();
+      if (normalize2(descFirst) === normalize2(paraFirst)) {
+        // Body has more content after the first sentence — slice it off
+        if (paraText.length > paraFirst.length + 30) {
+          const trimmedInner = innerHtml.trim();
+          const sliced = sliceHtmlAtVisibleChars(trimmedInner, paraFirst.length);
+          if (sliced && sliced.remainder.trim().length > 30) {
+            const cleanedRemainder = sliced.remainder
+              .replace(/^[\s.!?,;:—–\-]+/, "")
+              .trim();
+            if (cleanedRemainder.length > 30) {
+              const pTagMatch = introMatch[2].match(/^<p[^>]*>/);
+              const pOpenTag = pTagMatch ? pTagMatch[0] : "<p>";
+              const newPBlock = `${pOpenTag}${cleanedRemainder}</p>`;
+              return articleHtml.replace(introMatch[0], introMatch[1] + newPBlock);
+            }
+          }
+        }
+      }
     }
   }
 

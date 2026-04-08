@@ -120,6 +120,81 @@ export async function getArticles(): Promise<Article[]> {
  * pipeline-admin + stage-publish + articles-api), but render-time dedup
  * fixes existing articles immediately without re-publishing.
  */
+// Slice HTML at a visible-character offset while preserving tag balance.
+// See _shared/description.ts for the canonical version with full comments.
+function sliceHtmlAtVisibleChars(
+  html: string,
+  targetChars: number,
+): { prefix: string; remainder: string } | null {
+  if (!html || targetChars <= 0) return null;
+  let i = 0;
+  let visibleCount = 0;
+  const prefixParts: string[] = [];
+  const openTagStack: string[] = [];
+
+  while (i < html.length) {
+    if (visibleCount >= targetChars) break;
+    const ch = html[i];
+
+    if (ch === '<') {
+      const tagEnd = html.indexOf('>', i);
+      if (tagEnd === -1) break;
+      const fullTag = html.slice(i, tagEnd + 1);
+      prefixParts.push(fullTag);
+
+      const tagInner = fullTag.slice(1, -1).trim();
+      const isClosing = tagInner.startsWith('/');
+      const isSelfClosing = tagInner.endsWith('/') || /^(br|hr|img|input)\b/i.test(tagInner);
+      if (!isClosing && !isSelfClosing) {
+        const tagName = tagInner.split(/[\s/>]/)[0];
+        if (tagName) openTagStack.push(tagName);
+      } else if (isClosing) {
+        const tagName = tagInner.slice(1).split(/[\s/>]/)[0];
+        for (let j = openTagStack.length - 1; j >= 0; j--) {
+          if (openTagStack[j] === tagName) {
+            openTagStack.splice(j, 1);
+            break;
+          }
+        }
+      }
+      i = tagEnd + 1;
+      continue;
+    }
+
+    if (ch === '&') {
+      const semi = html.indexOf(';', i);
+      if (semi !== -1 && semi - i < 10) {
+        prefixParts.push(html.slice(i, semi + 1));
+        visibleCount++;
+        i = semi + 1;
+        continue;
+      }
+    }
+
+    prefixParts.push(ch);
+    if (/\s/.test(ch)) {
+      if (visibleCount > 0 && prefixParts[prefixParts.length - 2] && !/\s/.test(prefixParts[prefixParts.length - 2])) {
+        visibleCount++;
+      }
+    } else {
+      visibleCount++;
+    }
+    i++;
+  }
+
+  while (i < html.length && /\S/.test(html[i]) && html[i] !== '<') {
+    prefixParts.push(html[i]);
+    i++;
+  }
+
+  for (let j = openTagStack.length - 1; j >= 0; j--) {
+    prefixParts.push(`</${openTagStack[j]}>`);
+  }
+  const remainderOpens = openTagStack.map(t => `<${t}>`).join('');
+  const remainder = remainderOpens + html.slice(i);
+  return { prefix: prefixParts.join(''), remainder };
+}
+
 function stripDuplicateStandfirst(articleHtml: string, description: string): string {
   const desc = (description || '').replace(/\s+/g, ' ').trim();
   if (desc.length < 30) return articleHtml;
@@ -158,10 +233,68 @@ function stripDuplicateStandfirst(articleHtml: string, description: string): str
     return articleHtml.replace(introMatch[0], introMatch[1]);
   }
 
-  // Description is a sentence-truncated prefix of the paragraph
-  if (paraText.length > desc.length && np.startsWith(nd.slice(0, Math.min(120, nd.length)))) {
-    if (desc.length / paraText.length > 0.4) {
+  // Tier A: literal prefix slice
+  if (paraText.length > desc.length + 20 && np.startsWith(nd)) {
+    const innerHtmlTrimmed = innerHtml.trim();
+    const sliced = sliceHtmlAtVisibleChars(innerHtmlTrimmed, desc.length);
+    if (sliced && sliced.remainder.trim().length > 30) {
+      const cleanedRemainder = sliced.remainder
+        .replace(/^[\s.!?,;:—–\-]+/, '')
+        .trim();
+      if (cleanedRemainder.length > 30) {
+        const pTagMatch = introMatch[2].match(/^<p[^>]*>/);
+        const pOpenTag = pTagMatch ? pTagMatch[0] : '<p>';
+        const newPBlock = `${pOpenTag}${cleanedRemainder}</p>`;
+        return articleHtml.replace(introMatch[0], introMatch[1] + newPBlock);
+      }
+    }
+  }
+
+  // Tier B: paraphrase strip — body p1 word set ≥80% overlap with desc
+  // and lengths within 60% → it's a paraphrase, strip whole paragraph
+  const tokenize = (s: string): string[] =>
+    s.toLowerCase()
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201c\u201d]/g, '"')
+      .replace(/[^a-z0-9' ]+/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length >= 3);
+  const descWords = new Set(tokenize(desc));
+  const paraWords = new Set(tokenize(paraText));
+  if (descWords.size >= 8) {
+    let intersection = 0;
+    for (const w of descWords) if (paraWords.has(w)) intersection++;
+    const overlap = intersection / descWords.size;
+    const lengthRatio = Math.min(paraText.length, desc.length) / Math.max(paraText.length, desc.length);
+    if (overlap >= 0.8 && lengthRatio >= 0.6) {
       return articleHtml.replace(introMatch[0], introMatch[1]);
+    }
+  }
+
+  // Tier C: first-sentence-only dedup — slice the shared opening sentence
+  const descFirstSentMatch = desc.match(/^[^.!?]+[.!?]/);
+  const paraFirstSentMatch = paraText.match(/^[^.!?]+[.!?]/);
+  if (descFirstSentMatch && paraFirstSentMatch) {
+    const descFirst = descFirstSentMatch[0].trim();
+    const paraFirst = paraFirstSentMatch[0].trim();
+    if (descFirst.length >= 20 && paraFirst.length >= 20) {
+      const normalize2 = (s: string) =>
+        s.toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ').trim();
+      if (normalize2(descFirst) === normalize2(paraFirst) && paraText.length > paraFirst.length + 30) {
+        const innerHtmlTrimmed = innerHtml.trim();
+        const sliced = sliceHtmlAtVisibleChars(innerHtmlTrimmed, paraFirst.length);
+        if (sliced && sliced.remainder.trim().length > 30) {
+          const cleanedRemainder = sliced.remainder
+            .replace(/^[\s.!?,;:—–\-]+/, '')
+            .trim();
+          if (cleanedRemainder.length > 30) {
+            const pTagMatch = introMatch[2].match(/^<p[^>]*>/);
+            const pOpenTag = pTagMatch ? pTagMatch[0] : '<p>';
+            const newPBlock = `${pOpenTag}${cleanedRemainder}</p>`;
+            return articleHtml.replace(introMatch[0], introMatch[1] + newPBlock);
+          }
+        }
+      }
     }
   }
 

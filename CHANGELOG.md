@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.2] - 2026-04-08
+
+### Fixed — 5 Standfirsts Still Duplicated (Three-Tier Dedup Strategy)
+
+After v22.7.1 declared dedup complete, a manual production query found 5 articles where the standfirst was still being repeated in the body. The original `stripDuplicateStandfirst` only handled the simple case (description IS the body paragraph). It missed three more sophisticated patterns.
+
+**Found by direct production query** rather than trusting prior fixes:
+```sql
+SELECT slug FROM articles WHERE first body <p> shares opening text with description;
+```
+→ 5 hits: `glp1-safety-data-gaps-pharma-funding`, `free-will-debate-opus`, `mcas-diagnosis-tryptase-criteria-institutional-conflict`, `cell-not-a-machine-biology-stochasticity`, `investigating-contrarian-evidence-on-nasas-moon-landings-and-recent-return-claim`.
+
+**Three new dedup tiers** in [`_shared/description.ts`](supabase/functions/_shared/description.ts) and [`src/utils/articles.ts`](src/utils/articles.ts):
+
+**Tier A — literal prefix slice** (3 of 5 articles): description is the opening sentences of a much longer paragraph (e.g. desc = first 155 chars, paragraph = 800 chars). Old behavior: required `desc.length / paraText.length > 0.4`, which excluded short descriptions in long paragraphs. New behavior: walk the inner HTML token-by-token via new `sliceHtmlAtVisibleChars()` helper, slice off exactly `desc.length` visible characters while preserving inline tags (`<em>`, `<strong>`, `<a>`) and tag balance, then keep the remainder. Surgical excision instead of dropping the whole paragraph.
+
+**Tier B — paraphrase strip** (1 of 5: `free-will-debate-opus`): body p1 is a paraphrase of the description with mid-sentence inserts ("Every few years, philosophers and neuroscientists gather **— metaphorically or literally —** to argue..."). Literal-prefix matching fails because of the inserted parenthetical. New rule: if the body's word set has ≥80% overlap with the description's word set AND the lengths are within 60% of each other, the body p1 IS the description in different words. Strip the whole paragraph. Tokenizer skips short stop words (<3 chars) to avoid false positives on common articles/prepositions.
+
+**Tier C — first-sentence-only dedup** (1 of 5: `investigating-contrarian-evidence...`): description and body p1 share exactly the first sentence ("An AI was asked to investigate the Moon landings.") then diverge into completely different content. Stripping the whole paragraph would lose the new content; literal-prefix matching only catches 1 sentence's worth which is below the 30-char remainder threshold. New rule: if the normalized first sentence of the description equals the normalized first sentence of the body AND the body has substantial content after (>30 chars), slice off just that one sentence using `sliceHtmlAtVisibleChars()`.
+
+**New helper `sliceHtmlAtVisibleChars(html, n)`**: walks HTML token by token. Tags pass through (don't count). Text contributes to a visible-character counter. HTML entities count as 1 char. When the counter reaches `n`, walks forward to a word boundary, closes any still-open inline tags in the prefix, re-opens them at the start of the remainder. Returns `{ prefix, remainder }`. Both halves are well-formed HTML.
+
+**Backfilled all 5 articles** via the existing `dedup-standfirsts` admin action (now powered by the upgraded helper). **Live-verified all 5 on production** by curling the rendered HTML and parsing `<p class="standfirst">` against the first body `<p>`:
+
+| Article | Standfirst | First body P |
+|---|---|---|
+| free-will-debate-opus | "Every few years, philosophers..." | "That should tell you something." |
+| moon-landings-investigation | "An AI was asked to investigate the Moon landings. It exposed not a conspiracy..." | "It wrote a debunking piece in twenty minutes..." |
+| glp1-safety | "In September 2023, the FDA updated... ileus." | "Intestinal blockage. The kind that can kill you..." |
+| cell-not-a-machine | "The cell is a machine. Jacques Monod said so in 1972..." | "Genes are software. Proteins are hardware..." |
+| mcas-diagnosis | "In a case report... Recurrent anaphylaxis..." | "Seven episodes over eighteen years..." |
+
+**Production query confirms zero duplicated standfirsts remain** (down from 5/183 to 0/183).
+
+Deployed: `pipeline-admin`, `stage-publish`, `articles-api`, `publish-article`. Backfill ran via `dedup-standfirsts` action.
+
 ## [22.7.1] - 2026-04-08
 
 ### Fixed — Bulk Narration Regen Was Silently Failing (Production Verified)
