@@ -109,6 +109,69 @@ export async function getArticles(): Promise<Article[]> {
 }
 
 /**
+ * Render-time dedup: strip the first <p> from <section id="introduction">
+ * if it duplicates the description. ArticleLayout already renders the
+ * description as a standfirst above the body — leaving the matching
+ * paragraph in produces a duplicated intro.
+ *
+ * This is the same logic as `_shared/description.ts::stripDuplicateStandfirst`
+ * but ported here so the Astro render pipeline doesn't have to import from
+ * the Deno edge functions directory. Publish-time dedup also runs (see
+ * pipeline-admin + stage-publish + articles-api), but render-time dedup
+ * fixes existing articles immediately without re-publishing.
+ */
+function stripDuplicateStandfirst(articleHtml: string, description: string): string {
+  const desc = (description || '').replace(/\s+/g, ' ').trim();
+  if (desc.length < 30) return articleHtml;
+
+  const introMatch = articleHtml.match(
+    /(<section[^>]*id=["']introduction["'][^>]*>\s*)(<p[^>]*>([\s\S]*?)<\/p>\s*)/i
+  );
+  if (!introMatch) return articleHtml;
+
+  const innerHtml = introMatch[3];
+  const paraText = innerHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!paraText) return articleHtml;
+
+  // Identical match
+  if (paraText === desc) return articleHtml.replace(introMatch[0], introMatch[1]);
+
+  const minLen = Math.min(paraText.length, desc.length);
+  const maxLen = Math.max(paraText.length, desc.length);
+  const ratio = minLen / maxLen;
+
+  const normalize = (s: string) =>
+    s.toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').trim();
+  const np = normalize(paraText);
+  const nd = normalize(desc);
+  const sliceLen = Math.min(80, minLen);
+  const leadingMatch =
+    np.startsWith(nd.slice(0, sliceLen)) || nd.startsWith(np.slice(0, sliceLen));
+
+  if (ratio > 0.8 && leadingMatch) {
+    return articleHtml.replace(introMatch[0], introMatch[1]);
+  }
+
+  // Description is a sentence-truncated prefix of the paragraph
+  if (paraText.length > desc.length && np.startsWith(nd.slice(0, Math.min(120, nd.length)))) {
+    if (desc.length / paraText.length > 0.4) {
+      return articleHtml.replace(introMatch[0], introMatch[1]);
+    }
+  }
+
+  // Standfirst dek wrapped in <strong>/<b>/<em>
+  const isStandfirst = /^\s*<(strong|b|em|i)[^>]*>[\s\S]*?<\/\1>\s*$/i.test(innerHtml.trim());
+  if (isStandfirst) {
+    const sharedHead = Math.min(40, minLen);
+    if (sharedHead > 20 && np.slice(0, sharedHead) === nd.slice(0, sharedHead)) {
+      return articleHtml.replace(introMatch[0], introMatch[1]);
+    }
+  }
+
+  return articleHtml;
+}
+
+/**
  * Get a single article by slug (includes draft/unpublished for preview)
  */
 export async function getArticleBySlug(slug: string): Promise<(Article & { articleHtml: string; toc: { id: string; title: string }[] }) | null> {
@@ -120,9 +183,11 @@ export async function getArticleBySlug(slug: string): Promise<(Article & { artic
 
   if (error || !data) return null;
 
+  const mapped = mapRow(data);
+  const rawHtml = (data.article_html as string) || '';
   return {
-    ...mapRow(data),
-    articleHtml: (data.article_html as string) || '',
+    ...mapped,
+    articleHtml: stripDuplicateStandfirst(rawHtml, mapped.description),
     toc: (data.toc as { id: string; title: string }[]) || [],
   };
 }

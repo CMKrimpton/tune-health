@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.6.0] - 2026-04-08
+
+### Fixed — Duplicated Intro Paragraphs (Standfirst Was Repeating in Body)
+
+Articles were rendering the description as a standfirst block at the top, then immediately showing the same text again as the first paragraph of the article body. The description was being extracted FROM that first paragraph, then both got rendered. No dedup happened anywhere.
+
+**Fix — dedup at three layers:**
+
+1. **New shared helper `stripDuplicateStandfirst(html, description)`** in [`_shared/description.ts`](supabase/functions/_shared/description.ts) — strips the first `<p>` from `<section id="introduction">` when it duplicates the description. Heuristics: identical text after whitespace collapse; one is a leading slice of the other with ≥80% length ratio; description is a sentence-truncated prefix of a longer paragraph (≥40% coverage); paragraph is a `<strong>`/`<em>` standfirst dek with shared first 20+ chars.
+2. **Publish-time dedup** — wired into `submit-article`, `submit-new-article`, `publish-direct` (in [`pipeline-admin/index.ts`](supabase/functions/pipeline-admin/index.ts)), `stage-publish` ([`stage-publish/index.ts`](supabase/functions/stage-publish/index.ts)), and `articles-api save` ([`articles-api/index.ts`](supabase/functions/articles-api/index.ts)). Every write path stores cleaned HTML.
+3. **Render-time dedup** — `getArticleBySlug` in [`src/utils/articles.ts`](src/utils/articles.ts) applies the same dedup logic to whatever HTML it reads from the DB. This means existing articles get fixed immediately on next page render without re-publishing.
+4. **One-shot backfill** — new `dedup-standfirsts` admin action in `pipeline-admin` walks every article in the DB, applies the dedup, and writes cleaned HTML back. Ran on production: **6 of 205 articles had duplicated intros**, all stripped.
+
+### Fixed — Narration Not Auto-Regenerating When Article Is Edited
+
+`articles-api save` updated the description field but never told `generate-narration` that the text had changed. Result: every time you edited an article's description in the admin editor, the audio narration kept reading the OLD text. Reported as fixed many times — this fix is in `articles-api`, the actual entry point that the edit page calls (previous fixes were in `stage-publish`, which only runs during pipeline publishing, not during edit-page saves).
+
+**Fix in [`articles-api/index.ts`](supabase/functions/articles-api/index.ts):**
+- Save action now fetches `description` + `narration_url` from the existing row before updating
+- After the update succeeds, compares old vs new description
+- If description changed AND new description is ≥20 chars, fire-and-forget dispatches `generate-narration` with `force: true`
+- Logged as `[articles-api] description changed for {slug} — dispatching narration regen (force=true)` so it's visible in function logs
+- Non-blocking: the narration call is fire-and-forget so the save response is still instant
+
+This sits alongside the existing `stage-publish` narration regen path, which handles pipeline publishes. Now both entry points (pipeline publish + admin edit save) regenerate narration when the description changes.
+
 ## [22.5.0] - 2026-04-08
 
 ### Fixed — Description Extraction Across All Publish Paths

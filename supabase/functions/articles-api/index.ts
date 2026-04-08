@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { stripDuplicateStandfirst } from "../_shared/description.ts";
 // GitHub sync removed — site now serves from Supabase directly (SSR)
 
 const corsHeaders = {
@@ -64,12 +65,25 @@ Deno.serve(async (req: Request) => {
       const article = payload.article;
       if (!article || !article.slug) return json({ error: "article with slug required" }, 400);
 
-      // Check if article already exists
+      // Check if article already exists — fetch description + narration_url so
+      // we can detect a description change and trigger narration regen
       const { data: existing } = await db
         .from("articles")
-        .select("id")
+        .select("id, description, narration_url, article_html")
         .eq("slug", article.slug)
         .maybeSingle();
+
+      // Dedup the standfirst from the body if both description + html provided.
+      // The render layer also dedups, but writing clean HTML to the DB means
+      // RSS, social previews, and any future consumer all get the clean copy.
+      const incomingDescription = (article.description as string | undefined) ?? existing?.description;
+      const incomingHtml = (article.article_html as string | undefined) ?? existing?.article_html;
+      if (incomingDescription && incomingHtml) {
+        const cleaned = stripDuplicateStandfirst(incomingHtml, incomingDescription);
+        if (cleaned !== incomingHtml) {
+          article.article_html = cleaned;
+        }
+      }
 
       let result;
       if (existing) {
@@ -96,6 +110,34 @@ Deno.serve(async (req: Request) => {
           .single();
         if (error) throw error;
         result = data;
+      }
+
+      // ── Auto-regenerate narration if description changed ──────────────
+      // Narration narrates the description field. If the user edited the
+      // description (or this is a new article with a narration_url that
+      // doesn't match the new text), the audio is now stale. Fire-and-forget
+      // dispatch to generate-narration with force=true.
+      // Trigger conditions:
+      //   - description in payload differs from existing description, OR
+      //   - new article being inserted with no narration yet
+      const newDesc = (article.description as string | undefined) ?? null;
+      const oldDesc = existing?.description ?? null;
+      const descriptionChanged = newDesc !== null && newDesc !== oldDesc;
+      if (descriptionChanged && newDesc && newDesc.trim().length >= 20) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        if (supabaseUrl) {
+          console.log(`[articles-api] description changed for ${article.slug} — dispatching narration regen (force=true)`);
+          fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({ action: "generate", slug: article.slug, force: true }),
+          }).catch(err =>
+            console.warn(`[articles-api] narration dispatch failed for ${article.slug}: ${err instanceof Error ? err.message : "unknown"}`)
+          );
+        }
       }
 
       return json(result);

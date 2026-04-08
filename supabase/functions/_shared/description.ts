@@ -224,6 +224,89 @@ function truncateAtSentence(text: string, maxLen: number): string {
   return slice.trim() + "…";
 }
 
+// Strip the first <p> from <section id="introduction"> when its plain text
+// is essentially the same as the description. ArticleLayout already renders
+// the description as a standfirst above the body, so leaving the matching
+// paragraph in produces a duplicated intro.
+//
+// Heuristic: the body paragraph and the description must overlap by at least
+// 80% on either side (description is a leading slice of paragraph, OR
+// paragraph is a leading slice of description). This catches:
+//   - the standfirst dek (paragraph IS the description, 100% match)
+//   - the truncated-at-280-chars first paragraph (description is the first
+//     ~280 chars of a longer paragraph)
+//
+// It does NOT strip:
+//   - paragraphs that merely share a few opening words
+//   - cases where the body opens with a completely different sentence
+export function stripDuplicateStandfirst(
+  articleHtml: string,
+  description: string | undefined | null
+): string {
+  const desc = (description || "").replace(/\s+/g, " ").trim();
+  if (desc.length < 30) return articleHtml;
+
+  const introMatch = articleHtml.match(
+    /(<section[^>]*id=["']introduction["'][^>]*>\s*)(<p[^>]*>([\s\S]*?)<\/p>\s*)/i
+  );
+  if (!introMatch) return articleHtml;
+
+  const fullPBlock = introMatch[2];
+  const innerHtml = introMatch[3];
+  const paraText = stripTags(innerHtml);
+  if (!paraText) return articleHtml;
+
+  // Strict match: identical (after whitespace collapse) — covers standfirsts
+  if (paraText === desc) {
+    return articleHtml.replace(introMatch[0], introMatch[1]);
+  }
+
+  // Loose match: one is a leading slice of the other AND length ratio > 0.8
+  const minLen = Math.min(paraText.length, desc.length);
+  const maxLen = Math.max(paraText.length, desc.length);
+  const ratio = minLen / maxLen;
+
+  // Compare normalised slices (lowercase, strip smart quotes / curly apostrophes)
+  const normalize = (s: string) =>
+    s.toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').trim();
+  const np = normalize(paraText);
+  const nd = normalize(desc);
+  const sliceLen = Math.min(80, minLen);
+  const leadingMatch =
+    np.startsWith(nd.slice(0, sliceLen)) || nd.startsWith(np.slice(0, sliceLen));
+
+  if (ratio > 0.8 && leadingMatch) {
+    return articleHtml.replace(introMatch[0], introMatch[1]);
+  }
+
+  // Special case: description is a sentence-truncated prefix of the paragraph.
+  // (Our extractor truncates at sentence boundary up to 280 chars, then the
+  // body paragraph continues for more sentences. The description should still
+  // be a leading slice.)
+  if (paraText.length > desc.length && np.startsWith(nd.slice(0, Math.min(120, nd.length)))) {
+    // Only strip if description is at least 60% of paragraph (so we don't
+    // strip a 1000-char paragraph because of a 60-char description)
+    if (desc.length / paraText.length > 0.4) {
+      return articleHtml.replace(introMatch[0], introMatch[1]);
+    }
+  }
+
+  // Last-ditch: paragraph is wrapped in <strong>/<b>/<em> AND has any
+  // meaningful overlap with description. A standfirst dek is by definition
+  // editorially intended as the description.
+  if (isStandfirstHtml(innerHtml)) {
+    // If the dek text and description share at least their first 40 chars,
+    // strip the dek.
+    const sharedHead = Math.min(40, minLen);
+    if (sharedHead > 20 && np.slice(0, sharedHead) === nd.slice(0, sharedHead)) {
+      return articleHtml.replace(introMatch[0], introMatch[1]);
+    }
+  }
+
+  void fullPBlock;
+  return articleHtml;
+}
+
 // Decide whether a description is genuinely broken/truncated and should be
 // replaced. A standfirst (dek) that doesn't end in a period is NOT broken —
 // that's editorial convention.

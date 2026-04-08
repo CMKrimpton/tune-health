@@ -4,7 +4,7 @@ import { supabase, parseScore } from "../_shared/db.ts";
 
 import { getByline, MODELS } from "../_shared/constants.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
-import { descriptionLooksBroken, extractDescriptionFromHtml } from "../_shared/description.ts";
+import { descriptionLooksBroken, extractDescriptionFromHtml, stripDuplicateStandfirst } from "../_shared/description.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -98,12 +98,22 @@ Deno.serve(async (req: Request) => {
       .eq("id", logId)
       .single();
 
+    // Final dedup pass: strip first body <p> if it duplicates the final
+    // description (which may differ from the upstream extraction if QC or
+    // copy-edit rewrote it). Run on the article HTML the editor stored, then
+    // write the cleaned version to the articles table.
+    const articleHtmlForDb = stripDuplicateStandfirst(
+      (articleData.html as string) || "",
+      finalDescription
+    );
+
     // Update article to published status with editor's final touches
     await db
       .from("articles")
       .update({
         title: finalTitle,
         description: finalDescription,
+        article_html: articleHtmlForDb,
         draft: false,
         status: "published",
         published_at: new Date().toISOString(),

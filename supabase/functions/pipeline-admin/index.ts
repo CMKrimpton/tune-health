@@ -5,7 +5,7 @@ import { rotateFeatured } from "../_shared/featured.ts";
 import { getCategoryGradient, MODELS, FLAT_PRICING } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
 import { isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
-import { extractDescriptionFromHtml, extractDescriptionFromMarkdown } from "../_shared/description.ts";
+import { extractDescriptionFromHtml, extractDescriptionFromMarkdown, stripDuplicateStandfirst } from "../_shared/description.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
 // ── Markdown → Site HTML converter ──────────────────────────────────────
@@ -186,6 +186,46 @@ Deno.serve(async (req: Request) => {
         message: newFeatured
           ? `Featured rotated to: ${newFeatured}`
           : "No rotation needed (current featured is still fresh or no eligible articles)",
+      });
+    }
+
+    // ------ DEDUP-STANDFIRSTS — one-shot backfill: strip duplicate intro <p> across all articles ------
+    if (action === "dedup-standfirsts") {
+      const { data: rows, error: listErr } = await db
+        .from("articles")
+        .select("slug, description, article_html")
+        .not("article_html", "is", null);
+      if (listErr) return json({ error: `List failed: ${listErr.message}` }, 500);
+
+      let updated = 0;
+      let skipped = 0;
+      const samples: Array<{ slug: string; before: number; after: number }> = [];
+
+      for (const row of rows || []) {
+        const html = (row.article_html as string) || "";
+        const desc = (row.description as string) || "";
+        if (!html || !desc) { skipped++; continue; }
+        const cleaned = stripDuplicateStandfirst(html, desc);
+        if (cleaned !== html) {
+          const { error: upErr } = await db
+            .from("articles")
+            .update({ article_html: cleaned })
+            .eq("slug", row.slug);
+          if (!upErr) {
+            updated++;
+            if (samples.length < 10) samples.push({ slug: row.slug as string, before: html.length, after: cleaned.length });
+          }
+        } else {
+          skipped++;
+        }
+      }
+      return json({
+        success: true,
+        updated,
+        skipped,
+        total: (rows || []).length,
+        samples,
+        message: `Stripped duplicate standfirst from ${updated} of ${(rows || []).length} articles`,
       });
     }
 
@@ -938,6 +978,8 @@ Deno.serve(async (req: Request) => {
         extractedDesc.description ||
         (editorBrief.description as string) ||
         "";
+      // Strip duplicate standfirst from body (rendered separately by ArticleLayout)
+      articleHtml = stripDuplicateStandfirst(articleHtml, resolvedDescription);
       const metadata = {
         title,
         slug,
@@ -1071,7 +1113,12 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Parse TOC from the HTML (must happen AFTER markdown conversion)
+      // Strip the first body <p> when it duplicates the description (the
+      // standfirst is rendered separately by ArticleLayout — leaving the
+      // matching paragraph in produces a duplicated intro).
+      articleHtml = stripDuplicateStandfirst(articleHtml, description);
+
+      // Parse TOC from the HTML (must happen AFTER markdown conversion + dedup)
       const tocMatches = [...articleHtml.matchAll(/<section[^>]*id="([^"]+)"[^>]*>(?:(?!<\/section>|<section[\s>])[\s\S])*?<h2[^>]*>([^<]+)<\/h2>/gi)];
       const toc = tocMatches.map(m => ({ id: m[1], title: m[2].trim() }));
 
@@ -1208,6 +1255,9 @@ Deno.serve(async (req: Request) => {
           console.log(`[Admin] publish-direct: extracted ${htmlExtract.source} from HTML (${description.length} chars)`);
         }
       }
+
+      // Strip duplicate standfirst paragraph from body (see helper for rules)
+      articleContent = stripDuplicateStandfirst(articleContent, description);
 
       // Parse TOC
       const tocMatches = [...articleContent.matchAll(/<section[^>]*id="([^"]+)"[^>]*>(?:(?!<\/section>|<section[\s>])[\s\S])*?<h2[^>]*>([^<]+)<\/h2>/gi)];
