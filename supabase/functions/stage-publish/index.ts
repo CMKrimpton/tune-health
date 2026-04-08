@@ -4,6 +4,7 @@ import { supabase, parseScore } from "../_shared/db.ts";
 
 import { getByline, MODELS } from "../_shared/constants.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
+import { descriptionLooksBroken, extractDescriptionFromHtml } from "../_shared/description.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -48,40 +49,44 @@ Deno.serve(async (req: Request) => {
     const finalTitle = (qcResult.headline as string) || (metadata.title as string);
     let finalDescription = (qcResult.description as string) || (metadata.description as string);
 
-    // HARD GATE: reject truncated descriptions at the last line of defense.
-    // parseClaudeJSON Step 3 silently repairs truncated JSON — which can produce
-    // descriptions like "Thyroid hormones are the master regulators of your metabolism, but interpreting their"
-    // (cut off mid-sentence). This check catches it at publish time.
-    // But short descriptions that end with proper punctuation are fine (human-written).
-    const descTrimmed = (finalDescription || "").trim();
-    const endsWithPunctuation = /[.!?]["')\u2019]?\s*$/.test(descTrimmed);
-    if (!endsWithPunctuation && descTrimmed.length > 20) {
-      console.warn(`[Publish] ⚠️ Description appears truncated: "${descTrimmed.slice(-60)}" (${descTrimmed.length} chars, endsPunct=${endsWithPunctuation})`);
-      // Try each fallback source in order: QC → writer metadata → editor brief (from log's research_data)
+    // A description is legitimately a standfirst/dek (no terminal period OK)
+    // when the upstream extractor flagged it. publish-direct and submit-new-article
+    // set this when they pulled the dek from the article HTML.
+    const descIsStandfirst = Boolean(
+      (metadata.descriptionIsStandfirst as boolean | undefined) ||
+        ((qcResult as Record<string, unknown>).descriptionIsStandfirst as boolean | undefined)
+    );
+
+    // HARD GATE: only replace descriptions that look genuinely broken —
+    // empty, mid-word, dangling connector, or metadata strip. A valid
+    // standfirst like "Why some people 'get it'…needed both" passes.
+    // This prevents the previous nonsense fallback that concatenated the
+    // standfirst with the first body paragraph as "sentence 1".
+    if (descriptionLooksBroken(finalDescription, { isStandfirst: descIsStandfirst })) {
+      console.warn(`[Publish] ⚠️ Description looks broken: "${(finalDescription || "").slice(0, 80)}" (${(finalDescription || "").length} chars, standfirst=${descIsStandfirst})`);
+
+      // Try each fallback source in order: QC → writer metadata → editor brief
       const { data: logForBrief } = await db.from("daily_article_log").select("research_data").eq("id", logId).maybeSingle();
       const editorBriefDesc = ((logForBrief?.research_data as Record<string, unknown>)?._editorBrief as Record<string, unknown>)?.description as string | undefined;
       const candidates = [
         qcResult.description as string,
         metadata.description as string,
         editorBriefDesc,
-      ].filter((d): d is string => !!d && d.trim().length >= 80 && /[.!?]["')\u2019]?\s*$/.test(d.trim()));
+      ].filter((d): d is string => !!d && !descriptionLooksBroken(d));
 
       if (candidates.length > 0) {
         finalDescription = candidates[0];
-        console.log(`[Publish] Restored description from fallback (${finalDescription.length} chars)`);
+        console.log(`[Publish] Restored description from candidate source (${finalDescription.length} chars)`);
       } else {
-        // All sources are truncated — synthesize from the article's first paragraph
-        const firstParagraph = ((articleData.html as string) || "")
-          .replace(/<[^>]+>/g, " ")
-          .replace(/\s+/g, " ")
-          .trim()
-          .split(/(?<=[.!?])\s+/)
-          .slice(0, 2)
-          .join(" ")
-          .trim();
-        if (firstParagraph.length >= 60) {
-          finalDescription = firstParagraph;
-          console.log(`[Publish] Synthesized description from article opening (${finalDescription.length} chars)`);
+        // All sources are broken — synthesize using the shared extractor.
+        // This walks <section id="introduction"> properly, skips breadcrumbs,
+        // prefers a standfirst, and falls back to the first prose paragraph
+        // truncated at a sentence boundary. Never concatenates standfirst +
+        // body into a single run-on sentence.
+        const synth = extractDescriptionFromHtml((articleData.html as string) || "");
+        if (synth.description) {
+          finalDescription = synth.description;
+          console.log(`[Publish] Synthesized description via shared extractor (${synth.source}, ${finalDescription.length} chars)`);
         }
       }
     }

@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.5.0] - 2026-04-08
+
+### Fixed — Description Extraction Across All Publish Paths
+
+Two articles published on 2026-04-08 surfaced a category of bugs in how every publish path picked the article description. The dumb "first `<p>` inside `<section id=\"introduction\">`" regex was grabbing the wrong paragraph, and `stage-publish`'s "truncation gate" was making things worse by treating valid standfirst deks as broken and synthesizing nonsense.
+
+**Symptoms in production:**
+- *"The Modelers and the Operators"* — description = `"Why some people \"get it\" immediately, why most don't, and why evolution needed both A man sits down at a piano he's never touched. Within forty minutes…"` (the standfirst dek concatenated with the first body paragraph as a 289-char run-on sentence)
+- *"OCD: A Brain Circuit, Not a Quirk"* — description = empty. The first `<p>` in the article was a metadata strip (`"Mental Health · The 30 Series · Part 1 · 10 min read"`), which got extracted, then rejected, then the synth fallback failed silently
+
+**Root causes:**
+
+1. **Three nearly-identical extraction blocks** in [`pipeline-admin/index.ts`](supabase/functions/pipeline-admin/index.ts) (`submit-article`, `submit-new-article`, `publish-direct`) all used the same dumb `<section id="introduction">\s*<p[^>]*>(...)<\/p>` regex with no awareness of breadcrumb strips, standfirst deks, or paragraph semantics
+2. **`stage-publish`'s `endsWithPunctuation` gate** ([stage-publish/index.ts:51-87](supabase/functions/stage-publish/index.ts#L51-L87)) treated any description without a terminal `.!?` as truncated. Standfirsts/deks legitimately don't end in periods — that's editorial convention. The gate then ran a synth fallback that stripped ALL HTML, joined everything with spaces, and took "first 2 sentences" — which fused the standfirst with the body paragraph because the standfirst had no period
+
+**Fix — single shared module + four call sites unified:**
+
+New module [`supabase/functions/_shared/description.ts`](supabase/functions/_shared/description.ts) — single source of truth:
+
+- **`extractDescriptionFromHtml(html)`** — walks all `<p>` elements inside `<section id="introduction">` in order, **skips metadata strips** (anything with `·`/`•`/`|` separators, "X min read", "Part N of M", short all-caps lines, "By {Author}" bylines), **detects standfirst deks** (entire paragraph wrapped in a single `<strong>`/`<b>`/`<em>`), uses the standfirst as-is when present, otherwise returns the first real prose paragraph truncated at a sentence boundary (never mid-word). Returns `{ description, source, isStandfirst }`
+- **`extractDescriptionFromMarkdown(md)`** — same logic for raw markdown: handles `## subhead-as-dek`, `**bold-line-as-dek**`, or first prose paragraph. Stops at the first heading or blank line so it never collects multi-paragraph runs
+- **`descriptionLooksBroken(desc, { isStandfirst })`** — single source of truth for what "broken" means: empty, mid-word cut, dangling connector (`,`/`—`/`the`/`of`/`with`/`for`/`and`/`but`/`is`/`are`/...), metadata strip. **A standfirst without terminal punctuation passes** — that's editorial convention, not breakage
+- **`truncateAtSentence(text, maxLen)`** — internal helper that prefers a `.!?` boundary, falls back to a word boundary with `…`, never cuts mid-word
+
+**All four publish entry points unified:**
+
+1. **`submit-article`** ([pipeline-admin/index.ts:890](supabase/functions/pipeline-admin/index.ts#L890)) — the resume-from-brief path. Now extracts when both writer-supplied and editor-brief descriptions are empty
+2. **`submit-new-article`** ([pipeline-admin/index.ts:1043](supabase/functions/pipeline-admin/index.ts#L1043)) — used by both the New Article tab AND the dashboard "Article → Review → Publish" upload
+3. **`publish-direct`** ([pipeline-admin/index.ts:1184](supabase/functions/pipeline-admin/index.ts#L1184)) — used by both the New Article tab AND the dashboard "Ready → Art + Publish" upload
+4. **`stage-publish`** ([stage-publish/index.ts:55-92](supabase/functions/stage-publish/index.ts#L55-L92)) — final hard gate. Now reads `metadata.descriptionIsStandfirst` (set by upstream extractors), uses the shared `descriptionLooksBroken()` check, and on synth fallback uses `extractDescriptionFromHtml()` instead of the old "strip all HTML, take first 2 sentences" code that produced run-ons
+
+The `descriptionIsStandfirst` flag travels from upstream extraction through `metadata` → log entry → `stage-publish`, so the truncation gate knows when an unpunctuated description is editorially correct and not garbage.
+
+**New Article tab vs Topic Queue Upload — verified unified:**
+
+`ArticleEditor.tsx` (New Article tab) and `PipelineMonitor.tsx` (Topic Queue Upload) both call the exact same `submit-new-article` and `publish-direct` actions. They share the same backend, the same extraction logic, the same gate. No drift, no duplicate logic, no two systems fighting each other. Auditable from a single file.
+
+**Backfilled the two broken articles:**
+- `the-modelers-and-the-operators` → `"Why some people \"get it\" immediately, why most don't, and why evolution needed both"` (the actual standfirst, 83 chars)
+- `ocd-brain-circuit-not-personality-quirk` → first paragraph cleanly truncated at sentence boundary (268 chars, ends in `.`)
+
+Files touched:
+- **New**: [`supabase/functions/_shared/description.ts`](supabase/functions/_shared/description.ts)
+- **Modified**: [`supabase/functions/pipeline-admin/index.ts`](supabase/functions/pipeline-admin/index.ts), [`supabase/functions/stage-publish/index.ts`](supabase/functions/stage-publish/index.ts)
+- **Deployed**: `pipeline-admin`, `stage-publish`
+
 ## [22.4.0] - 2026-04-08
 
 ### Changed — Typography Default Is Now Newsreader

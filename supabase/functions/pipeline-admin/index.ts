@@ -5,6 +5,7 @@ import { rotateFeatured } from "../_shared/featured.ts";
 import { getCategoryGradient, MODELS, FLAT_PRICING } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
 import { isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
+import { extractDescriptionFromHtml, extractDescriptionFromMarkdown } from "../_shared/description.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
 // ── Markdown → Site HTML converter ──────────────────────────────────────
@@ -886,9 +887,17 @@ Deno.serve(async (req: Request) => {
       const looksLikeMarkdown = !articleHtml.includes("<section") && !articleHtml.includes("<p>") &&
         (articleHtml.includes("\n## ") || articleHtml.includes("\n# ") || /^\s*#{1,3}\s/m.test(articleHtml));
 
+      // Extract a standfirst/first-paragraph description from markdown BEFORE
+      // conversion (preserves ## subhead / **bold** standfirst shapes)
+      let extractedDesc = { description: "", source: "none" as const, isStandfirst: false };
       if (looksLikeMarkdown) {
         console.log("[Admin] submit-article: detected markdown input — converting to site HTML");
+        extractedDesc = extractDescriptionFromMarkdown(articleHtml);
         articleHtml = convertMarkdownToSiteHtml(articleHtml);
+      }
+      // Always try HTML extraction as a fallback (or primary for HTML input)
+      if (!extractedDesc.description) {
+        extractedDesc = extractDescriptionFromHtml(articleHtml);
       }
 
       // Fetch the log entry to get editorial brief data
@@ -923,10 +932,17 @@ Deno.serve(async (req: Request) => {
       // Build article metadata from editor brief
       const category = (editorBrief.categoryOverride as string) || (researchData.category as string) || "Clinical Evidence";
       const gradient = getCategoryGradient(category);
+      // Description priority: explicit writer input → extracted standfirst/prose → editor brief → empty
+      const resolvedDescription =
+        writerDescription ||
+        extractedDesc.description ||
+        (editorBrief.description as string) ||
+        "";
       const metadata = {
         title,
         slug,
-        description: writerDescription || (editorBrief.description as string) || "",
+        description: resolvedDescription,
+        descriptionIsStandfirst: extractedDesc.isStandfirst && !writerDescription,
         category,
         tags: (researchData.tags as string[]) || [],
         keywords: (researchData.keywords as string[]) || [],
@@ -1027,57 +1043,31 @@ Deno.serve(async (req: Request) => {
       const looksLikeMarkdown = !articleHtml.includes("<section") && !articleHtml.includes("<p>") &&
         (articleHtml.includes("\n## ") || articleHtml.includes("\n# ") || /^\s*#{1,3}\s/m.test(articleHtml));
 
+      // Smart description extraction — handles standfirsts, breadcrumb strips,
+      // bold deks, and sentence-boundary truncation. Single source of truth in
+      // _shared/description.ts so every publish path agrees.
+      let descriptionIsStandfirst = false;
+      let mdExtract = { description: "", source: "none" as const, isStandfirst: false };
       if (looksLikeMarkdown) {
         console.log("[Admin] submit-new-article: detected markdown — converting to site HTML");
-
-        // Auto-extract description: first paragraph after # Title, OR ## subtitle if it
-        // comes immediately after # Title with no paragraph between them.
         if (!description) {
-          const mdLines = articleHtml.split("\n");
-          let foundTitle = false;
-          const descParagraphLines: string[] = [];
-          for (const line of mdLines) {
-            const t = line.trim();
-            if (!foundTitle && /^# /.test(t) && !/^##/.test(t)) {
-              foundTitle = true;
-              continue;
-            }
-            if (foundTitle) {
-              if (t === "") {
-                if (descParagraphLines.length > 0) break;
-                continue;
-              }
-              // ## subtitle right after # title (no paragraphs yet) → use as description
-              if (/^## /.test(t)) {
-                if (descParagraphLines.length === 0) {
-                  descParagraphLines.push(t.replace(/^## /, ""));
-                }
-                break;
-              }
-              descParagraphLines.push(t);
-            }
-          }
-          if (descParagraphLines.length > 0) {
-            description = descParagraphLines.join(" ")
-              .replace(/\*\*(.+?)\*\*/g, "$1")
-              .replace(/\*(.+?)\*/g, "$1")
-              .replace(/`([^`]+)`/g, "$1")
-              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-              .trim();
-            console.log(`[Admin] submit-new-article: extracted description from standfirst (${description.length} chars)`);
+          mdExtract = extractDescriptionFromMarkdown(articleHtml);
+          if (mdExtract.description) {
+            description = mdExtract.description;
+            descriptionIsStandfirst = mdExtract.isStandfirst;
+            console.log(`[Admin] submit-new-article: extracted ${mdExtract.source} from markdown (${description.length} chars)`);
           }
         }
-
         articleHtml = convertMarkdownToSiteHtml(articleHtml);
       }
 
-      // Auto-extract description from first <p> of introduction if still empty (HTML input)
+      // Fallback: extract from HTML after any markdown conversion
       if (!description) {
-        const introParaMatch = articleHtml.match(/<section[^>]*id="introduction"[^>]*>\s*<p[^>]*>([\s\S]*?)<\/p>/i);
-        if (introParaMatch) {
-          description = introParaMatch[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-          if (description.length > 300) description = description.slice(0, 297) + "...";
-          console.log(`[Admin] submit-new-article: extracted description from intro HTML (${description.length} chars)`);
+        const htmlExtract = extractDescriptionFromHtml(articleHtml);
+        if (htmlExtract.description) {
+          description = htmlExtract.description;
+          descriptionIsStandfirst = htmlExtract.isStandfirst;
+          console.log(`[Admin] submit-new-article: extracted ${htmlExtract.source} from HTML (${description.length} chars)`);
         }
       }
 
@@ -1090,7 +1080,7 @@ Deno.serve(async (req: Request) => {
       const readTime = Math.ceil(wordCount / 220);
 
       const gradient = getCategoryGradient(category);
-      const metadata = { title, slug, description, category, tags, keywords, gradient };
+      const metadata = { title, slug, description, descriptionIsStandfirst, category, tags, keywords, gradient };
 
       // 1. Create pipeline log entry in "written" status
       const { data: logEntry, error: logInsertErr } = await db.from("daily_article_log").insert({
@@ -1192,60 +1182,30 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Markdown detection + conversion
+      // Smart description extraction — see _shared/description.ts
+      let descriptionIsStandfirst = false;
       const looksLikeMarkdown = !articleContent.includes("<section") && !articleContent.includes("<p>") &&
         (articleContent.includes("\n## ") || articleContent.includes("\n# ") || /^\s*#{1,3}\s/m.test(articleContent));
       if (looksLikeMarkdown) {
         console.log("[Admin] publish-direct: detected markdown — converting to site HTML");
-
-        // Auto-extract description: first paragraph after # Title, OR ## subtitle if it
-        // comes immediately after # Title with no paragraph between them.
         if (!description) {
-          const mdLines = articleContent.split("\n");
-          let foundTitle = false;
-          const descParagraphLines: string[] = [];
-          for (const line of mdLines) {
-            const t = line.trim();
-            if (!foundTitle && /^# /.test(t) && !/^##/.test(t)) {
-              foundTitle = true;
-              continue;
-            }
-            if (foundTitle) {
-              if (t === "") {
-                if (descParagraphLines.length > 0) break;
-                continue;
-              }
-              // ## subtitle right after # title (no paragraphs yet) → use as description
-              if (/^## /.test(t)) {
-                if (descParagraphLines.length === 0) {
-                  descParagraphLines.push(t.replace(/^## /, ""));
-                }
-                break;
-              }
-              descParagraphLines.push(t);
-            }
-          }
-          if (descParagraphLines.length > 0) {
-            description = descParagraphLines.join(" ")
-              .replace(/\*\*(.+?)\*\*/g, "$1")
-              .replace(/\*(.+?)\*/g, "$1")
-              .replace(/`([^`]+)`/g, "$1")
-              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-              .trim();
-            console.log(`[Admin] publish-direct: extracted description from standfirst (${description.length} chars)`);
+          const mdExtract = extractDescriptionFromMarkdown(articleContent);
+          if (mdExtract.description) {
+            description = mdExtract.description;
+            descriptionIsStandfirst = mdExtract.isStandfirst;
+            console.log(`[Admin] publish-direct: extracted ${mdExtract.source} from markdown (${description.length} chars)`);
           }
         }
-
         articleContent = convertMarkdownToSiteHtml(articleContent);
       }
 
-      // Auto-extract description from first <p> of introduction if still empty (HTML input)
+      // Fallback / primary for HTML input
       if (!description) {
-        const introParaMatch = articleContent.match(/<section[^>]*id="introduction"[^>]*>\s*<p[^>]*>([\s\S]*?)<\/p>/i);
-        if (introParaMatch) {
-          description = introParaMatch[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-          if (description.length > 300) description = description.slice(0, 297) + "...";
-          console.log(`[Admin] publish-direct: extracted description from intro HTML (${description.length} chars)`);
+        const htmlExtract = extractDescriptionFromHtml(articleContent);
+        if (htmlExtract.description) {
+          description = htmlExtract.description;
+          descriptionIsStandfirst = htmlExtract.isStandfirst;
+          console.log(`[Admin] publish-direct: extracted ${htmlExtract.source} from HTML (${description.length} chars)`);
         }
       }
 
@@ -1258,7 +1218,7 @@ Deno.serve(async (req: Request) => {
       const readTime = Math.ceil(wordCount / 220);
 
       const gradient = getCategoryGradient(category);
-      const metadata = { title, slug, description, category, tags, keywords, gradient };
+      const metadata = { title, slug, description, descriptionIsStandfirst, category, tags, keywords, gradient };
 
       // Create pipeline log — starts at "copy_edited" to skip all editorial stages
       const { data: logEntry, error: logInsertErr } = await db.from("daily_article_log").insert({

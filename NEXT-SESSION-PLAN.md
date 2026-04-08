@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v22.4.0 live. ~192 published articles. Site is fully SSR-driven from Supabase. Default typography is now Newsreader. Copy-edit stage no longer flattens human-written headers. Social-engine validates `mode` and chains briefs cross-persona. Independence skip monitoring surfaces in dashboard.
+> **Status**: v22.5.0 live. ~192 published articles. Site is fully SSR-driven from Supabase. Default typography is Newsreader. Copy-edit stage no longer flattens human-written headers. Social-engine validates `mode` and chains briefs cross-persona. Independence skip monitoring surfaces in dashboard. **Description extraction unified across all four publish paths via `_shared/description.ts` — standfirsts/deks no longer get fused with body paragraphs and breadcrumb strips no longer leak into descriptions.**
 
 > **Last updated**: 2026-04-08
 
