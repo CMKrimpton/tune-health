@@ -190,65 +190,56 @@ Deno.serve(async (req: Request) => {
     }
 
     // ------ REGEN-ALL-NARRATIONS — one-shot: regenerate every published article's narration ------
-    // Use after a description-extraction overhaul or when historical narrations are
-    // out of sync with current descriptions. Walks all published articles and
-    // dispatches generate-narration with force=true. Throttled to avoid hitting
-    // ElevenLabs rate limits — sequential dispatch with small delay.
+    //
+    // CRITICAL: We do NOT use `fetch()` from inside this function to dispatch
+    // generate-narration calls. Deno edge runtime tears down pending fetch
+    // requests when the parent function returns its response — so a previous
+    // version of this action that did `fetch().catch()` in a loop returned
+    // success but actually delivered ZERO regen calls. Verified on production:
+    // 183 "dispatched", 0 narrations actually regenerated.
+    //
+    // Solution: dispatch via `pg_net.http_post` from SQL. pg_net is a postgres
+    // background worker — the HTTP request persists AFTER the calling function
+    // returns. Same pattern the pipeline cron uses for chain-dispatch.
     if (action === "regen-all-narrations") {
-      const onlyStale = body.onlyStale !== false; // default true: skip articles with no description change
       const limit = (body.limit as number) || 500;
       const { data: rows, error: listErr } = await db
         .from("articles")
-        .select("slug, description, narration_url")
+        .select("slug, description")
         .eq("status", "published")
         .not("description", "is", null)
         .limit(limit);
       if (listErr) return json({ error: `List failed: ${listErr.message}` }, 500);
 
-      const supabaseUrl = Deno.env.get("SUPABASE_URL");
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-      if (!supabaseUrl || !serviceKey) {
-        return json({ error: "SUPABASE_URL or SERVICE_ROLE_KEY missing" }, 500);
+      const candidates = (rows || []).filter(r => {
+        const d = (r.description as string) || "";
+        return d.trim().length >= 20;
+      });
+
+      if (candidates.length === 0) {
+        return json({ success: true, dispatched: 0, total: 0, message: "No eligible articles" });
       }
 
-      let dispatched = 0;
-      let skipped = 0;
-      const errors: Array<{ slug: string; error: string }> = [];
+      const slugs = candidates.map(r => r.slug as string);
 
-      for (const row of rows || []) {
-        const slug = row.slug as string;
-        const desc = (row.description as string) || "";
-        if (!desc || desc.trim().length < 20) { skipped++; continue; }
+      // Dispatch via SQL function that uses pg_net.http_post — survives
+      // edge function teardown. Returns immediately (queued by pg_net worker).
+      const { data: rpcData, error: rpcErr } = await db.rpc("dispatch_narration_regen_batch", {
+        p_slugs: slugs,
+      });
 
-        try {
-          // Fire-and-forget WITHOUT awaiting the audio generation — just kick
-          // it off so all dispatches happen quickly. ElevenLabs will queue.
-          fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${serviceKey}`,
-            },
-            body: JSON.stringify({ action: "generate", slug, force: true }),
-          }).catch(err =>
-            console.warn(`[regen-all-narrations] dispatch failed for ${slug}: ${err instanceof Error ? err.message : "unknown"}`)
-          );
-          dispatched++;
-          // Small delay to avoid overwhelming the function pool
-          await new Promise(r => setTimeout(r, 50));
-        } catch (err: unknown) {
-          errors.push({ slug, error: err instanceof Error ? err.message : "unknown" });
-        }
+      if (rpcErr) {
+        return json({
+          error: `RPC dispatch failed: ${rpcErr.message}`,
+          hint: "Migration 20260408_dispatch_narration_regen_batch.sql may not be applied yet",
+        }, 500);
       }
 
-      void onlyStale;
       return json({
         success: true,
-        dispatched,
-        skipped,
+        dispatched: rpcData || slugs.length,
         total: (rows || []).length,
-        errors: errors.slice(0, 20),
-        message: `Dispatched ${dispatched} narration regenerations — they'll complete in the background over ~${Math.ceil(dispatched * 3 / 60)} min`,
+        message: `Dispatched ${slugs.length} narration regenerations via pg_net — they'll complete in the background over ~${Math.ceil(slugs.length * 3 / 60)} min`,
       });
     }
 

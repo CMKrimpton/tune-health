@@ -133,28 +133,58 @@ async function handleGenerate(body: Record<string, unknown>) {
   // Caller can override voice; fall back to default
   const voiceId = (body.voiceId as string) || MODELS.NARRATION_VOICE;
 
-  // Call ElevenLabs TTS API
-  const ttsResponse = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-    {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: introText,
-        model_id: MODELS.NARRATION_MODEL,
-        voice_settings: voiceSettings,
-        output_format: "mp3_44100_128",
-      }),
-    }
-  );
+  // Call ElevenLabs TTS API with retry-on-429 backoff. ElevenLabs has a
+  // hard 10-concurrent-request limit on most subscriptions; bulk regen
+  // operations easily blow past this. Instead of failing, sleep + retry.
+  // This makes generate-narration self-healing under any concurrency
+  // pressure, not just bulk regen.
+  const ttsCallWithRetry = async (): Promise<Response> => {
+    const maxAttempts = 8;
+    // Jittered exponential backoff: ~3s, 6s, 12s, 24s, 30s, 30s, 30s, 30s
+    // Capped at 30s per retry. Total worst case ~165s.
+    let lastErrText = "";
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const resp = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": apiKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: introText,
+            model_id: MODELS.NARRATION_MODEL,
+            voice_settings: voiceSettings,
+            output_format: "mp3_44100_128",
+          }),
+        }
+      );
+      if (resp.ok) return resp;
 
-  if (!ttsResponse.ok) {
-    const errText = await ttsResponse.text();
-    throw new Error(`ElevenLabs API error ${ttsResponse.status}: ${errText}`);
-  }
+      const errText = await resp.text();
+      lastErrText = errText;
+
+      // Only retry on 429 (rate limit) or 5xx (transient)
+      const is429 = resp.status === 429;
+      const is5xx = resp.status >= 500 && resp.status < 600;
+      if (!is429 && !is5xx) {
+        throw new Error(`ElevenLabs API error ${resp.status}: ${errText}`);
+      }
+      if (attempt === maxAttempts) {
+        throw new Error(`ElevenLabs API error ${resp.status} after ${maxAttempts} attempts: ${errText}`);
+      }
+      // Exponential backoff with jitter, capped at 30s
+      const baseMs = Math.min(3000 * Math.pow(2, attempt - 1), 30000);
+      const jitterMs = Math.floor(Math.random() * 2000);
+      const sleepMs = baseMs + jitterMs;
+      console.log(`[Narration] ${slug}: ElevenLabs ${resp.status} on attempt ${attempt}/${maxAttempts}, sleeping ${sleepMs}ms`);
+      await new Promise(r => setTimeout(r, sleepMs));
+    }
+    throw new Error(`ElevenLabs API failed after retries: ${lastErrText}`);
+  };
+
+  const ttsResponse = await ttsCallWithRetry();
 
   const audioBuffer = await ttsResponse.arrayBuffer();
 

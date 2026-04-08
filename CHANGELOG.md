@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.1] - 2026-04-08
+
+### Fixed — Bulk Narration Regen Was Silently Failing (Production Verified)
+
+After v22.7 declared "183 narrations dispatched" the user reported narrations were STILL out of sync with descriptions. Investigation found three compounding bugs in the bulk regen path:
+
+**1. Fire-and-forget `fetch()` from inside an edge function loop gets killed**
+
+The first version of `regen-all-narrations` did `fetch().catch()` in a tight loop and returned immediately. Deno edge runtime tears down pending fetch requests when the parent function returns its response. Result: function reported "183 dispatched" but actual delivery was zero. Verified on production: narration_url timestamps were unchanged after the action ran.
+
+(Single fire-and-forget `fetch()` calls in `stage-publish`, `articles-api save`, `publish-article`, `editorial-qc` are NOT affected — they each do additional async work after the dispatch which keeps the function alive long enough for the connection to establish. Verified: all 183 articles have working `hero_image` from the same `stage-publish` fire-and-forget pattern.)
+
+**Fix**: dispatch via `pg_net.http_post` instead of `fetch()`. New SQL function `dispatch_narration_regen_batch(text[])` in migration [`20260410_dispatch_narration_regen_batch.sql`](supabase/migrations/20260410_dispatch_narration_regen_batch.sql) — pg_net is a postgres background worker that survives the lifetime of the calling SQL session. Same pattern as the existing `chain_dispatch()` function used by the pipeline cron. The TypeScript action now calls `db.rpc("dispatch_narration_regen_batch", { p_slugs })` and the dispatches are guaranteed to fire.
+
+**2. ElevenLabs has a 10-concurrent-request limit and 173 of 183 calls were 429-rejected**
+
+Even after pg_net delivered all 183 dispatches reliably, ElevenLabs's `concurrent_limit_exceeded` rate limit blocked ~173 of them. Without retry, those calls returned 500 and the narration_url stayed stale.
+
+**Fix in [`generate-narration/index.ts`](supabase/functions/generate-narration/index.ts)**: wrapped the ElevenLabs TTS call in a retry-with-backoff loop. Up to 8 attempts, jittered exponential backoff (3s → 6s → 12s → 24s → 30s capped). Retries on 429 and 5xx. This makes generate-narration self-healing under any concurrency pressure, not just bulk regen — any future spike that triggers ElevenLabs throttling will recover automatically instead of returning a 500.
+
+**3. 43 articles had legacy narration_urls without `?v=` cache busters**
+
+These were generated before the cache-busting timestamp was added. The pg_net dispatch attempted to regenerate them but ~7 hit transient failures that exhausted retries. Mopped up via a sequential bash loop (4s sleep between each, well under the concurrent limit).
+
+**Production verification — every published article now has a fresh narration:**
+
+```sql
+SELECT
+  count(*) FILTER (WHERE narration_url IS NULL) as null_url,         -- 0
+  count(*) FILTER (WHERE narration_url NOT LIKE '%v=%') as legacy,   -- 0
+  count(*) FILTER (WHERE narration_url LIKE '%v=%') as has_cachebust -- 183
+FROM articles WHERE status='published';
+```
+
+Plus live-tested article rendering on production: standfirst dedup is working (the dek does NOT repeat as the first body paragraph). Verified at https://tune-health.vercel.app/articles/the-modelers-and-the-operators.
+
+Deployed: `pipeline-admin`, `generate-narration`. Migration `20260410_dispatch_narration_regen_batch.sql` applied.
+
 ## [22.7.0] - 2026-04-08
 
 ### Fixed — Narration Race Condition + Bulk Regen of All Stale Narrations
