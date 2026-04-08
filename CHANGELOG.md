@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.5] - 2026-04-08
+
+### Fixed — 2 Articles With Empty Body Were Rendering as Blank Pages on Production
+
+A direct production audit (rather than trusting v22.7.x prior fixes) found two articles with `status='published'` but `LENGTH(article_html) = 0`:
+
+- `cannabis-mental-health` — "The Largest Cannabis Study Ever Conducted Just Delivered Bad News"
+- `adhd-sleep-brain` — "ADHD Brains Are Half Asleep. That Explains Everything."
+
+Both were seed-inserted into the DB on 2026-03-22 with full metadata (title, description, hero_image, narration_url, even MP3 files in storage) but never had `article_html` written. They were `status='published'` with `published_at IS NULL` — a state contradiction that none of the publish paths produce. Almost certainly a manual seed from before the pipeline existed. Live verification: the rendered HTML had `<div class="article-content">` followed by absolutely nothing — completely blank pages on production.
+
+**Three-layer fix:**
+
+1. **Render-time guard in [`getArticleBySlug`](src/utils/articles.ts)** — returns null if `article_html.length < 200`, which triggers the `[slug].astro` route's redirect to `/404`. Logged as `[getArticleBySlug] {slug}: article_html too short ({len} chars) — returning null to trigger 404` for visibility.
+
+2. **Listing-time filter in [`getArticles`](src/utils/articles.ts)** — same threshold, filters orphan rows out of `getArticles()` so they never appear in homepage, listings, RSS, sitemap, command palette, or anywhere else readers can see them. Logged as `[getArticles] hiding orphan row "{slug}"`.
+
+3. **Direct DB cleanup**: marked both broken rows as `status='archived'`, `draft=true`. Even without the code guards they'd now be invisible to listings.
+
+**Bonus cleanup**: 51 published articles had `published_at IS NULL` (legacy seed inserts from 2026-03-31). These had real content (17k–35k chars) and proper `publish_date`, so the missing column was cosmetic — but the contradiction was the same shape as the actual broken articles, making any future audit harder. Backfilled `published_at` from `publish_date` for all 51.
+
+**Production sanity sweep after fixes:**
+
+```
+published:               181  (was 183 — 2 archived)
+drafts:                    4
+archived:                 20  (+2)
+broken_published:          0  ✓
+missing_publish_date:      0  ✓
+missing_narration_pub:     0  ✓
+missing_hero_pub:          0  ✓
+duplicated_standfirsts:    0  ✓ (181 / 181 verified clean)
+fresh_narrations:        181  ✓
+```
+
+### Lesson logged
+- **Always run a direct production data audit before declaring a session "production ready"** — don't trust that prior fixes covered everything. The orphan rows weren't created by any v22.x bug, but no prior audit had checked for empty `article_html` on `status='published'` rows. This is now the first thing I check.
+- The render-time + listing-time guards mean any FUTURE orphan row (regardless of source — manual seed, interrupted publish, third-party import, anything) is automatically invisible to readers instead of rendering as blank pages.
+
 ## [22.7.4] - 2026-04-08
 
 ### Fixed — vercel.json Was Overriding the Middleware Cache TTL Fix

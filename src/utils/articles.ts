@@ -103,7 +103,20 @@ export async function getArticles(): Promise<Article[]> {
     return [];
   }
 
-  const articles = (data || []).map(mapRow);
+  // GUARD: filter out orphan rows with empty/near-empty article_html.
+  // These are seed inserts or interrupted publishes that should not
+  // appear in listings, RSS, sitemaps, command palette, or anywhere
+  // else readers can see them. Mirrors the guard in getArticleBySlug.
+  const filtered = (data || []).filter(row => {
+    const html = (row.article_html as string | null) || '';
+    if (html.length < 200) {
+      console.warn(`[getArticles] hiding orphan row "${row.slug}" — article_html only ${html.length} chars`);
+      return false;
+    }
+    return true;
+  });
+
+  const articles = filtered.map(mapRow);
   setCacheArticles(articles);
   return articles;
 }
@@ -322,8 +335,21 @@ export async function getArticleBySlug(slug: string): Promise<(Article & { artic
 
   if (error || !data) return null;
 
-  const mapped = mapRow(data);
   const rawHtml = (data.article_html as string) || '';
+
+  // GUARD: never render an article with empty / near-empty body. Returning
+  // null causes the route handler to redirect to /404. This protects
+  // against orphan rows where article_html got wiped, was never written,
+  // or where a publish flow set status='published' before the body was
+  // attached. Without this guard, blank pages would render as if they
+  // were real articles. Threshold is intentionally small (200 chars
+  // wraps an empty <section><p></p></section> wrapper).
+  if (rawHtml.length < 200) {
+    console.warn(`[getArticleBySlug] ${slug}: article_html too short (${rawHtml.length} chars) — returning null to trigger 404`);
+    return null;
+  }
+
+  const mapped = mapRow(data);
   return {
     ...mapped,
     articleHtml: stripDuplicateStandfirst(rawHtml, mapped.description),
