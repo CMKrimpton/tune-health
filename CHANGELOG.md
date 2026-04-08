@@ -6,6 +6,78 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.7] - 2026-04-08
+
+### Fixed — Both Pre-Existing Issues from v22.7.6 (Cron Timeouts + Gemini Empty Response)
+
+Both issues flagged in v22.7.6 fixed and verified live.
+
+**1. pg_cron / pg_net 5-second default timeout — fixed via 3 migrations**
+
+`pg_net.http_post` defaults to a 5-second timeout. None of the 8 HTTP-dispatching crons (`pinger`, `scout-gemini`, `scout-grok`, `scout-grok-afternoon`, `featured-rotation`, `social-poster`, `social-planner`, `social-sync`) specified `timeout_milliseconds`, so every dispatch was getting cut off at 5s. The edge function work itself usually still completed (Supabase keeps the function running on the server side after pg_net disconnects), but pg_net logged every dispatch as `Timeout of 5000 ms reached` in `net._http_response`, which:
+- Polluted audits and made it hard to tell which dispatches actually succeeded
+- Broke pg_net's retry-on-failure logic (every call "failed")
+- Hid real failures inside a sea of false-positive timeouts
+
+**Migration [`20260411_cron_and_dispatch_timeouts.sql`](supabase/migrations/20260411_cron_and_dispatch_timeouts.sql)** re-scheduled all 8 crons with `timeout_milliseconds := 60000` and redefined `chain_dispatch()` with the same setting.
+
+**Migration [`20260412_cron_timeout_tuning.sql`](supabase/migrations/20260412_cron_timeout_tuning.sql)** then tuned the timeouts based on actual observed runtimes:
+- `scout-gemini`, `scout-grok`, `scout-grok-afternoon`: 60s → **180s** (scout takes ~87s end-to-end with Gemini + Google Search + dedup pass + DB inserts; verified by direct test)
+- `pinger`: 60s → **90s** (Gemini source takes 30-65s with retries)
+- `social-planner`, `social-sync`: 60s → **120s** (catalog mining + multi-platform metric pulls)
+- `social-poster`, `featured-rotation`: stayed at 60s (sufficient)
+
+**Migration [`20260413_dispatch_pipeline_stage_timeout.sql`](supabase/migrations/20260413_dispatch_pipeline_stage_timeout.sql)** redefined `dispatch_pipeline_stage()` (the article-produce safety-net cron) with `timeout_milliseconds := 120000` for its single internal `net.http_post` call.
+
+**Production verification (live)**: 22:30 UTC cron run after migrations applied — both `pinger` and `social-poster` returned `status_code: 200`, error_msg: null. **Zero new pg_net timeouts in the last 10 minutes**, down from a steady stream every 30 minutes for hours prior.
+
+**2. Pipeline-pinger Gemini "Empty response" silent failures — fixed in `_shared/api-clients.ts`**
+
+Root cause: `gemini-2.5-flash` with `tools: [{google_search: {}}]` and `maxTokens: 500` was hitting `MAX_TOKENS` finishReason while still generating search tool calls, returning `parts: []` with no actual text output. The wrapper threw `Error("Empty Gemini response (after retry)")` which crashed the entire pinger run before it could fall through to other source ticks.
+
+**Two-part fix:**
+
+**A. Bumped pinger Gemini calls' maxTokens** in [`pipeline-pinger/index.ts`](supabase/functions/pipeline-pinger/index.ts):
+- `checkGeminiSearch`: 500 → 2000 (search-grounded responses need headroom for tool calls + JSON synthesis)
+- `pubmed-triage`: 500 → 1500
+
+**B. Made `gemini()` log diagnostics and not throw on empty** in [`_shared/api-clients.ts`](supabase/functions/_shared/api-clients.ts):
+- Now extracts and logs `finishReason` (so we can tell `MAX_TOKENS` from `SAFETY` from `RECITATION`)
+- Logs `promptFeedback` on empty (catches input filtering / safety blocks)
+- Returns empty string instead of throwing — callers (pinger, scout) already handle empty results gracefully via JSON.parse try/catch and return empty signal lists
+- Throwing was the proximate cause of the v22.7.6 silent-pinger-failure issue
+
+**Plus added explicit empty-text guards** in `pipeline-pinger`'s `checkGeminiSearch` and `pubmed-triage` so the now-graceful empty path returns `signals: []` instead of trying to JSON.parse an empty string.
+
+**3. Backfilled trolley-problem narration**
+
+Reconciling `trolley-problem-correct-answer` from `status='draft'` to `status='published'` in v22.7.6 surfaced that it had no narration (drafts skip narration generation). Manually triggered `generate-narration` with `force=true`. Now has fresh `narration_url` with cache-busting timestamp.
+
+### Production sanity sweep — every count now zero
+
+```
+healthy_published:        182
+broken_html:                0  ✓
+missing_publish_date:       0  ✓
+missing_narration:          0  ✓
+legacy_narration:           0  ✓
+state_contradictions:       0  ✓
+missing_hero:               0  ✓
+
+pg_net last 10 min:    2 dispatches, 2 succeeded, 0 timeouts  ✓
+pinger signals 30min:  1 (was 0/30min for hours prior)  ✓
+scout-gemini direct:   found 20, added 14 in 87s  ✓
+```
+
+### Files
+
+- New: `supabase/migrations/20260411_cron_and_dispatch_timeouts.sql`
+- New: `supabase/migrations/20260412_cron_timeout_tuning.sql`
+- New: `supabase/migrations/20260413_dispatch_pipeline_stage_timeout.sql`
+- Modified: `supabase/functions/_shared/api-clients.ts`
+- Modified: `supabase/functions/pipeline-pinger/index.ts`
+- Deployed: ALL 26 edge functions (so every gemini caller picks up the new wrapper behavior)
+
 ## [22.7.6] - 2026-04-08
 
 ### Fixed — Triple-Check Audit: Stricter Listing Filter + State Reconciliation

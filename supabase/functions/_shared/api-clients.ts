@@ -251,6 +251,7 @@ export async function gemini(opts: { system: string; user: string; model?: strin
   let data = await res.json();
   let parts = data.candidates?.[0]?.content?.parts || [];
   let text = parts.map((p: { text?: string }) => p.text || "").join("");
+  let finishReason = data.candidates?.[0]?.finishReason || "unknown";
 
   // Track tokens from first attempt (even if empty — we still paid for the input)
   const firstUm = data.usageMetadata || {};
@@ -259,7 +260,7 @@ export async function gemini(opts: { system: string; user: string; model?: strin
 
   // Retry once if empty (Gemini sometimes returns empty on first try with search grounding)
   if (!text.trim()) {
-    console.log(`[Gemini] Empty response on first try for ${stage}, retrying...`);
+    console.log(`[Gemini] Empty response on first try for ${stage} (finishReason=${finishReason}), retrying...`);
     const retryBody = { ...requestBody };
     const retry = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
@@ -274,6 +275,7 @@ export async function gemini(opts: { system: string; user: string; model?: strin
       data = await retry.json();
       parts = data.candidates?.[0]?.content?.parts || [];
       text = parts.map((p: { text?: string }) => p.text || "").join("");
+      finishReason = data.candidates?.[0]?.finishReason || "unknown";
       // Accumulate retry tokens — both attempts cost money
       const retryUm = data.usageMetadata || {};
       totalInputTokens += retryUm.promptTokenCount || 0;
@@ -281,7 +283,21 @@ export async function gemini(opts: { system: string; user: string; model?: strin
     }
   }
 
-  if (!text.trim()) throw new Error("Empty Gemini response (after retry)");
+  if (!text.trim()) {
+    // Log diagnostic info — finishReason tells us WHY (MAX_TOKENS, SAFETY,
+    // RECITATION, etc.) so we can fix the prompt or maxTokens setting.
+    // promptFeedback explains if the input was blocked.
+    const promptFeedback = JSON.stringify(data.promptFeedback || {});
+    console.warn(`[Gemini] Empty response (after retry) for ${stage}: finishReason=${finishReason}, promptFeedback=${promptFeedback.slice(0, 200)}, model=${model}, maxTokens=${requestBody.generationConfig && (requestBody.generationConfig as Record<string, unknown>).maxOutputTokens}`);
+    // Return empty text instead of throwing — callers (pinger, scout)
+    // already handle empty results gracefully via JSON.parse try/catch
+    // and return empty signal lists. Throwing kills the entire dispatch
+    // and was the root cause of v22.7.6's pinger silent-failure issue.
+    return {
+      text: "",
+      usage: { model, stage, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, costUsd: calcCost(model, totalInputTokens, totalOutputTokens) },
+    };
+  }
   return {
     text,
     usage: { model, stage, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, costUsd: calcCost(model, totalInputTokens, totalOutputTokens) },

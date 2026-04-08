@@ -45,11 +45,23 @@ If NOTHING qualifies: {"breaking": false}
 If something does: {"breaking": true, "signals": [{"topic": "specific angle for 25-year-old readers", "why_breaking": "what happened and why it matters", "urgency": "high or medium"}]}
 Max 3 signals. Focus on stories a 25-year-old would text to a friend.`,
     model: MODELS.PINGER_GEMINI,
-    maxTokens: 500,
+    // 2000 tokens (was 500). Search-grounded responses consume tokens for
+    // tool calls AND output synthesis — 500 was too tight and caused
+    // MAX_TOKENS finishReason with empty `parts` (no output text emitted).
+    // 2000 leaves headroom for the model to call google_search, summarize
+    // findings, AND emit the JSON response. Verified: a 3-signal response
+    // is ~300 chars / ~100 tokens, so 2000 is comfortable.
+    maxTokens: 2000,
     temperature: 0.3,
     webSearch: true,
     timeout: 60000,
   }, "pinger-gemini");
+
+  // text may be empty if Gemini returned no parts after retry — handle as
+  // "no signals found" rather than crashing the whole pinger run.
+  if (!text || !text.trim()) {
+    return { signals: [], cost: usage.costUsd };
+  }
 
   try {
     const parsed = JSON.parse(text.replace(/^```json?\n?/, "").replace(/\n?```$/, "").trim());
@@ -155,10 +167,16 @@ async function checkPubMedRSS(db: ReturnType<typeof supabase>): Promise<{ signal
       system: `Medical publication triage. Decide which new journal publications are BREAKING NEWS for a health magazine vs routine science.`,
       user: `New publications from top journals (last 24h):\n${titles.map((t, i) => `${i + 1}. ${t}`).join("\n")}\n\nFor each, is this BREAKING (affects large population + surprising/actionable) or ROUTINE?\n{"signals": [{"title": "...", "breaking": true/false, "topic": "reader-facing angle if breaking", "why": "one sentence"}]}`,
       model: MODELS.PINGER_TRIAGE,
-      maxTokens: 500,
+      // Bumped 500 → 1500. Triaging 10 items @ ~80 chars each = ~200 tokens
+      // input + output. 500 was tight. 1500 leaves headroom.
+      maxTokens: 1500,
       temperature: 0.2,
       webSearch: false,
     }, "pinger-pubmed-triage");
+
+    if (!triageRaw || !triageRaw.trim()) {
+      return { signals: [], cost: usage.costUsd };
+    }
 
     try {
       const parsed = JSON.parse(triageRaw.replace(/^```json?\n?/, "").replace(/\n?```$/, "").trim());
