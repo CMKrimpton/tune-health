@@ -90,9 +90,16 @@ function mapRow(row: Record<string, unknown>): Article {
 export async function getArticles(): Promise<Article[]> {
   if (_cachedArticles && isCacheValid()) return _cachedArticles;
 
+  // Filter on BOTH status='published' AND draft=false. Two checks because
+  // these fields are not always in sync (legacy seed inserts, interrupted
+  // publish flows). Status is the canonical "is this live?" field; draft
+  // is a legacy flag retained for back-compat. Listings + RSS + sitemap
+  // all flow through here so any reader-visible surface gets the strict
+  // intersection.
   const { data, error } = await supabase
     .from('articles')
     .select('*')
+    .eq('status', 'published')
     .eq('draft', false)
     .eq('coming_soon', false)
     .order('sort_order', { ascending: false, nullsFirst: false })
@@ -335,9 +342,23 @@ export async function getArticleBySlug(slug: string): Promise<(Article & { artic
 
   if (error || !data) return null;
 
+  // GUARD A: status must be 'published'. Reject draft/archived rows so
+  // direct slug access doesn't expose unpublished content.
+  if (data.status !== 'published') {
+    console.warn(`[getArticleBySlug] ${slug}: status=${data.status} (not published) — returning null`);
+    return null;
+  }
+
+  // GUARD B: draft flag must be false too. Belt-and-braces against any
+  // state contradiction between status and draft.
+  if (data.draft === true) {
+    console.warn(`[getArticleBySlug] ${slug}: draft=true — returning null`);
+    return null;
+  }
+
   const rawHtml = (data.article_html as string) || '';
 
-  // GUARD: never render an article with empty / near-empty body. Returning
+  // GUARD C: never render an article with empty / near-empty body. Returning
   // null causes the route handler to redirect to /404. This protects
   // against orphan rows where article_html got wiped, was never written,
   // or where a publish flow set status='published' before the body was

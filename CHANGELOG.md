@@ -6,6 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.6] - 2026-04-08
+
+### Fixed — Triple-Check Audit: Stricter Listing Filter + State Reconciliation
+
+User asked "triple check everything". Ran a deep production audit. Found one more state contradiction and one pre-existing infrastructure issue.
+
+**1. State contradiction: 1 article had `status='draft'` but `draft=false`** (`trolley-problem-correct-answer`). It had real content (11k chars), was on the live site, and was being rendered correctly — but the inconsistent state meant the existing `getArticles()` filter (`.eq('draft', false)`) accepted it while a future status-based check would not. Two-part fix:
+
+   - **DB fix**: reconciled the row to `status='published'`, backfilled `published_at` from `updated_at`. The trolley article was already public — we just made the metadata match reality.
+   - **Code hardening in [`getArticles()`](src/utils/articles.ts)**: query now requires BOTH `status='published'` AND `draft=false`. Two checks because legacy seed inserts and interrupted publish flows can desync these fields. `status` is the canonical "is this live?" field; `draft` is a legacy flag retained for back-compat. Listings + RSS + sitemap all flow through here so any reader-visible surface gets the strict intersection.
+
+**2. Hardened `getArticleBySlug` with three explicit guards** in [`src/utils/articles.ts`](src/utils/articles.ts):
+   - Guard A: `status === 'published'` required (rejects draft / archived rows from direct slug access)
+   - Guard B: `draft === false` required (defense against status/draft desync)
+   - Guard C: `article_html.length >= 200` required (the v22.7.5 orphan-row guard)
+
+   Each guard logs a `console.warn` so if a 404 happens unexpectedly, the cause is in the function logs.
+
+**3. End-to-end live verification of 10 random articles**: all 10 returned 200 with valid standfirsts. Both archived articles correctly redirect to `/404` on production. RSS / sitemap / homepage / `/articles` listings contain zero references to either archived slug.
+
+### Pre-existing issues found (NOT introduced by this session, flagged for next session)
+
+**A. `pipeline-pinger` is silently failing every 30 minutes** — Google Gemini API has been returning empty responses (`"Empty Gemini response (after retry)"`) for the pinger's prompts. The pinger handles it gracefully and continues to other source ticks (PubMed RSS), but only 2 signals in the last 4 hours vs the expected ~8. **Action needed**: investigate Gemini prompt or model — may be a Google API regression.
+
+**B. ALL `pg_cron` → `net.http_post` calls use the default 5-second timeout** because none of the cron schedules specify `timeout_milliseconds`. The pinger function actually takes ~64 seconds end-to-end, so pg_net cuts the connection at 5s. Supabase keeps the function running on the server side, so the work still completes — but pg_net logs every cron dispatch as a "Timeout of 5000 ms reached" failure, polluting `net._http_response`. Cosmetic for now (no actual functional impact verified) but worth fixing in next session by re-running the cron.schedule SQL with explicit `timeout_milliseconds := 60000`.
+
+### Final production sanity sweep
+
+```
+healthy_published:        182  (was 181 — reconciled trolley-problem)
+drafts:                     3  (was 4)
+archived:                  20  
+coming_soon:                0
+orphan_log_fk:              0  ✓
+narration_no_cachebust:     0  ✓ (all 182 have cache-busting timestamps)
+duplicated_standfirsts:     0  ✓ (verified by re-running dedup-standfirsts: 0/205)
+broken_html_published:      0  ✓
+```
+
+**Live verification on tune-health.vercel.app**:
+- v22.7.4 cache headers verified: `cdn-cache-control: s-maxage=15`
+- 10 random article samples: 10/10 OK
+- 2 archived articles: both → `/404` (302 redirect)
+- 0 archived slug references in `/`, `/articles`, `/rss.xml`, `/sitemap.xml`
+
 ## [22.7.5] - 2026-04-08
 
 ### Fixed — 2 Articles With Empty Body Were Rendering as Blank Pages on Production
