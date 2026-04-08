@@ -6,6 +6,92 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.0] - 2026-04-08
+
+### Fixed — Narration Race Condition + Bulk Regen of All Stale Narrations
+
+After v22.6 added narration regen on description change, narrations were STILL out of sync with descriptions. Two reasons:
+
+**1. Race condition: autosave was overwriting freshly-generated narration_url**
+
+The edit page's autosave (`doSaveMetadata`) included `narration_url` from the form field — which holds the value loaded at page open. The flow that broke things:
+
+1. User edits description → autosave fires with `description: NEW`, `narration_url: OLD_URL`
+2. `articles-api save` accepts both, dispatches narration regen in background
+3. ~30s later regen completes, updates `articles.narration_url` to `NEW_URL` (with cache-busting timestamp)
+4. User touches any field → autosave fires AGAIN with `description: NEW`, `narration_url: OLD_URL` (form still holds page-load value)
+5. `articles-api save` writes `narration_url: OLD_URL` — clobbers the freshly-generated URL
+
+Fixed at two layers (defense in depth):
+- **Client**: removed `narration_url` from `doSaveMetadata`'s payload in [`src/pages/admin/edit/[slug].astro`](src/pages/admin/edit/[slug].astro). The form field is display-only — `generate-narration` writes `narration_url` directly to the DB
+- **Server**: `articles-api save` in [`articles-api/index.ts`](supabase/functions/articles-api/index.ts) now `delete article.narration_url` from any incoming payload before processing. **Only `generate-narration` is allowed to write `narration_url`.** Any caller that tries to set it via `articles-api` is silently ignored.
+
+**2. Historical narrations were stale from before the auto-regen fix existed**
+
+All 183 published article narrations were generated at publish time against whatever description the article had THEN. None of them had ever been regenerated when descriptions were later edited (autosave path was broken until v22.6, race condition until just now). The audio files in storage were all synced to old descriptions.
+
+Fix: new `regen-all-narrations` admin action in `pipeline-admin`. Walks all published articles with non-empty descriptions, dispatches `generate-narration` with `force: true` for each, throttled 50ms between dispatches to avoid hammering the function pool. ElevenLabs queues the actual TTS calls.
+
+Ran on production: **183 narrations dispatched**. They complete in the background over ~10 minutes. Cache-busting `?v={timestamp}` query string in `narration_url` ensures browsers/CDNs serve the new audio immediately on next page load.
+
+### Fixed — Closed Every Remaining Weak Spot in the Article Write Path
+
+After v22.6 a full audit of every code path that touches `articles.description` or `articles.article_html` surfaced three more leaks. All fixed and verified.
+
+**1. `publish-article` was storing the entire Astro file (frontmatter + layout) as `article_html`**
+
+The legacy "Publish to GitHub" button on the edit page was assembling a full `.astro` file (`---\nimport ArticleLayout...` etc.) and POSTing it to `publish-article`, which then dumbly stored the whole string as `article_html`. The SSR site would then render the frontmatter and layout JSX as if it were body HTML, corrupting the article.
+
+Fix in [`supabase/functions/publish-article/index.ts`](supabase/functions/publish-article/index.ts):
+- Defensive frontmatter strip — detects `---\n…\n---` at the top and removes it
+- Detects `<div class="article-content">…</div>` wrapper and extracts inner HTML
+- Falls back to extracting all top-level `<section>` tags if no wrapper found
+- Runs the shared `stripDuplicateStandfirst()` so the body never repeats the description
+- Compares old vs new description and fire-and-forget dispatches `generate-narration` with `force: true` if changed (mirrors `articles-api save`)
+
+Plus rewired the edit page's "Publish to live site" button at [`src/pages/admin/edit/[slug].astro`](src/pages/admin/edit/[slug].astro) to skip `publish-article` entirely and just call `articles-api save` with `status: 'published'`. Both `doSaveMetadata()` and `doSaveContent()` already go through `articles-api save`, so dedup + narration regen happen automatically. No more `.astro` file assembly anywhere — the legacy GitHub-publish path is dead.
+
+**2. `editorial-qc` was bypassing `articles-api save` and writing descriptions directly**
+
+The autonomous editorial QC agent walks the catalog, identifies issues, and applies fixes via `db.from("articles").update(updateData)`. When it changed a description field, the narration was never regenerated — the audio kept reading the old text after every QC sweep.
+
+Fix in [`supabase/functions/editorial-qc/index.ts`](supabase/functions/editorial-qc/index.ts):
+- After applying a `description` field update, fire-and-forget dispatch `generate-narration` with `force: true`
+- Logged as `[editorial-qc] description changed for {slug} — dispatching narration regen` for visibility
+
+**3. `stripDuplicateStandfirst()` only matched `<section id="introduction">` and missed articles with custom first-section IDs**
+
+The DB has 5 articles using `<section id="executive-summary">`, `<section id="the-accidental-cardiac-drug">`, etc. as their first section. The dedup helper's regex was hardcoded to `id="introduction"` and silently skipped them.
+
+Fix in [`supabase/functions/_shared/description.ts`](supabase/functions/_shared/description.ts) and [`src/utils/articles.ts`](src/utils/articles.ts):
+- Both `getIntroParagraphs()` and `stripDuplicateStandfirst()` now try `<section id="introduction">` first, then fall back to the FIRST `<section>` regardless of id
+- Same fix ported to the render-time helper in `articles.ts` so existing articles with custom IDs render correctly
+
+**4. One article (`longevity-funding-conflicts-…`) had raw markdown stored as `article_html`**
+
+A historical artifact from before the markdown auto-detection was added. The article was rendering `# Where the Funding Doesn't Shine\n\n…` as literal text on the page.
+
+Fix: new one-shot `repair-markdown-bodies` admin action in `pipeline-admin`. Walks all articles, detects raw markdown (no `<section>`/`<p>` + has `#` headings), runs `convertMarkdownToSiteHtml()` + `stripDuplicateStandfirst()`, writes back. Ran on production: 1 of 205 articles repaired.
+
+**Audit summary — every article write path now goes through dedup + narration regen:**
+
+| Path | article_html dedup | description narration regen |
+|---|---|---|
+| `submit-article` (resume from brief) | ✅ | n/a (description doesn't change here) |
+| `submit-new-article` (New Article tab + Topic Queue Upload) | ✅ | via `stage-publish` |
+| `publish-direct` (New Article tab + Topic Queue Upload) | ✅ | via `stage-publish` |
+| `stage-publish` (pipeline final write) | ✅ (final pass) | ✅ (force=true) |
+| `articles-api save` (edit page) | ✅ | ✅ (force=true on description change) |
+| `publish-article` (legacy + defensive) | ✅ | ✅ (force=true on description change) |
+| `editorial-qc` (autonomous QC) | n/a (only updates metadata fields) | ✅ (force=true on description change) |
+| `stage-independence` (Grok corrections) | safe — `stage-publish` runs final dedup before DB write |
+| `stage-voice-rewrite` | safe — `stage-publish` runs final dedup before DB write |
+| Render time (`getArticleBySlug`) | ✅ (fallback safety net) | n/a |
+
+Verified: zero direct `articles.update()`/`upsert()` writes touching `article_html` or `description` outside this list. No more leaks.
+
+Deployed: `pipeline-admin`, `publish-article`, `editorial-qc`. Backfilled: 1 markdown article repaired.
+
 ## [22.6.0] - 2026-04-08
 
 ### Fixed — Duplicated Intro Paragraphs (Standfirst Was Repeating in Body)

@@ -62,11 +62,19 @@ function stripTags(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-// Extract all <p>…</p> blocks inside the first <section id="introduction">
+// Extract all <p>…</p> blocks inside the first <section> of the article.
+// Prefers <section id="introduction"> when present, but falls back to the
+// FIRST <section> regardless of id (some articles use #executive-summary,
+// #the-accidental-cardiac-drug, or other custom first-section IDs).
 function getIntroParagraphs(articleHtml: string): Array<{ raw: string; inner: string; text: string }> {
-  const sectionMatch = articleHtml.match(
+  // 1. Try the canonical #introduction section
+  let sectionMatch = articleHtml.match(
     /<section[^>]*id=["']introduction["'][^>]*>([\s\S]*?)<\/section>/i
   );
+  // 2. Fall back to the FIRST <section> in the document
+  if (!sectionMatch) {
+    sectionMatch = articleHtml.match(/<section[^>]*>([\s\S]*?)<\/section>/i);
+  }
   if (!sectionMatch) return [];
   const sectionBody = sectionMatch[1];
   const paragraphs: Array<{ raw: string; inner: string; text: string }> = [];
@@ -246,9 +254,17 @@ export function stripDuplicateStandfirst(
   const desc = (description || "").replace(/\s+/g, " ").trim();
   if (desc.length < 30) return articleHtml;
 
-  const introMatch = articleHtml.match(
+  // Try the canonical #introduction section first, then fall back to the
+  // FIRST <section> regardless of id (some articles use custom first-section
+  // IDs like #executive-summary).
+  let introMatch = articleHtml.match(
     /(<section[^>]*id=["']introduction["'][^>]*>\s*)(<p[^>]*>([\s\S]*?)<\/p>\s*)/i
   );
+  if (!introMatch) {
+    introMatch = articleHtml.match(
+      /(<section[^>]*>\s*)(<p[^>]*>([\s\S]*?)<\/p>\s*)/i
+    );
+  }
   if (!introMatch) return articleHtml;
 
   const fullPBlock = introMatch[2];

@@ -787,6 +787,13 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
     async function doSaveMetadata() {
       const f = document.getElementById('editForm');
       if (!f) return;
+      // IMPORTANT: never include narration_url in the autosave payload.
+      // generate-narration writes narration_url to the DB directly. The form
+      // field is display-only and may hold a stale URL from page-load. If we
+      // sent it back here, we would race-overwrite a freshly-generated URL
+      // (the regen runs ~30s in the background after a description change,
+      // and any subsequent autosave would clobber it). Same logic for any
+      // other fields the server owns asynchronously.
       const res = await fetch(apiBase + '/articles-api', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
@@ -807,7 +814,6 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
             hero_image_alt: f.heroImageAlt.value.trim() || null,
             gradient_from: f.gradientFrom.value.trim() || null,
             gradient_to: f.gradientTo.value.trim() || null,
-            narration_url: f.narrationUrl.value.trim() || null,
             featured: f.featured.checked,
             draft: f.draft.checked,
             coming_soon: f.comingSoon.checked,
@@ -939,7 +945,11 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
       }
     });
 
-    // ─── Publish to GitHub ───
+    // ─── Publish to live site ───
+    // The site is fully SSR-driven from Supabase — no GitHub commits, no
+    // .astro file generation. Publishing just means: save current edits +
+    // flip status to "published". articles-api save handles dedup +
+    // narration regen automatically.
     document.getElementById('publishGitHubBtn')?.addEventListener('click', async () => {
       if (!await styledConfirm('Publish article', 'Publish this article to the live site?', 'Publish')) return;
       const btn = document.getElementById('publishGitHubBtn');
@@ -949,119 +959,40 @@ const gradientPresets: Record<string, { from: string; to: string }> = {
       error.style.display = 'none'; status.style.display = 'none';
 
       try {
-        // Force save metadata + content to DB before publishing
+        // Force save metadata + content to DB before publishing.
+        // Both go through articles-api save → dedup standfirst + regen
+        // narration if description changed.
         if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
         await doSaveMetadata();
         await doSaveContent();
         btn.textContent = 'Publishing...';
 
-        // Get latest article data from DB (includes all fields)
-        const getRes = await fetch(apiBase + '/articles-api', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get', slug }),
-        });
-        if (!getRes.ok) throw new Error('Failed to load article from database');
-        const db = await getRes.json();
-
-        // Assemble .astro file
-        const publishDate = new Date(db.publish_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-        const tagsHtml = (db.tags || [])
-          .map(tag => '    <span class="px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-sm">' + tag + '</span>')
-          .join('\n');
-
-        const tocHtml = (db.toc || [])
-          .map(item => '      <a href="#' + item.id + '" class="block text-sm text-stone-600 dark:text-stone-400 hover:text-primary-600 transition-colors">' + item.title + '</a>')
-          .join('\n');
-
-        const title = db.title.replace(/"/g, '&quot;');
-        const desc = db.description.replace(/"/g, '&quot;');
-
-        // Deduplicate: if the first <p> in <section id="introduction"> matches
-        // the description (rendered as standfirst by ArticleLayout), strip it
-        // so the reader doesn't see the same text twice.
-        let articleHtml = db.article_html || '';
-        const descPlain = (db.description || '').replace(/\s+/g, ' ').trim();
-        if (descPlain.length > 30) {
-          const introMatch = articleHtml.match(
-            /(<section[^>]*id="introduction"[^>]*>\s*)(<p[^>]*>)([\s\S]*?)(<\/p>)/i
-          );
-          if (introMatch) {
-            const firstParaText = introMatch[3].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-            if (descPlain.startsWith(firstParaText.slice(0, 80)) || firstParaText.startsWith(descPlain.slice(0, 80))) {
-              articleHtml = articleHtml.replace(introMatch[0], introMatch[1]);
-            }
-          }
-        }
-
-        const astroContent = '---\nimport ArticleLayout from \'../../layouts/ArticleLayout.astro\';\n---\n\n<ArticleLayout\n  title="' + title + '"\n  description="' + desc + '"\n  category="' + db.category + '"\n  readTime="' + db.read_time + ' min read"\n  publishDate="' + publishDate + '"\n>\n' +
-          '  <div class="mb-12 p-6 bg-stone-100 dark:bg-stone-900 rounded-2xl reveal">\n    <h2 class="font-serif text-lg font-semibold mb-4">In This Article</h2>\n    <nav class="space-y-2">\n' + tocHtml + '\n    </nav>\n  </div>\n\n  <div class="article-content">\n' + articleHtml + '\n  </div>\n\n  <Fragment slot="tags">\n' + tagsHtml + '\n  </Fragment>\n</ArticleLayout>\n';
-
-        // Preserve existing author from GitHub JSON (don't overwrite pen name)
-        let existingAuthor = { name: 'alumi news Editorial', role: 'Medical Review Board' };
-        try {
-          const ghRes = await fetch(apiBase + '/fetch-article', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ slug }),
-          });
-          if (ghRes.ok) {
-            const ghData = await ghRes.json();
-            if (ghData.metadata?.author) existingAuthor = ghData.metadata.author;
-          }
-        } catch {}
-
-        // Build metadata JSON — include ALL fields from DB
-        const metadata = {
-          title: db.title,
-          description: db.description,
-          category: db.category,
-          publishDate: db.publish_date,
-          author: existingAuthor,
-          readTime: db.read_time,
-          featured: db.featured,
-          draft: db.draft || false,
-          tags: db.tags || [],
-          gradient: { from: db.gradient_from, to: db.gradient_to },
-          keywords: db.keywords || [],
-          comingSoon: db.coming_soon || false,
-        };
-        // Only include optional fields if they have values (keeps JSON clean)
-        if (db.hero_image) metadata.heroImage = db.hero_image;
-        if (db.hero_image_alt) metadata.heroImageAlt = db.hero_image_alt;
-        if (db.hero_image_light) metadata.heroImageLight = db.hero_image_light;
-        if (db.narration_url) metadata.narrationUrl = db.narration_url;
-        if (db.sort_order) metadata.sortOrder = db.sort_order;
-
-        // Commit to GitHub
-        const pubRes = await fetch(apiBase + '/publish-article', {
+        // Flip status to published. articles-api save runs the dedup pass
+        // and dispatches narration regen automatically (handled server-side
+        // in the save action — see articles-api/index.ts).
+        const pubRes = await fetch(apiBase + '/articles-api', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
           body: JSON.stringify({
-            slug,
-            astroContent,
-            metadata,
-            commitMessage: 'feat: Publish \'' + db.title + '\' from admin',
+            action: 'save',
+            article: {
+              slug,
+              status: 'published',
+              draft: false,
+              published_at: new Date().toISOString(),
+            },
           }),
         });
 
-        if (!pubRes.ok) throw new Error('GitHub publish failed');
+        if (!pubRes.ok) throw new Error('Publish failed (articles-api save returned ' + pubRes.status + ')');
 
-        // Update database status
-        await fetch(apiBase + '/articles-api', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-          body: JSON.stringify({ action: 'save', article: { slug, status: 'published', published_at: new Date().toISOString() } }),
-        });
-
-        status.textContent = 'Published to GitHub! Vercel will rebuild in ~60 seconds.';
+        status.textContent = 'Published! Live on the site immediately.';
         status.style.display = 'block';
         btn.textContent = 'Published';
       } catch (err) {
         error.textContent = 'Publish failed: ' + err.message;
         error.style.display = 'block';
-        btn.textContent = 'Publish to GitHub';
+        btn.textContent = 'Publish';
       } finally {
         btn.disabled = false;
       }

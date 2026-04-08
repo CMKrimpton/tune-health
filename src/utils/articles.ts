@@ -124,9 +124,15 @@ function stripDuplicateStandfirst(articleHtml: string, description: string): str
   const desc = (description || '').replace(/\s+/g, ' ').trim();
   if (desc.length < 30) return articleHtml;
 
-  const introMatch = articleHtml.match(
+  // Try #introduction first, then fall back to the FIRST <section> in the doc
+  let introMatch = articleHtml.match(
     /(<section[^>]*id=["']introduction["'][^>]*>\s*)(<p[^>]*>([\s\S]*?)<\/p>\s*)/i
   );
+  if (!introMatch) {
+    introMatch = articleHtml.match(
+      /(<section[^>]*>\s*)(<p[^>]*>([\s\S]*?)<\/p>\s*)/i
+    );
+  }
   if (!introMatch) return articleHtml;
 
   const innerHtml = introMatch[3];

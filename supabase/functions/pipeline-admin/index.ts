@@ -189,6 +189,104 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // ------ REGEN-ALL-NARRATIONS — one-shot: regenerate every published article's narration ------
+    // Use after a description-extraction overhaul or when historical narrations are
+    // out of sync with current descriptions. Walks all published articles and
+    // dispatches generate-narration with force=true. Throttled to avoid hitting
+    // ElevenLabs rate limits — sequential dispatch with small delay.
+    if (action === "regen-all-narrations") {
+      const onlyStale = body.onlyStale !== false; // default true: skip articles with no description change
+      const limit = (body.limit as number) || 500;
+      const { data: rows, error: listErr } = await db
+        .from("articles")
+        .select("slug, description, narration_url")
+        .eq("status", "published")
+        .not("description", "is", null)
+        .limit(limit);
+      if (listErr) return json({ error: `List failed: ${listErr.message}` }, 500);
+
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!supabaseUrl || !serviceKey) {
+        return json({ error: "SUPABASE_URL or SERVICE_ROLE_KEY missing" }, 500);
+      }
+
+      let dispatched = 0;
+      let skipped = 0;
+      const errors: Array<{ slug: string; error: string }> = [];
+
+      for (const row of rows || []) {
+        const slug = row.slug as string;
+        const desc = (row.description as string) || "";
+        if (!desc || desc.trim().length < 20) { skipped++; continue; }
+
+        try {
+          // Fire-and-forget WITHOUT awaiting the audio generation — just kick
+          // it off so all dispatches happen quickly. ElevenLabs will queue.
+          fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({ action: "generate", slug, force: true }),
+          }).catch(err =>
+            console.warn(`[regen-all-narrations] dispatch failed for ${slug}: ${err instanceof Error ? err.message : "unknown"}`)
+          );
+          dispatched++;
+          // Small delay to avoid overwhelming the function pool
+          await new Promise(r => setTimeout(r, 50));
+        } catch (err: unknown) {
+          errors.push({ slug, error: err instanceof Error ? err.message : "unknown" });
+        }
+      }
+
+      void onlyStale;
+      return json({
+        success: true,
+        dispatched,
+        skipped,
+        total: (rows || []).length,
+        errors: errors.slice(0, 20),
+        message: `Dispatched ${dispatched} narration regenerations — they'll complete in the background over ~${Math.ceil(dispatched * 3 / 60)} min`,
+      });
+    }
+
+    // ------ REPAIR-MARKDOWN-BODIES — one-shot: convert any article_html that's still raw markdown ------
+    if (action === "repair-markdown-bodies") {
+      const { data: rows, error: listErr } = await db
+        .from("articles")
+        .select("slug, description, article_html")
+        .not("article_html", "is", null);
+      if (listErr) return json({ error: `List failed: ${listErr.message}` }, 500);
+
+      let repaired = 0;
+      const fixed: Array<{ slug: string; before: number; after: number }> = [];
+
+      for (const row of rows || []) {
+        const html = (row.article_html as string) || "";
+        if (!html) continue;
+        // Detect raw markdown: no HTML tags AND has markdown headings
+        const looksLikeMarkdown = !html.includes("<section") && !html.includes("<p>") &&
+          (html.includes("\n## ") || html.includes("\n# ") || /^\s*#{1,3}\s/m.test(html));
+        if (!looksLikeMarkdown) continue;
+
+        const converted = convertMarkdownToSiteHtml(html);
+        if (!converted || converted.length < 100) continue;
+
+        const cleaned = stripDuplicateStandfirst(converted, (row.description as string) || "");
+        const { error: upErr } = await db
+          .from("articles")
+          .update({ article_html: cleaned })
+          .eq("slug", row.slug);
+        if (!upErr) {
+          repaired++;
+          fixed.push({ slug: row.slug as string, before: html.length, after: cleaned.length });
+        }
+      }
+      return json({ success: true, repaired, total: (rows || []).length, fixed });
+    }
+
     // ------ DEDUP-STANDFIRSTS — one-shot backfill: strip duplicate intro <p> across all articles ------
     if (action === "dedup-standfirsts") {
       const { data: rows, error: listErr } = await db

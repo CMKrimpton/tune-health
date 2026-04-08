@@ -380,6 +380,29 @@ async function applyFixes(
 
         if (error) throw error;
 
+        // ── Auto-regen narration if description changed ──────────────
+        // Narration narrates the description field. Bypassing articles-api
+        // here means we own the narration regen dispatch directly.
+        if (issue.field === "description") {
+          const newDesc = (issue.suggested || "").trim();
+          if (newDesc.length >= 20 && newDesc !== issue.current) {
+            const supabaseUrl = Deno.env.get("SUPABASE_URL");
+            if (supabaseUrl) {
+              console.log(`[editorial-qc] description changed for ${issue.slug} — dispatching narration regen (force=true)`);
+              fetch(`${supabaseUrl}/functions/v1/generate-narration`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                },
+                body: JSON.stringify({ action: "generate", slug: issue.slug, force: true }),
+              }).catch(err =>
+                console.warn(`[editorial-qc] narration dispatch failed for ${issue.slug}: ${err instanceof Error ? err.message : "unknown"}`)
+              );
+            }
+          }
+        }
+
         results.push({
           slug: issue.slug,
           field: issue.field,

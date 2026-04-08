@@ -65,6 +65,14 @@ Deno.serve(async (req: Request) => {
       const article = payload.article;
       if (!article || !article.slug) return json({ error: "article with slug required" }, 400);
 
+      // ── narration_url is owned by generate-narration ─────────────────
+      // Never let a caller (autosave, edit page, anything) write
+      // narration_url through this path. Defense against race conditions
+      // where a stale form value would clobber a freshly-generated URL.
+      if ("narration_url" in article) {
+        delete article.narration_url;
+      }
+
       // Check if article already exists — fetch description + narration_url so
       // we can detect a description change and trigger narration regen
       const { data: existing } = await db
