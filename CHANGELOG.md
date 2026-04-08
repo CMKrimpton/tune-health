@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.4] - 2026-04-08
+
+### Fixed — vercel.json Was Overriding the Middleware Cache TTL Fix
+
+User reported the Replace function on a published article didn't work — the new title and content weren't appearing on the live site. Investigation found that the v22.7.3 cache TTL fix only changed `Cache-Control` (the standard shared-cache header) and missed `CDN-Cache-Control` — the Vercel-specific header which **takes precedence** over the standard one for Vercel's edge cache.
+
+The Replace function actually worked perfectly — verified directly in the database: title `"Two Kinds of Smart"`, fresh `published_at`, fresh narration with v22.7.1 cache-busting timestamp, hero image present. But every uncached request to `/articles/the-modelers-and-the-operators` came back with the old title because Vercel's edge was holding it for 5 minutes from `vercel.json`:
+
+```json
+{
+  "source": "/articles/:slug",
+  "headers": [
+    { "key": "CDN-Cache-Control", "value": "s-maxage=300, stale-while-revalidate=3600" }
+  ]
+}
+```
+
+Confirmed by curl: `curl -sL ".../articles/the-modelers-and-the-operators?cb=$(date +%s)"` (cache-busting query) returned the new title. Without the cache buster, it returned the old one.
+
+**Fix in [`vercel.json`](vercel.json)**: dropped `CDN-Cache-Control` from `s-maxage=300` to `s-maxage=15` for `/articles/:slug` and from `s-maxage=60` to `s-maxage=15` for `/topics/*`. Combined with `stale-while-revalidate=86400`, the edge serves cached content instantly but revalidates every 15s in the background.
+
+### Lessons learned
+- `vercel.json` `headers` overrides everything. Astro middleware and per-page `Astro.response.headers.set()` calls are silently shadowed for any path matched by a `vercel.json` header rule.
+- When debugging cache issues on Vercel, always check `cdn-cache-control` (the Vercel-specific header) NOT just `cache-control`. They can disagree.
+- The `x-vercel-cache: HIT` / `MISS` header tells you whether Vercel served from edge. `x-vercel-cache: MISS` means fresh — useful for proving the rendering layer is correct vs the cache layer is stale.
+
 ## [22.7.3] - 2026-04-08
 
 ### Fixed — Article Edits Took Up to 5 Minutes to Propagate + "Publish to GitHub" Stale Copy
