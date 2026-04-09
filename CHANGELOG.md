@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.8.2] - 2026-04-09
+
+### Fixed — Full pipeline audit: 6 bugs across 5 edge functions
+
+Ultra-audit of every line touching title/description/metadata across all pipeline stages. Six agents audited stage-independence, stage-qc, stage-copy-edit, stage-voice-rewrite, stage-publish, and pipeline-admin in parallel.
+
+**Bugs fixed:**
+
+1. **`###` standfirst invisible to description extraction** (`_shared/description.ts`): `extractDescriptionFromMarkdown` only handled `## ` standfirsts, not `### `. Writer's `### standfirst` was skipped, description extracted from wrong paragraph, and `<h3>` left in body (duplicate). Now handles `#{2,3}` uniformly.
+
+2. **`stripDuplicateStandfirst` ignored `<h3>` elements** (`_shared/description.ts`): Only matched `<p>` as the first element in `<section>`. An `<h3>` standfirst was never stripped even when it duplicated the description. Now matches `<p>` or `<h3>`.
+
+3. **`convertMarkdownToSiteHtml` emitted `<h3>` standfirsts into body** (`pipeline-admin/index.ts`): `## ` standfirsts were correctly skipped when first content after title (line 140-143), but `### ` had no such guard. Now both `## ` and `### ` standfirsts are skipped when they appear as the first content line.
+
+4. **`stage-voice-rewrite` had ZERO human-article guard**: No check for `_writtenBy`. If QC ever dispatched a human article here (bug, race, manual DB edit), Opus prose would be destroyed with no recovery. Now has a hard guard that blocks rewrite and advances to copy-edit.
+
+5. **`stage-publish` second description gate used wrong `isStandfirst` flag** (line 79): The `descIsStandfirst` flag from upstream could be `false` for human articles, causing a valid standfirst without terminal punctuation to be replaced with synthesized garbage. Now forces `isStandfirst: true` for human articles.
+
+6. **`stage-copy-edit` description threshold mismatch** (lines 152 vs 223): Descriptions 20-49 chars were "kept" as currentDescription (>= 20) but then "replaceable" by the model (< 50). Aligned both thresholds to 50.
+
+**Also fixed:** `|| null` → `?? null` for independence_score/editor_score in stage-publish (preserves score of 0).
+
 ## [22.8.0] - 2026-04-09
 
 ### Fixed — Description lock + markdown H1 extraction for human-written articles

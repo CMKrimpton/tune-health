@@ -149,7 +149,7 @@ Deno.serve(async (req: Request) => {
       ? (metadata.title as string) || (qcResult.headline as string) || ""
       : (qcResult.headline as string) || (metadata.title as string) || "";
     const originalDesc = (metadata.description as string) || "";
-    const currentDescription = (isHumanWritten && originalDesc.length >= 20)
+    const currentDescription = (isHumanWritten && originalDesc.length >= 50)
       ? originalDesc
       : (qcResult.description as string) || originalDesc;
 

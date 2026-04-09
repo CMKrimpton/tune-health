@@ -264,9 +264,9 @@ export function extractDescriptionFromMarkdown(markdown: string): ExtractedDescr
 
   const firstLine = lines[i].trim();
 
-  // Case 1: ## Subhead as standfirst
-  if (/^## [^#]/.test(firstLine)) {
-    const text = cleanMdInlines(firstLine.replace(/^## /, ""));
+  // Case 1: ## or ### Subhead as standfirst
+  if (/^#{2,3} [^#]/.test(firstLine)) {
+    const text = cleanMdInlines(firstLine.replace(/^#{2,3} /, ""));
     return { description: text, source: "standfirst", isStandfirst: true };
   }
 
@@ -363,12 +363,15 @@ export function stripDuplicateStandfirst(
   // Try the canonical #introduction section first, then fall back to the
   // FIRST <section> regardless of id (some articles use custom first-section
   // IDs like #executive-summary).
+  // Match <p> OR <h3> as the first element — writers use ### standfirsts
+  // which become <h3> in the body, and these must be stripped when they
+  // duplicate the description rendered by ArticleLayout.
   let introMatch = articleHtml.match(
-    /(<section[^>]*id=["']introduction["'][^>]*>\s*)(<p[^>]*>([\s\S]*?)<\/p>\s*)/i
+    /(<section[^>]*id=["']introduction["'][^>]*>\s*)(<(?:p|h3)[^>]*>([\s\S]*?)<\/(?:p|h3)>\s*)/i
   );
   if (!introMatch) {
     introMatch = articleHtml.match(
-      /(<section[^>]*>\s*)(<p[^>]*>([\s\S]*?)<\/p>\s*)/i
+      /(<section[^>]*>\s*)(<(?:p|h3)[^>]*>([\s\S]*?)<\/(?:p|h3)>\s*)/i
     );
   }
   if (!introMatch) return articleHtml;

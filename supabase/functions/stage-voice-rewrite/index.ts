@@ -38,6 +38,20 @@ Deno.serve(async (req: Request) => {
     const metadata = (articleData.metadata as Record<string, unknown>) || {};
     const articleHtml = (articleData.html as string) || "";
 
+    // HARD GUARD: never rewrite human-written prose. QC should never dispatch here
+    // for human articles, but if it does (bug, race, manual DB edit), bail out
+    // and advance to copy-edit instead of destroying Opus prose.
+    const isHumanWritten = researchData._writtenBy === "human-opus" || researchData._writtenBy === "admin-editor";
+    if (isHumanWritten) {
+      console.warn(`[VoiceRewrite] ⚠️ BLOCKED — human-written article "${metadata.title}" reached voice rewrite. Skipping to copy-edit.`);
+      await db.from("daily_article_log").update({
+        status: "voice_rewrite_done",
+        research_data: { ...researchData, _voiceRewrite: { skipped: true, reason: "human-written article" }, _voiceRewriteCompleted: true },
+      }).eq("id", logId);
+      await dispatchStage("stage-copy-edit", logId);
+      return json({ success: true, logId, skipped: true, reason: "human-written article — voice rewrite blocked" });
+    }
+
     // Get QC feedback for targeted rewrite instructions
     const qcResult = (researchData._qcResult as Record<string, unknown>) || {};
     const qcFeedback = (qcResult.reviseInstructions as string) || "Voice is too bland/Wikipedia-like. Needs personality, editorial positions, and direct reader address.";

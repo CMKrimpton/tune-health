@@ -76,7 +76,9 @@ Deno.serve(async (req: Request) => {
     // standfirst like "Why some people 'get it'…needed both" passes.
     // This prevents the previous nonsense fallback that concatenated the
     // standfirst with the first body paragraph as "sentence 1".
-    if (descriptionLooksBroken(finalDescription, { isStandfirst: descIsStandfirst })) {
+    // For human articles, always treat the description as a standfirst (lenient check) —
+    // the upstream descIsStandfirst flag may not have been set by the submit path.
+    if (descriptionLooksBroken(finalDescription, { isStandfirst: descIsStandfirst || isHumanWritten })) {
       console.warn(`[Publish] ⚠️ Description looks broken: "${(finalDescription || "").slice(0, 80)}" (${(finalDescription || "").length} chars, standfirst=${descIsStandfirst})`);
 
       // Try each fallback source in order: QC → writer metadata → editor brief
@@ -132,8 +134,8 @@ Deno.serve(async (req: Request) => {
         status: "published",
         published_at: new Date().toISOString(),
         sort_order: Date.now(),
-        independence_score: logScores?.grok_score || null,
-        editor_score: logScores?.editor_score || null,
+        independence_score: logScores?.grok_score ?? null,
+        editor_score: logScores?.editor_score ?? null,
         pipeline_log_id: logId,
         author_name: getByline(logScores?.model_used || MODELS.DEFAULT_CLAUDE).name,
         author_role: getByline(logScores?.model_used || MODELS.DEFAULT_CLAUDE).role,

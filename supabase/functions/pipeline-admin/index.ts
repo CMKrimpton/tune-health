@@ -150,9 +150,14 @@ function convertMarkdownToSiteHtml(md: string): string {
       continue;
     }
 
-    // H3 — subheading within section
+    // H3 — subheading within section (or standfirst if first content after title)
     if (/^### /.test(trimmed)) {
       flushList();
+      // Standfirst pattern: ### immediately after # title with no body paragraphs yet.
+      // Skip the H3 — the text becomes the description shown in the standfirst.
+      if (isFirstSection && currentSection.length === 0) {
+        continue;
+      }
       const headingText = trimmed.replace(/^### /, "").replace(/\*\*/g, "");
       currentSection.push(`  <h3>${inlineFormat(headingText)}</h3>`);
       continue;
