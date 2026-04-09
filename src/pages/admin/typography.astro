@@ -401,6 +401,14 @@ const SAMPLE = {
                 class:list={['typo-apply', { 'is-active': isActive }]}
                 data-preset={preset.id}
                 data-name={preset.name}
+                data-display={preset.display}
+                data-body={preset.body}
+                data-sans={preset.sans}
+                data-fonts={preset.googleFontsQuery || ''}
+                data-display-tracking={preset.displayLetterSpacing || ''}
+                data-display-weight={preset.displayWeight || ''}
+                data-body-adjust={String(preset.bodySizeAdjust ?? 0.514)}
+                data-display-adjust={String(preset.displaySizeAdjust ?? 0.49)}
               >
                 {isActive ? 'Active' : 'Apply'}
               </button>
@@ -469,18 +477,54 @@ const SAMPLE = {
         if (activeName) activeName.textContent = presetName || DEFAULT_NAME;
       }
 
-      function setPreset(presetId, presetName) {
-        // Optimistic update — instant feedback, no reload.
-        // The gallery cards each render in their own font already, so the
-        // "active" state is purely a visual indicator. The cookie POST runs
-        // in the background; the public site picks it up on next navigation.
+      function applyPresetLocally(btn) {
+        // Instantly swap CSS variables on :root so the page reflects the change
+        var root = document.documentElement.style;
+        var display = btn.getAttribute('data-display');
+        var body = btn.getAttribute('data-body');
+        var sans = btn.getAttribute('data-sans');
+        var fonts = btn.getAttribute('data-fonts');
+        var tracking = btn.getAttribute('data-display-tracking');
+        var weight = btn.getAttribute('data-display-weight');
+        var bodyAdj = btn.getAttribute('data-body-adjust');
+        var dispAdj = btn.getAttribute('data-display-adjust');
+
+        if (display) root.setProperty('--font-display', display);
+        if (body) root.setProperty('--font-body', body);
+        if (sans) root.setProperty('--font-sans', sans);
+        if (bodyAdj) root.setProperty('--font-body-adjust', bodyAdj);
+        if (dispAdj) root.setProperty('--font-display-adjust', dispAdj);
+        root.setProperty('--font-display-tracking', tracking || '0em');
+        root.setProperty('--font-display-weight', weight || '');
+
+        // Hot-swap Google Fonts <link> if needed
+        if (fonts) {
+          var href = 'https://fonts.googleapis.com/css2?' + fonts + '&display=swap';
+          var existing = document.getElementById('typo-live-fonts');
+          if (existing) {
+            existing.href = href;
+          } else {
+            var link = document.createElement('link');
+            link.id = 'typo-live-fonts';
+            link.rel = 'stylesheet';
+            link.href = href;
+            document.head.appendChild(link);
+          }
+        }
+      }
+
+      function setPreset(presetId, presetName, triggerBtn) {
         updateActiveCard(presetId, presetName);
-        showToast('Applied: ' + (presetName || DEFAULT_NAME) + '. Open the site to see it.');
+        if (triggerBtn) applyPresetLocally(triggerBtn);
+        showToast('Applied: ' + (presetName || DEFAULT_NAME));
 
         fetch('/api/typography', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ presetId: presetId || '' }),
+        }).then(function (res) {
+          if (!res.ok) showToast('Error saving preset (HTTP ' + res.status + ')');
         }).catch(function () {
           showToast('Network error — preset not saved');
         });
@@ -491,12 +535,15 @@ const SAMPLE = {
           if (btn.classList.contains('is-active')) return;
           var id = btn.getAttribute('data-preset');
           var name = btn.getAttribute('data-name');
-          setPreset(id, name);
+          setPreset(id, name, btn);
         });
       });
 
       if (resetBtn) {
-        resetBtn.addEventListener('click', function () { setPreset(null, DEFAULT_NAME); });
+        resetBtn.addEventListener('click', function () {
+          var defaultBtn = document.querySelector('[data-preset="' + DEFAULT_ID + '"]');
+          setPreset(null, DEFAULT_NAME, defaultBtn);
+        });
       }
     });
   </script>

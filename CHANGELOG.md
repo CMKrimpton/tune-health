@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.8.4] - 2026-04-09
+
+### Fixed — Typography preset system + font pairing audit
+
+**Critical bug fix:**
+- Typography preset switching never worked — `:root` CSS variables in `global.css` always overrode the inline preset injection due to CSS cascade ordering. Removed hardcoded defaults; presets now control fonts correctly
+
+**Typography admin UX:**
+- Clicking "Apply" now instantly swaps fonts on the page (CSS variables + Google Fonts hot-swap) — no navigation or reload needed
+- Added HTTP error feedback (was silently swallowing 401s)
+
+**Font pairing audit — 11 presets redesigned:**
+- `merriweather`: Merriweather display + Lora body (was too heavy for body text)
+- `frank-ruhl`: Frank Ruhl display + Source Serif 4 body (was mono + generic sans)
+- `domine`: Domine display + Lora body (was mono, limited weights)
+- `faustina`: kept mono + upgraded to Fira Sans UI (pragmatic reading DNA)
+- `cormorant`: Cormorant display + Source Serif 4 body (was two Garamonds — zero contrast)
+- `arvo`: Arvo slab display + Lora body (slab too heavy for body text)
+- `zilla`: Zilla display + Spectral body + Fira Sans (Mozilla ecosystem trio)
+- `gentium`: Cormorant display + Gentium body (Gentium too delicate for headlines)
+- `cardo`: Young Serif display + Cardo body (Cardo too limited for display)
+- `crimson-text`: kept mono + upgraded to Work Sans UI (literary identity)
+- `roboto-slab`: Slab display + Roboto Serif body + Roboto sans (full superfamily)
+
+**New preset:**
+- `allrecipes` — Gabarito + Crimson Pro: tribute to Riley Cran's custom Copper Pot typeface
+
 ## [22.8.3] - 2026-04-09
 
 ### Fixed — Full-app ultra-audit: 11 bugs across 9 files

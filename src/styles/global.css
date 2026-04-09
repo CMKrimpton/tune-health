@@ -3,25 +3,13 @@
 @tailwind utilities;
 
 /* =========================================
-   Typography variables — default preset (Playfair Classic).
-   BaseLayout overrides these on :root when a typography_preset cookie is set,
-   then swaps the Google Fonts <link> to load the alternate families.
+   Typography variables — injected by BaseLayout via buildRootCss().
+   The active preset (cookie-controlled, fallback: DEFAULT_PRESET_ID)
+   always emits --font-display, --font-body, --font-sans, and the
+   size-adjust values on :root. No hardcoded defaults here — they
+   were overriding preset injection due to CSS cascade ordering.
    See src/config/typography-presets.ts and src/utils/typography.ts.
    ========================================= */
-:root {
-  --font-display: 'Playfair Display';
-  --font-body: 'Crimson Pro';
-  --font-sans: 'Inter';
-  /* font-size-adjust normalizes apparent size across typefaces by scaling
-     each font so its x-height matches the target ratio of the font-size.
-     Without this, fonts with naturally small x-heights (Crimson Pro, Cormorant,
-     Bodoni, Playfair) read as visibly smaller than fonts with tall x-heights
-     (Inter, Plex, Lora) at the same point size. The default 0.514 matches
-     Inter's natural ratio — a calibrated reference point.
-     Presets may override these via the typography preset config. */
-  --font-body-adjust: 0.514;
-  --font-display-adjust: 0.49;
-}
 
 /* =========================================
    TUNE HEALTH - Premium Editorial Design

@@ -134,14 +134,14 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'merriweather',
     name: 'Merriweather Journal',
-    vibe: 'Eben Sopwith\'s screen-optimized serif. Warm, broad, very readable. The chosen face of ProPublica and The Conversation.',
+    vibe: 'Merriweather\'s bold weight was born for headlines — sturdy, high x-height, screen-optimized. Lora body is lighter and warmer for long-form reading. ProPublica energy.',
     display: "'Merriweather', Georgia, serif",
-    body: "'Merriweather', Georgia, serif",
+    body: "'Lora', Georgia, serif",
     sans: "'Source Sans 3', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@400;500;600;700',
+      'family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Source+Sans+3:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
-    // Merriweather is famously high x-height (~0.52) — designed for screens
+    // Merriweather ~0.52 display, Lora ~0.51 body — near-identical x-heights
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.514,
   },
@@ -171,14 +171,14 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'frank-ruhl',
     name: 'Frank Ruhl Libre',
-    vibe: 'Israeli-designed contemporary editorial serif. Tall, refined, slightly modular. The free analog to Recoleta — modern editorial without nostalgia.',
+    vibe: 'Israeli-designed high-contrast editorial serif — dramatic at display sizes. Source Serif 4 body provides clean, readable counterweight. Modern editorial without nostalgia.',
     display: "'Frank Ruhl Libre', Georgia, serif",
-    body: "'Frank Ruhl Libre', Georgia, serif",
+    body: "'Source Serif 4', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Frank+Ruhl+Libre:wght@400;500;600;700;900&family=Inter:wght@400;500;600;700',
+      'family=Frank+Ruhl+Libre:wght@400;500;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600;700',
     displayLetterSpacing: '-0.02em',
-    // Frank Ruhl Libre x-height ~0.50
+    // Frank Ruhl ~0.50 display, Source Serif 4 ~0.484 body
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.50,
   },
@@ -229,14 +229,14 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'domine',
     name: 'Domine',
-    vibe: 'Pablo Impallari\'s screen-optimized serif. Designed specifically for body text on the web. Penguin-bookish quality with Merriweather-grade legibility.',
+    vibe: 'Impallari\'s chunky, authoritative display serif — strong at headline sizes. Lora body softens the reading experience. Both are warm transitional serifs that share proportional DNA without competing.',
     display: "'Domine', Georgia, serif",
-    body: "'Domine', Georgia, serif",
+    body: "'Lora', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Domine:wght@400;500;600;700&family=Inter:wght@400;500;600;700',
+      'family=Domine:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
-    // Domine x-height ~0.51 — designed for screens
+    // Domine ~0.51 display, Lora ~0.51 body — matched x-heights
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.514,
   },
@@ -299,14 +299,15 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'faustina',
     name: 'Faustina Magazine',
-    vibe: 'Omnibus-Type\'s narrow editorial body, designed for newspaper columns. Tight, efficient, modern. Used by El País.',
+    vibe: 'Omnibus-Type\'s narrow editorial serif — designed for newspaper columns, tight and efficient. Fira Sans UI shares its pragmatic, built-for-reading DNA. El País energy.',
     display: "'Faustina', Georgia, serif",
     body: "'Faustina', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
+    sans: "'Fira Sans', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Faustina:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+      'family=Faustina:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Fira+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400',
     displayLetterSpacing: '-0.018em',
-    // Faustina x-height ~0.51 — designed for screens
+    displayWeight: '700',
+    // Faustina x-height ~0.51, Fira Sans ~0.52 — near-matched
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.51,
   },
@@ -457,98 +458,100 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   },
   {
     id: 'roboto-slab',
-    name: 'Roboto Slab',
-    vibe: 'Google\'s slab variant of Roboto. Screen-tuned, geometric, mechanical without being cold. The slab category, done right.',
+    name: 'Roboto Slab + Serif',
+    vibe: 'The full Roboto trio: Slab for bold display, Serif for readable body, Sans for UI. Each variant designed for its role — superfamily differentiation done right.',
     display: "'Roboto Slab', Georgia, serif",
-    body: "'Roboto Slab', Georgia, serif",
+    body: "'Roboto Serif', Georgia, serif",
     sans: "'Roboto', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700',
+      'family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto+Serif:ital,opsz,wght@0,8..144,400;0,8..144,500;0,8..144,600;1,8..144,400&family=Roboto:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
-    // Roboto Slab x-height ~0.52 — designed for screens
+    displayWeight: '700',
+    // Roboto Slab ~0.52, Roboto Serif ~0.51, Roboto ~0.52 — tight cluster
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.514,
   },
   {
     id: 'cormorant',
     name: 'Cormorant Refined',
-    vibe: 'Cormorant Garamond — Renaissance old-style elegance. EB Garamond body. Scholarly, refined, restrained.',
+    vibe: 'Cormorant Garamond — extreme high-contrast display serif, dramatic at large sizes. Source Serif 4 body is clean and readable, providing the counterweight Cormorant needs. Renaissance elegance meets modern clarity.',
     display: "'Cormorant Garamond', Georgia, serif",
-    body: "'EB Garamond', Georgia, serif",
+    body: "'Source Serif 4', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700',
+      'family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600;700',
     displayWeight: '600',
-    // EB Garamond x-height ~0.41, Cormorant ~0.41 — both VERY small.
-    // These need aggressive scale-up or they'll look like 12pt at 18pt size.
-    bodySizeAdjust: 0.52,
+    // Cormorant ~0.41 (very small x-height, needs scale-up), Source Serif 4 ~0.484
+    bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.50,
   },
   {
     id: 'arvo',
     name: 'Arvo Geometric',
-    vibe: 'Anton Koovit\'s geometric slab. Clean, contemporary, no decoration. Pairs with Inter for a modern editorial-engineering tone.',
+    vibe: 'Koovit\'s geometric slab — punchy, confident headlines. Lora body provides the warmth and readability that slab serifs lack at text sizes. Clean contrast between mechanical display and calligraphic body.',
     display: "'Arvo', Georgia, serif",
-    body: "'Arvo', Georgia, serif",
+    body: "'Lora', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Arvo:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700',
+      'family=Arvo:ital,wght@0,400;0,700;1,400;1,700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
-    // Arvo x-height ~0.50
-    bodySizeAdjust: 0.518,
+    // Arvo ~0.50, Lora ~0.51 — well-matched
+    bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.51,
   },
   {
     id: 'zilla',
-    name: 'Zilla Slab',
-    vibe: 'Mozilla\'s house slab. Designed by Typotheque for the Firefox brand. Confident, contemporary, slightly angular.',
+    name: 'Zilla Mozilla',
+    vibe: 'Mozilla\'s house slab (Typotheque) for bold display. Spectral body for readable long-form. Fira Sans UI completes the Mozilla ecosystem — three fonts from the same brand orbit.',
     display: "'Zilla Slab', Georgia, serif",
-    body: "'Zilla Slab', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
+    body: "'Spectral', Georgia, serif",
+    sans: "'Fira Sans', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Zilla+Slab:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+      'family=Zilla+Slab:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Fira+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400',
     displayLetterSpacing: '-0.015em',
-    // Zilla Slab x-height ~0.51
+    displayWeight: '700',
+    // Zilla ~0.51 display, Spectral ~0.50 body, Fira ~0.52 UI — tight cluster
     bodySizeAdjust: 0.514,
     displaySizeAdjust: 0.51,
   },
   {
     id: 'gentium',
-    name: 'Gentium Book Plus',
-    vibe: 'SIL\'s award-winning literary face. Designed for the world\'s minority languages. Quiet, generous, deeply considered — the typographer\'s conscience pick.',
-    display: "'Gentium Book Plus', Georgia, serif",
+    name: 'Gentium Scholarly',
+    vibe: 'Cormorant Garamond display brings Renaissance drama to headlines. Gentium Book Plus body — SIL\'s award-winning literary face — is quietly generous for long-form reading. Classical scholarship energy.',
+    display: "'Cormorant Garamond', Georgia, serif",
     body: "'Gentium Book Plus', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700',
-    displayLetterSpacing: '-0.015em',
-    // Gentium x-height ~0.47
+      'family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.01em',
+    displayWeight: '600',
+    // Cormorant ~0.41, Gentium ~0.47 — both small, classical proportions
     bodySizeAdjust: 0.518,
     displaySizeAdjust: 0.50,
   },
   {
     id: 'cardo',
-    name: 'Cardo Scholarly',
-    vibe: 'David Perry\'s Renaissance Italian humanist, designed for classics scholarship. Generous proportions, scholarly authority, deep glyph coverage.',
-    display: "'Cardo', Georgia, serif",
+    name: 'Cardo Renaissance',
+    vibe: 'Young Serif display — chunky, warm, high x-height — creates bold hierarchy over Cardo\'s delicate Renaissance body. Muscular headlines, scholarly prose.',
+    display: "'Young Serif', Georgia, serif",
     body: "'Cardo', Georgia, serif",
     sans: "'Inter', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Cardo:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700',
+      'family=Young+Serif&family=Cardo:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
-    // Cardo x-height ~0.45 — small Renaissance proportions
+    // Young Serif ~0.52 (high), Cardo ~0.45 (small) — dramatic size contrast
     bodySizeAdjust: 0.52,
-    displaySizeAdjust: 0.50,
+    displaySizeAdjust: 0.52,
   },
   {
     id: 'crimson-text',
-    name: 'Crimson Text',
-    vibe: 'Sebastian Kosch\'s Italian Renaissance revival. Classical proportions, scholarly authority. The body text version of Crimson Pro, with tighter metrics.',
+    name: 'Crimson Literary',
+    vibe: 'Kosch\'s Renaissance revival for long-form literary reading. Work Sans UI adds contemporary warmth — a humanist geometric that complements Crimson\'s calligraphic roots without competing.',
     display: "'Crimson Text', Georgia, serif",
     body: "'Crimson Text', Georgia, serif",
-    sans: "'Inter', -apple-system, sans-serif",
+    sans: "'Work Sans', -apple-system, sans-serif",
     googleFontsQuery:
-      'family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700',
+      'family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Work+Sans:wght@400;500;600;700',
     displayLetterSpacing: '-0.015em',
     // Crimson Text x-height ~0.45 — small, needs scale-up
     bodySizeAdjust: 0.52,
@@ -582,6 +585,21 @@ export const TYPOGRAPHY_PRESETS: TypographyPreset[] = [
     // Tinos matches Times metrics — x-height ~0.45
     bodySizeAdjust: 0.518,
     displaySizeAdjust: 0.50,
+  },
+  {
+    id: 'allrecipes',
+    name: 'Allrecipes (Copper Pot tribute)',
+    vibe: 'Inspired by Riley Cran\'s custom Copper Pot for Allrecipes — geometric sans with rounded terminals, tight spacing, high x-height. Gabarito is the closest free match: same structural warmth and weight range. Crimson Pro body for editorial contrast.',
+    display: "'Gabarito', -apple-system, sans-serif",
+    body: "'Crimson Pro', Georgia, serif",
+    sans: "'Gabarito', -apple-system, sans-serif",
+    googleFontsQuery:
+      'family=Gabarito:wght@400;500;600;700;800;900&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700',
+    displayLetterSpacing: '-0.02em',
+    displayWeight: '800',
+    // Gabarito x-height ~0.53, Crimson Pro ~0.45
+    bodySizeAdjust: 0.514,
+    displaySizeAdjust: 0.53,
   },
 ];
 
