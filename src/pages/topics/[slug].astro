@@ -13,7 +13,7 @@ import SEO from '../../components/SEO.astro';
 
 const { slug } = Astro.params;
 const category = getCategoryFromSlug(slug || '');
-if (!category) return Astro.redirect('/404');
+if (!category) return new Response(null, { status: 404, headers: { Location: '/404' } });
 const articles = await getArticlesForCategory(category);
 const meta = CATEGORY_META[category];
 const domain = getDomainForCategory(category);

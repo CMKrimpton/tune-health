@@ -5,13 +5,11 @@ import Footer from '../../components/Footer.astro';
 import Newsletter from '../../components/Newsletter.astro';
 import CommandPaletteWrapper from '../../components/CommandPaletteWrapper.astro';
 import SideNav from '../../components/SideNav.astro';
-import { getArticles, getComingSoonArticles, getCategoriesWithCounts, formatPublishDateShort, getArticleGradientStyle, getAllTags, isNewArticle } from '../../utils/articles';
+import { getArticles, getComingSoonArticles, getCategoriesWithCounts, formatPublishDateShort, getArticleGradientStyle, isNewArticle } from '../../utils/articles';
 
 const articles = await getArticles();
 const comingSoon = await getComingSoonArticles();
 const categoriesWithCounts = await getCategoriesWithCounts();
-const allTags = await getAllTags();
-
 // Featured: top 3 articles
 const featuredArticles = articles.slice(0, 3);
 

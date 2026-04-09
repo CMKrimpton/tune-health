@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.8.3] - 2026-04-09
+
+### Fixed — Full-app ultra-audit: 11 bugs across 9 files
+
+Six parallel agents audited every file in the app: all pipeline stages, shared utilities, admin components, frontend pages, middleware, Supabase client, and caching layer.
+
+**Critical fixes:**
+1. `extractDescriptionFromHtml` + `getIntroParagraphs` now find `<h3>` elements (### standfirsts were invisible)
+2. Upload direct path no longer sends hardcoded `description: ''` (let server extract from body)
+3. `retry` action blocks retrying published articles (was silently overwriting live articles)
+4. `produce-topic` guards against double-click creating duplicate pipeline runs
+
+**Medium fixes:**
+5. `improve-article` PostgREST filter syntax corrected — `'("published","failed")'` → `"(published,failed)"`
+6. `[slug].astro` + `topics/[slug].astro` return proper 404 status instead of 302 redirect (SEO)
+7. Middleware: removed `PUBLIC_ADMIN_TOKEN` fallback (security), removed dead `isArticle ? 15 : 15` ternary
+8. `supabase.ts`: added `.trim()` to env vars per CLAUDE.md gotcha #4
+9. `articles.ts`: split shared `_cacheTimestamp` into per-cache timestamps (coming-soon was invalidating published articles cache)
+
+**Dead code removed:**
+10. `sentenceEnd` variable in `truncateAtSentence` (computed but void'd)
+11. `allTags` fetch + import in articles/index.astro (fetched but never used)
+
 ## [22.8.2] - 2026-04-09
 
 ### Fixed — Full pipeline audit: 6 bugs across 5 edge functions

@@ -3,7 +3,7 @@ import { defineMiddleware } from 'astro:middleware';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 function getAdminToken(): string {
-  return (process.env.ADMIN_TOKEN || import.meta.env.ADMIN_TOKEN || process.env.PUBLIC_ADMIN_TOKEN || import.meta.env.PUBLIC_ADMIN_TOKEN || '').trim();
+  return (process.env.ADMIN_TOKEN || import.meta.env.ADMIN_TOKEN || '').trim();
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -85,8 +85,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       // Previously was s-maxage=300 (5 minutes) for articles which meant
       // edits stayed invisible for up to 5 minutes — confusing for the
       // editor and hard to verify.
-      const isArticle = url.pathname.startsWith('/articles/') && url.pathname !== '/articles/';
-      const ttl = isArticle ? 15 : 15;
+      const ttl = 15;
       response.headers.set('Cache-Control', `s-maxage=${ttl}, stale-while-revalidate=86400`);
     }
   }

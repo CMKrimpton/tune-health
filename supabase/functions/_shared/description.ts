@@ -168,11 +168,12 @@ function sliceHtmlAtVisibleChars(
   };
 }
 
-// Extract all <p>…</p> blocks inside the first <section> of the article.
+// Extract all <p> and <h3> blocks inside the first <section> of the article.
+// <h3> is included because writers use ### standfirsts which become <h3>.
 // Prefers <section id="introduction"> when present, but falls back to the
 // FIRST <section> regardless of id (some articles use #executive-summary,
 // #the-accidental-cardiac-drug, or other custom first-section IDs).
-function getIntroParagraphs(articleHtml: string): Array<{ raw: string; inner: string; text: string }> {
+function getIntroParagraphs(articleHtml: string): Array<{ raw: string; inner: string; text: string; tag: string }> {
   // 1. Try the canonical #introduction section
   let sectionMatch = articleHtml.match(
     /<section[^>]*id=["']introduction["'][^>]*>([\s\S]*?)<\/section>/i
@@ -183,13 +184,15 @@ function getIntroParagraphs(articleHtml: string): Array<{ raw: string; inner: st
   }
   if (!sectionMatch) return [];
   const sectionBody = sectionMatch[1];
-  const paragraphs: Array<{ raw: string; inner: string; text: string }> = [];
-  const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  const paragraphs: Array<{ raw: string; inner: string; text: string; tag: string }> = [];
+  // Match <p> and <h3> elements (writers use ### standfirsts → <h3>)
+  const elemRegex = /<(p|h3)[^>]*>([\s\S]*?)<\/\1>/gi;
   let m: RegExpExecArray | null;
-  while ((m = pRegex.exec(sectionBody)) !== null) {
-    const inner = m[1];
+  while ((m = elemRegex.exec(sectionBody)) !== null) {
+    const tag = m[1].toLowerCase();
+    const inner = m[2];
     const text = stripTags(inner);
-    if (text) paragraphs.push({ raw: m[0], inner, text });
+    if (text) paragraphs.push({ raw: m[0], inner, text, tag });
   }
   return paragraphs;
 }
@@ -210,9 +213,10 @@ export function extractDescriptionFromHtml(articleHtml: string): ExtractedDescri
   for (let i = 0; i < paras.length; i++) {
     const p = paras[i];
 
-    // Standfirst check on the first non-metadata paragraph
+    // Standfirst check on the first non-metadata element
     if (!looksLikeMetadataStrip(p.text)) {
-      if (isStandfirstHtml(p.inner)) {
+      // <h3> elements are standfirsts (from ### in markdown)
+      if (p.tag === "h3" || isStandfirstHtml(p.inner)) {
         return {
           description: p.text,
           source: "standfirst",
@@ -316,10 +320,8 @@ function cleanMdInlines(s: string): string {
 function truncateAtSentence(text: string, maxLen: number): string {
   const t = text.trim();
   if (t.length <= maxLen) return t;
-  // Find the last sentence-ending punctuation before maxLen
   const slice = t.slice(0, maxLen);
-  const sentenceEnd = slice.search(/[.!?]["')\u2019]?(?=\s|$)(?!.*[.!?])/);
-  // Simpler: find the last occurrence of .!? in the slice
+  // Find the last sentence-ending punctuation before maxLen
   const lastPunct = Math.max(
     slice.lastIndexOf(". "),
     slice.lastIndexOf("! "),
@@ -334,7 +336,6 @@ function truncateAtSentence(text: string, maxLen: number): string {
     return slice.slice(0, lastSpace).trim() + "…";
   }
   // Pathological: just hard-truncate
-  void sentenceEnd;
   return slice.trim() + "…";
 }
 

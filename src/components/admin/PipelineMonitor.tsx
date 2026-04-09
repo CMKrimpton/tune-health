@@ -597,7 +597,6 @@ function PipelineMonitorInner({ initialLogs, initialArticleCount, apiBase, initi
             articleHtml: uploadHtml.trim(),
             title: uploadTitle.trim(),
             slug,
-            description: '',
             category: uploadCategory || undefined,
           }),
         });

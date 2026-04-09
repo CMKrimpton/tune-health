@@ -3,10 +3,10 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
 import { getArticleBySlug } from '../../utils/articles';
 
 const { slug } = Astro.params;
-if (!slug) return Astro.redirect('/404');
+if (!slug) return new Response(null, { status: 404, headers: { Location: '/404' } });
 
 const article = await getArticleBySlug(slug);
-if (!article) return Astro.redirect('/404');
+if (!article) return new Response(null, { status: 404, headers: { Location: '/404' } });
 
 // Build TOC HTML from stored toc jsonb
 const tocHtml = article.toc.length > 0

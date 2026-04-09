@@ -1141,6 +1141,11 @@ Return JSON only.`;
         return json({ error: "Log entry not found", detail: logError?.message }, 404);
       }
 
+      // Block retrying published articles — re-running would overwrite the live article
+      if (logEntry.status === "published") {
+        return json({ error: "Cannot retry a published article. Use 'improve-article' to re-run the full pipeline." }, 400);
+      }
+
       const research = (logEntry.research_data as Record<string, unknown>) || {};
       let resumeStatus: string;
 
@@ -1900,8 +1905,20 @@ End with: <div class="data-callout reveal"><p><strong>Disclaimer:</strong> This 
       const queueId = body.queueId as string;
       if (!queueId) return json({ error: "queueId is required" }, 400);
 
-      const { data: topic } = await db.from("topic_queue").select("id, topic, source").eq("id", queueId).maybeSingle();
+      const { data: topic } = await db.from("topic_queue").select("id, topic, source, status").eq("id", queueId).maybeSingle();
       if (!topic) return json({ error: "Queue item not found" }, 404);
+
+      // Guard against double-click: if already in_progress, check for existing pipeline run
+      if (topic.status === "in_progress") {
+        const { data: existing } = await db.from("daily_article_log")
+          .select("id, status")
+          .eq("queue_id", queueId)
+          .not("status", "in", "(published,failed)")
+          .maybeSingle();
+        if (existing) {
+          return json({ error: "This topic already has an active pipeline run", existingLogId: existing.id }, 409);
+        }
+      }
 
       // Mark queue item as in_progress
       await db.from("topic_queue").update({ status: "in_progress" }).eq("id", queueId);
@@ -1947,7 +1964,7 @@ End with: <div class="data-callout reveal"><p><strong>Disclaimer:</strong> This 
       const { data: existing } = await db.from("daily_article_log")
         .select("id, status")
         .eq("slug", slug)
-        .not("status", "in", '("published","failed")')
+        .not("status", "in", "(published,failed)")
         .maybeSingle();
       if (existing) {
         return json({ error: `Article "${slug}" already has an active pipeline run (status: ${existing.status})` }, 409);

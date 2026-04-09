@@ -13,17 +13,25 @@ import { supabase } from '../lib/supabase';
 // for more than a blink. The CDN s-maxage header handles real caching.
 let _cachedArticles: Article[] | null = null;
 let _cachedComingSoon: Article[] | null = null;
-let _cacheTimestamp = 0;
+let _cacheTimestampArticles = 0;
+let _cacheTimestampComingSoon = 0;
 const CACHE_TTL = 2_000; // 2 seconds — one SSR render, never cross-request
 
-function isCacheValid(): boolean {
-  return Date.now() - _cacheTimestamp < CACHE_TTL;
+function isArticlesCacheValid(): boolean {
+  return Date.now() - _cacheTimestampArticles < CACHE_TTL;
+}
+
+function isComingSoonCacheValid(): boolean {
+  return Date.now() - _cacheTimestampComingSoon < CACHE_TTL;
 }
 
 function setCacheArticles(articles: Article[], comingSoon?: Article[]) {
   _cachedArticles = articles;
-  if (comingSoon !== undefined) _cachedComingSoon = comingSoon;
-  _cacheTimestamp = Date.now();
+  _cacheTimestampArticles = Date.now();
+  if (comingSoon !== undefined) {
+    _cachedComingSoon = comingSoon;
+    _cacheTimestampComingSoon = Date.now();
+  }
 }
 
 export interface Article {
@@ -88,7 +96,7 @@ function mapRow(row: Record<string, unknown>): Article {
  * Cached per SSR render — safe to call from every component.
  */
 export async function getArticles(): Promise<Article[]> {
-  if (_cachedArticles && isCacheValid()) return _cachedArticles;
+  if (_cachedArticles && isArticlesCacheValid()) return _cachedArticles;
 
   // Filter on BOTH status='published' AND draft=false. Two checks because
   // these fields are not always in sync (legacy seed inserts, interrupted
@@ -391,7 +399,7 @@ export async function getFeaturedArticles(): Promise<Article[]> {
  * Cached per SSR render.
  */
 export async function getComingSoonArticles(): Promise<Article[]> {
-  if (_cachedComingSoon && isCacheValid()) return _cachedComingSoon;
+  if (_cachedComingSoon && isComingSoonCacheValid()) return _cachedComingSoon;
 
   const { data, error } = await supabase
     .from('articles')
@@ -406,7 +414,7 @@ export async function getComingSoonArticles(): Promise<Article[]> {
 
   const articles = (data || []).map(mapRow);
   _cachedComingSoon = articles;
-  _cacheTimestamp = Date.now();
+  _cacheTimestampComingSoon = Date.now();
   return articles;
 }
 
