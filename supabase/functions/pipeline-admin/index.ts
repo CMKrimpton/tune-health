@@ -2,11 +2,52 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { supabase, calcCost, dispatchStage } from "../_shared/db.ts";
 import { rotateFeatured } from "../_shared/featured.ts";
-import { getCategoryGradient, MODELS, FLAT_PRICING } from "../_shared/constants.ts";
+import { getCategoryGradient, MODELS, FLAT_PRICING, classifyCategory, VALID_CATEGORIES } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
 import { isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
 import { extractDescriptionFromHtml, extractDescriptionFromMarkdown, stripDuplicateStandfirst } from "../_shared/description.ts";
 import type { ApiUsage } from "../_shared/types.ts";
+
+// ── Category resolution ────────────────────────────────────────────────
+// All publish paths used to default to "Clinical Evidence" when the user
+// didn't pass an explicit category. This caused articles like
+// "Two Kinds of Smart" (a cognition/Neuroscience piece) to land in
+// Clinical Evidence — which is for trial-driven medical research only.
+//
+// New behavior:
+//   1. If user passes a valid category → use it
+//   2. If user passes an invalid category → reject (clear error)
+//   3. If no category → run classifyCategory() on title + description + body
+//      to auto-detect via keyword scoring (already exists in constants.ts)
+//   4. Only if auto-detect returns empty → fall back to "Clinical Evidence"
+//      with a console.warn so we can audit later
+function resolveCategory(opts: {
+  provided: string | undefined | null;
+  title: string;
+  description?: string;
+  bodyText?: string;
+  slug: string;
+}): { category: string; error?: string } {
+  const provided = (opts.provided || "").trim();
+  if (provided) {
+    if (VALID_CATEGORIES.includes(provided)) {
+      return { category: provided };
+    }
+    return {
+      category: "",
+      error: `Invalid category "${provided}". Must be one of: ${VALID_CATEGORIES.join(", ")}`,
+    };
+  }
+  // No category provided — auto-classify from content
+  const sample = [opts.title, opts.description || "", (opts.bodyText || "").slice(0, 4000)].join(" ");
+  const detected = classifyCategory(sample);
+  if (detected) {
+    console.log(`[resolveCategory] auto-detected "${detected}" for ${opts.slug}`);
+    return { category: detected };
+  }
+  console.warn(`[resolveCategory] no category provided and auto-detect failed for ${opts.slug} — falling back to Clinical Evidence`);
+  return { category: "Clinical Evidence" };
+}
 
 // ── Markdown → Site HTML converter ──────────────────────────────────────
 // Converts writer-pasted markdown into the site's HTML format:
@@ -1059,7 +1100,18 @@ Deno.serve(async (req: Request) => {
       const readTime = Math.ceil(wordCount / 220);
 
       // Build article metadata from editor brief
-      const category = (editorBrief.categoryOverride as string) || (researchData.category as string) || "Clinical Evidence";
+      // Editor brief is canonical here — category was decided during the editor stage
+      // by reading research findings + brief intent. Only fall back to auto-classify
+      // if brief AND research_data are both missing a category.
+      const briefCategory = (editorBrief.categoryOverride as string) || (researchData.category as string) || "";
+      const catResolution = resolveCategory({
+        provided: briefCategory,
+        title,
+        description: writerDescription || undefined,
+        bodyText: plainText,
+        slug,
+      });
+      const category = catResolution.category;
       const gradient = getCategoryGradient(category);
       // Description priority: explicit writer input → extracted standfirst/prose → editor brief → empty
       const resolvedDescription =
@@ -1148,13 +1200,19 @@ Deno.serve(async (req: Request) => {
       const title = (body.title as string)?.trim();
       const slug = (body.slug as string)?.trim();
       let description = (body.description as string)?.trim() || "";
-      const category = (body.category as string)?.trim() || "Clinical Evidence";
+      const providedCategory = (body.category as string)?.trim() || "";
       const tags = (body.tags as string[]) || [];
       const keywords = (body.keywords as string[]) || [];
 
       if (!articleHtml || !title || !slug) {
         return json({ error: "articleHtml, title, and slug are required" }, 400);
       }
+
+      // Resolve category: validate if provided, auto-classify from content if not.
+      // Bodyless auto-classify falls back to title only — fine for early validation
+      // since we'll re-resolve after the body is parsed if no category was provided.
+      const earlyCatCheck = resolveCategory({ provided: providedCategory, title, description, slug });
+      if (earlyCatCheck.error) return json({ error: earlyCatCheck.error }, 400);
 
       // Strip full HTML page wrapper if present (Opus sometimes returns full pages)
       if (articleHtml.includes("<!DOCTYPE") || articleHtml.includes("<html")) {
@@ -1214,6 +1272,20 @@ Deno.serve(async (req: Request) => {
       const plainText = articleHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const wordCount = plainText.split(/\s+/).length;
       const readTime = Math.ceil(wordCount / 220);
+
+      // Re-resolve category now that we have the full body text. If user
+      // provided one, this is a no-op (passes through). If they didn't,
+      // we get a much better classification from full content vs title only.
+      const finalCat = resolveCategory({
+        provided: providedCategory,
+        title,
+        description,
+        bodyText: plainText,
+        slug,
+      });
+      if (finalCat.error) return json({ error: finalCat.error }, 400);
+      const category = finalCat.category;
+      void earlyCatCheck;
 
       const gradient = getCategoryGradient(category);
       const metadata = { title, slug, description, descriptionIsStandfirst, category, tags, keywords, gradient };
@@ -1290,12 +1362,20 @@ Deno.serve(async (req: Request) => {
       const title = (body.title as string)?.trim();
       let slug = (body.slug as string)?.trim() || "";
       let description = (body.description as string)?.trim() || "";
-      const category = (body.category as string)?.trim() || "Clinical Evidence";
+      const providedCategory = (body.category as string)?.trim() || "";
       const tags = (body.tags as string[]) || [];
       const keywords = (body.keywords as string[]) || [];
 
       if (!articleContent || !title) {
         return json({ error: "articleHtml and title are required" }, 400);
+      }
+
+      // Validate provided category early (auto-classify happens later when
+      // we have the full body text — see resolveCategory call below)
+      if (providedCategory && !VALID_CATEGORIES.includes(providedCategory)) {
+        return json({
+          error: `Invalid category "${providedCategory}". Must be one of: ${VALID_CATEGORIES.join(", ")}`,
+        }, 400);
       }
 
       // Auto-generate slug from title if not provided
@@ -1355,6 +1435,19 @@ Deno.serve(async (req: Request) => {
       const plainText = articleContent.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const wordCount = plainText.split(/\s+/).length;
       const readTime = Math.ceil(wordCount / 220);
+
+      // Resolve category from full body content. If providedCategory is set
+      // and valid (already checked above), passes through. If not, auto-
+      // classifies via keyword scoring on title + description + body.
+      const catResolution = resolveCategory({
+        provided: providedCategory,
+        title,
+        description,
+        bodyText: plainText,
+        slug,
+      });
+      // earlyCheck already rejected invalid provided values; no error possible here
+      const category = catResolution.category;
 
       const gradient = getCategoryGradient(category);
       const metadata = { title, slug, description, descriptionIsStandfirst, category, tags, keywords, gradient };

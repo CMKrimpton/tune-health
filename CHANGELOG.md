@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.8] - 2026-04-08
+
+### Fixed — "Clinical Evidence" Was a Misleading Default Category
+
+User reported "Two Kinds of Smart" (a piece on cognitive styles, fluid vs crystallized intelligence) was incorrectly filed under Clinical Evidence. Root cause: all three publish paths (`submit-article`, `submit-new-article`, `publish-direct`) silently defaulted to `"Clinical Evidence"` when no category was provided:
+
+```ts
+const category = (body.category as string)?.trim() || "Clinical Evidence";
+```
+
+When the user used Replace from the dashboard without picking a category (the upload UI doesn't surface a category picker on the Replace flow), it fell through to that default. Same bug exposed every article uploaded without an explicit category.
+
+**Fix in [`pipeline-admin/index.ts`](supabase/functions/pipeline-admin/index.ts):**
+
+New `resolveCategory()` helper at the top of the file:
+1. **If user provides a valid category** (in `VALID_CATEGORIES`): use it
+2. **If user provides an invalid category**: reject with `400 Invalid category "X". Must be one of: ...`
+3. **If no category**: run `classifyCategory()` (existing function in `_shared/constants.ts`) on `title + description + first 4000 chars of body` — uses keyword scoring across all 9 categories
+4. **Only if auto-detect returns empty**: fall back to `"Clinical Evidence"` with a `console.warn` so future audits can find it
+
+Wired into all 3 publish paths:
+- `submit-article` (resume from brief): uses `editorBrief.categoryOverride || research_data.category` first, falls through to auto-classify if both are empty
+- `submit-new-article` (New Article tab + dashboard upload): early validation on provided category, then re-resolve with full body text after parse
+- `publish-direct` (dashboard "Ready → Art + Publish"): same two-phase pattern
+
+Categories for new uploads will now be **either** what the user explicitly chose **or** an auto-classification from the actual content — not a fixed-default-that-happens-to-be-wrong-half-the-time.
+
+### Backfilled — "Two Kinds of Smart" → Neuroscience
+
+Direct DB update: `UPDATE articles SET category='Neuroscience' WHERE slug='the-modelers-and-the-operators'`. Verified live on production: `<meta property="article:section" content="Neuroscience">`.
+
+Reasoning: the article is about how brains differ — fluid vs crystallized intelligence, two cognitive operating systems. The codebase's `CATEGORY_KEYWORDS` for Neuroscience explicitly includes `cognitive`, `cognition`, `neural`, `brain` — all of which appear throughout the piece. Mental Health is for clinical psych conditions (depression, anxiety, ADHD, OCD); this is normal cognitive variation, not a disorder.
+
+### Flagged but NOT auto-fixed — 11 other potentially mismatched Clinical Evidence articles
+
+Ran the keyword classifier against all 53 published Clinical Evidence articles. Found 11 where another category scores ≥2 points higher than Clinical Evidence:
+
+| Slug | Title | Suggested |
+|---|---|---|
+| `glp1-safety-data-gaps-pharma-funding` | GLP-1 Drugs Work. Who's Watching for What Doesn't? | Pharmacology |
+| `sglt2-inhibitors-heart-failure-mechanism` | A Diabetes Drug Rewrote Heart Failure Medicine | Pharmacology |
+| `lariocidin-new-antibiotic-class-amr-pipeline-crisis` | A Backyard Soil Sample Just Rewrote the Antibiotic Playbook | Pharmacology |
+| `mirtazapine-guide` | Mirtazapine: The Quiet Overachiever of Modern Psychopharmacology | Pharmacology |
+| `progesterone-vs-progestin-whi-hormone-therapy` | Medicine Gave Women the Wrong Hormone for Decades | Pharmacology |
+| `bladder-cancer-treatment-revolution-2025` | Bladder Cancer Killed People the Same Way for Forty Years | Pharmacology |
+| `nocebo-effect` | The Nocebo Effect: How Belief Makes Drugs Toxic | Pharmacology |
+| `step-therapy-fail-first-insurance-patient-harm` | Your Insurer Is Practicing Medicine Without a License | Pharmacology |
+| `dietary-patterns-immune-rewiring` | Every Meal Is an Immune Command | Nutrition |
+| `paternal-preconception-health-pregnancy-outcomes` | Prenatal Medicine Has Been Staring at Half the Biology | Environmental Health |
+| `thyroid-dysfunction-systemic-health-impact` | How Thyroid Dysfunction Silently Undermines Health | Environmental Health |
+
+These are editorial judgment calls (e.g. "is a piece about a specific drug Pharmacology or Clinical Evidence?") so I deliberately did NOT auto-reclassify them. Available for next session if you want to walk through and decide one by one.
+
 ## [22.7.7] - 2026-04-08
 
 ### Fixed — Both Pre-Existing Issues from v22.7.6 (Cron Timeouts + Gemini Empty Response)
