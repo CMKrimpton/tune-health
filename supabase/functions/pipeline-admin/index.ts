@@ -1230,8 +1230,14 @@ Return JSON only.`;
       // Extract a standfirst/first-paragraph description from markdown BEFORE
       // conversion (preserves ## subhead / **bold** standfirst shapes)
       let extractedDesc = { description: "", source: "none" as const, isStandfirst: false };
+      let markdownH1: string | null = null;
       if (looksLikeMarkdown) {
         console.log("[Admin] submit-article: detected markdown input — converting to site HTML");
+        // Extract H1 title from markdown BEFORE conversion strips it.
+        // The converter skips H1 (title handled separately in metadata),
+        // so if the writer didn't type a title in the UI, we capture it here.
+        const h1Match = articleHtml.match(/^\s*#\s+([^\n]+)/m);
+        if (h1Match) markdownH1 = h1Match[1].replace(/\*\*(.+?)\*\*/g, "$1").trim();
         extractedDesc = extractDescriptionFromMarkdown(articleHtml);
         articleHtml = convertMarkdownToSiteHtml(articleHtml);
       }
@@ -1255,8 +1261,8 @@ Return JSON only.`;
       const researchData = (logEntry.research_data as Record<string, unknown>) || {};
       const editorBrief = (researchData._editorBrief as Record<string, unknown>) || {};
       const slug = logEntry.slug || (editorBrief.slug as string);
-      // Writer's title wins over editor's headline — the writer knows the piece best
-      const title = writerTitle || logEntry.title || (editorBrief.headline as string);
+      // Writer's title wins: explicit UI field → markdown H1 → log entry → editor brief
+      const title = writerTitle || markdownH1 || logEntry.title || (editorBrief.headline as string);
 
       if (!slug) return json({ error: "No slug found in log entry" }, 400);
 

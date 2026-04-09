@@ -46,8 +46,17 @@ Deno.serve(async (req: Request) => {
     if (!slug) return json({ error: "No slug found in log entry" }, 400);
 
     // Editor approved — apply any headline/description improvements
+    const isHumanWritten = researchData._writtenBy === "human-opus" || researchData._writtenBy === "admin-editor";
     const finalTitle = (qcResult.headline as string) || (metadata.title as string);
-    let finalDescription = (qcResult.description as string) || (metadata.description as string);
+
+    // DESCRIPTION LOCK: human-written articles keep their original standfirst
+    // unless it's genuinely broken. QC models routinely replace punchy
+    // standfirsts with dry summaries — mirror the title lock pattern.
+    const originalDesc = (metadata.description as string) || "";
+    const qcDesc = (qcResult.description as string) || "";
+    let finalDescription = (!isHumanWritten || descriptionLooksBroken(originalDesc, { isStandfirst: true }))
+      ? (qcDesc || originalDesc)
+      : originalDesc;
 
     // A description is legitimately a standfirst/dek (no terminal period OK)
     // when the upstream extractor flagged it. publish-direct and submit-new-article

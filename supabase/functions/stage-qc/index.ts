@@ -5,6 +5,7 @@ import { generateWithFallback, parseClaudeJSON } from "../_shared/api-clients.ts
 import { auditVoiceQuality } from "../_shared/voice-audit.ts";
 import { getQCContext } from "../_shared/analytics.ts";
 import { QC_CHAIN } from "../_shared/constants.ts";
+import { descriptionLooksBroken } from "../_shared/description.ts";
 
 // ---------------------------------------------------------------------------
 // Senior Editor QC Prompt
@@ -235,18 +236,29 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
     const isManuallyQueued = !!researchData._fromQueue;
 
     // TITLE LOCK: human-written articles keep their original title. QC can suggest
-    // a headline but it must not override what the writer chose. The description
-    // is allowed to be improved (QC often writes a better standfirst).
+    // a headline but it must not override what the writer chose.
     const resolveTitle = () => isHumanWritten
       ? (metadata.title as string) || (qcResult.headline as string)
       : (qcResult.headline as string) || (metadata.title as string);
+
+    // DESCRIPTION LOCK: human-written articles keep their original description
+    // (standfirst) unless it's genuinely broken (empty, truncated, metadata strip).
+    // QC models routinely replace punchy standfirsts with dry summaries.
+    const resolveDescription = () => {
+      const original = (metadata.description as string) || "";
+      const qcDesc = (qcResult.description as string) || "";
+      if (!isHumanWritten) return qcDesc || original;
+      // Human-written: keep original unless broken
+      if (!descriptionLooksBroken(original, { isStandfirst: true })) return original;
+      return qcDesc || original;
+    };
 
     // If editor kills the article, mark as failed — UNLESS human-written or manually queued
     if (qcResult.decision === "kill") {
       if (isHumanWritten || isManuallyQueued) {
         console.log(`[QC] Kill requested but article was ${isHumanWritten ? "human-written" : "manually queued"} — force publishing with QC improvements`);
         const finalTitle = resolveTitle();
-        const finalDescription = (qcResult.description as string) || (metadata.description as string);
+        const finalDescription = resolveDescription();
         if (finalTitle) (metadata as Record<string, unknown>).title = finalTitle;
         if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
         const { error: forceErr } = await db.from("daily_article_log").update({
@@ -278,7 +290,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
       if (isHumanWritten) {
         console.log(`[QC] Revise requested but article was human-written — force publishing with QC improvements`);
         const finalTitle = resolveTitle();
-        const finalDescription = (qcResult.description as string) || (metadata.description as string);
+        const finalDescription = resolveDescription();
         if (finalTitle) (metadata as Record<string, unknown>).title = finalTitle;
         if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
         const { error: forceErr } = await db.from("daily_article_log").update({
@@ -298,7 +310,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
       if (revisionCount > 1) {
         console.log(`[QC] Max revisions (${revisionCount}) reached for ${slug} — force publishing`);
         const finalTitle = resolveTitle();
-        const finalDescription = (qcResult.description as string) || (metadata.description as string);
+        const finalDescription = resolveDescription();
         if (finalTitle) (metadata as Record<string, unknown>).title = finalTitle;
         if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
         await db.from("daily_article_log").update({
@@ -334,7 +346,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
         console.log(`[QC] Voice rewrite already applied for ${slug} — force publishing`);
         // Apply headline/description improvements and set to qc_approved
         const finalTitle = resolveTitle();
-        const finalDescription = (qcResult.description as string) || (metadata.description as string);
+        const finalDescription = resolveDescription();
         if (finalTitle) (metadata as Record<string, unknown>).title = finalTitle;
         if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
         await db.from("daily_article_log").update({
@@ -370,7 +382,7 @@ Make your final call. Publish, request revisions, or kill. Remember: voice failu
 
     // Decision is "publish" — apply headline/description improvements, set to qc_approved
     const finalTitle = resolveTitle();
-    const finalDescription = (qcResult.description as string) || (metadata.description as string);
+    const finalDescription = resolveDescription();
     if (finalTitle) (metadata as Record<string, unknown>).title = finalTitle;
     if (finalDescription) (metadata as Record<string, unknown>).description = finalDescription;
 

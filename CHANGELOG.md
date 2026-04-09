@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.8.0] - 2026-04-09
+
+### Fixed — Description lock + markdown H1 extraction for human-written articles
+
+Pipeline was overwriting human-written standfirsts and titles during QC/copy-edit/publish stages. The "Ice Cream Is Healthy" article shipped with a dry JAMA citation as the description instead of the writer's standfirst ("Harvard researchers spent twenty years trying to make a finding disappear. The finding won."), and the editor brief's headline replaced the writer's H1.
+
+**Description lock** (mirrors existing title lock):
+- `stage-qc`: new `resolveDescription()` — for human-opus articles, keeps original description unless `descriptionLooksBroken()` flags it. Applied at all 5 code paths (publish/kill-override/revise-override/max-revisions/voice-rewrite-already-done)
+- `stage-copy-edit`: `currentDescription` now reads from `metadata.description` (writer's original) for human articles, not from `qcResult.description` (QC's rewrite). Existing broken-description guard at line 215 still fires for genuinely truncated descriptions
+- `stage-publish`: same pattern — human articles keep `metadata.description` unless broken
+
+**Markdown H1 title extraction**:
+- `pipeline-admin` `submit-article`: the markdown converter strips H1 (title handled separately in metadata), but the submit path never captured it. Editor brief headline filled in instead. Now extracts H1 before conversion and adds it to the title priority chain: `writerTitle → markdownH1 → logEntry.title → editorBrief.headline`
+
+**Live fix**: description, first body paragraph, and narration corrected directly in DB for `ice-cream-is-healthy`.
+
 ## [22.7.9] - 2026-04-08
 
 ### Fixed — All 182 Articles Reclassified by AI Audit (47 corrections)

@@ -142,8 +142,13 @@ Deno.serve(async (req: Request) => {
     const isHumanWritten = researchData._writtenBy === "human-opus" || researchData._writtenBy === "admin-editor";
 
     // Use QC's polished title/description as the starting point (QC may have already improved these)
+    // DESCRIPTION LOCK: for human-written articles, prefer the writer's original description
+    // over QC's rewrite — QC models routinely replace punchy standfirsts with dry summaries.
     const currentTitle = (qcResult.headline as string) || (metadata.title as string) || "";
-    const currentDescription = (qcResult.description as string) || (metadata.description as string) || "";
+    const originalDesc = (metadata.description as string) || "";
+    const currentDescription = (isHumanWritten && originalDesc.length >= 20)
+      ? originalDesc
+      : (qcResult.description as string) || originalDesc;
 
     // Extract H2/H3 headers from article HTML
     const headers: Array<{ text: string; level: string; fullTag: string }> = [];
