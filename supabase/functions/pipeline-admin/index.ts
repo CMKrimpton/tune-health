@@ -5,6 +5,7 @@ import { rotateFeatured } from "../_shared/featured.ts";
 import { getCategoryGradient, MODELS, FLAT_PRICING, classifyCategory, VALID_CATEGORIES } from "../_shared/constants.ts";
 import { verifyPubMedCitations } from "../_shared/pubmed.ts";
 import { isDuplicate, buildFingerprints } from "../_shared/dedup.ts";
+import { claude } from "../_shared/api-clients.ts";
 import { extractDescriptionFromHtml, extractDescriptionFromMarkdown, stripDuplicateStandfirst } from "../_shared/description.ts";
 import type { ApiUsage } from "../_shared/types.ts";
 
@@ -356,6 +357,175 @@ Deno.serve(async (req: Request) => {
         total: (rows || []).length,
         samples,
         message: `Stripped duplicate standfirst from ${updated} of ${(rows || []).length} articles`,
+      });
+    }
+
+    // ------ RECLASSIFY-ALL-CATEGORIES — AI-powered category audit + correction ------
+    //
+    // Pulls every published article and asks Claude Sonnet to pick the best
+    // category from the canonical 9-list based on title + description + body
+    // sample. Compares with current category and reports/applies changes.
+    //
+    // Batched 10 articles per Claude call to keep token usage reasonable
+    // (~1500 input tokens × 18 batches = ~27k input tokens, ~$0.10 total).
+    //
+    // Pass `dryRun: true` to see what would change without applying. Default
+    // is dry-run so this action is safe to call without flags.
+    if (action === "reclassify-all-categories") {
+      const dryRun = body.dryRun !== false; // default true
+      const { data: rows, error: listErr } = await db
+        .from("articles")
+        .select("slug, title, description, category, article_html")
+        .eq("status", "published")
+        .order("slug");
+      if (listErr) return json({ error: `List failed: ${listErr.message}` }, 500);
+
+      const articles = (rows || []).map(r => ({
+        slug: r.slug as string,
+        title: (r.title as string) || "",
+        description: (r.description as string) || "",
+        currentCategory: (r.category as string) || "",
+        // First 1500 chars of plain text body — enough to capture the
+        // article's actual subject matter, not just the headline framing.
+        bodySample: ((r.article_html as string) || "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 1500),
+      }));
+
+      // Batch into groups of 10 for Claude to classify
+      const batchSize = 10;
+      const batches: typeof articles[] = [];
+      for (let i = 0; i < articles.length; i += batchSize) {
+        batches.push(articles.slice(i, i + batchSize));
+      }
+
+      const classifications: Array<{
+        slug: string;
+        old: string;
+        new: string;
+        rationale: string;
+      }> = [];
+      let totalCost = 0;
+      const errors: Array<{ batch: number; error: string }> = [];
+
+      // Concurrency limit — Anthropic allows parallel calls but we want to
+      // stay polite. 5 in flight means 18 batches finish in ~4 waves ≈ 30-60s
+      // total instead of 18 × 5s = 90s sequential.
+      const MAX_CONCURRENT = 5;
+
+      const systemPrompt = `You are an editorial categorizer for alumi news, a health magazine. Each article must be assigned to EXACTLY ONE of these 9 categories based on its primary subject matter:
+
+- **Neuroscience**: brain function, cognition, neural mechanisms, cognitive science, neurobiology. Includes cognitive style, intelligence, learning, memory.
+- **Mental Health**: clinical psychiatric conditions (depression, anxiety, ADHD, OCD, PTSD, bipolar, addiction, trauma). Therapy and counseling. NOT normal cognitive variation.
+- **Longevity**: aging mechanisms, healthspan, lifespan extension, anti-aging interventions, geroscience.
+- **Clinical Evidence**: trial-driven medical research, biomarkers, diagnostics, screening, evidence reviews. Disease research where the angle is "what does the evidence show?". Cancer trials, vaccine efficacy, surgical outcomes.
+- **Environmental Health**: pollutants, microplastics, PFAS, air/water quality, endocrine disruptors, chemical exposures, toxic environmental agents.
+- **Nutrition**: diet, food, nutrients, supplements, microbiome, fasting, eating patterns, dietary interventions.
+- **Fitness**: exercise, strength training, cardio, athletic performance, physical activity, sedentary behavior.
+- **Sleep Science**: sleep, insomnia, circadian rhythm, sleep apnea, REM, chronotype.
+- **Pharmacology**: specific drugs and drug classes, pharma industry, drug mechanisms, prescribing, drug safety/efficacy of NAMED compounds (statins, GLP-1, SSRIs, antibiotics, opioids, etc). Pieces ABOUT the drug or drug industry, not pieces that happen to mention drugs.
+
+DECISION RULES:
+1. Pick the SINGLE best fit. If two could work, pick the more specific one.
+2. Pharmacology vs Clinical Evidence: if the piece is fundamentally about a SPECIFIC DRUG or DRUG CLASS (mechanism, safety, industry, prescribing), use Pharmacology. If it's about a disease where multiple treatment approaches are discussed, use Clinical Evidence.
+3. Mental Health vs Neuroscience: clinical psychiatric conditions → Mental Health. Normal cognitive variation, brain mechanisms, cognitive science → Neuroscience.
+4. Environmental Health vs Clinical Evidence: anything where the angle is "an environmental exposure causes harm" → Environmental Health, even if it cites clinical evidence.
+5. Be decisive. Every article must get exactly one category from the 9-list above.
+
+Return STRICTLY this JSON format, no preamble or commentary:
+{"results": [{"slug": "...", "category": "...", "rationale": "one short sentence"}]}`;
+
+      const processBatch = async (batchIdx: number) => {
+        const batch = batches[batchIdx];
+        const userPrompt = `Classify these ${batch.length} articles. Return one result per article in the same order:
+
+${batch.map((a, idx) => `--- ARTICLE ${idx + 1} ---
+SLUG: ${a.slug}
+CURRENT CATEGORY: ${a.currentCategory}
+TITLE: ${a.title}
+DESCRIPTION: ${a.description}
+BODY SAMPLE: ${a.bodySample}`).join("\n\n")}
+
+Return JSON only.`;
+
+        try {
+          const result = await claude({
+            system: systemPrompt,
+            user: userPrompt,
+            model: MODELS.DEFAULT_CLAUDE,
+            maxTokens: 2000,
+            temperature: 0.1,
+          }, "reclassify-categories");
+          totalCost += result.usage.costUsd;
+
+          const cleaned = result.text.replace(/^```json?\n?/, "").replace(/\n?```$/, "").trim();
+          const parsed = JSON.parse(cleaned);
+          const results = (parsed.results || []) as Array<{ slug: string; category: string; rationale: string }>;
+
+          for (const r of results) {
+            const article = batch.find(a => a.slug === r.slug);
+            if (!article) continue;
+            if (!VALID_CATEGORIES.includes(r.category)) {
+              console.warn(`[reclassify] AI returned invalid category "${r.category}" for ${r.slug} — skipping`);
+              continue;
+            }
+            if (r.category !== article.currentCategory) {
+              classifications.push({
+                slug: r.slug,
+                old: article.currentCategory,
+                new: r.category,
+                rationale: (r.rationale || "").slice(0, 200),
+              });
+            }
+          }
+        } catch (err: unknown) {
+          errors.push({ batch: batchIdx, error: err instanceof Error ? err.message : "unknown" });
+        }
+      };
+
+      // Process batches in waves of MAX_CONCURRENT parallel calls
+      for (let wave = 0; wave < batches.length; wave += MAX_CONCURRENT) {
+        const waveBatches = [];
+        for (let j = 0; j < MAX_CONCURRENT && wave + j < batches.length; j++) {
+          waveBatches.push(processBatch(wave + j));
+        }
+        await Promise.all(waveBatches);
+      }
+
+      // Apply changes if not dry-run
+      let applied = 0;
+      if (!dryRun) {
+        for (const c of classifications) {
+          const { error } = await db
+            .from("articles")
+            .update({ category: c.new, updated_at: new Date().toISOString() })
+            .eq("slug", c.slug);
+          if (!error) applied++;
+        }
+      }
+
+      // Add total cost to overhead log
+      if (totalCost > 0) {
+        try {
+          await db.rpc("increment_overhead_cost", { p_amount: totalCost });
+        } catch { /* non-fatal */ }
+      }
+
+      return json({
+        success: true,
+        dryRun,
+        totalArticles: articles.length,
+        batches: batches.length,
+        wouldChange: classifications.length,
+        applied,
+        errors,
+        costUsd: Math.round(totalCost * 10000) / 10000,
+        changes: classifications,
+        message: dryRun
+          ? `DRY RUN: ${classifications.length} of ${articles.length} articles would be reclassified. Pass {"dryRun": false} to apply.`
+          : `Applied ${applied} of ${classifications.length} category changes across ${articles.length} articles.`,
       });
     }
 

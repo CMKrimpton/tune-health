@@ -6,6 +6,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.7.9] - 2026-04-08
+
+### Fixed — All 182 Articles Reclassified by AI Audit (47 corrections)
+
+User asked to make sure all articles are in correct categories. New `reclassify-all-categories` admin action in [`pipeline-admin/index.ts`](supabase/functions/pipeline-admin/index.ts) pulls every published article (slug + title + description + first 1500 chars of body) and asks Claude Sonnet 4.6 to assign each to one of the canonical 9 categories. Returns one rationale sentence per change.
+
+**Implementation:**
+- Batched 10 articles per Claude call (~1500 input tokens × 19 batches = ~28k tokens)
+- Parallelized 5 batches per wave to fit within edge function wall-clock limits
+- Defaults to dry-run; pass `{"dryRun": false}` to apply
+- Strict category validation against `VALID_CATEGORIES` (rejects any invalid AI output)
+- Cost logged to overhead via `increment_overhead_cost` RPC
+
+**Decision rules baked into the system prompt:**
+- Pharmacology vs Clinical Evidence: pieces about specific named drugs / drug classes / pharma industry → Pharmacology. Pieces about diseases where multiple treatment approaches are discussed → Clinical Evidence
+- Mental Health vs Neuroscience: clinical psychiatric conditions (depression, anxiety, OCD, ADHD, PTSD) → Mental Health. Normal cognitive variation, brain mechanisms, cognitive science → Neuroscience
+- Environmental Health vs Clinical Evidence: anything where the angle is "an environmental exposure causes harm" → Environmental Health, even if it cites clinical evidence
+
+**Run results**: 182 articles classified, **47 reclassified, 0 errors, $0.50 total cost**.
+
+### Distribution before vs after
+
+| Category | Before | After | Δ |
+|---|---|---|---|
+| Pharmacology | 15 | **35** | **+20** |
+| Neuroscience | 29 | 34 | +5 |
+| Clinical Evidence | 54 | 33 | -21 |
+| Nutrition | 24 | 27 | +3 |
+| Environmental Health | 14 | 15 | +1 |
+| Sleep Science | 11 | 10 | -1 |
+| Fitness | 9 | 10 | +1 |
+| Mental Health | 16 | 9 | -7 |
+| Longevity | 8 | 9 | +1 |
+| Research Summary (orphan) | 1 | **0** | -1 |
+| Science (orphan) | 1 | **0** | -1 |
+
+**Pharmacology grew from 15 → 35** because the AI correctly identified that articles about specific drugs/compounds (`glp1-safety-data-gaps`, `sglt2-inhibitors-heart-failure`, `creatine-brain-cognition`, `nicotine-research`, `melatonin-supplement-contamination`, `mirtazapine-guide`, `cannabis-mental-health-evidence-lancet`, `birth-control-eugenic-history`, `cold-remedies-evidence-zinc-phenylephrine-honey`, `aspartame-fda-approval-regulatory-capture`, etc.) are fundamentally drug-mechanism / drug-industry pieces, not generic clinical research.
+
+**Two orphan categories eliminated**: `Research Summary` (1 article) and `Science` (1 article). Both reclassified into the canonical 9-list.
+
+### Notable corrections
+
+- `the-modelers-and-the-operators` → Neuroscience (the article that started this audit)
+- `ocd-brain-circuit-not-personality-quirk`: Clinical Evidence → **Mental Health** (clinical psych condition, not generic clinical research)
+- `trolley-problem-correct-answer`: Mental Health → **Neuroscience** (cognitive/moral reasoning, not a clinical condition)
+- `early-life-stress-gut-brain-pathways`: Mental Health → **Neuroscience** (gut-brain biology)
+- `49ers-injuries-emf-substation-theory`: Mental Health → **Environmental Health** (EMF exposure investigation)
+- `nitric-oxide-paradox-aging-vasodilator`: Neuroscience → **Longevity** (aging mechanism)
+- `vo2-max-mortality-predictor`: Longevity → **Fitness** (cardiorespiratory fitness primary subject)
+- `gut-microbiome-brain`: Neuroscience → **Nutrition** (microbiome is a nutrition subject)
+- `tennis-longevity-social-exercise-science`: Fitness → **Longevity** (lifespan extension is the dominant theme)
+
+**Live verified on production**: spot-checked `glp1-safety-data-gaps-pharma-funding` (`<meta property="article:section" content="Pharmacology">`) and `ocd-brain-circuit-not-personality-quirk` (`<meta property="article:section" content="Mental Health">`).
+
+### Future-proofing
+The new `reclassify-all-categories` action is permanent — call it any time to re-audit categories after content shifts. Combined with v22.7.8's `resolveCategory()` helper, new uploads now land in the right category automatically (auto-classify from content if not explicitly provided), and historical drift can be cleaned up with a single API call.
+
 ## [22.7.8] - 2026-04-08
 
 ### Fixed — "Clinical Evidence" Was a Misleading Default Category
