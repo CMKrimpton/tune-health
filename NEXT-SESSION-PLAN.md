@@ -1,6 +1,6 @@
 # Next Session Plan
 
-> **Status**: v22.8.3 live. ~192 published articles. Site is fully SSR-driven from Supabase. Default typography is Newsreader. **Full human-article protection**: title lock + description lock + voice-rewrite guard across all pipeline stages (QC, copy-edit, publish). `###` standfirsts handled correctly in extraction, dedup, and markdown conversion. Retry/produce-topic guards prevent article corruption. Proper 404 status codes for SEO. Per-cache timestamps prevent stale data. `extractDescriptionFromHtml` now finds `<h3>` elements.
+> **Status**: v22.8.5 live. ~183 published articles. Site is fully SSR-driven from Supabase. Default typography is Newsreader. **Full human-article protection**: title lock + description lock + voice-rewrite guard across all pipeline stages (QC, copy-edit, publish). `###` standfirsts handled correctly in extraction, dedup, and markdown conversion. Retry/produce-topic guards prevent article corruption. Proper 404 status codes for SEO. Per-cache timestamps prevent stale data. `extractDescriptionFromHtml` now finds `<h3>` elements.
 
 > **Last updated**: 2026-04-09
 
@@ -84,6 +84,9 @@
 - **Env var trimming**: `supabase.ts` now `.trim()`s env vars per CLAUDE.md gotcha #4
 - **Cache timestamps**: Split shared `_cacheTimestamp` into per-cache timestamps (coming-soon no longer invalidates articles cache)
 - **Dead code**: Removed unused `sentenceEnd` variable, removed unused `allTags` fetch + import
+
+### Scout cron fix (v22.8.5)
+- **2pm scout was wrong desk**: `scout-grok-afternoon` passed `"scoutModel":"grok"` — two Contrarian Desk scouts daily, zero Investigation Desk. Replaced with `scout-sonnet` passing `"scoutModel":"sonnet"`. DB-only fix (cron.unschedule + cron.schedule)
 
 ---
 

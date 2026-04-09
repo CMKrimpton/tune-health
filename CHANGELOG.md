@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [22.8.5] - 2026-04-09
+
+### Fixed — Scout cron misconfiguration
+
+- **2pm scout was running wrong desk**: `scout-grok-afternoon` cron passed `"scoutModel":"grok"` (Contrarian Desk) instead of `"scoutModel":"sonnet"` (Investigation Desk). Two Grok scouts were running daily, zero Investigation Desk scouts
+- Replaced with `scout-sonnet` cron — correct name, correct model parameter, same 2pm UTC schedule
+- Scout schedule now matches design: Gemini/Trending 6am, Sonnet/Investigation 2pm, Grok/Contrarian 10pm
+
 ## [22.8.4] - 2026-04-09
 
 ### Fixed — Typography preset system + font pairing audit
