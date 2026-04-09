@@ -1,8 +1,8 @@
 # Next Session Plan
 
-> **Status**: v22.5.0 live. ~192 published articles. Site is fully SSR-driven from Supabase. Default typography is Newsreader. Copy-edit stage no longer flattens human-written headers. Social-engine validates `mode` and chains briefs cross-persona. Independence skip monitoring surfaces in dashboard. **Description extraction unified across all four publish paths via `_shared/description.ts` — standfirsts/deks no longer get fused with body paragraphs and breadcrumb strips no longer leak into descriptions.**
+> **Status**: v22.8.3 live. ~192 published articles. Site is fully SSR-driven from Supabase. Default typography is Newsreader. **Full human-article protection**: title lock + description lock + voice-rewrite guard across all pipeline stages (QC, copy-edit, publish). `###` standfirsts handled correctly in extraction, dedup, and markdown conversion. Retry/produce-topic guards prevent article corruption. Proper 404 status codes for SEO. Per-cache timestamps prevent stale data. `extractDescriptionFromHtml` now finds `<h3>` elements.
 
-> **Last updated**: 2026-04-08
+> **Last updated**: 2026-04-09
 
 ---
 
@@ -59,19 +59,45 @@
 
 ---
 
-## What Shipped in v22.4.0 (this session)
+## What Shipped in v22.8.x (this session — 2026-04-09)
 
-- **Typography default → Newsreader** (`medium` preset). `DEFAULT_PRESET_ID` flipped; admin reset button reads default name from data attributes
-- **Copy-edit header lock for human-Opus articles** — code-level guard mirrors title lock. Headers BLOCKED unless structurally broken (empty / dangling punctuation / dangling preposition / stray HTML). Length is no longer brokenness. Triggered by OCD article 2026-04-08 regression where a 9-word editorial header was flattened to a 4-word listicle hook. Prompt's hard "4–8 words = failure" rule also softened to a guideline
-- **Social-engine `mode` validation** + cross-brief `references` chaining (3-tier cascade: AI value → prior persona on same platform → earlier persona in same brief)
-- **Independence skip monitoring** — `pipeline-admin` returns `independenceSkipped24h`; `PipelineMonitor` renders red warning pill when ≥3 in 24h
-- `TYPOGRAPHY-AUDIT.md` + `alumi news — Style Guide.pdf` committed
+### Human-article protection (v22.8.0–22.8.1)
+- **Description lock**: `resolveDescription()` in stage-qc mirrors `resolveTitle()` — human standfirsts preserved unless `descriptionLooksBroken()`. Applied in stage-qc (5 code paths), stage-copy-edit, stage-publish
+- **Title lock in stage-publish + stage-copy-edit**: Both were missing the lock — QC's rewritten headline always won. Now `metadata.title` wins for human-opus articles
+- **Markdown H1 extraction**: `submit-article` now captures H1 before `convertMarkdownToSiteHtml` strips it. Title priority: `writerTitle → markdownH1 → logEntry.title → editorBrief.headline`
+
+### Pipeline audit (v22.8.2)
+- **`###` standfirst**: `extractDescriptionFromMarkdown` handles `#{2,3}`, `convertMarkdownToSiteHtml` skips `###` standfirsts (mirrors `##` pattern), `stripDuplicateStandfirst` matches `<h3>` not just `<p>`
+- **Voice-rewrite human guard**: Hard `isHumanWritten` check blocks Opus prose destruction, advances to copy-edit
+- **Stage-publish description gate**: Forces `isStandfirst: true` for human articles in second `descriptionLooksBroken` check
+- **Stage-copy-edit threshold**: Aligned description "broken" threshold (20 → 50 chars)
+- **Score preservation**: `|| null` → `?? null` for independence_score/editor_score
+
+### Full-app ultra-audit (v22.8.3)
+- **`extractDescriptionFromHtml` + `getIntroParagraphs`**: Now find `<h3>` elements as standfirsts (root cause of invisible standfirst + duplication)
+- **Upload direct path**: Removed hardcoded `description: ''` — server now extracts from body
+- **Retry guard**: Blocks retrying published articles (was silently corrupting live content)
+- **Produce-topic guard**: Checks for existing in-progress pipeline run before creating new one
+- **PostgREST filter**: `improve-article` fix — `'("published","failed")'` → `"(published,failed)"`
+- **404 status codes**: `[slug].astro` + `topics/[slug].astro` return proper 404 instead of 302 redirect
+- **Middleware security**: Removed `PUBLIC_ADMIN_TOKEN` fallback, removed dead `isArticle ? 15 : 15` ternary
+- **Env var trimming**: `supabase.ts` now `.trim()`s env vars per CLAUDE.md gotcha #4
+- **Cache timestamps**: Split shared `_cacheTimestamp` into per-cache timestamps (coming-soon no longer invalidates articles cache)
+- **Dead code**: Removed unused `sentenceEnd` variable, removed unused `allTags` fetch + import
 
 ---
 
 ## Priority for Next Session
 
-### 1. Social platform credentials — still the blocker for the social system to actually post (HIGH if you want social to ship)
+### 1. Add "Science" as a 10th category (user requested)
+
+Some articles don't fit the 9 health-specific categories (e.g., "The Modelers and the Operators" is in Neuroscience but is really about AI/epistemology; the moon landings investigation is general science). User wants a "Science" category for topics that aren't health/medical.
+
+**Files that need changes**: `_shared/constants.ts` (VALID_CATEGORIES, CATEGORY_GRADIENTS, CATEGORY_KEYWORDS), `admin/types.ts` (VALID_CATEGORIES, CATEGORY_GRADIENTS, GRADIENT_HEX_MAP), `category-domains.ts` (CATEGORY_DOMAINS, CATEGORY_META), `articles.ts` (categoryGradients). Then run the `reclassify-all-categories` action with updated decision rules.
+
+**Open decisions**: Which domain should it go in? (new "Ideas"/"Discovery" domain, or expand "Medicine" to "Science & Medicine"?). What color/gradient? (cyan/teal-blue suggested). What keywords for auto-classification?
+
+### 2. Social platform credentials — still the blocker for the social system to actually post (HIGH if you want social to ship)
 
 The full social pipeline (engine → writer → poster → sync) is built and tested end-to-end against the database. **Nothing has ever been posted because no platform credentials are set.** `social_platform_config.api_configured = false` for all 14 platforms.
 
