@@ -47,7 +47,12 @@ Deno.serve(async (req: Request) => {
 
     // Editor approved — apply any headline/description improvements
     const isHumanWritten = researchData._writtenBy === "human-opus" || researchData._writtenBy === "admin-editor";
-    const finalTitle = (qcResult.headline as string) || (metadata.title as string);
+
+    // TITLE LOCK: human-written articles keep their original title.
+    // QC can suggest a headline but it must not override what the writer chose.
+    const finalTitle = isHumanWritten
+      ? (metadata.title as string) || (qcResult.headline as string)
+      : (qcResult.headline as string) || (metadata.title as string);
 
     // DESCRIPTION LOCK: human-written articles keep their original standfirst
     // unless it's genuinely broken. QC models routinely replace punchy

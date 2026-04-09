@@ -144,7 +144,10 @@ Deno.serve(async (req: Request) => {
     // Use QC's polished title/description as the starting point (QC may have already improved these)
     // DESCRIPTION LOCK: for human-written articles, prefer the writer's original description
     // over QC's rewrite — QC models routinely replace punchy standfirsts with dry summaries.
-    const currentTitle = (qcResult.headline as string) || (metadata.title as string) || "";
+    // TITLE LOCK: human-written articles keep their original title, not QC's rewrite
+    const currentTitle = isHumanWritten
+      ? (metadata.title as string) || (qcResult.headline as string) || ""
+      : (qcResult.headline as string) || (metadata.title as string) || "";
     const originalDesc = (metadata.description as string) || "";
     const currentDescription = (isHumanWritten && originalDesc.length >= 20)
       ? originalDesc
