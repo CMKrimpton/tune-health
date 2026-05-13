@@ -16,7 +16,7 @@
     "@astrojs/tailwind": "^6.0.2",
     "@astrojs/vercel": "^8.2.11",
     "@supabase/supabase-js": "^2.101.1",
-    "astro": "^5.16.5",
+    "astro": "^6.1.10",
     "cmdk": "^1.1.1",
     "mammoth": "^1.12.0",
     "react": "^19.1.0",
